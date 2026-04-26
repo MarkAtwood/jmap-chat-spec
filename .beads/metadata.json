@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "jmap_chat_spec",
+  "project_id": "049b6513-75e1-4c72-aae5-af4931861907"
+}
