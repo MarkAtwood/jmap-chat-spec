@@ -319,6 +319,21 @@ A Reaction is an emoji response to a Message, stored as a value in the `reaction
 `sentAt` (UTCDate):
 : Time the reaction was added.
 
+## ReadDisposition {#read-disposition-type}
+
+A ReadDisposition is a String value that indicates *why* a recipient acknowledged a message. It is carried on `Message.readDisposition` and within `deliveryReceipts` entries. The following values are defined:
+
+`"displayed"`:
+: The message content was presented to the user's attention. This is the default when `readDisposition` is absent or unrecognized.
+
+`"deleted"`:
+: The message was removed from the recipient's mailbox without being displayed (e.g., bulk delete or swipe-to-dismiss without opening).
+
+`"processed"`:
+: The message was handled by an automated process (e.g., a bot or filter rule) without a human viewing it.
+
+Implementations MUST NOT reject messages or receipts that carry an unrecognized `readDisposition` value. Unrecognized values MUST be stored as-is and SHOULD be treated as `"displayed"` for the purposes of unread-count computation and user-interface rendering. This allows deployments to define additional values (e.g., `"voice-listened"`, `"forwarded"`) without breaking older implementations.
+
 ## ChatContact {#chat-contact}
 
 A ChatContact represents a remote user known to this mailbox. A ChatContact's `id` is exactly the userId provided by the authentication layer: it is the single, global identity key for that user within this deployment.
@@ -530,13 +545,16 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 : `"pending"`, `"delivered"`, `"failed"`, or `"received"`. For group chats, reflects aggregate state across all recipients; see `deliveryReceipts` for per-recipient detail.
 
 `deliveryReceipts` (Object, optional, server-set):
-: For group chats, a JSON object mapping each non-owner participant's ChatContact.id to `{"deliveredAt": <UTCDate-or-null>, "deviceDeliveredAt": <UTCDate-or-null>, "readAt": <UTCDate-or-null>}`. Present only when `senderId` is `"self"`. `deviceDeliveredAt` is optional and MAY be absent if the recipient's platform does not support device-delivery confirmation (e.g., APNs content-available callbacks or FCM data delivery receipts); implementations that cannot obtain this signal MUST omit the field rather than approximate it with `deliveredAt`. Unlike the top-level `deliveredAt` and `readAt` fields, `deviceDeliveredAt` has no top-level parallel because device-delivery confirmation is always a per-recipient event with no aggregate owner-side equivalent.
+: For group chats, a JSON object mapping each non-owner participant's ChatContact.id to `{"deliveredAt": <UTCDate-or-null>, "deviceDeliveredAt": <UTCDate-or-null>, "readAt": <UTCDate-or-null>, "readDisposition": <String-or-null>}`. Present only when `senderId` is `"self"`. `deviceDeliveredAt` is optional and MAY be absent if the recipient's platform does not support device-delivery confirmation (e.g., APNs content-available callbacks or FCM data delivery receipts); implementations that cannot obtain this signal MUST omit the field rather than approximate it with `deliveredAt`. `readDisposition` is absent when `readAt` is null. See {{read-disposition-type}}. Unlike the top-level `deliveredAt` and `readAt` fields, `deviceDeliveredAt` has no top-level parallel because device-delivery confirmation is always a per-recipient event with no aggregate owner-side equivalent.
 
 `deliveredAt` (UTCDate, optional, server-set):
 : Time the first outbound delivery was acknowledged.
 
 `readAt` (UTCDate, optional, server-set):
 : Time the owner acknowledged reading this message.
+
+`readDisposition` (String, optional, server-set):
+: The ReadDisposition value ({{read-disposition-type}}) recorded when `readAt` was last set. Absent when `readAt` is not set. When the server sets `readAt` in response to a `Message/set` update that omits `readDisposition`, the server MUST store `"displayed"`.
 
 `editedAt` (UTCDate, optional, server-set):
 : Time of the most recent edit.
@@ -1008,7 +1026,7 @@ Clients SHOULD only add or remove reactions where `senderId` is `"self"`. Server
 
 #### Marking as Read
 
-`update` with `readAt: <UTCDate>`.
+`update` with `readAt: <UTCDate>` and optionally `readDisposition: <String>`. If `readDisposition` is omitted, the server stores `"displayed"`. See {{read-disposition-type}} for defined values; unrecognized values are stored as-is.
 
 ### Message/query
 

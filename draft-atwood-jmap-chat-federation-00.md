@@ -307,6 +307,9 @@ Method name: `Peer/receipt`
 `readAt` (UTCDate, optional):
 : Time the message was read by the recipient. SHOULD be present when the recipient's owner has read the message.
 
+`readDisposition` (String, optional):
+: The ReadDisposition value indicating why the message was acknowledged. SHOULD be present when `readAt` is present. If `readAt` is present and `readDisposition` is absent, the receiving server MUST store `"displayed"`. See ReadDisposition in {{JMAP-CHAT}}. Unrecognized values MUST be stored as-is.
+
 `readerUserId` (String):
 : The ChatContact.id of the acknowledging user. For group chats, used to update the per-recipient delivery receipt in `deliveryReceipts`.
 
@@ -326,11 +329,11 @@ server MUST determine the effective receipt-sharing preference for the
 relevant Chat using the same rule as the Sender Behavior (defined above).
 
 If the effective preference is `false`, the server MUST NOT update
-`Message.deliveryReceipts` with the supplied `readAt` value, and MUST
-NOT deliver any resulting state-change event to the owner's connected
-clients. The server MUST NOT record `deviceDeliveredAt` when the
-effective preference is `false`; like `readAt`, it is a
-privacy-sensitive timestamp reflecting user activity.
+`Message.deliveryReceipts` with the supplied `readAt` or `readDisposition`
+values, and MUST NOT deliver any resulting state-change event to the
+owner's connected clients. The server MUST NOT record `deviceDeliveredAt`
+when the effective preference is `false`; like `readAt` and
+`readDisposition`, it is a privacy-sensitive value reflecting user activity.
 
 The server MAY still record `deliveredAt` if present, as delivery
 acknowledgement is not affected by the receipt-sharing preference.
