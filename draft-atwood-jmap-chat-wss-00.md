@@ -110,7 +110,7 @@ Because a single authenticated WebSocket connection authorizes a continuous stre
 
 # JMAP Chat API over WebSocket {#api}
 
-All JMAP Chat owner-facing methods defined in {{JMAP-CHAT}} — including all `/get`, `/set`, `/query`, `/changes`, `/queryChanges`, `Space/join`, and `ReadPosition/set` methods — operate over the {{RFC8887}} WebSocket transport without modification. Clients include `"urn:ietf:params:jmap:chat"` in the `using` array of each JMAP Request object.
+All JMAP Chat owner-facing methods defined in {{JMAP-CHAT}} — including all `/get`, `/set`, `/query`, `/changes`, `/queryChanges`, `Chat/typing`, and `Space/join` methods — operate over the {{RFC8887}} WebSocket transport without modification. Clients include `"urn:ietf:params:jmap:chat"` in the `using` array of each JMAP Request object.
 
 The `maxConcurrentRequests` limit in the Session capabilities applies to requests made on the WebSocket connection. When using the WebSocket subprotocol over a binding of HTTP that supports request multiplexing (e.g., HTTP/2), this limit applies to the sum of requests made on both the JMAP API endpoint and the WebSocket connection, per {{RFC8887}} Section 4.3.2.
 
