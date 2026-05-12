@@ -975,7 +975,7 @@ The server sets `id`, `senderMsgId`, `senderId`, `receivedAt`, `deliveryState`, 
 
 The server MUST:
 
-1. Push a MessageRevision onto `editHistory` with the current `body`, `bodyType`, and current server time as `editedAt`.
+1. If the server retains edit history, push a MessageRevision onto `editHistory` with the current `body`, `bodyType`, and current server time as `editedAt`.
 2. Replace `body` and `bodyType` with the submitted values.
 3. Set `editedAt` to the current server time.
 4. Send `Peer/deliver` carrying an `edit` payload to all recipients (see {{peer-deliver}}).
