@@ -931,9 +931,13 @@ The server MUST NOT persist this event. Before delivering a typing push event to
 
 Servers SHOULD rate-limit `Chat/typing` calls per account per chat. Servers SHOULD accept no more than one call per account per chat per 3 seconds; calls that exceed this rate MAY be silently discarded without error.
 
+The recommended 3-second value pairs with the 10-second client-side decay timer described later in this section: with one accepted event per 3 seconds while a sender is actively typing, the receiver's decay timer sees at least three events before deciding the sender has stopped. Servers using a significantly lower rate impose unnecessary load on themselves and on federated peers; servers using a significantly higher rate risk receivers clearing the typing indicator while the sender is still active.
+
 Changes to `receiveTypingIndicators` via `Chat/set` MUST take effect for all typing push events delivered after the `Chat/set` response is returned.
 
-When `receiveTypingIndicators` transitions from `false` to `true`, the server does not synthesize `typing: false` events for previously suppressed senders. Clients MUST use a decay timer to recover from any stale typing state; if no typing event is received for a given `(chatId, senderId)` pair within 10 seconds, the client MUST hide the typing indicator for that pair.
+When `receiveTypingIndicators` transitions from `false` to `true`, the server does not synthesize `typing: false` events for previously suppressed senders. Clients SHOULD use a decay timer to recover from any stale typing state; if no typing event is received for a given `(chatId, senderId)` pair within approximately 10 seconds, the client SHOULD hide the typing indicator for that pair.
+
+The recommended 10-second value is calibrated against the server-side rate limit specified earlier in this section ({{chat-typing}}): with one `Chat/typing` call accepted per 3 seconds while a sender is actively typing, 10 seconds represents three missed events and is a reliable signal that the sender has stopped. Clients that diverge significantly from this value will appear inconsistent to users running multiple clients in parallel (for example, a mobile client showing the typing indicator long after a desktop client has cleared it). Implementations targeting environments with high inbound latency MAY choose a slightly longer window; implementations targeting low-latency contexts MAY choose shorter.
 
 Note: `Chat.receiveTypingIndicators` is a persistent per-chat preference and survives reconnects. It is distinct from the `chatIds` scope in `ChatStreamEnable` ({{JMAP-CHAT-WSS}}), which is a session-scoped view-management filter. Both may suppress delivery of a typing event for the same chat, but they serve different purposes and are evaluated independently.
 
