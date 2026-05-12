@@ -79,6 +79,9 @@ informative:
   JMAP-TASKS:
     title: JMAP for Tasks
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-tasks/
+  W3C-DID-CORE:
+    title: Decentralized Identifiers (DIDs) v1.0
+    target: https://www.w3.org/TR/did-core/
 
 --- abstract
 
@@ -137,7 +140,7 @@ Peer:
 : Another mailbox server communicating with this mailbox.
 
 id / userId:
-: A ChatContact's `id` is the stable, opaque identity string provided by the authentication layer for that user. These two terms are intentionally equivalent in this protocol: ChatContact.id IS the userId. There is no separate identity namespace. Servers MUST set ChatContact.id to the userId string obtained from the authentication layer.
+: A ChatContact's `id` is the stable, opaque identity string provided by the authentication layer for that user. These two terms are intentionally equivalent in this protocol: ChatContact.id IS the userId. There is no separate identity namespace. Servers MUST set ChatContact.id to the userId string obtained from the authentication layer. The specific form of the identifier (for example, a `user@host`-style string, a Decentralized Identifier URI {{?W3C-DID-CORE}}, or any other URI form) is not constrained by this specification; servers MUST treat it as opaque regardless of form.
 
 # The urn:ietf:params:jmap:chat Capability {#capability}
 
