@@ -409,7 +409,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : **Group chats only.** blobId of the group avatar image. Mutable by admins.
 
 `members` (ChatMember[]):
-: **Group chats only.** Full membership list including the owner.
+: **Group chats only.** Full membership list.
 
 `spaceId` (String, immutable):
 : **Channel Chats only.** The id of the containing Space.
@@ -655,7 +655,7 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 : Named roles defined for this Space, ordered by `position` descending. Does not include the implicit `@everyone` role.
 
 `members` (SpaceMember[]):
-: Full membership list including the owner.
+: Full membership list.
 
 `categories` (Category[]):
 : Categories, ordered by `position`.
@@ -1066,7 +1066,7 @@ The `update` operation for Space uses semantic mutation keys (`addRoles`, `remov
 
 Optional: `description` (String), `iconBlobId` (String).
 
-The server assigns a ULID, sets the caller as the owner with all permissions, and returns the new Space.
+The server assigns a ULID and adds the caller to `members` with at least one role granting permissions sufficient to administer the Space. The specific bootstrap-role configuration is server-defined; servers MAY pre-create a high-position role for the caller, MAY assign every permission from {{space-permissions}}, or MAY use any other mechanism that ensures the newly-created Space is administrable. The server returns the new Space.
 
 #### Updating a Space
 
@@ -1088,7 +1088,7 @@ The server assigns a ULID, sets the caller as the owner with all permissions, an
 : Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String[]). Requires `"manage_members"`. If the resulting membership would exceed a server-defined limit on the number of members per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeMembers` (String[]):
-: ChatContact.ids to remove. Requires `"manage_members"`. The owner cannot be removed.
+: ChatContact.ids to remove. Requires `"manage_members"`. Servers SHOULD refuse to remove a member when doing so would leave the Space without any member holding `"manage_members"` or `"manage_space"`; the specific last-administrator protection policy is server-defined. Servers MUST return an `invalidProperties` SetError ({{RFC8620}} §5.3) naming `removeMembers` when refusing on this basis.
 
 `updateMembers` (Object[]):
 : Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`.
@@ -1113,7 +1113,7 @@ The server assigns a ULID, sets the caller as the owner with all permissions, an
 
 #### Destroying a Space
 
-Cascades to all channel Chats and their Messages. Hard-deletes all records; no tombstones are retained. Requires owner identity.
+Cascades to all channel Chats and their Messages. Hard-deletes all records; no tombstones are retained. The caller MUST hold `"manage_space"`; servers MAY impose additional deployment-defined requirements (multi-administrator approval, dedicated controller principal, etc.) before honoring the destroy. Servers MUST return a `forbidden` SetError when the caller does not satisfy the deployment's destroy-authorization rules.
 
 ### Space/query
 
@@ -1406,16 +1406,29 @@ Authorization for peer server access in federation deployments is defined in {{J
 
 When determining whether a member may perform an action in a channel Chat, servers MUST evaluate permissions in this order:
 
-1. The Space owner always has all permissions; skip remaining steps.
-2. Compute the union of `permissions` across all SpaceRoles held by the member, including the implicit `@everyone` role.
-3. Apply `deny` entries from any ChannelPermission records matching the member's roles (`targetType: "role"`), in ascending position order.
-4. Apply `allow` entries from the same role-targeted records, in ascending position order.
-5. Apply `deny` entries from any ChannelPermission record matching the member directly (`targetType: "member"`).
-6. Apply `allow` entries from the same member-targeted record.
+1. Compute the union of `permissions` across all SpaceRoles held by the member, including the implicit `@everyone` role.
+2. Apply `deny` entries from any ChannelPermission records matching the member's roles (`targetType: "role"`), in ascending position order.
+3. Apply `allow` entries from the same role-targeted records, in ascending position order.
+4. Apply `deny` entries from any ChannelPermission record matching the member directly (`targetType: "member"`).
+5. Apply `allow` entries from the same member-targeted record.
+
+Servers MAY designate one or more controller principals that bypass this resolution and have all permissions implicitly. The mechanism for designating such principals (and for transferring or revoking the designation) is deployment-defined and outside the scope of this specification. Implementations differ on this point; see {{space-deployment}}.
 
 Servers MUST perform this resolution server-side. Clients MUST NOT be trusted to assert their own permissions.
 
 Role hierarchy enforcement: members may only create or modify SpaceRoles whose `position` is strictly less than their own highest-position role. Servers MUST reject role management operations that violate this constraint.
+
+## Space Governance: Deployment Variation {#space-deployment}
+
+This specification defines the membership, role, and permission mechanisms for Spaces but does not prescribe a single ownership model. Implementations vary:
+
+- Some deployments designate a single irreducible controller per Space (the creator, in the style of Discord, Telegram groups, or Slack workspaces), enforced server-side so that the controller cannot be removed or demoted by other members.
+- Other deployments operate without a designated controller, relying entirely on the role-and-permission graph; if administrative coverage is lost (no member holds `"manage_space"`), recovery is out-of-band.
+- Enterprise deployments may delegate Space governance to an external identity provider or directory service, with the JMAP Chat server enforcing administrative actions on behalf of that external authority.
+
+Federated deployments SHOULD coordinate their governance policies with peer servers when federating Spaces, since divergence can produce surprising interop behaviour during membership churn (for example, server A may refuse to remove its local controller while server B has no such restriction). This specification does not define a wire-level mechanism for advertising or negotiating a governance policy between peers; deployments that federate at scale are encouraged to publish their policy out-of-band.
+
+Clients SHOULD NOT assume a specific governance model. Where the UI needs to surface "who runs this Space", clients SHOULD derive the answer from the role-and-permission graph (e.g., members holding `"manage_space"`) rather than from a single distinguished principal.
 
 # Security Considerations {#security}
 
