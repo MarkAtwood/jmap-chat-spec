@@ -586,7 +586,7 @@ A SpaceRole is a named set of permissions within a Space. Roles are ordered by `
   Servers MUST ignore unrecognized permission names.
 
 `position` (UnsignedInt):
-: Role hierarchy position. No two roles in a Space SHOULD share the same value.
+: Role hierarchy position, sorted descending: higher `position` values outrank lower ones. Position `0` is reserved for the implicit `@everyone` role, which every member of a Space holds and which serves as the permission floor; defined SpaceRoles MUST have `position` > 0. No two roles in a Space SHOULD share the same value.
 
 ## SpaceMember {#space-member}
 
