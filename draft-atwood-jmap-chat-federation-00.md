@@ -396,8 +396,10 @@ peer per chat per 3 seconds; calls received above this rate MAY be
 silently discarded without error.
 
 Servers that cache a remote participant's `receiveTypingIndicators` value
-SHOULD use a TTL of no more than 60 seconds, as there is no federation
-notification mechanism when a remote user updates this preference.
+SHOULD use a short TTL; the specific value is implementation-defined. As
+there is no federation notification mechanism when a remote user updates
+this preference, the TTL chosen affects how long a stale value may
+persist after a remote user opts out of typing-indicator forwarding.
 
 ## Peer/retract
 
