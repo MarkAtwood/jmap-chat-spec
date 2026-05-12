@@ -298,15 +298,216 @@ softened to recommended defaults.
 
 ### 2.1 Mapping deployment authorization to the wire permission vocabulary
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `38055ec` added a paragraph to §Space
+Permission Resolution making explicit that "Requires `X`" and "Mutable by
+members with `X` permission" clauses describe *recommended* mappings from the
+closed permission vocabulary to the actions those permissions gate.
+Deployments MAY substitute or augment these mappings with deployment-specific
+authorization policy — for example, gating an action on a different
+permission, requiring additional authorization beyond merely holding the
+named permission, or recognizing an internal capability not present in the
+closed vocabulary. The wire-level contract is that unauthorized callers
+receive `forbidden`; the permission names in `SpaceRole.permissions` retain
+their stated meanings when returned to clients.
+
+**What you must decide.**
+
+- Whether to use the spec's default mappings unchanged or replace them.
+- If replacing: what your deployment-specific authorization model looks like
+  and how it maps onto the wire-observable permission names that clients
+  see.
+- Whether to support gradual migration (defaults plus overrides) or
+  all-or-nothing replacement.
+- How your model handles the carve-out MUST clauses that the latitude
+  paragraph explicitly does NOT cover (sender-only constraints on
+  `Message/set update` and Reaction operations, the mailbox-owner constraint
+  from RFC 8620, and security input-validation requirements).
+
+**Considerations.**
+
+- The closed permission vocabulary is wire-visible. Even if your internal
+  authorization differs, what you put in `SpaceRole.permissions` is what
+  clients see and may use for pre-flight UX (e.g., greying out "Delete
+  channel" if the current user lacks `manage_channels`).
+- A deployment that gates "delete channel" on a different permission name
+  than `manage_channels` confuses clients that pre-check UX state from the
+  permission set.
+- Adding *additional* authorization beyond holding the named permission
+  (quorum, IdP claim verification, time-of-day policy) is fully
+  spec-compliant. The wire contract is the `forbidden` response, not the
+  in-server check.
+- Document any deviations from spec defaults. Users and auditors need to be
+  able to verify behavior without reading server source code.
+
+**Common patterns.**
+
+- *Spec defaults*: follow the per-method "Requires X" clauses as written.
+  Predictable for clients; minimal divergence between deployments.
+- *Two-key authorization*: certain destructive actions (Space destroy, role
+  delete) require approval from two distinct admin members. The wire returns
+  `forbidden` until quorum is reached.
+- *IdP-driven overrides*: organizational policy determines effective
+  authorization; deployments map IdP claims to internal authorization that
+  gates the wire methods.
+- *Role-graph supplementation*: keep the spec defaults but add additional
+  impl-defined internal roles that grant subsets (e.g., a "moderator-lite"
+  internal role with `manage_members` but not `manage_roles`).
+
+**Recommended starting point.**
+
+Start with the spec defaults. Don't substitute mappings unless you have a
+concrete reason — the spec's recommended mapping captures decades of chat-UX
+convention.
+
+If you need richer authorization (quorum, IdP, time-limited), layer it on top
+of the spec defaults rather than replacing them. The wire contract is
+preserved either way; the additional checks just narrow the set of requests
+that succeed.
+
+Document deviations in your deployment's API documentation. Users seeing
+`forbidden` on actions the spec says should work need to be able to find out
+why.
 
 ### 2.2 Custom emoji authorization
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `9344aec` removed the normative
+`manage_emoji` permission and server-admin emoji authorization. Who may
+create, modify, or destroy custom emojis at Space or server scope is
+deployment-defined. The `CustomEmoji` data type and the
+`CustomEmoji/get|set|query|changes|queryChanges` methods remain wire
+contract; only the authorization is server-defined.
+
+**What you must decide.**
+
+- Whether all Space members can add custom emojis or only privileged
+  members.
+- Whether destruction is reversible (true delete vs archival).
+- Whether one member may destroy another member's custom emoji (or only
+  their own).
+- Server-level emoji policy (the spec defines both Space-scoped and
+  server-scoped CustomEmoji records).
+- Quotas: maximum emojis per Space, maximum bytes per emoji, total bytes
+  across the deployment.
+
+**Considerations.**
+
+- *Open-add* (any Space member): low friction; common in casual contexts;
+  risk of abuse (offensive emojis, namespace squatting on names like
+  `:approved:` or `:rejected:`).
+- *Privileged-add* (specific role required): structured; more friction;
+  common in enterprise contexts.
+- *Destruction vs archival*: destroying an emoji affects all messages that
+  reference it. Archival (mark deprecated, prevent new use, keep existing
+  reactions intact) preserves chat history at the cost of indefinite
+  storage.
+- *Author-preserves-control*: the emoji creator can manage their own
+  contributions but not others'. Strong precedent in Discord and Slack;
+  matches user intuition.
+- *Server-level vs Space-level scope*: server-level emoji carry your
+  deployment's name as context; typically reserved for server admins.
+  Space-level scope is delegated to Space admins.
+
+**Common patterns.**
+
+- Discord: server members holding "Manage Expressions" can add server
+  emojis; members can manage their own additions; archived on deletion
+  rather than purged.
+- Slack: workspace admins manage workspace emoji; in some plans, all
+  members can add; deletion is destructive and replaces reactions with a
+  default icon.
+- Matrix: no native CustomEmoji; per-room reaction policy is implicit.
+- Telegram: sticker packs are user-published globally rather than
+  Space-scoped.
+
+**Recommended starting point.**
+
+Space-level emoji: members holding `manage_channels` (or a deployment-internal
+"manage_emoji" mapping per §2.1) can add and manage Space-scoped emoji.
+Members can always destroy their own contributions.
+
+Use archival rather than destruction: mark deprecated, prevent new reactions
+from using it, preserve existing reactions with a placeholder icon. The
+storage cost is bounded by your retention policy.
+
+Quotas: 100 emoji per Space, 256 KB per emoji image. Tune based on storage
+budget. Reject `CustomEmoji/set` with `overQuota` (per `{{RFC8620}}` §5.3)
+when the count or size limit is exceeded.
+
+Server-level emoji: restrict to a dedicated server-admin role (§1.3). The
+server name appears in the emoji context; user-facing implications are
+larger than for Space-scoped emoji.
 
 ### 2.3 Mention scope predicates (`@here` and `@admins`)
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Decision D4a of `fig9.1` (broadcast-scope
+mention design) makes the predicate definitions deployment-defined:
+
+- `@everyone`: all current members of the Space or Chat — fully deterministic.
+- `@here`: "members with active presence" — which presence states qualify is
+  server-defined.
+- `@admins`: "members with administrative authority" — which permissions or
+  roles qualify, and whether controller principals (§1.1) are included, is
+  server-defined.
+
+(Note: `fig9.2` implementation of broadcast-scope mentions is pending at the
+time of writing. This subsection covers the predicate design once broadcast
+mentions land.)
+
+**What you must decide.**
+
+- For `@here`: which `PresenceStatus.presence` values qualify (`"online"`
+  only? `"online"` and `"away"`? include `"busy"`?). Exclude `"invisible"`
+  and `"offline"`.
+- For `@admins`: which permissions in the effective permission union count
+  (`manage_space` only? any `manage_*`? a deployment-internal "moderator"
+  role?). Whether controller principals from §1.1 are included.
+- Whether to expose your predicate definition to clients (so a mention
+  preview can render the expected recipient count accurately).
+- Whether the predicate is configurable per-Space, per-deployment, or
+  hardcoded.
+
+**Considerations.**
+
+- `@here` is a "soft" broadcast — recipients are notified more loudly than
+  for a normal message but not as loudly as a direct `@user`. A restrictive
+  presence definition reduces accidental over-notification at the cost of
+  excluding users who were briefly away.
+- `@admins` exists for admin escalation ("hey admins, please look at this").
+  Including controller principals (the impl-defined privileged class from
+  §1.1) matches user intuition: a controller has admin-equivalent authority.
+  Including non-member admin-equivalent principals (§1.3) is also defensible
+  but exposes their existence to chat participants more loudly.
+- Resolution timing is delivery-time on each receiving server (per `fig9.1`
+  D4b). Each server's predicate evaluates against its own local view. This
+  means two servers may resolve `@here` to different recipient sets for the
+  same message; the spec accepts this.
+- Strict predicates (`@here` = online only) make `@here` reliable when it
+  fires but cause frequent "I missed it because I was 'away'" complaints.
+  Looser predicates (`@here` = online and away) reduce false-negatives at
+  the cost of notification volume.
+
+**Common patterns.**
+
+| System | `@here` predicate | `@admins` (or equivalent) predicate |
+|---|---|---|
+| Slack | Active (excludes "away", DND) | No native scope; use role mention |
+| Discord | Online and not DND | No native scope; use role mention |
+| Microsoft Teams | All with active presence | Channel owner / team owner |
+| Matrix | N/A (PL-based mention) | PL >= threshold |
+
+**Recommended starting point.**
+
+- `@here` predicate: `presence in ("online", "away")`. Generous enough that
+  brief away-status periods don't drop users out; strict enough to exclude
+  `"offline"`, `"invisible"`, and (debatably) `"busy"`.
+- `@admins` predicate: members whose effective permission union includes
+  `manage_space` OR who are controller principals on the originating server.
+  Exclude non-member admin-equivalent principals (§1.3) from the `@admins`
+  recipient set — they receive notifications via separate audit channels.
+- Evaluate at delivery time on each receiving server using that server's
+  local view of presence and roles.
+- Document the predicate in your deployment's user-facing documentation so
+  users understand who'll be notified by their `@here` or `@admins`.
 
 ---
 
