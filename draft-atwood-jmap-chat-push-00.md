@@ -174,7 +174,7 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 : The sender's claimed composition time, as stored in the message. Included for display purposes, such as showing the send time in the notification preview. This is a client-supplied value and MUST NOT be used for ordering.
 
 `hasMention` (Boolean):
-: `true` if the account owner's ChatContact.id appears in the message's `mentions` array (a direct @user mention); `false` otherwise. Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
+: `true` if the account owner is directly @-mentioned in the message; `false` otherwise. The server MUST set this to `true` when the account owner's ChatContact.id appears in the message's `Message.mentions` array, OR when the message's `bodyType` is `"application/jmap-chat-rich"` and any span of `type: "mention"` carries the owner's ChatContact.id in its `userId` field. (For rich-body messages, `Message.mentions` is mandated empty by {{JMAP-CHAT}}; mention information is carried inline within the spans.) Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
 
 `hasMentionAll` (Boolean):
 : `true` if the message was sent with Space-wide mention scope — that is, by a sender holding the `"mention_all"` permission in {{JMAP-CHAT}} — regardless of whether the owner's id appears in `mentions`; `false` otherwise. A message MAY have both `hasMention` and `hasMentionAll` set to `true`.
@@ -244,6 +244,8 @@ Servers SHOULD rate-limit `ChatMessagePush` delivery per `PushSubscription`. Whe
   ]
 }
 ~~~
+
+In this example the message body is plain text, so `hasMention` was computed from `Message.mentions`. When the underlying message uses `bodyType: "application/jmap-chat-rich"`, `Message.mentions` is mandated empty by {{JMAP-CHAT}} and the server computes `hasMention` from inline `mention` spans instead (see {{chat-message-entry}}); the resulting payload structure is otherwise identical.
 
 # Security Considerations {#security}
 
