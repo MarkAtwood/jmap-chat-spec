@@ -596,7 +596,7 @@ Otherwise, the receiving server MUST update the `presence`, `lastActiveAt`, `sta
 
 ## Persistent Queue
 
-Outbound messages MUST be queued in a persistent outbox before the first delivery attempt. This ensures that messages are not lost if the remote server is temporarily unreachable or if the local server restarts between the time a message is created and the time delivery is confirmed.
+Outbound messages MUST be durable across local server restart prior to delivery confirmation; the specific mechanism (persistent outbox, write-through queue, transactional store with the local message-store write, replicated in-memory queue backed by an upstream broker with at-least-once delivery, etc.) is implementation-defined. This ensures that messages are not lost if the remote server is temporarily unreachable or if the local server restarts between the time a message is created and the time delivery is confirmed.
 
 ## Retry and Backoff
 
