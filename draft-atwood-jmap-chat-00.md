@@ -374,6 +374,8 @@ A ChatMember describes one participant in a group Chat. The `id` field is the pa
 `invitedBy` (String, optional):
 : The ChatContact.id of the member who added this participant.
 
+The `"admin" | "member"` role enum is the wire-observable representation of group-chat authority and is what remote peers see via {{JMAP-CHAT-FED}}. Servers MAY designate additional internal principals (server administrators, members of a dedicated moderator role, automated maintenance systems, or principals delegated by an external identity provider) as having admin-equivalent authority for the actions admins may perform; the means of designating such principals is deployment-defined. From a remote peer's perspective, all such administrative actions appear to originate from a member with the `"admin"` role on the originating server.
+
 ## Chat {#chat}
 
 A Chat is a conversation between two or more participants. Three kinds are defined: `"direct"` (one-to-one), `"group"` (multi-party), and `"channel"` (a channel within a Space). Fields whose applicability is restricted to one or two kinds are labeled accordingly; unlabeled fields apply to all kinds.
