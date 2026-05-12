@@ -276,6 +276,8 @@ A Mention identifies a user referenced within a message body.
 `length` (UnsignedInt):
 : Byte length of the mention text. Servers MUST reject a mention where `offset + length` exceeds the byte length of `body`.
 
+The `id` field carries the full identifier of the mentioned user as known to the authoritative server, regardless of textual form. Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{?W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined; server-side validation of the resulting Mention (offset/length checks above, ChatContact existence) applies unchanged. The same principle applies to the `userId` field on rich-body `"mention"` spans ({{rich-body}}).
+
 ## MessageRevision {#message-revision}
 
 A MessageRevision records one historical version of a Message body.
