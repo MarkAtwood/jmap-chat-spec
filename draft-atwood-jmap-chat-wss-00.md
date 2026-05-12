@@ -215,6 +215,8 @@ For direct and group Chats, servers MUST check each recipient's `receiveTypingIn
 
 Servers MUST verify at delivery time that the owner remains a current member of the identified Chat. If the owner is no longer a member, the event MUST be dropped silently.
 
+Servers MUST NOT deliver a `ChatTypingEvent` whose `senderId` corresponds to a ChatContact that is `blocked` on the recipient's ChatContact record. The sender is not notified. This parallels the message-suppression rule for blocked contacts in {{JMAP-CHAT}} Security Considerations and prevents a blocked user from leaking presence or attention patterns to a recipient who has explicitly chosen to ignore them.
+
 ## ChatPresenceEvent {#chat-presence-event}
 
 Delivered to the client when a ChatContact's presence state changes and that contact is within the scope of the active `contactIds` subscription. `ChatPresenceEvent` delivers real-time presence snapshots; it is distinct from `PresenceStatus` state-change notifications ({{push-state}}), which track changes to the owner's own PresenceStatus record.
@@ -373,6 +375,7 @@ Servers MUST verify authorization at the time of each ephemeral event delivery, 
 
 - `ChatTypingEvent` MUST only be delivered for Chats in which the owner is a current member at delivery time.
 - `ChatTypingEvent` MUST NOT be delivered to a recipient whose Chat record (for a direct or group Chat) has `receiveTypingIndicators: false` at delivery time.
+- `ChatTypingEvent` MUST NOT be delivered when the sender (`senderId`) corresponds to a ChatContact whose `blocked` field is `true` on the recipient's ChatContact record at delivery time.
 - `ChatPresenceEvent` MUST NOT be delivered for ChatContacts whose `blocked` field is `true` at delivery time.
 
 ## Rate Limiting
