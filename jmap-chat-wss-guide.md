@@ -302,6 +302,14 @@ for the recipient account before sending a `ChatTypingEvent` frame. If the field
 chats only; channel chats are exempt. Perform this check in the delivery path alongside
 the membership check, not at subscribe time.
 
+Similarly, each handler MUST check whether the sending ChatContact is `blocked` on the
+recipient's contact list before sending a `ChatTypingEvent` or `ChatPresenceEvent` frame;
+if `blocked` is `true`, the handler MUST silently drop the event. Like the membership and
+`receiveTypingIndicators` checks, this is a delivery-time check, not a subscribe-time
+check. The same blocked-sender suppression rule applies on both event types and protects
+users from leaking presence or attention patterns to a blocked contact whose messages are
+already being dropped.
+
 ### State-change push
 
 State-change delivery via `WebSocketPushEnable` reuses RFC 8887's existing mechanism.

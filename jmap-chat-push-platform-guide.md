@@ -162,13 +162,16 @@ delivery guide for per-platform limits), drop fields from `ChatMessageEntry` obj
 this order until the payload fits:
 
 1. `bodySnippet` — the largest variable field; drop first
-2. `spaceName`
-3. `chatName`
-4. `senderDisplayName`
+2. `spaceId` — opaque identifier with no display value
+3. `sentAt` — display nicety; the recipient's local clock is close enough
+4. `spaceName`
+5. `chatName`
+6. `senderDisplayName`
 
-This truncation order applies to the default property set. If the `ChatPushConfig`
-specifies a `properties` list that excludes some of these fields, they will already be
-absent and can be skipped in the sequence.
+This truncation order applies when these fields are present in the payload (whether
+delivered by default or because the client requested them via `properties`). If the
+`ChatPushConfig` specifies a `properties` list that excludes some of these fields, they
+will already be absent and can be skipped in the sequence.
 
 Never drop: `@type`, `accountId`, `state` (on the outer object), `messageId`, `chatId`,
 `chatKind`, `senderId`, `hasMention`, `hasMentionAll`, `encrypted`.
