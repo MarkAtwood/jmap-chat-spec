@@ -29,6 +29,7 @@ informative:
   RFC8621:
   RFC9404:
   RFC9420:
+  RFC9425:
   MIMI-CONTENT:
     title: More Instant Messaging Interoperability (MIMI) Content Format
     target: https://datatracker.ietf.org/doc/draft-ietf-mimi-content/
@@ -66,9 +67,6 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-cid-00
     date: 2026
-  JMAP-QUOTAS:
-    title: JMAP Quotas
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-quotas/
   JMAP-METADATA:
     title: JMAP Metadata
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
@@ -162,21 +160,6 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object
 `maxAttachmentsPerMessage` (UnsignedInt):
 : Maximum number of attachments per message.
 
-`maxGroupMembers` (UnsignedInt):
-: Maximum number of members in a group Chat, including the owner.
-
-`maxSpaceMembers` (UnsignedInt):
-: Maximum number of members in a Space, including the owner.
-
-`maxRolesPerSpace` (UnsignedInt):
-: Maximum number of named roles per Space.
-
-`maxChannelsPerSpace` (UnsignedInt):
-: Maximum number of channel Chats per Space.
-
-`maxCategoriesPerSpace` (UnsignedInt):
-: Maximum number of categories per Space.
-
 `supportedBodyTypes` (String[]):
 : MIME types accepted in `bodyType`. MUST include `"text/plain"`. End-to-end encrypted deployments SHOULD also include an appropriate encrypted-content type such as `"application/mls-ciphertext"`. Servers SHOULD support `"text/markdown"` (CommonMark profile, as specified in {{RFC7763}}) and `"application/jmap-chat-rich"` (defined in {{rich-body}}). Servers participating in MIMI federation domains MAY also include `"application/mimi-content"` {{MIMI-CONTENT}}.
 
@@ -185,7 +168,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object
 
 The `role` field used to distinguish owner and peer accounts in federation deployments is defined in {{JMAP-CHAT-FED}}.
 
-Note: {{JMAP-QUOTAS}} defines a `Quota` data type for exposing storage and count limits to clients. Servers SHOULD implement the JMAP Quota extension and include `"Message"`, `"Chat"`, and `"Space"` in the `datatypes` field of relevant Quota records, giving clients visibility into storage consumption beyond the static capability limits defined above.
+Note: {{RFC9425}} defines a `Quota` data type for exposing account-level storage and object-count limits to clients. Servers SHOULD implement the JMAP Quota extension and include relevant chat data types — for example `"Message"` (storage), `"Chat"` (count of group and direct chats), or `"Space"` (count of Spaces) — in the `types` field of relevant Quota records. JMAP Quotas express account-level (or domain/global) limits; servers additionally enforce per-aggregate limits (members per group Chat, members/roles/channels/categories per Space) by returning an `overQuota` SetError ({{RFC8620}} §5.3) on the relevant `Chat/set` or `Space/set` entry at the time the limit would be exceeded.
 
 ## Session Object Extensions
 
@@ -883,7 +866,7 @@ Standard JMAP `/set`.
 : Display name of the group.
 
 `memberIds` (String[], required):
-: ChatContact.ids of initial non-owner members. Total membership including the owner MUST NOT exceed `maxGroupMembers`.
+: ChatContact.ids of initial non-owner members. If the resulting membership would exceed a server-defined limit on the number of members per group Chat, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 Optional at creation: `description` (String), `avatarBlobId` (String), `messageExpirySeconds` (UnsignedInt).
 
@@ -900,7 +883,7 @@ For group chats, admins additionally may update: `name`, `description`, `avatarB
 Member list changes use the following patch keys (all require admin role):
 
 `addMembers` (Object[]):
-: Each entry: `id` (String, ChatContact.id) and optional `role` (String, default `"member"`). Total membership after addition MUST NOT exceed `maxGroupMembers`. The server MUST send `Peer/groupUpdate` to all current members.
+: Each entry: `id` (String, ChatContact.id) and optional `role` (String, default `"member"`). If the resulting membership would exceed a server-defined limit on the number of members per group Chat, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3) for that entry. On success, the server MUST send `Peer/groupUpdate` to all current members.
 
 `removeMembers` (String[]):
 : ChatContact.ids to remove. The server MUST send `Peer/groupUpdate` to all remaining members and to the removed members.
@@ -1093,7 +1076,7 @@ The server assigns a ULID, sets the caller as the owner with all permissions, an
 : Metadata fields. Require `"manage_space"` permission.
 
 `addRoles` (Object[]):
-: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String). Server assigns ULIDs. Total MUST NOT exceed `maxRolesPerSpace`. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this.
+: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeRoles` (String[]):
 : SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Requires `"manage_roles"`.
@@ -1102,7 +1085,7 @@ The server assigns a ULID, sets the caller as the owner with all permissions, an
 : Each entry: `id` (String) and any of `name`, `color`, `permissions`, `position`. Requires `"manage_roles"`. Members may only modify roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this.
 
 `addMembers` (Object[]):
-: Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String[]). Total MUST NOT exceed `maxSpaceMembers`. Requires `"manage_members"`.
+: Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String[]). Requires `"manage_members"`. If the resulting membership would exceed a server-defined limit on the number of members per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeMembers` (String[]):
 : ChatContact.ids to remove. Requires `"manage_members"`. The owner cannot be removed.
@@ -1111,7 +1094,7 @@ The server assigns a ULID, sets the caller as the owner with all permissions, an
 : Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`.
 
 `addChannels` (Object[]):
-: Each entry: `name` (String, required), optional `categoryId` (String), `position` (UnsignedInt), and `topic` (String). The server creates a Chat record of `kind: "channel"` with `spaceId` set to this Space's id and assigns a ULID as the chatId. Total channel count MUST NOT exceed `maxChannelsPerSpace`. Requires `"manage_channels"`.
+: Each entry: `name` (String, required), optional `categoryId` (String), `position` (UnsignedInt), and `topic` (String). The server creates a Chat record of `kind: "channel"` with `spaceId` set to this Space's id and assigns a ULID as the chatId. Requires `"manage_channels"`. If the resulting channel count would exceed a server-defined limit on the number of channels per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeChannels` (String[]):
 : Channel Chat ids to remove. Cascades to all Messages in those channels. Requires `"manage_channels"`.
@@ -1120,7 +1103,7 @@ The server assigns a ULID, sets the caller as the owner with all permissions, an
 : Each entry: `id` (String, channel Chat id) and any of `name`, `topic`, `categoryId`, `position`, `slowModeSeconds`, `permissionOverrides`. Requires `"manage_channels"`.
 
 `addCategories` (Object[]):
-: Each entry: `name` (String), optional `position` (UnsignedInt) and `channelIds` (String[]). Server assigns ULIDs. Total MUST NOT exceed `maxCategoriesPerSpace`. Requires `"manage_channels"`.
+: Each entry: `name` (String), optional `position` (UnsignedInt) and `channelIds` (String[]). Server assigns ULIDs. Requires `"manage_channels"`. If the resulting category count would exceed a server-defined limit on the number of categories per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeCategories` (String[]):
 : Category ids to remove. Channels in removed categories move to `uncategorizedChannelIds`. Requires `"manage_channels"`.
@@ -1457,7 +1440,7 @@ All peer-supplied fields are attacker-controlled. Servers MUST validate:
 
 ## Denial of Service
 
-Enforce `maxBodyBytes` and `maxAttachmentBytes` at parse time, before any fetch or storage. Enforce `maxAttachmentsPerMessage`, `maxGroupMembers`, and `maxSpaceMembers` at creation and update time. Rate-limit `Peer/typing` per peer.
+Enforce `maxBodyBytes` and `maxAttachmentBytes` at parse time, before any fetch or storage. Enforce `maxAttachmentsPerMessage` at creation and update time. Servers MUST also enforce implementation-defined per-aggregate caps on group Chat membership, Space membership, roles, channels, and categories at `Chat/set` and `Space/set` time, returning `overQuota` SetErrors ({{RFC8620}} §5.3) as specified in those methods. Rate-limit `Peer/typing` per peer.
 
 ## Chat ID Integrity
 
