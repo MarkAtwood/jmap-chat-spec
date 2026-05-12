@@ -1401,6 +1401,10 @@ Authentication is handled at the transport layer as described in {{introduction}
 - **Owner** (identity equals the mailbox owner's id): all methods.
 - **Other**: HTTP 401.
 
+Beyond this transport-level distinction, all Space-internal authorization — the "Requires `X`" clauses on `Space/set`, `Chat/set`, and related methods, and the "Mutable by members with `X` permission" clauses on object fields — is enforced server-side. Clients MUST NOT be trusted to enforce their own access; servers MUST evaluate authorization independently on every request and return `forbidden` to unauthorized callers (see {{space-permissions}}).
+
+The permission vocabulary defined in {{space-role}} appears on the wire in `SpaceRole.permissions` arrays and `SpaceMember.roleIds` references. This exposure is for client-side presentation and pre-flight UX (rendering admin controls, displaying role membership, avoiding obviously-doomed requests), not as a client-enforced security layer. A spec-compliant client MAY ignore the vocabulary entirely and rely on `forbidden` responses; this is functionally equivalent but produces less responsive UI.
+
 Authorization for peer server access in federation deployments is defined in {{JMAP-CHAT-FED}}.
 
 # Space Permission Resolution {#space-permissions}
