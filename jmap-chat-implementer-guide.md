@@ -1110,15 +1110,211 @@ to expose.
 
 ### 6.1 Broadcast-mention suppression and `Chat.muted` bypass
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Decision D5 of `fig9.1` chose the D5-Impl
+position: broadcast mentions (`@everyone`, `@here`, `@admins`) bypass
+`Chat.muted` for targeted recipients by default; opt-out is deployment-defined
+with no new wire field added. Per-scope opt-out (mute `@here` but not
+`@everyone`) is explicitly deferred to a future bead.
+
+(Note: `fig9.2` main-draft implementation of broadcast-scope mentions is
+pending at the time of writing. This subsection covers the suppression model
+once broadcast mentions land.)
+
+**What you must decide.**
+
+- Whether to expose a per-Chat or per-account opt-out from broadcast-mention
+  escalation (so users can restore strict-mute behavior).
+- Whether Space admins can configure broadcast-mention behavior at the Space
+  level.
+- How to surface the policy in your client UI (settings page, contextual
+  hint when muting a Chat, explicit "always notify on @everyone" toggle).
+- Whether to expose the default-bypass behavior to clients via the account
+  capability so multi-client UX stays consistent.
+
+**Considerations.**
+
+- *Default bypass* matches user expectations from Slack and Discord. Users
+  understand that `@everyone` is "loud" by design.
+- *Strict mute as opt-out*: some users want `Chat.muted` to mute
+  everything, including `@everyone`. Privacy-conscious users and those who
+  have been targets of abuse particularly value this.
+- *Workplace policy*: enterprise deployments may need administrative
+  controls — e.g., "always allow @here from managers" overriding individual
+  mute settings.
+- *Wire contract is fixed*: whatever opt-out you build is local
+  (deployment-side preference, client-side filter, etc.), not exposed via
+  federation. Federated peers don't know your local preferences.
+- *Per-scope granularity* (mute `@here` only) is feasible client-side or
+  via deployment preferences but not via wire fields — `fig9.1`'s D5-sub
+  decision deferred wire-level per-scope to a future bead.
+
+**Common patterns.**
+
+| System | Default | Opt-out |
+|---|---|---|
+| Slack | `@channel` bypasses DND by default | Per-channel "Suppress @channel notifications" toggle |
+| Discord | `@everyone` and `@here` bypass mute | Server-level "Suppress @everyone and @here" toggle |
+| Matrix | Mentions respect mute settings | Explicit elevation required for notifications |
+
+**Recommended starting point.**
+
+Default behavior: broadcast mentions to targeted recipients bypass
+`Chat.muted` and use the configured `mentionUrgency` per the push draft
+(`draft-atwood-jmap-chat-push-00.md`). This matches Slack/Discord conventions
+and respects the sender's intent.
+
+Provide a per-account preference "Always honor mute, even for @everyone".
+Default to false. Surface in the notification settings UI alongside other
+mute/DND controls.
+
+For workplace deployments: layer Space-admin configuration on top —
+"@everyone can override mute for: [all members | members with admin role |
+no one]". Don't expose this via wire fields; it's deployment policy
+expressed through the per-account preference's effective value.
+
+Document the default-bypass and your opt-out controls in your privacy
+notice. Users targeted by broadcast mentions need to know whether their
+mute setting protects them.
 
 ### 6.2 Receipt-sharing scope and granularity
 
-*(Stub — fill in.)*
+**What the spec leaves open.** The main draft defines two receipt-sharing
+preferences: `PresenceStatus.receiptSharing` (account-level, default `true`)
+and `Chat.receiptSharing` (per-chat override). The bidirectional rule
+(main draft `:777`) means turning off your sharing also turns off your
+visibility into others' read times. Deployments choose finer granularity,
+defaults, and UI exposure.
+
+**What you must decide.**
+
+- Default value for new accounts (`true` for useful UX, `false` for stronger
+  privacy by default).
+- Whether to expose finer granularity (per-sender, per-contact-class,
+  time-of-day) on top of account + per-chat.
+- How to surface the bidirectional nature to users in your settings UI.
+- How to handle conflicting preferences across federation (your user opts
+  out; peer server may not propagate the opt-out preference).
+
+**Considerations.**
+
+- *Default true* (WhatsApp / iMessage style): more useful UX; readers see
+  delivery confirmations and read receipts; some users feel surveilled.
+- *Default false* (Slack / Signal style): more private by default; users
+  who want receipt visibility opt in explicitly.
+- *Bidirectional rule*: a user who wants to see others' read times but not
+  share their own cannot get that — the spec is symmetric. Document this
+  clearly.
+- *Per-chat overrides*: useful for contexts where receipt sharing is
+  expected (work chat) versus where it isn't (sensitive personal contact).
+- *Federation*: receipt suppression at the sender's server stops outbound
+  `Peer/receipt` calls (federation `:318`); receipt suppression at the
+  receiver's server stops inbound `Peer/receipt` from being delivered to
+  clients (federation `:329`). Both ends enforce; ` defense-in-depth.
+
+**Common patterns.**
+
+- Slack: read receipts disabled at protocol level; user-visible "seen by N
+  members" only for some context types.
+- Signal: read receipts opt-in per user.
+- WhatsApp: blue ticks on by default; per-account toggle to disable.
+- iMessage: read receipts on by default; per-conversation toggle.
+
+**Recommended starting point.**
+
+Default `PresenceStatus.receiptSharing: true` (WhatsApp/iMessage-style).
+Provide per-account toggle in settings to disable.
+
+Expose `Chat.receiptSharing` per-chat override in the chat-info pane.
+Default to absent (inherit account-level); allow user to set explicitly
+for sensitive conversations.
+
+Document the bidirectional rule in plain language: "Turning off read
+receipts means you won't see when others read your messages either."
+
+For federated deployments: trust the federation suppression rules at both
+sender and receiver sides; do not attempt to bypass them with a "show
+unofficial read time" UI.
 
 ### 6.3 Blocked-sender ephemeral-event suppression
 
-*(Stub — fill in.)*
+**What the spec covers.** Commits `dim0` (WSS) and `87qs` (corpus-wide)
+made blocked-sender suppression for typing and presence events normative in
+the WSS draft, main draft, and federation draft. The architectural property
+is documented in the main draft Security Considerations ({#blocked-contacts}
+anchor): typing and presence push events whose sending or referenced
+ChatContact has `blocked: true` are dropped server-side before delivery to
+any of the owner's clients, on any transport. The sender is not informed.
+
+This is fully spec'd; what's left is implementation choices around how
+blocking is surfaced and managed at the UI level.
+
+**What you must decide.**
+
+- How blocking is exposed in client UI (block button location, confirmation
+  flow, "blocked users" list).
+- Whether to distinguish *block* from *mute* in the UI (different
+  affordances, different effects).
+- Whether blocking is per-account (block this user globally) or per-Space
+  (block this user only in this Space).
+- Whether to ever surface "you've been blocked" status to the blocked
+  party (almost universally: no — defeats the privacy property).
+- How blocking interacts with shared Space membership (block someone you
+  share a Space with: do you still see their messages in the Space, or
+  does block override membership visibility?).
+
+**Considerations.**
+
+- *Block vs mute distinction*: mute is per-conversation suppression of
+  notifications; block is identity-level shunning of incoming events.
+  Most chat products distinguish; some collapse them.
+- *Per-account vs per-Space block*: per-account is simpler; per-Space lets
+  a user block a stranger in one public Space without affecting another.
+  The spec models per-account (`ChatContact.blocked`) but doesn't preclude
+  deployment-side per-Space lists layered on top.
+- *Visibility of blocked status*: surfacing "you've been blocked" to the
+  blocked party makes blocking hostile rather than protective. The spec's
+  silent-suppression rule depends on the blocked party not knowing.
+- *Shared Space membership*: if Alice blocks Bob and they share a Space,
+  Alice still sees Space-level activity from Bob (messages in shared
+  channels). The block applies to direct messages and ephemeral events,
+  not full Space-membership invisibility. (Per the spec's blocked-contacts
+  Security Considerations rule.)
+- *UI affordance*: a clear "Block" action with a confirmation dialog
+  explaining what blocking does. Avoid lossy euphemisms — "Mute" is for
+  notifications; "Block" is for the relationship.
+
+**Common patterns.**
+
+- Most chat products: per-account block; silent to the blocked party;
+  block-list visible to the blocker in settings.
+- Some products: per-Space block for public-Space contexts (Discord
+  per-server, Telegram per-group).
+- Some products: surface "this user has restricted you" indirectly — a
+  message sent to a blocking user appears as "delivered" but never as
+  "read".
+
+**Recommended starting point.**
+
+Per-account block via `ChatContact.blocked: true`. Confirm via a dialog
+that explains: blocked users' messages are silently dropped; blocked
+users see neither your typing indicators nor your presence; you no longer
+see theirs.
+
+Do NOT surface block status to the blocked party in any form. This is the
+spec's privacy property; respecting it requires not leaking via UI side
+channels either.
+
+Keep the block list in user-facing settings (account settings → "Blocked
+users"); make it easy to unblock.
+
+Shared Space membership: per the spec's rule, blocking does not exit
+shared Spaces. Make this explicit in the block-confirmation dialog so
+users aren't surprised when they still see the blocked user in a
+mutual Space.
+
+Mute and block are distinct UI affordances. Mute affects notifications
+(per-chat suppression); block affects the identity-level relationship.
+Don't collapse them.
 
 ---
 
