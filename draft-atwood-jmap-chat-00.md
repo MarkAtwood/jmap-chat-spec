@@ -366,7 +366,7 @@ A ChatMember describes one participant in a group Chat. The `id` field is the pa
 : The participant's ChatContact.id / userId.
 
 `role` (String):
-: Either `"admin"` or `"member"`. Admins may add and remove members and update group chat metadata. The creator is automatically assigned the `"admin"` role.
+: Either `"admin"` or `"member"`. Admins may add and remove members and update group chat metadata. The bootstrap-role assignment at chat creation — whether and how the creator initially receives the `"admin"` role — is server-defined.
 
 `joinedAt` (UTCDate):
 : Time this participant joined the chat.
@@ -865,11 +865,11 @@ Standard JMAP `/set`.
 : Display name of the group.
 
 `memberIds` (String[], required):
-: ChatContact.ids of initial non-owner members. If the resulting membership would exceed a server-defined limit on the number of members per group Chat, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+: ChatContact.ids of additional initial members. If the resulting membership would exceed a server-defined limit on the number of members per group Chat, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 Optional at creation: `description` (String), `avatarBlobId` (String), `messageExpirySeconds` (UnsignedInt).
 
-The server assigns the chatId (a ULID), sets the owner as an admin member, and MUST send `Peer/groupUpdate` to each initial member before any messages are sent.
+The server assigns the chatId (a ULID), adds the creator to `members` with at least one role granting permissions sufficient to administer the chat (the specific bootstrap-role configuration is server-defined), and MUST send `Peer/groupUpdate` to each initial member before any messages are sent.
 
 #### Updating a Chat
 
