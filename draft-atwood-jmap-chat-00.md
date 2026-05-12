@@ -1419,6 +1419,10 @@ Servers MUST perform this resolution server-side. Clients MUST NOT be trusted to
 
 Role hierarchy enforcement: members may only create or modify SpaceRoles whose `position` is strictly less than their own highest-position role. Servers MUST reject role management operations that violate this constraint.
 
+The "Requires `X`" and "Mutable by members with `X` permission" clauses elsewhere in this specification describe the recommended mapping from the closed permission vocabulary defined in {{space-role}} to the actions those permissions gate. Deployments MAY substitute or augment these mappings with deployment-specific authorization policy — for example, gating an action on a different permission, requiring additional authorization beyond merely holding the named permission, or recognizing an internal capability not present in the closed vocabulary. The wire-level contract is that unauthorized callers MUST receive `forbidden`; the permission names defined in {{space-role}} retain their stated meanings when they appear in `SpaceRole.permissions` values returned to clients.
+
+Some MUST constraints in this specification are not subject to this latitude because they define wire-level behaviour rather than server-internal authorization: the sender-only constraints on `Message/set update` and on Reaction creation and removal, the mailbox-owner constraint inherited from {{RFC8620}}, and all input validation requirements in {{security}}.
+
 ## Space Governance: Deployment Variation {#space-deployment}
 
 This specification defines the membership, role, and permission mechanisms for Spaces but does not prescribe a single ownership model. Implementations vary:
