@@ -448,7 +448,7 @@ Method name: `Peer/groupUpdate`
 : The group chat ULID.
 
 `senderUserId` (String):
-: The ChatContact.id of the user making the change. MUST match the authenticated identity and MUST be an admin of the identified group on the sending server.
+: The ChatContact.id of the user making the change. MUST match the authenticated identity. The sending server SHOULD also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
 
 `action` (String):
 : One of the following values:
