@@ -924,19 +924,179 @@ deviate with reason.
 
 ### 5.1 Typing rate and decay calibration
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commits `ic5s.1` and `ic5s.2` reframed the
+typing rate-limit and client-side decay timer as SHOULD recommendations with
+explicit calibration rationale rather than MUST mandates. The main draft now
+specifies a 3-second server-side rate-limit window and a 10-second client-side
+decay window, with a calibration paragraph explaining why these values pair:
+one accepted event per 3 seconds while typing means the receiver's decay timer
+sees at least three events before the 10-second window expires.
+
+The two values are calibrated against each other. Changing one without
+adjusting the other produces incorrect behavior: a longer rate-limit window
+with the same decay would clear the indicator while the sender is still
+actively typing; a shorter rate-limit with the same decay would burn
+unnecessary network and federation traffic.
+
+**What you must decide.**
+
+- Whether to use the recommended 3s / 10s pair or deviate.
+- If deviating: adjust both values to maintain the calibration (the client
+  decay should be at least 3x the server rate-limit window).
+- Whether to expose the configured values to clients (e.g., via the
+  account-level capability object) so multi-client UX stays consistent.
+- How aggressively to enforce the rate-limit when senders exceed it
+  (silently discard, error response, temporary lockout).
+
+**Considerations.**
+
+- The 3s rate is federation-wide via `Peer/typing` rate limits (federation
+  draft `:395`). If you deviate locally, your federated peers still
+  rate-limit at 3s; senders crossing the federation boundary will see the
+  federated rate even if your local rate is different.
+- The 10s decay is *client-side*. Different clients of the same account
+  using different decay timers will look inconsistent ("desktop says still
+  typing, mobile cleared it"). Pick one value per deployment and document
+  it.
+- High-latency environments (mobile networks, federated peers, congested
+  links) benefit from longer windows. Low-latency (LAN, in-server) tolerate
+  shorter.
+
+**Common patterns.**
+
+| System | Typing rate | Decay window |
+|---|---|---|
+| Slack | ~3 seconds | ~5 seconds (UI cleared on no event) |
+| Discord | ~5 seconds | ~10 seconds |
+| Signal | Per-message gesture (less rate-based) | ~6 seconds |
+
+**Recommended starting point.**
+
+Use the spec's 3s / 10s pair. The calibration is well-documented in the
+spec text; deviating without measured reason adds risk without obvious
+upside.
+
+If you must deviate: maintain the 3x ratio (decay ≥ 3 × rate-limit window).
+Tell clients via the account capability object so they can match your
+deployment's choice. Document the deviation in your deployment's API
+reference.
 
 ### 5.2 Federation Peer/presence outbound rate
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `uy1m.4` removed the hardcoded
+30-second value from the federation `Peer/presence` outbound rate guidance.
+The current wording: "Servers SHOULD rate-limit outbound `Peer/presence`
+calls per subscriber; the specific rate is implementation-defined."
+
+**What you must decide.**
+
+- How frequently to push outbound `Peer/presence` updates per subscriber.
+- Whether to batch presence changes (collapse multiple changes within a
+  window into a single push).
+- Whether the rate is uniform per subscriber or varies by relationship
+  (e.g., active conversation partner gets faster updates than dormant
+  contact).
+
+**Considerations.**
+
+- Presence is best-effort. Dropped updates are tolerable; the system is not
+  cache-coherent.
+- Fan-out cost scales with subscriber count. A user with 1,000 active
+  presence subscribers triggers 1,000 outbound calls per presence change
+  without rate-limiting.
+- User experience: 30-second updates feel "reasonably current" for
+  online/away/offline transitions; faster (5-10s) feels real-time; slower
+  (60s+) feels stale.
+- Federation cost is paid by your server; downstream servers benefit from
+  your rate-limit without paying for it.
+
+**Common patterns.**
+
+- Most chat federation systems: 30-60 second outbound rate per subscriber.
+- High-volume products: aggressive collapsing of frequent transitions
+  (online→away→online) into a single update.
+- Some products: no proactive presence push; subscribers poll on demand.
+
+**Recommended starting point.**
+
+**30 seconds per subscriber** — matches the value previously hardcoded in
+the federation draft before `uy1m.4` softened it, and matches the
+WSS-layer 30s rate at `draft-atwood-jmap-chat-wss-00.md:253`. Consistent
+across federation and WSS layers; subscribers don't see unexpected
+behavioral differences.
+
+If you tune: don't go below 10 seconds (federation traffic explodes); don't
+go above 5 minutes (presence becomes too stale to be useful for typical UX).
+
+Batch frequent transitions: if a user goes `online → away → online` within
+the rate-limit window, send only the most recent state at the end of the
+window.
 
 ### 5.3 `receiveTypingIndicators` cache TTL
 
-*(Stub — fill in.)*
+This topic is covered in §4.3 (Federation contact resolution caching).
+The recommended starting point is **60 seconds**.
 
 ### 5.4 Retry and backoff intervals
 
-*(Stub — fill in.)*
+**What the spec leaves open.** The federation draft `:601` says: "The
+minimum initial retry interval, maximum retry interval, and total retry
+duration are implementation-defined, but implementations SHOULD apply a
+jitter factor to avoid synchronized retry storms from multiple servers."
+
+**What you must decide.**
+
+- Initial retry interval (how long after the first failure before retrying).
+- Maximum retry interval (the cap as exponential backoff grows).
+- Total retry duration (when to declare permanent failure and mark
+  `deliveryState: "failed"`).
+- Jitter factor (random variation to spread retries from synchronized
+  failures).
+
+**Considerations.**
+
+- Initial too short: a temporarily-overloaded peer gets hammered.
+- Initial too long: a transient network blip delays delivery longer than
+  necessary.
+- Maximum too low: backoff doesn't actually back off; peers under sustained
+  load see no relief.
+- Maximum too high: a recovered peer doesn't see retry traffic for a long
+  time; messages sit longer than necessary in the outbox.
+- Total too short: messages declared failed before peer recovery is
+  reasonable; user-visible delivery failures multiply.
+- Total too long: failed messages clog the outbox indefinitely; storage
+  cost grows; users wonder why an obviously-gone peer's messages are still
+  "pending".
+- Jitter is critical at scale. Without jitter, every server in a deployment
+  retries at the same exponential schedule when a peer goes down; recovery
+  causes a thundering herd.
+
+**Common patterns.**
+
+| System | Initial | Max | Total | Jitter |
+|---|---|---|---|---|
+| Most email MTAs | 30s | 4 hours | 5 days | 10-20% |
+| HTTP retry libs | 1s | 60s | 5 minutes | 10-30% |
+| Most chat federation | 5s | 5 minutes | 24-48 hours | 20% |
+
+**Recommended starting point.**
+
+- **Initial retry**: 5 seconds.
+- **Maximum interval**: 5 minutes (the backoff cap).
+- **Total retry duration**: 24 hours (after which mark
+  `deliveryState: "failed"`).
+- **Jitter**: ±20% of the computed interval (multiplied by a uniform
+  random factor in [0.8, 1.2]).
+- **Backoff schedule**: exponential with base 2, capped at the maximum
+  (so 5s → 10s → 20s → 40s → 80s → 160s → 300s [cap] → 300s ...).
+
+Tune the total duration based on your user expectations: 24 hours is a
+reasonable balance between "the message has a chance to land" and "the
+user shouldn't see it pending for days". Email's 5-day default is too long
+for chat product UX.
+
+Document the schedule in your deployment's API reference so operators can
+predict retry behavior during incidents.
 
 ---
 
