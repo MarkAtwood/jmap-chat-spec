@@ -716,15 +716,201 @@ similarly impl-defined.
 
 ### 4.1 Outbox durability mechanism
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `uy1m.2` softened the federation
+draft's outbox section to express durability as an outcome rather than a
+prescribed mechanism: "Outbound messages MUST be durable across local server
+restart prior to delivery confirmation; the specific mechanism (persistent
+outbox, write-through queue, transactional store with the local message-store
+write, replicated in-memory queue backed by an upstream broker with
+at-least-once delivery, etc.) is implementation-defined."
+
+**What you must decide.**
+
+- Which durability backing store you use for outbound messages.
+- At-most-once vs at-least-once delivery semantics.
+- Whether duplicate suppression is sender-side (don't retry once acked) or
+  receiver-side (dedup by `senderMsgId`).
+- Recovery on restart: replay all pending, or replay only what hasn't been
+  acked.
+
+**Considerations.**
+
+- *Persistent queue* (Redis with persistence, SQL queue table): simple,
+  well-understood, easy to operate. Most chat servers start here.
+- *Transactional DB with message store*: the message-create transaction
+  also creates the outbox entry; no separate state machine. Stronger
+  consistency; requires the message store to be in a transactional DB.
+- *Replicated broker* (Kafka, RabbitMQ with persistence, NATS JetStream):
+  scales horizontally; adds operational complexity; useful if you're
+  already running one for other purposes.
+- *In-memory* queue with snapshot-on-graceful-shutdown: NOT durable across
+  crashes. Don't use this for federation outbound — the spec MUST is real.
+- *At-least-once* means receivers may see duplicates and must dedup. The
+  federation `senderMsgId` is designed for this (federation draft `:209`).
+- *At-most-once* end-to-end is hard to guarantee without coordinated acks;
+  most chat systems accept at-least-once and rely on receiver dedup.
+
+**Common patterns.**
+
+- Most chat systems: at-least-once delivery with receiver-side dedup via a
+  sender-assigned message id (mapped to `senderMsgId` in JMAP Chat
+  federation).
+- Some enterprise products: transactional DB approach for stronger
+  consistency between message persistence and outbox visibility.
+- Large-scale deployments: replicated broker with idempotent consumers;
+  scales to millions of messages per minute.
+
+**Recommended starting point.**
+
+At-least-once delivery via `senderMsgId`-based dedup at the receiver. This
+matches what the federation draft already specifies at `:609` ("A message
+whose senderMsgId is already known for the given chat at the receiving
+server MAY be silently discarded by that server").
+
+Backing store: a persistent queue alongside your message database. If your
+message store is already in a transactional DB (Postgres, MySQL, SQLite),
+write the outbox row in the same transaction as the message row — this
+gives you transactional consistency without a separate state machine.
+
+Replicated broker only if you're already operating one for other workloads.
+Adding Kafka just for chat federation is operational overkill for most
+deployments.
 
 ### 4.2 Edit-history retention policy
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `uy1m.5` made the MessageRevision push
+on edit conditional on retention. The main draft edit procedure now reads:
+"If the server retains edit history, push a MessageRevision onto editHistory
+with the current body, bodyType, and current server time as editedAt."
+Combined with the main draft `:546` retention paragraph ("Servers MAY limit
+the number of retained revisions; if so, older revisions MAY be elided"), a
+zero-retention deployment is fully spec-compliant.
+
+**What you must decide.**
+
+- Whether to retain edit history at all.
+- If yes: how many revisions per message, how long.
+- Whether retention is configurable per-Space, per-account, or fixed
+  per-deployment.
+- Privacy implications: edit history that survives is searchable evidence;
+  users editing sensitive content may not realize it's retained.
+- Compliance: some regulated environments require retention; others require
+  destruction.
+
+**Considerations.**
+
+- *No retention*: simplest. Messages are mutable; editing leaves only the
+  `editedAt` timestamp on the latest version. The `editHistory` field is
+  always empty. Lowest storage cost; strongest user privacy.
+- *Bounded retention* (N revisions, time-bounded): preserves recent edits
+  for audit and "show edit history" UX; drops old ones to bound storage.
+  Common balance point.
+- *Full retention*: every revision kept forever. Valuable for moderation
+  and audit; storage cost grows with edit frequency; raises privacy
+  concerns.
+- *Privacy*: a user who edits "Meet at 5pm" to "Meet at 6pm" probably
+  doesn't care if both versions survive. A user who accidentally pastes a
+  password and immediately edits to remove it absolutely does.
+- *Compliance*: regulated industries (finance, healthcare, government) may
+  legally require retention or destruction; layer your policy on top of
+  these external requirements.
+- *Client UX*: if you retain history, clients may render an "edited (see
+  history)" affordance. If you don't, clients render just "edited" with no
+  history.
+
+**Common patterns.**
+
+- Slack: workspace admins configure retention; default is full history for
+  Free and Pro plans; Enterprise allows custom retention.
+- Discord: edit history retained indefinitely; viewable in audit log for
+  server staff.
+- Signal: no edit feature historically; if added, ephemeral by design.
+- Telegram: limited edit history retained for moderator review on public
+  channels.
+
+**Recommended starting point.**
+
+Retain the last 5 revisions per message. Older revisions elided per the
+spec's `:546` paragraph.
+
+Document the retention policy prominently in your user-facing TOS or
+privacy notice. Users editing sensitive content need to know history is
+kept.
+
+For compliance-driven deployments: layer additional retention rules on top
+of the default (longer or shorter as required by regulation).
+
+Per-Space configuration: allow Space admins to set their Space's retention
+within deployment-defined bounds (e.g., zero to deployment-max). The wire
+protocol doesn't expose retention policy directly; configuration is
+deployment-side.
+
+If you choose zero retention: be explicit about it in product copy.
+"Edited" without history is unusual for chat products; users will assume
+the history is there unless told otherwise.
 
 ### 4.3 Federation contact resolution caching
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `uy1m.3` softened the federation
+draft's `receiveTypingIndicators` cache TTL guidance to remove the hardcoded
+60-second value. The current wording: "Servers that cache a remote
+participant's receiveTypingIndicators value SHOULD use a short TTL; the
+specific value is implementation-defined." More broadly, every server that
+caches peer-supplied data (Session objects, ChatContact attributes,
+preferences) chooses its own freshness vs traffic trade-off.
+
+**What you must decide.**
+
+- TTL for cached remote `receiveTypingIndicators` values.
+- TTL for `ChatContact` records derived from peer `/.well-known/jmap`
+  Session objects.
+- TTL for peer endpoint advertisements (`Session.ownerEndpoints`).
+- Cache invalidation strategy: time-based only, or also on explicit refresh
+  events.
+- Whether to share caches across nodes in your deployment.
+
+**Considerations.**
+
+- Long TTL: less network chatter; staler state. A user who opts out of
+  typing indicators may keep receiving them from peers until cache TTL
+  expires.
+- Short TTL: fresher state; more requests to peer servers. At scale, this
+  matters.
+- No cache: simplest; most overhead. Not realistic for production
+  deployments.
+- *Cache invalidation*: there's no federation-wide notification protocol
+  for preference changes. A user changes `receiveTypingIndicators` on
+  server A; server B has no way to learn this except by re-fetching
+  (which is what cache TTL enforces). If you build a notification channel
+  for proactive invalidation, document it in deployment-side
+  configuration.
+- *Cache poisoning*: peer servers are trust boundaries. A hostile peer
+  could lie about a user's preferences. Treat peer-supplied cache data as
+  advisory, not authoritative.
+
+**Common patterns.**
+
+- HTTP caching norms: `Cache-Control` style policies with revalidation.
+  JMAP Chat doesn't define HTTP cache headers for these specific values
+  but the same pattern applies.
+- Per-conversation cache + on-demand refresh: most chat federation systems.
+- Shared cache across nodes: useful at scale; adds invalidation complexity.
+
+**Recommended starting point.**
+
+- `receiveTypingIndicators` cache TTL: **60 seconds**. This matches the
+  value previously hardcoded in the federation draft before `uy1m.3`
+  softened it; treat it as a sensible default and tune based on your
+  deployment's volume and acceptable staleness window.
+- `ChatContact` record cache from peer Session: **1 hour** with on-demand
+  refresh when the user explicitly initiates a contact interaction.
+- `Session.ownerEndpoints` cache: **1 hour**; the spec already treats these
+  as ephemeral hints.
+- Invalidate on explicit user action (e.g., user-initiated "refresh peer
+  info") in addition to time-based expiry.
+- Do not share federation caches across nodes by default. Per-node caches
+  are simpler to reason about; add cross-node sharing only when measured
+  traffic justifies the complexity.
 
 ---
 
