@@ -532,7 +532,7 @@ Method name: `Peer/subscribePresence`
 
 ### Behavior
 
-On success, the remote server MAY push subsequent `Peer/presence` calls to the subscriber whenever the owner's presence, `statusText`, or `statusEmoji` changes. Servers SHOULD rate-limit outbound `Peer/presence` calls per subscriber to no more than one call per 30 seconds. Servers MAY drop presence push deliveries that fail; presence delivery is best-effort.
+On success, the remote server MAY push subsequent `Peer/presence` calls to the subscriber whenever the owner's presence, `statusText`, or `statusEmoji` changes. Servers SHOULD rate-limit outbound `Peer/presence` calls per subscriber; the specific rate is implementation-defined. Servers MAY drop presence push deliveries that fail; presence delivery is best-effort.
 
 Calling `Peer/subscribePresence` again before the TTL expires renews the subscription and SHOULD reset the TTL to the newly granted value.
 
