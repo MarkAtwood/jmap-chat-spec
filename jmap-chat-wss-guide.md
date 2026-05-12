@@ -10,6 +10,22 @@ spec intentionally leaves open.
 
 ---
 
+## A note on RFC 2119 keywords
+
+This guide uses RFC 2119 keywords (MUST, SHOULD, MAY, REQUIRED, RECOMMENDED, etc.) for
+clarity, but in the spirit of implementer guidance rather than as a normative protocol
+specification:
+
+- The drafts (`draft-atwood-jmap-chat-*.md`) are the normative source of truth. Where
+  this guide describes a spec requirement using a keyword, the keyword reflects the
+  spec's normativity; if guide and draft disagree, the draft wins.
+- Where this guide uses a keyword for an operational practice, UX default, or deployment
+  choice (e.g., "servers SHOULD log admin actions"), the keyword reflects implementer
+  best-practice. Deviation does not affect protocol interop.
+- Cite the spec, not the guide, when claiming normative authority.
+
+---
+
 ## The two event tracks
 
 A WebSocket connection carries two independent streams of server-to-client events that

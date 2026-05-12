@@ -48,7 +48,7 @@ Always `grep -r <term> . --include='*.md'` before and after a change to catch al
 - Do not commit or push without explicit user approval
 - Do not use TodoWrite or markdown task lists — use `bd create` for all tracking
 - Do not add fields, methods, or behaviors not present in the drafts unless explicitly directed
-- Do not introduce RFC 2119 keywords (MUST, SHOULD, MAY, etc.) into guide files
+- RFC 2119 keywords (MUST, SHOULD, MAY, etc.) may be used in guide files, but each guide must include the standard "A note on RFC 2119 keywords" wrapper near its top so readers know the keywords carry implementer-guidance weight, not normative protocol authority. The drafts remain the only normative source of truth.
 
 ## Beads Issue Tracker
 

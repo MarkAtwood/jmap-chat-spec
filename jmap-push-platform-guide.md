@@ -8,6 +8,23 @@ specific to a particular extension, see the supplement for that extension (e.g.,
 
 ---
 
+## A note on RFC 2119 keywords
+
+This guide uses RFC 2119 keywords (MUST, SHOULD, MAY, REQUIRED, RECOMMENDED, etc.) for
+clarity, but in the spirit of implementer guidance rather than as a normative protocol
+specification:
+
+- The relevant drafts (`draft-atwood-jmap-chat-*.md`, RFC 8620, RFC 8030, RFC 8291) are
+  the normative source of truth. Where this guide describes a spec requirement using a
+  keyword, the keyword reflects the spec's normativity; if guide and spec disagree, the
+  spec wins.
+- Where this guide uses a keyword for an operational practice, platform-handling
+  convention, or deployment choice (e.g., "servers SHOULD cache OAuth tokens"), the
+  keyword reflects implementer best-practice. Deviation does not affect protocol interop.
+- Cite the spec, not the guide, when claiming normative authority.
+
+---
+
 ## Platform overview
 
 | Platform | Registration | Auth | Body | Size limit | E2E encrypted |
