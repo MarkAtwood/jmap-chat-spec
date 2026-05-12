@@ -562,7 +562,7 @@ Note: {{JMAP-METADATA}} defines a generic annotation layer that can be attached 
 A SpaceRole is a named set of permissions within a Space. Roles are ordered by `position`; higher position values outrank lower ones. The implicit `@everyone` role (position 0) is held by all Space members and is not included in the `roles` array.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this role.
 
 `name` (String):
 : Display name of the role.
@@ -609,7 +609,7 @@ A SpaceMember describes one participant in a Space.
 A Category is a named grouping of channels within a Space.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this category.
 
 `name` (String):
 : Display name of the category.
@@ -641,7 +641,7 @@ A ChannelPermission record overrides Space-level role permissions for a specific
 A Space is a named container for channel Chats, members, roles, and categories. It corresponds to what other systems call a server, workspace, or team.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this Space.
 
 `name` (String):
 : Display name of the Space.
@@ -687,7 +687,7 @@ Note: {{JMAP-METADATA}} defines a generic annotation layer that can be attached 
 A CustomEmoji is a server- or Space-scoped custom emoji image available for use in Reactions.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this emoji.
 
 `name` (String):
 : The shortcode name for this emoji, without colons (e.g., `catjam`). MUST be unique within its scope (Space or server-global). MUST contain only lowercase alphanumeric characters, hyphens, and underscores.
@@ -740,7 +740,7 @@ A SpaceInvite grants a new member access to a Space via a shared invite code.
 A SpaceBan prevents a user from participating in a Space.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this ban.
 
 `spaceId` (String, immutable):
 : The id of the Space this ban applies to.
@@ -765,7 +765,7 @@ A SpaceBan prevents a user from participating in a Space.
 A ReadPosition tracks the owner's read state within a Chat. The server creates a ReadPosition record automatically when a Chat first becomes visible to the owner, and destroys it when the Chat is destroyed. For direct and group Chats, a ReadPosition is created when the first message is delivered. For channel Chats, a ReadPosition is created when the owner joins the containing Space. This cursor model serves the same local read-tracking purpose as the `$seen` keyword in {{RFC8621}} (JMAP Mail), but uses a per-chat high-water mark rather than per-message boolean flags, which is appropriate for the ordered-stream access pattern of chat.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this read position.
 
 `chatId` (String, immutable):
 : The id of the Chat this position tracks.
@@ -783,7 +783,7 @@ The receipt-sharing opt-out is bidirectional: when the effective `receiptSharing
 A PresenceStatus represents the owner's self-reported availability and custom status. There is exactly one PresenceStatus record per account; the server creates it automatically.
 
 `id` (String, immutable, server-set):
-: A ULID assigned by the server.
+: Opaque server-assigned JMAP identifier for this record.
 
 `presence` (String):
 : The owner's self-reported availability. One of `"online"`, `"away"`, `"busy"`, `"invisible"`, or `"offline"`. Default is `"online"`.
@@ -1071,7 +1071,7 @@ The `update` operation for Space uses semantic mutation keys (`addRoles`, `remov
 
 Optional: `description` (String), `iconBlobId` (String).
 
-The server assigns a ULID and adds the caller to `members` with at least one role granting permissions sufficient to administer the Space. The specific bootstrap-role configuration is server-defined; servers MAY pre-create a high-position role for the caller, MAY assign every permission from {{space-permissions}}, or MAY use any other mechanism that ensures the newly-created Space is administrable. The server returns the new Space.
+The server assigns the Space's `id` and adds the caller to `members` with at least one role granting permissions sufficient to administer the Space. The specific bootstrap-role configuration is server-defined; servers MAY pre-create a high-position role for the caller, MAY assign every permission from {{space-permissions}}, or MAY use any other mechanism that ensures the newly-created Space is administrable. The server returns the new Space.
 
 #### Updating a Space
 
