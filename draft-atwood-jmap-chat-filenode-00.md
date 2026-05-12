@@ -150,7 +150,6 @@ For Space members, the following table maps role permissions to FileNode access.
 | Member with `"send"` | Read + Create: upload new files and directories |
 | Member with `"manage_channels"` | Read + Create + Delete: remove any file or directory |
 | Member with `"manage_space"` | Read + Create + Delete + Administer: manage ACLs, rename the tree root |
-| Space owner | Full access (equivalent to Administer) |
 
 Creating the Space file tree root (a FileNode with `role: "urn:jmap:chat:filenode:space"`) requires `"manage_space"` permission. This is a higher bar than the general Create access granted by `"send"`, because establishing the root is a one-time structural operation that affects all Space members.
 
