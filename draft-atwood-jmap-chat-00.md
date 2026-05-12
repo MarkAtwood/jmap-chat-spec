@@ -579,7 +579,6 @@ A SpaceRole is a named set of permissions within a Space. Roles are ordered by `
   - `"manage_roles"` — create and edit roles below own highest role
   - `"manage_space"` — edit Space name, description, and icon
   - `"ban"` — ban and unban members
-  - `"manage_emoji"` — create, edit, and delete Space-scoped custom emoji
   - `"mention_all"` — use Space-wide @mentions
 
   Servers MUST ignore unrecognized permission names.
@@ -1192,7 +1191,9 @@ Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
-`create` accepts: `name` (String, required), `blobId` (String, required), `spaceId` (String, optional). For Space-scoped emoji, requires `"manage_emoji"` permission in the Space. For server-global emoji, requires server admin authorization (server policy).
+Authorization for `CustomEmoji/set` (`create`, `update`, and `destroy`) is implementation-defined, for both Space-scoped and server-global emoji. Servers MUST return a `forbidden` SetError ({{RFC8620}} §5.3) when the caller is not authorized to act on the targeted emoji.
+
+`create` accepts: `name` (String, required), `blobId` (String, required), `spaceId` (String, optional).
 
 `update` supports: `name`, `blobId`.
 
