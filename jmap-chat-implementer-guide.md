@@ -520,15 +520,190 @@ resolution layer that the spec leaves to deployment.
 
 ### 3.1 Identifier scheme
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `uy1m.1` softened seven id-field
+definitions (`SpaceRole.id`, `Category.id`, `Space.id`, `CustomEmoji.id`,
+`SpaceBan.id`, `ReadPosition.id`, `PresenceStatus.id`) to "Opaque
+server-assigned JMAP identifier" — no required encoding scheme. `Chat.id`,
+`Message.id`, and `senderMsgId` retain explicit ULID requirements because the
+spec relies on their lexicographic time-ordering for message retrieval and
+unreadCount derivation. `ChatContact.id` is whatever the authentication layer
+returns; the spec doesn't constrain its form.
+
+**What you must decide.**
+
+- For non-time-ordered IDs (the seven softened): which scheme (ULID, KSUID,
+  Snowflake, opaque random / UUIDv4, prefixed type-tag IDs).
+- For `Chat.id` / `Message.id` / `senderMsgId`: still ULID, but you choose
+  the implementation.
+- For `ChatContact.id`: whatever your auth layer returns; document the
+  format so peer servers and clients know what to expect.
+
+**Considerations.**
+
+- *ULID*: 26 chars base32, lexicographic time-ordering, readable, monotonic
+  within a millisecond. Default choice for most JMAP implementations.
+- *KSUID*: 27 chars base62; similar to ULID; includes more random bits.
+- *Snowflake*: 64-bit integer represented as string; requires worker-id
+  coordination at scale; common in services with sharded ID generators.
+- *UUIDv4 / opaque random*: 36 chars (hex with dashes); no ordering; safe
+  default if you don't need time-ordering.
+- *Prefixed type tags*: encoding the object type in the ID (e.g.,
+  `space:01J3...`) helps debugging and prevents accidental cross-type
+  references. Costs a few bytes per ID and ties IDs to type forever.
+- *Bytes on the wire*: ULID is 26 chars; UUIDv4 is 36 chars. Across a busy
+  chat product, the difference adds up.
+
+**Common patterns.**
+
+| System | ID scheme |
+|---|---|
+| Slack | Snowflake-style with type prefix (`C12345...` channel, `U12345...` user) |
+| Discord | Snowflake; 64-bit numeric as string |
+| Matrix | Opaque random with prefix and server suffix (`!ABCDE...:server.example`) |
+| Most JMAP servers | ULID for everything |
+
+**Recommended starting point.**
+
+- Time-ordered IDs (`Chat.id`, `Message.id`, `senderMsgId`): ULID.
+- Non-time-ordered IDs: ULID, for consistency with time-ordered IDs and
+  ecosystem familiarity. Use a different scheme only if you have a concrete
+  reason (e.g., integrating with an existing ID issuer that already produces
+  KSUIDs).
+- `ChatContact.id`: whatever your auth layer returns. Document the format
+  (regex or example) in your deployment's API reference. Peer servers
+  validate against this format when checking the identity-binding
+  constraint at §`{{peer-authentication}}` of the federation draft.
 
 ### 3.2 DID URI handling
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `48b6a31` (q15f Option B) added a prose
+sentence acknowledging that `ChatContact.id` may take any URI form, including
+a Decentralized Identifier URI per W3C DID-Core. The core spec stops there:
+no DID resolution, no auth integration, no new capability. A future companion
+draft (`8sgn`) is filed but not yet written; it would define wire mechanics
+for DID-based federation auth, resolution, and method support.
+
+**What you must decide.**
+
+- Whether your deployment accepts DID-shaped identifiers in `ChatContact.id`.
+- If accepted: what (if anything) you do with them beyond treating them as
+  opaque strings.
+- Whether to implement DID resolution (DNS-based `did:web`, blockchain-based
+  `did:plc`/`did:ion`, etc.).
+- Whether to follow `8sgn` once it lands — and contribute to its design now
+  if you have a stake.
+
+**Considerations.**
+
+- *Treat as opaque* (q15f Option B baseline): no special handling. DID URIs
+  appear in `ChatContact.id` as long strings; the rest of the protocol
+  works unchanged. Lowest implementation cost; no portability benefit.
+- *Adding resolution*: lets your server fetch DID Document metadata, verify
+  endpoint claims, support identity portability across server moves.
+  Substantial implementation effort; most chat products don't bother.
+- *`did:web`* is the easiest DID method: DNS-based, low complexity. If you
+  decide to engage, start here.
+- *`did:plc`* and *`did:ion`* are blockchain-derived; slower resolution,
+  larger trust model, more dependencies.
+- *Future-proofing*: if you build resolution infrastructure ad-hoc, you may
+  end up with a custom flavor that doesn't match `8sgn`'s eventual
+  specification. Either follow `8sgn` or accept the rework cost when it
+  lands.
+
+**Common patterns.**
+
+- AT Protocol (Bluesky): DID-first identity (`did:plc:xxx`); resolution is
+  mandatory.
+- Matrix: discussed DID integration; not adopted as primary identity.
+- Most JMAP and email-style products: no DID engagement.
+
+**Recommended starting point.**
+
+Treat DID URIs as opaque `ChatContact.id` values. No special handling. This
+matches q15f Option B and keeps you spec-conformant without committing to
+DID infrastructure.
+
+If your user base demands real DID interop, follow `8sgn` rather than
+rolling custom resolution. The companion draft's design questions are
+already enumerated in `8sgn`'s description.
+
+Document acceptance criteria in your deployment's API reference: which DID
+methods (if any) you treat specially, which you accept opaquely, which you
+reject.
 
 ### 3.3 Federated mention textual form parsing and resolution
 
-*(Stub — fill in.)*
+**What the spec leaves open.** Commit `5bfb16d` (f13f resolution) added a
+paragraph to the Mention section noting that common composer-side textual
+forms include `@user@host` (Mastodon style) and DID URI forms (e.g.,
+`@did:web:alice.example`). Parsing the textual form into a candidate id, and
+resolving that candidate to a known ChatContact, are deployment-defined.
+Server-side validation of the resulting Mention (offset/length, ChatContact
+existence) is unchanged.
+
+**What you must decide.**
+
+- Whether your client(s) recognize `@user@host` textual forms.
+- Whether your client(s) recognize DID URI textual forms.
+- Parser rules: what counts as the host part, how to handle subdomains,
+  whether to accept Unicode in the user-part (IRI-style) or restrict to
+  ASCII (IDN punycode).
+- How a textual form resolves to a candidate `ChatContact.id`: local lookup
+  first, `/.well-known/jmap` probe, organizational directory, etc.
+- Whether to auto-create a `ChatContact` record on a successful resolution
+  to a previously-unknown peer user.
+
+**Considerations.**
+
+- Composer-side parsing is purely UX. The wire format is structured Mention
+  entries (offset/length + id) regardless of textual form. The receiver
+  reads the structured Mention; it does not re-parse the body text.
+- *Resolution latency*: typing `@alice@example.com` should ideally show a
+  pending state and resolve before the user hits send. If resolution fails
+  (peer unreachable, no such user), the client should let the user send
+  anyway or downgrade the mention to plaintext.
+- *Auto-creation*: a mention to a previously-unknown user implies the
+  sender wants to communicate with that user. Auto-creating a `ChatContact`
+  record (main draft `:810` permits this) lets the mention land as a real
+  mention rather than a broken reference. Be defensive: rate-limit
+  auto-creation per sender to prevent enumeration attacks.
+- *IDN / IRI*: international domain names should be normalized to punycode
+  (`xn--...`) for `ChatContact.id`; the displayed textual form can keep
+  Unicode. Treat user-part Unicode carefully; the auth layer's normalization
+  rules apply.
+- *Anti-abuse*: a malicious sender that mentions hundreds of random users
+  to force ChatContact creation is doing reconnaissance. Rate-limit. Cap
+  per-Space new-contact-via-mention creation per hour.
+
+**Common patterns.**
+
+- ActivityPub: `@user@host`; Mastodon clients resolve via WebFinger or
+  out-of-band; servers auto-create Actor records on first reference.
+- Matrix: `@user:server` (Matrix-style; note the colon, not at-sign);
+  resolution via `/.well-known/matrix` or homeserver discovery.
+- Most JMAP Chat deployments: no formal pattern yet; this guide and `f13f`
+  define the conventions.
+
+**Recommended starting point.**
+
+Composer parser: recognize `@user@host` and `@did:...` forms. Tolerate
+Unicode in the user-part; normalize IDN hosts to punycode. Treat
+malformed textual forms as plaintext rather than failed mentions (less UX
+friction).
+
+Resolution: try local `ChatContact` lookup first (by exact match on the
+resolved candidate id). On miss, probe `/.well-known/jmap` at the host to
+discover the peer's `ownerUserId` and validate the resolution. Cache
+successful resolutions for the session.
+
+Auto-create policy: create a new `ChatContact` record only on the sender's
+explicit send action (not on every keystroke as the textual form is typed).
+Rate-limit auto-creation per sender per Space per hour. Cap total
+ChatContact growth per Space.
+
+Document the parser and resolution behavior in your deployment's
+client-side docs so users understand what mentions are valid and how to
+type them.
 
 ---
 
