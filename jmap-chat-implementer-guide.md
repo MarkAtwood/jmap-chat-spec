@@ -1355,7 +1355,10 @@ relationship. Implementations SHOULD NOT collapse them.
 | Inline push payloads (`ChatMessagePush`) | `jmap-chat-push-platform-guide.md` |
 | Platform-specific push delivery (FCM, APNs, WNS, etc.) | `jmap-push-platform-guide.md` |
 | Federation between mailbox servers | `draft-atwood-jmap-chat-federation-00.md` |
+| Calendar integration (`Space.calendarId`, RSVPs, availability lookup) | `jmap-chat-calendars-guide.md` |
+| Task list integration (`Space.taskListId`, `Task.chatId`, workflows) | `jmap-chat-tasks-guide.md` |
 
 This guide focuses on deployment-policy decisions for the core JMAP Chat
-draft. Transport-specific, push-specific, and federation-specific
-implementation details live in their dedicated guides.
+draft. Transport-specific, push-specific, federation-specific, calendar-
+specific, and task-specific implementation details live in their dedicated
+guides.
