@@ -122,22 +122,20 @@ Servers MAY automatically create a new Calendar when a Space is created and bind
 
 When a Space is destroyed, the bound Calendar SHOULD NOT be automatically destroyed unless explicitly requested by the destroying member. The Calendar persists independently and may be unbound from the Space without being deleted.
 
-## Permission mapping
+## Authorization
 
-The closed permission vocabulary of {{JMAP-CHAT}} governs operations on a bound Calendar's CalendarEvents as follows (recommended defaults; deployments MAY substitute or augment per §Space Permission Resolution of {{JMAP-CHAT}}):
+Authorization for operations on a bound Calendar — who may read events, who may create or modify events, who may RSVP — is deployment-defined. Calendar authorization in real-world deployments ranges from "anyone in the Space can do anything" (small team) to deeply layered enterprise models (LDAP/AD groups, OIDC claim mappings, role-based access control, sensitivity labels, delegation models, organizational-unit boundaries, regulatory compliance constraints). This specification does not attempt to prescribe a single model.
 
-| JMAP Calendars operation | Recommended Space permission |
-|---|---|
-| `CalendarEvent/get` for events in the bound Calendar | Space membership (any role) |
-| `CalendarEvent/query` for events in the bound Calendar | Space membership (any role) |
-| `CalendarEvent/set` create (new event) | `"manage_channels"` |
-| `CalendarEvent/set` update (own participation status) | Space membership (any role) |
-| `CalendarEvent/set` update (other event fields) | `"manage_channels"` |
-| `CalendarEvent/set` destroy | `"manage_channels"` |
+The wire contract this specification establishes is:
 
-The "own participation status" exception is the spec's recognition that any Space member SHOULD be able to RSVP to events on the bound Calendar without holding a management permission. Deployments MAY impose additional restrictions (for example, requiring members to hold a `"send"` permission to RSVP, or restricting RSVPs in archived Spaces).
+- The {{JMAP-CALENDARS}} permission model is the authoritative authorization layer for Calendar operations. Servers MUST evaluate JMAP Calendars authorization on every Calendar operation, regardless of how the operation was initiated (directly via JMAP Calendars or indirectly via chat-layer wiring).
+- Unauthorized operations MUST receive the appropriate JMAP Calendars error response (typically `forbidden`).
+- Servers MAY use {{JMAP-CHAT}} Space membership and the closed Space-permission vocabulary as inputs to that authorization decision (per §Space Permission Resolution of {{JMAP-CHAT}}, which makes such mappings deployment-defined).
+- Deployments MUST document the actual authorization model in user-facing API documentation; the wire protocol does not advertise it.
 
-`Calendar/set` itself (binding-level changes such as renaming the Calendar or modifying its permissions) is governed by the JMAP Calendars permission model on the account, not by Space membership. Deployments MAY layer additional checks (for example, requiring `"manage_space"` to rename the bound Calendar) but the wire contract is the JMAP Calendars model.
+The chat-layer wiring (binding a Calendar to a Space, surfacing CalendarEvents in messages) does not bypass JMAP Calendars authorization. A user lacking JMAP Calendars permission to RSVP to an event cannot RSVP regardless of any chat-side affordance; the underlying `CalendarEvent/set` returns `forbidden`.
+
+`Calendar/set` itself (binding-level changes such as renaming the Calendar or modifying its permissions) is governed by the JMAP Calendars permission model on the account. Deployments MAY layer additional checks tied to {{JMAP-CHAT}} Space permissions (for example, requiring `"manage_space"` to rename the bound Calendar) but the wire contract is the JMAP Calendars model.
 
 # CalendarEvent in Chat Context {#event-in-chat}
 
@@ -252,13 +250,15 @@ When `type` is `urn:jmap:chat:cap:availability`:
 
 ## Privacy
 
-`Principal/getAvailability` exposes occupancy information (whether time slots are busy or free) — not event details, but still privacy-sensitive. Deployments MUST gate availability lookup according to a deployment-defined policy. Recommended defaults:
+`Principal/getAvailability` exposes occupancy information (whether time slots are busy or free) — not event details, but still privacy-sensitive. The policy governing in-chat availability lookup is deployment-defined.
 
-- Within a Space: members of the same Space MAY query each other's availability.
-- Across Spaces but same account: opt-in per principal, controlled by the principal owner.
-- Across accounts (federated): no automatic lookup; explicit consent from the queried principal is REQUIRED.
+Real-world deployments choose along axes including: same-Space membership; same-account-not-same-Space; cross-account (federated); same-organizational-unit (in enterprise contexts with directory integration); explicit per-principal consent; time-of-day or working-hours windows; sensitivity tags on the queried calendar; regulatory or compliance overlays. This specification does not prescribe values along these axes.
 
-Deployments MUST document the policy actually applied. Users targeted by availability lookup MUST be able to discover the policy through standard product UX (settings page or equivalent); they SHOULD NOT have to read source code to learn who can see their free/busy state.
+The wire contract this specification establishes is:
+
+- Servers MAY expose `Principal/getAvailability` in response to chat-context queries.
+- Servers MUST reject (with the appropriate JMAP Calendars error) any query that violates their configured policy.
+- Deployments MUST document the policy in user-facing product documentation; users SHOULD NOT have to read source code to learn who can see their free/busy state.
 
 ## Granularity
 
@@ -270,7 +270,7 @@ Cross-server federation of calendar binding is **not in scope** for this revisio
 
 Cross-server federation of calendar-event MessageActions and ICS attachments works in the limited sense described in {{event-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts.
 
-Cross-server availability lookup is explicitly **not supported** by this specification: a server MUST NOT expose `Principal/getAvailability` results to remote servers without explicit out-of-band consent from the queried principal, and this specification does not define a mechanism for negotiating that consent.
+Cross-server availability lookup is out of scope for this specification. Deployments wishing to enable it MUST do so via mechanisms outside this specification; the wire contract here does not extend across the federation boundary.
 
 # Security Considerations {#security}
 

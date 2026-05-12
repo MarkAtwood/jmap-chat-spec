@@ -126,25 +126,20 @@ Servers MAY automatically create a new TaskList when a Space is created and bind
 
 When a Space is destroyed, the bound TaskList SHOULD NOT be automatically destroyed unless explicitly requested by the destroying member. The TaskList persists independently and may be unbound from the Space without being deleted. Tasks within an unbound TaskList retain their content; only the Space association is removed.
 
-## Permission mapping
+## Authorization
 
-The closed permission vocabulary of {{JMAP-CHAT}} governs operations on a bound TaskList's Tasks as follows (recommended defaults; deployments MAY substitute or augment per §Space Permission Resolution of {{JMAP-CHAT}}):
+Authorization for operations on a bound TaskList — who may read tasks, who may create or modify tasks, who may close them — is deployment-defined. Task authorization in real-world deployments ranges from "anyone in the Space can do anything" (small team) to deeply layered enterprise models (LDAP/AD groups, project-level ACLs, role-based access control, assignment-based access, organizational-unit boundaries, regulatory or compliance constraints). This specification does not attempt to prescribe a single model.
 
-| JMAP Tasks operation | Recommended Space permission |
-|---|---|
-| `Task/get` for tasks in the bound TaskList | Space membership (any role) |
-| `Task/query` for tasks in the bound TaskList | Space membership (any role) |
-| `Task/set` create (new task) | `"send"` |
-| `Task/set` update own task | `"send"` |
-| `Task/set` update other member's task | `"manage_channels"` |
-| `Task/set` destroy own task | `"send"` |
-| `Task/set` destroy other member's task | `"manage_channels"` |
+The wire contract this specification establishes is:
 
-The rationale for mapping task creation to `"send"` rather than `"manage_channels"` is that creating a task is an ordinary content-producing action analogous to sending a message, not a management operation. Deployments wishing to gate task creation behind a moderation-level permission MAY do so (per the per-method auth latitude), but the recommended default is to make tasks an unprivileged work-product.
+- The {{JMAP-TASKS}} permission model is the authoritative authorization layer for Task operations. Servers MUST evaluate JMAP Tasks authorization on every Task operation, regardless of how the operation was initiated (directly via JMAP Tasks or indirectly via chat-layer wiring).
+- Unauthorized operations MUST receive the appropriate JMAP Tasks error response (typically `forbidden`).
+- Servers MAY use {{JMAP-CHAT}} Space membership and the closed Space-permission vocabulary as inputs to that authorization decision (per §Space Permission Resolution of {{JMAP-CHAT}}, which makes such mappings deployment-defined).
+- Deployments MUST document the actual authorization model in user-facing API documentation; the wire protocol does not advertise it.
 
-The "update own task" exception recognizes that a task author SHOULD be able to edit or close their own task without management permission. Reassigning a task to another user is an "update", as is modifying the assignee field.
+The chat-layer wiring (binding a TaskList to a Space, surfacing Tasks in messages, creating discussion Chats for Tasks) does not bypass JMAP Tasks authorization. A user lacking JMAP Tasks permission to create or modify a Task on the bound TaskList cannot do so regardless of any chat-side affordance.
 
-`TaskList/set` itself (binding-level changes such as renaming the TaskList or modifying its permissions) is governed by the JMAP Tasks permission model on the account, not by Space membership. Deployments MAY layer additional checks (for example, requiring `"manage_space"` to rename the bound TaskList).
+`TaskList/set` itself (binding-level changes such as renaming the TaskList or modifying its permissions) is governed by the JMAP Tasks permission model on the account. Deployments MAY layer additional checks tied to {{JMAP-CHAT}} Space permissions (for example, requiring `"manage_space"` to rename the bound TaskList) but the wire contract is the JMAP Tasks model.
 
 # Task Extension: Chat Back-Reference {#task-chatid}
 
@@ -250,11 +245,11 @@ Cross-server federation of `urn:jmap:chat:cap:task` MessageActions works in the 
 
 # Security Considerations {#security}
 
-## Permission boundaries
+## Authorization is deployment-defined
 
-Permission mappings recommended in {{tasklist-binding}} are defaults. Deployments substituting them MUST ensure that the resulting authorization model is no more permissive on the wire than the recommended defaults imply, unless the deployment is operating in a context where broader authorization is appropriate (an explicit "internal corporate trust" mode, for example).
+The authorization model for Task operations on a bound TaskList is deployment-defined (see {{tasklist-binding}}). This specification does not prescribe who may perform which operations; that decision belongs to the deployment.
 
-A user lacking JMAP Tasks permissions on the bound TaskList cannot perform Task operations regardless of chat-layer permissions. The chat-layer permission mapping is a recommendation for how the chat-side primitives map onto the underlying JMAP Tasks model; it does not bypass JMAP Tasks authorization.
+What this specification does require is that the {{JMAP-TASKS}} permission model is the authoritative layer: servers MUST evaluate JMAP Tasks authorization on every Task operation, and unauthorized requests MUST receive a JMAP Tasks error response. The chat-layer wiring does not bypass JMAP Tasks authorization. A user lacking JMAP Tasks permissions on the bound TaskList cannot perform Task operations regardless of any chat-side affordance.
 
 ## Task content exposure
 
