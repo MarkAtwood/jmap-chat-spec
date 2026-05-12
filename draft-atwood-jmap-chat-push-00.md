@@ -168,7 +168,7 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 : The ChatContact.id of the message sender. This is the authoritative sender identity.
 
 `senderDisplayName` (String, optional):
-: The sender's display name at push-generation time. Derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. The `senderId` fallback occurs when the ChatContact record has not yet been fully resolved — for example, when a message arrives from a previously unknown peer in a federated deployment. This value is a snapshot and may become stale; clients MUST NOT treat it as an authoritative identity signal.
+: The sender's display name at push-generation time. For `chatKind: "channel"`, derived from the sender's `SpaceMember.nick` in the containing Space if present, otherwise `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. For `"direct"` and `"group"` chats, derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. The `senderId` fallback occurs when the ChatContact record has not yet been fully resolved — for example, when a message arrives from a previously unknown peer in a federated deployment. This value is a snapshot and may become stale; clients MUST NOT treat it as an authoritative identity signal.
 
 `sentAt` (UTCDate):
 : The sender's claimed composition time, as stored in the message. Included for display purposes, such as showing the send time in the notification preview. This is a client-supplied value and MUST NOT be used for ordering.
