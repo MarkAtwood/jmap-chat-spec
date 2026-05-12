@@ -85,8 +85,8 @@ subscription with `chatPush` configured MUST handle it the same way as any other
 
 ### FCM and ADM
 
-`data` map values must be strings. Serialize `ChatMessagePush` as JSON and place it under
-`"jmap-push"`:
+`data` map values MUST be strings. Servers MUST serialize `ChatMessagePush` as JSON and
+place it under `"jmap-push"`:
 
 ```json
 "data": {
@@ -96,8 +96,8 @@ subscription with `chatPush` configured MUST handle it the same way as any other
 
 ### HPK
 
-HPK's `data` field is a single string (not a map). Serialize `ChatMessagePush` as JSON
-and place the string there directly:
+HPK's `data` field is a single string (not a map). Servers MUST serialize
+`ChatMessagePush` as JSON and place the string there directly:
 
 ```json
 "data": "{ChatMessagePush serialized as a JSON string}"
@@ -105,7 +105,8 @@ and place the string there directly:
 
 ### MiPush
 
-URL-encode the `ChatMessagePush` JSON and pass it as the `payload` form field:
+Servers MUST URL-encode the `ChatMessagePush` JSON and pass it as the `payload` form
+field:
 
 ```
 payload={url_encoded_ChatMessagePush_json}
@@ -113,7 +114,7 @@ payload={url_encoded_ChatMessagePush_json}
 
 ### APNs
 
-Embed `ChatMessagePush` inline as a JSON object under `"jmap-push"`.
+Servers MUST embed `ChatMessagePush` inline as a JSON object under `"jmap-push"`.
 
 **Background push** (opportunistic delivery, no user-visible notification until the app
 wakes):
@@ -151,14 +152,14 @@ See the platform delivery guide for when each mode is appropriate and how to set
 
 ## Urgency
 
-Derive the platform urgency from `ChatPushConfig.urgency` using the mapping tables in the
-platform delivery guide.
+Servers MUST derive the platform urgency from `ChatPushConfig.urgency` using the
+mapping tables in the platform delivery guide.
 
 If `ChatPushConfig.mentionUrgency` is set and at least one entry in `messages` has
-`hasMention: true` or `hasMentionAll: true`, use `mentionUrgency` instead of `urgency`
-for the entire push. When a batch mixes mention and non-mention messages, all messages
-in that payload share the elevated urgency, because the mention notification must not be
-silently demoted.
+`hasMention: true` or `hasMentionAll: true`, the server MUST use `mentionUrgency`
+instead of `urgency` for the entire push. When a batch mixes mention and non-mention
+messages, all messages in that payload MUST share the elevated urgency — the mention
+notification MUST NOT be silently demoted.
 
 ---
 
@@ -174,8 +175,8 @@ call will not re-surface messages already present in the payload.
 ## Payload truncation
 
 When a `ChatMessagePush` payload exceeds the platform size limit (see the platform
-delivery guide for per-platform limits), drop fields from `ChatMessageEntry` objects in
-this order until the payload fits:
+delivery guide for per-platform limits), servers SHOULD drop fields from
+`ChatMessageEntry` objects in this order until the payload fits:
 
 1. `bodySnippet` — the largest variable field; drop first
 2. `spaceId` — opaque identifier with no display value
@@ -187,20 +188,20 @@ this order until the payload fits:
 This truncation order applies when these fields are present in the payload (whether
 delivered by default or because the client requested them via `properties`). If the
 `ChatPushConfig` specifies a `properties` list that excludes some of these fields, they
-will already be absent and can be skipped in the sequence.
+will already be absent and SHOULD be skipped in the sequence.
 
-Never drop: `@type`, `accountId`, `state` (on the outer object), `messageId`, `chatId`,
-`chatKind`, `senderId`, `hasMention`, `hasMentionAll`, `encrypted`.
+Servers MUST NOT drop: `@type`, `accountId`, `state` (on the outer object), `messageId`,
+`chatId`, `chatKind`, `senderId`, `hasMention`, `hasMentionAll`, `encrypted`.
 
-A client receiving a `ChatMessageEntry` with no `bodySnippet` should display a generic
-"new message" notification and fetch full content via `Message/changes` on next foreground
-wake — the same behavior as when `encrypted: true`.
+A client receiving a `ChatMessageEntry` with no `bodySnippet` SHOULD display a generic
+"new message" notification and fetch full content via `Message/changes` on next
+foreground wake — the same behavior as when `encrypted: true`.
 
 If the payload still exceeds the limit after all droppable fields are removed from every
-entry (typically due to a large batch), drop entries from the end of the `messages` array,
-keeping the first entry. If a single minimal entry still exceeds the platform limit, fall
-back to a plain `StateChange` for that subscription rather than sending an invalid or
-oversized payload.
+entry (typically due to a large batch), servers SHOULD drop entries from the end of the
+`messages` array, keeping the first entry. If a single minimal entry still exceeds the
+platform limit, servers MUST fall back to a plain `StateChange` for that subscription
+rather than sending an invalid or oversized payload.
 
 ---
 
