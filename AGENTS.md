@@ -25,12 +25,13 @@ This is a spec-writing project. All deliverables are Markdown files. There is no
 
 | If you change... | Also check... |
 |---|---|
-| A field name or method signature in a draft | All three guides for references to that field |
+| A field name or method signature in a draft | All four guides for references to that field |
 | Suppression or rate-limit behavior in a draft | The guide section describing that behavior |
 | A capability URN or error string | Every file that mentions it (`grep -r`) |
 | Urgency values or their semantics | Urgency tables in `jmap-push-platform-guide.md` |
 | Push payload structure | `jmap-chat-push-platform-guide.md` encoding and truncation sections |
 | WebSocket event delivery rules | `jmap-chat-wss-guide.md` suppression and handling sections |
+| Deployment-defined / impl-defined posture in a draft | `jmap-chat-implementer-guide.md` for the topic's section |
 
 Always `grep -r <term> . --include='*.md'` before and after a change to catch all occurrences.
 

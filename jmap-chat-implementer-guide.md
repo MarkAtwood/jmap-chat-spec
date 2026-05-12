@@ -572,7 +572,8 @@ returns; the spec doesn't constrain its form.
 - `ChatContact.id`: whatever your auth layer returns. Document the format
   (regex or example) in your deployment's API reference. Peer servers
   validate against this format when checking the identity-binding
-  constraint at §`{{peer-authentication}}` of the federation draft.
+  constraint described in the federation draft's Peer Authentication Model
+  section.
 
 ### 3.2 DID URI handling
 
