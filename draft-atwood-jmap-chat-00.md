@@ -79,6 +79,20 @@ informative:
   JMAP-TASKS:
     title: JMAP for Tasks
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-tasks/
+  JMAP-CHAT-CALENDARS:
+    title: JMAP Chat Calendars
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-calendars-00
+    date: 2026
+  JMAP-CHAT-TASKS:
+    title: JMAP Chat Tasks
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-tasks-00
+    date: 2026
   W3C-DID-CORE:
     title: Decentralized Identifiers (DIDs) v1.0
     target: https://www.w3.org/TR/did-core/
@@ -221,9 +235,9 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
   - `"urn:jmap:chat:cap:vtc"` — video/voice teleconference. `uri` is a signaling or room URL (e.g., a WebRTC signaling endpoint, a Jitsi room URL, a SIP URI).
   - `"urn:jmap:chat:cap:payment"` — payment receiving endpoint. `uri` is a payment URI (e.g., `lightning:...`, `zcash:...`, `monero:...`, `bitcoin:...`).
   - `"urn:jmap:chat:cap:blob"` — out-of-band file transfer endpoint. `uri` is a base URL for fetching or uploading blobs outside the JMAP blob mechanism.
-  - `"urn:jmap:chat:cap:calendar-event"` — calendar event link or meeting invite. `uri` is a calendar event URL or a JMAP CalendarEvent identifier. See {{JMAP-CALENDARS}}.
-  - `"urn:jmap:chat:cap:availability"` — invitation to perform a free/busy availability lookup. `uri` is a scheduling URL or JMAP Principal identifier. See {{JMAP-CALENDARS}}.
-  - `"urn:jmap:chat:cap:task"` — task or to-do item link. `uri` is a JMAP Task identifier or an external task tracking URL. See {{JMAP-TASKS}}.
+  - `"urn:jmap:chat:cap:calendar-event"` — calendar event link or meeting invite. `uri` is a calendar event URL or a JMAP CalendarEvent identifier. See {{JMAP-CALENDARS}} for the underlying calendar data model and {{JMAP-CHAT-CALENDARS}} for the chat integration semantics, including RSVP handling and structured rendering hints.
+  - `"urn:jmap:chat:cap:availability"` — invitation to perform a free/busy availability lookup. `uri` is a scheduling URL or JMAP Principal identifier. See {{JMAP-CALENDARS}} and {{JMAP-CHAT-CALENDARS}}.
+  - `"urn:jmap:chat:cap:task"` — task or to-do item link. `uri` is a JMAP Task identifier or an external task tracking URL. See {{JMAP-TASKS}} for the underlying task data model and {{JMAP-CHAT-TASKS}} for the chat integration semantics, including task-chat back-references and structured rendering hints.
   - `"urn:jmap:chat:cap:filenode"` — file storage node link. `uri` is a JMAP FileNode URL or identifier in a Space-scoped file tree. See {{JMAP-FILENODE}}.
 
   Other type URIs MAY be defined by deployments or future documents. The `urn:jmap:chat:cap:` prefix is reserved for types defined in JMAP Chat specifications.

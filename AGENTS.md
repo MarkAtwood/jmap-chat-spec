@@ -13,6 +13,8 @@ This is a spec-writing project. All deliverables are Markdown files. There is no
 
 **Normative drafts** (`draft-atwood-*.md`): IETF Internet-Draft format. Use RFC 2119 keywords (MUST, SHOULD, MAY). The drafts are the source of truth for all protocol behavior.
 
+Eight drafts are currently in the corpus: the core (`draft-atwood-jmap-chat-00.md`) plus seven companion specs covering push (`-push-00`), WebSocket transport (`-wss-00`), federation (`-federation-00`), file storage (`-filenode-00`), content identifiers (`draft-atwood-jmap-cid-00`), calendars (`-calendars-00`), and tasks (`-tasks-00`). Each companion has its own capability URN and is optional; the core stays focused on the chat protocol itself.
+
 **Implementer guides** (`jmap-*-guide.md`): Non-normative companions. No RFC 2119 keywords. When a guide describes behavior defined in a draft, the guide must be consistent with the draft.
 
 ## Before editing any file
