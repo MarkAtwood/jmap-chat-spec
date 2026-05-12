@@ -586,7 +586,9 @@ Method name: `Peer/presence`
 
 ### Receiver Behavior
 
-The receiving server MUST update the `presence`, `lastActiveAt`, `statusText`, and `statusEmoji` fields on the ChatContact record identified by `contactId`. The `statusText` and `statusEmoji` fields mirror `PresenceStatus.statusText` and `PresenceStatus.statusEmoji` from the remote owner's server; a `null` value in the request MUST clear the corresponding ChatContact field (setting it to absent). The server MUST then fire a local presence push event (as defined in {{JMAP-CHAT}}) to the owner's connected clients.
+If `contactId` corresponds to a ChatContact whose `blocked` field is `true` in the receiving account's contact list, the server MUST silently drop the request: it MUST NOT update the ChatContact record and MUST NOT fire any local presence push event. The server SHOULD return a success response to avoid disclosing block status to the calling server.
+
+Otherwise, the receiving server MUST update the `presence`, `lastActiveAt`, `statusText`, and `statusEmoji` fields on the ChatContact record identified by `contactId`. The `statusText` and `statusEmoji` fields mirror `PresenceStatus.statusText` and `PresenceStatus.statusEmoji` from the remote owner's server; a `null` value in the request MUST clear the corresponding ChatContact field (setting it to absent). The server MUST then fire a local presence push event (as defined in {{JMAP-CHAT}}) to the owner's connected clients.
 
 # Outbox and Delivery {#outbox}
 

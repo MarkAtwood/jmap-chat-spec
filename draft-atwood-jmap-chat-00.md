@@ -925,7 +925,7 @@ Method name: `Chat/typing`
 
 #### Server Behavior
 
-The server MUST NOT persist this event. Before delivering a typing push event to each potential recipient, the server MUST check that recipient's `receiveTypingIndicators` field for this Chat; if it is `false` and the Chat `kind` is `"direct"` or `"group"`, the server MUST silently drop the event and MUST NOT deliver it to any of that recipient's connected clients. For channel chats, `receiveTypingIndicators` has no effect. On success, the server SHOULD deliver a `typing` push event (see {{push}}) to all connected clients of each local participant in the Chat other than the requesting account, subject to the `receiveTypingIndicators` check above. For federated Chats, the server SHOULD invoke `Peer/typing` ({{JMAP-CHAT-FED}}) on each remote participant's home server.
+The server MUST NOT persist this event. Before delivering a typing push event to each potential recipient, the server MUST check that recipient's `receiveTypingIndicators` field for this Chat; if it is `false` and the Chat `kind` is `"direct"` or `"group"`, the server MUST silently drop the event and MUST NOT deliver it to any of that recipient's connected clients. For channel chats, `receiveTypingIndicators` has no effect. The server MUST also check whether the requesting account corresponds to a ChatContact whose `blocked` field is `true` on the recipient's contact list; if so, the server MUST silently drop the event for that recipient and MUST NOT deliver it to any of that recipient's connected clients. The sender is not informed. On success, the server SHOULD deliver a `typing` push event (see {{push}}) to all connected clients of each local participant in the Chat other than the requesting account, subject to the `receiveTypingIndicators` and blocked-sender checks above. For federated Chats, the server SHOULD invoke `Peer/typing` ({{JMAP-CHAT-FED}}) on each remote participant's home server.
 
 Servers SHOULD rate-limit `Chat/typing` calls per account per chat. Servers SHOULD accept no more than one call per account per chat per 3 seconds; calls that exceed this rate MAY be silently discarded without error.
 
@@ -1346,7 +1346,7 @@ event: typing
 data: {"chatId":"<id>","senderId":"<contact-id>","typing":<bool>}
 ~~~
 
-Not stored; carries no state token. Before delivering this event to a recipient, the server MUST apply the same `receiveTypingIndicators` check described in the `Chat/typing` server behavior ({{chat-typing}}).
+Not stored; carries no state token. Before delivering this event to a recipient, the server MUST apply the same `receiveTypingIndicators` and blocked-sender checks described in the `Chat/typing` server behavior ({{chat-typing}}).
 
 ## Presence Events
 
@@ -1354,6 +1354,8 @@ Not stored; carries no state token. Before delivering this event to a recipient,
 event: presence
 data: {"contactId":"<id>","presence":"<state>","lastActiveAt":"<ts>","statusText":"<string>|null","statusEmoji":"<string>|null"}
 ~~~
+
+Before delivering this event, the server MUST silently drop it if the identified ChatContact (`contactId`) has `blocked: true` on the receiving owner's contact list. The remote contact is not informed.
 
 The `statusText` and `statusEmoji` fields reflect the contact's current PresenceStatus values; they are `null` when the contact has no active custom status. Clients SHOULD update their displayed status immediately upon receiving this event without waiting for a `/changes` poll.
 
@@ -1471,6 +1473,8 @@ Chat IDs are server-assigned ULIDs. Security against cross-conversation injectio
 ## Blocked Contacts
 
 Messages from a ChatContact whose `blocked` field is `true` are silently dropped regardless of whether they arrive in a direct chat or a group chat context.
+
+Typing and presence push events whose sending or referenced ChatContact has `blocked: true` on the receiving owner's contact list are similarly dropped server-side before delivery to any of the owner's clients (see the `Chat/typing` server behavior in {{chat-typing}}, the typing and presence event sections in {{push}}, and the analogous rules in {{JMAP-CHAT-WSS}} and {{JMAP-CHAT-FED}}). The sender is not informed. This prevents a blocked user from leaking presence or attention patterns on any transport even though their messages are dropped.
 
 When `Chat.receiveTypingIndicators` is `false`, typing push events for that Chat are suppressed server-side (see `receiveTypingIndicators` in {{chat}} and the `Chat/typing` server behavior in {{chat-typing}}) before delivery to the owner. The sender is not informed; `Chat/typing` succeeds normally. This prevents a sender from inferring that typing indicators are being suppressed.
 
