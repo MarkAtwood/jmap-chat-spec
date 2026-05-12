@@ -130,9 +130,9 @@ For decentralized or federated products: role-graph-only with a clearly
 documented out-of-band recovery procedure (typically: server operator can
 manually grant `"manage_space"` to a member if all admins are lost).
 
-Document your choice in your deployment's user-facing security documentation.
-Users should not have to read your source code to know whether their account
-holds an irrevocable governance role.
+Deployments SHOULD document their governance choice in user-facing security
+documentation. Users SHOULD NOT have to read source code to know whether
+their account holds an irrevocable governance role.
 
 ### 1.2 Group-chat bootstrap role assignment
 
@@ -177,10 +177,11 @@ admin-action list, not the initial-seat policy.
 
 **Recommended starting point.**
 
-Creator auto-receives the `"admin"` role. Block admin-less groups (the last
-admin must promote a successor before leaving, or the group is destroyed).
-Provide an out-of-band promotion flow for cases where the creator's account
-is lost or abandoned.
+The creator SHOULD automatically receive the `"admin"` role. Deployments
+SHOULD prevent admin-less groups by requiring the last remaining admin to
+promote a successor before leaving (or by destroying the group). Deployments
+SHOULD provide an out-of-band promotion flow for cases where the creator's
+account is lost or abandoned.
 
 For enterprise deployments: layer this with a System Admin override
 (see §1.3) so that an organizational admin can recover an admin-less group
@@ -239,14 +240,15 @@ perspective, all such actions appear to originate from a member with the
 
 **Recommended starting point.**
 
-Define a server-admin role with admin-equivalent authority on all Spaces and
-group chats. Audit all server-admin actions to a separate log that is not
-exposed via the JMAP Chat wire protocol. Do not expose server-admin status
-to chat participants beyond the action attribution.
+Deployments SHOULD define a server-admin role with admin-equivalent authority
+on all Spaces and group chats. Server-admin actions MUST be audited to a
+separate log that is not exposed via the JMAP Chat wire protocol.
+Deployments SHOULD NOT expose server-admin status to chat participants
+beyond the action attribution.
 
 If you integrate with an external IdP for organizational role-based admin
-authority, make that integration optional and clearly scoped. Test that the
-JMAP Chat wire surface remains identical whether or not the IdP is wired up.
+authority, that integration SHOULD be optional and clearly scoped. The JMAP
+Chat wire surface MUST remain identical whether or not the IdP is wired up.
 
 ### 1.4 Slow-mode exemption beyond `manage_channels`
 
@@ -292,16 +294,16 @@ define additional exempt principals.
 
 **Recommended starting point.**
 
-Exempt server admins and dedicated moderator roles from slow-mode by
-default. Selectively exempt automated systems that emit important
-notifications (CI, on-call alerts) and rate-limit those that could spam
-(general-purpose chatbots). Do not exempt federated `Peer/deliver`
-messages at the receiver side; the rate limit applies at the original
-sender's server.
+Deployments SHOULD exempt server admins and dedicated moderator roles from
+slow-mode by default. Automated systems that emit important notifications
+(CI, on-call alerts) SHOULD be exempt; general-purpose chatbots that could
+spam SHOULD be rate-limited normally. Deployments MUST NOT exempt federated
+`Peer/deliver` messages at the receiver side; the rate limit applies at the
+original sender's server.
 
-Do not visually tag exempt senders unless your product has a specific
-trust-and-safety reason to make moderator status visible. The audit log
-records the action; the chat UI does not need to.
+Deployments SHOULD NOT visually tag exempt senders unless the product has a
+specific trust-and-safety reason to make moderator status visible. The
+audit log records the action; the chat UI does not need to.
 
 ---
 
@@ -373,18 +375,18 @@ their stated meanings when returned to clients.
 
 **Recommended starting point.**
 
-Start with the spec defaults. Don't substitute mappings unless you have a
-concrete reason — the spec's recommended mapping captures decades of chat-UX
-convention.
+Deployments SHOULD start with the spec defaults. Mappings SHOULD NOT be
+substituted without concrete reason — the spec's recommended mapping
+captures decades of chat-UX convention.
 
-If you need richer authorization (quorum, IdP, time-limited), layer it on top
-of the spec defaults rather than replacing them. The wire contract is
-preserved either way; the additional checks just narrow the set of requests
-that succeed.
+If richer authorization is required (quorum, IdP, time-limited), it SHOULD
+be layered on top of the spec defaults rather than replacing them. The wire
+contract is preserved either way; the additional checks just narrow the set
+of requests that succeed.
 
-Document deviations in your deployment's API documentation. Users seeing
-`forbidden` on actions the spec says should work need to be able to find out
-why.
+Deviations from spec defaults MUST be documented in the deployment's API
+documentation. Users seeing `forbidden` on actions the spec says should work
+need to be able to find out why.
 
 ### 2.2 Custom emoji authorization
 
@@ -440,20 +442,21 @@ contract; only the authorization is server-defined.
 **Recommended starting point.**
 
 Space-level emoji: members holding `manage_channels` (or a deployment-internal
-"manage_emoji" mapping per §2.1) can add and manage Space-scoped emoji.
-Members can always destroy their own contributions.
+"manage_emoji" mapping per §2.1) SHOULD be permitted to add and manage
+Space-scoped emoji. Members SHOULD always be able to destroy their own
+contributions.
 
-Use archival rather than destruction: mark deprecated, prevent new reactions
-from using it, preserve existing reactions with a placeholder icon. The
-storage cost is bounded by your retention policy.
+Deployments SHOULD use archival rather than destruction: mark deprecated,
+prevent new reactions from using it, preserve existing reactions with a
+placeholder icon. The storage cost is bounded by the retention policy.
 
 Quotas: 100 emoji per Space, 256 KB per emoji image. Tune based on storage
-budget. Reject `CustomEmoji/set` with `overQuota` (per `{{RFC8620}}` §5.3)
-when the count or size limit is exceeded.
+budget. The server MUST reject `CustomEmoji/set` with `overQuota` (per
+`{{RFC8620}}` §5.3) when the count or size limit is exceeded.
 
-Server-level emoji: restrict to a dedicated server-admin role (§1.3). The
-server name appears in the emoji context; user-facing implications are
-larger than for Space-scoped emoji.
+Server-level emoji SHOULD be restricted to a dedicated server-admin role
+(§1.3). The server name appears in the emoji context; user-facing
+implications are larger than for Space-scoped emoji.
 
 ### 2.3 Mention scope predicates (`@here` and `@admins`)
 
@@ -520,11 +523,12 @@ mentions land.)
   `"offline"`, `"invisible"`, and (debatably) `"busy"`.
 - `@admins` predicate: members whose effective permission union includes
   `manage_space` OR who are controller principals on the originating server.
-  Exclude non-member admin-equivalent principals (§1.3) from the `@admins`
-  recipient set — they receive notifications via separate audit channels.
-- Evaluate at delivery time on each receiving server using that server's
-  local view of presence and roles.
-- Document the predicate in your deployment's user-facing documentation so
+  Non-member admin-equivalent principals (§1.3) SHOULD be excluded from the
+  `@admins` recipient set — they receive notifications via separate audit
+  channels.
+- The predicate MUST be evaluated at delivery time on each receiving server
+  using that server's local view of presence and roles (per `fig9.1` D4b).
+- Deployments SHOULD document the predicate in user-facing documentation so
   users understand who'll be notified by their `@here` or `@admins`.
 
 ---
@@ -582,16 +586,17 @@ returns; the spec doesn't constrain its form.
 
 **Recommended starting point.**
 
-- Time-ordered IDs (`Chat.id`, `Message.id`, `senderMsgId`): ULID.
-- Non-time-ordered IDs: ULID, for consistency with time-ordered IDs and
-  ecosystem familiarity. Use a different scheme only if you have a concrete
-  reason (e.g., integrating with an existing ID issuer that already produces
-  KSUIDs).
-- `ChatContact.id`: whatever your auth layer returns. Document the format
-  (regex or example) in your deployment's API reference. Peer servers
-  validate against this format when checking the identity-binding
-  constraint described in the federation draft's Peer Authentication Model
-  section.
+- Time-ordered IDs (`Chat.id`, `Message.id`, `senderMsgId`): MUST be ULIDs
+  per the spec (the lexicographic time-ordering requirement is normative).
+- Non-time-ordered IDs: SHOULD also be ULIDs, for consistency with the
+  time-ordered IDs and ecosystem familiarity. A different scheme MAY be
+  used if there is a concrete reason (e.g., integrating with an existing
+  ID issuer that already produces KSUIDs).
+- `ChatContact.id`: whatever the auth layer returns. Deployments SHOULD
+  document the format (regex or example) in their API reference. Peer
+  servers MUST validate against this format when checking the
+  identity-binding constraint described in the federation draft's Peer
+  Authentication Model section.
 
 ### 3.2 DID URI handling
 
@@ -638,17 +643,17 @@ for DID-based federation auth, resolution, and method support.
 
 **Recommended starting point.**
 
-Treat DID URIs as opaque `ChatContact.id` values. No special handling. This
-matches q15f Option B and keeps you spec-conformant without committing to
-DID infrastructure.
+Deployments SHOULD treat DID URIs as opaque `ChatContact.id` values. No
+special handling is required. This matches q15f Option B and keeps the
+deployment spec-conformant without committing to DID infrastructure.
 
-If your user base demands real DID interop, follow `8sgn` rather than
-rolling custom resolution. The companion draft's design questions are
-already enumerated in `8sgn`'s description.
+If user demand justifies real DID interop, deployments SHOULD follow `8sgn`
+rather than rolling custom resolution. The companion draft's design
+questions are already enumerated in `8sgn`'s description.
 
-Document acceptance criteria in your deployment's API reference: which DID
-methods (if any) you treat specially, which you accept opaquely, which you
-reject.
+Deployments SHOULD document acceptance criteria in their API reference:
+which DID methods (if any) are treated specially, which are accepted
+opaquely, and which are rejected.
 
 ### 3.3 Federated mention textual form parsing and resolution
 
@@ -705,22 +710,23 @@ existence) is unchanged.
 
 **Recommended starting point.**
 
-Composer parser: recognize `@user@host` and `@did:...` forms. Tolerate
-Unicode in the user-part; normalize IDN hosts to punycode. Treat
-malformed textual forms as plaintext rather than failed mentions (less UX
-friction).
+Composer parser SHOULD recognize `@user@host` and `@did:...` forms.
+Implementations SHOULD tolerate Unicode in the user-part and normalize IDN
+hosts to punycode. Malformed textual forms SHOULD be treated as plaintext
+rather than failed mentions (less UX friction).
 
-Resolution: try local `ChatContact` lookup first (by exact match on the
-resolved candidate id). On miss, probe `/.well-known/jmap` at the host to
-discover the peer's `ownerUserId` and validate the resolution. Cache
-successful resolutions for the session.
+Resolution SHOULD try local `ChatContact` lookup first (by exact match on
+the resolved candidate id). On miss, the implementation SHOULD probe
+`/.well-known/jmap` at the host to discover the peer's `ownerUserId` and
+validate the resolution. Successful resolutions SHOULD be cached for the
+session.
 
-Auto-create policy: create a new `ChatContact` record only on the sender's
-explicit send action (not on every keystroke as the textual form is typed).
-Rate-limit auto-creation per sender per Space per hour. Cap total
-ChatContact growth per Space.
+Auto-create policy: a new `ChatContact` record SHOULD be created only on
+the sender's explicit send action (not on every keystroke as the textual
+form is typed). Auto-creation MUST be rate-limited per sender per Space
+per hour. Total ChatContact growth per Space SHOULD be capped.
 
-Document the parser and resolution behavior in your deployment's
+Deployments SHOULD document the parser and resolution behavior in their
 client-side docs so users understand what mentions are valid and how to
 type them.
 
@@ -781,19 +787,20 @@ at-least-once delivery, etc.) is implementation-defined."
 
 **Recommended starting point.**
 
-At-least-once delivery via `senderMsgId`-based dedup at the receiver. This
-matches what the federation draft already specifies at `:609` ("A message
-whose senderMsgId is already known for the given chat at the receiving
-server MAY be silently discarded by that server").
+Deployments SHOULD use at-least-once delivery via `senderMsgId`-based dedup
+at the receiver. This matches what the federation draft already specifies
+at `:609` ("A message whose senderMsgId is already known for the given chat
+at the receiving server MAY be silently discarded by that server").
 
-Backing store: a persistent queue alongside your message database. If your
+Backing store: a persistent queue alongside the message database. If the
 message store is already in a transactional DB (Postgres, MySQL, SQLite),
-write the outbox row in the same transaction as the message row — this
-gives you transactional consistency without a separate state machine.
+implementations SHOULD write the outbox row in the same transaction as the
+message row — this gives transactional consistency without a separate state
+machine.
 
-Replicated broker only if you're already operating one for other workloads.
-Adding Kafka just for chat federation is operational overkill for most
-deployments.
+A replicated broker SHOULD only be introduced if the deployment is already
+operating one for other workloads. Adding Kafka just for chat federation is
+operational overkill for most deployments.
 
 ### 4.2 Edit-history retention policy
 
@@ -849,24 +856,25 @@ zero-retention deployment is fully spec-compliant.
 
 **Recommended starting point.**
 
-Retain the last 5 revisions per message. Older revisions elided per the
-spec's `:546` paragraph.
+Deployments SHOULD retain the last 5 revisions per message. Older revisions
+SHOULD be elided per the spec's `:546` paragraph.
 
-Document the retention policy prominently in your user-facing TOS or
-privacy notice. Users editing sensitive content need to know history is
-kept.
+The retention policy MUST be documented prominently in the deployment's
+user-facing TOS or privacy notice. Users editing sensitive content need to
+know history is kept.
 
-For compliance-driven deployments: layer additional retention rules on top
-of the default (longer or shorter as required by regulation).
+For compliance-driven deployments: additional retention rules SHOULD be
+layered on top of the default (longer or shorter as required by
+regulation).
 
-Per-Space configuration: allow Space admins to set their Space's retention
-within deployment-defined bounds (e.g., zero to deployment-max). The wire
-protocol doesn't expose retention policy directly; configuration is
-deployment-side.
+Per-Space configuration: deployments MAY allow Space admins to set their
+Space's retention within deployment-defined bounds (e.g., zero to
+deployment-max). The wire protocol does not expose retention policy
+directly; configuration is deployment-side.
 
-If you choose zero retention: be explicit about it in product copy.
-"Edited" without history is unusual for chat products; users will assume
-the history is there unless told otherwise.
+If a deployment chooses zero retention, it MUST be explicit about that
+choice in product copy. "Edited" without history is unusual for chat
+products; users will assume the history is there unless told otherwise.
 
 ### 4.3 Federation contact resolution caching
 
@@ -919,17 +927,17 @@ preferences) chooses its own freshness vs traffic trade-off.
 
 - `receiveTypingIndicators` cache TTL: **60 seconds**. This matches the
   value previously hardcoded in the federation draft before `uy1m.3`
-  softened it; treat it as a sensible default and tune based on your
-  deployment's volume and acceptable staleness window.
+  softened it; deployments SHOULD treat it as a sensible default and tune
+  based on volume and acceptable staleness window.
 - `ChatContact` record cache from peer Session: **1 hour** with on-demand
   refresh when the user explicitly initiates a contact interaction.
 - `Session.ownerEndpoints` cache: **1 hour**; the spec already treats these
   as ephemeral hints.
-- Invalidate on explicit user action (e.g., user-initiated "refresh peer
-  info") in addition to time-based expiry.
-- Do not share federation caches across nodes by default. Per-node caches
-  are simpler to reason about; add cross-node sharing only when measured
-  traffic justifies the complexity.
+- Caches SHOULD be invalidated on explicit user action (e.g.,
+  user-initiated "refresh peer info") in addition to time-based expiry.
+- Federation caches SHOULD NOT be shared across nodes by default. Per-node
+  caches are simpler to reason about; cross-node sharing SHOULD be added
+  only when measured traffic justifies the complexity.
 
 ---
 
@@ -991,14 +999,14 @@ unnecessary network and federation traffic.
 
 **Recommended starting point.**
 
-Use the spec's 3s / 10s pair. The calibration is well-documented in the
-spec text; deviating without measured reason adds risk without obvious
-upside.
+Deployments SHOULD use the spec's 3s / 10s pair. The calibration is
+well-documented in the spec text; deviating without measured reason adds
+risk without obvious upside.
 
-If you must deviate: maintain the 3x ratio (decay ≥ 3 × rate-limit window).
-Tell clients via the account capability object so they can match your
-deployment's choice. Document the deviation in your deployment's API
-reference.
+If deviation is necessary: deployments MUST maintain the 3x ratio (decay
+≥ 3 × rate-limit window). Configured values SHOULD be exposed to clients
+via the account capability object so multi-client UX stays consistent.
+Deviations MUST be documented in the deployment's API reference.
 
 ### 5.2 Federation Peer/presence outbound rate
 
@@ -1038,18 +1046,19 @@ calls per subscriber; the specific rate is implementation-defined."
 
 **Recommended starting point.**
 
-**30 seconds per subscriber** — matches the value previously hardcoded in
-the federation draft before `uy1m.4` softened it, and matches the
-WSS-layer 30s rate at `draft-atwood-jmap-chat-wss-00.md:253`. Consistent
-across federation and WSS layers; subscribers don't see unexpected
-behavioral differences.
+Deployments SHOULD use **30 seconds per subscriber** — matches the value
+previously hardcoded in the federation draft before `uy1m.4` softened it,
+and matches the WSS-layer 30s rate at
+`draft-atwood-jmap-chat-wss-00.md:253`. Consistent across federation and
+WSS layers; subscribers don't see unexpected behavioral differences.
 
-If you tune: don't go below 10 seconds (federation traffic explodes); don't
-go above 5 minutes (presence becomes too stale to be useful for typical UX).
+If tuning: implementations SHOULD NOT go below 10 seconds (federation
+traffic explodes) and SHOULD NOT go above 5 minutes (presence becomes too
+stale to be useful for typical UX).
 
-Batch frequent transitions: if a user goes `online → away → online` within
-the rate-limit window, send only the most recent state at the end of the
-window.
+Implementations SHOULD batch frequent transitions: if a user goes
+`online → away → online` within the rate-limit window, only the most
+recent state SHOULD be sent at the end of the window.
 
 ### 5.3 `receiveTypingIndicators` cache TTL
 
@@ -1102,20 +1111,21 @@ jitter factor to avoid synchronized retry storms from multiple servers."
 
 - **Initial retry**: 5 seconds.
 - **Maximum interval**: 5 minutes (the backoff cap).
-- **Total retry duration**: 24 hours (after which mark
-  `deliveryState: "failed"`).
+- **Total retry duration**: 24 hours (after which the message MUST be
+  marked `deliveryState: "failed"`).
 - **Jitter**: ±20% of the computed interval (multiplied by a uniform
-  random factor in [0.8, 1.2]).
+  random factor in [0.8, 1.2]). Implementations MUST apply jitter per the
+  federation draft `:601`.
 - **Backoff schedule**: exponential with base 2, capped at the maximum
   (so 5s → 10s → 20s → 40s → 80s → 160s → 300s [cap] → 300s ...).
 
-Tune the total duration based on your user expectations: 24 hours is a
-reasonable balance between "the message has a chance to land" and "the
-user shouldn't see it pending for days". Email's 5-day default is too long
-for chat product UX.
+Deployments SHOULD tune the total duration based on user expectations: 24
+hours is a reasonable balance between "the message has a chance to land"
+and "the user shouldn't see it pending for days". Email's 5-day default is
+too long for chat product UX.
 
-Document the schedule in your deployment's API reference so operators can
-predict retry behavior during incidents.
+The retry schedule SHOULD be documented in the deployment's API reference
+so operators can predict retry behavior during incidents.
 
 ---
 
@@ -1177,23 +1187,23 @@ once broadcast mentions land.)
 
 **Recommended starting point.**
 
-Default behavior: broadcast mentions to targeted recipients bypass
+Default behavior: broadcast mentions to targeted recipients SHOULD bypass
 `Chat.muted` and use the configured `mentionUrgency` per the push draft
 (`draft-atwood-jmap-chat-push-00.md`). This matches Slack/Discord conventions
 and respects the sender's intent.
 
-Provide a per-account preference "Always honor mute, even for @everyone".
-Default to false. Surface in the notification settings UI alongside other
-mute/DND controls.
+Deployments SHOULD provide a per-account preference "Always honor mute,
+even for @everyone". The default SHOULD be false. The preference SHOULD be
+surfaced in the notification settings UI alongside other mute/DND controls.
 
-For workplace deployments: layer Space-admin configuration on top —
+For workplace deployments: Space-admin configuration MAY layer on top —
 "@everyone can override mute for: [all members | members with admin role |
-no one]". Don't expose this via wire fields; it's deployment policy
+no one]". This MUST NOT be exposed via wire fields; it is deployment policy
 expressed through the per-account preference's effective value.
 
-Document the default-bypass and your opt-out controls in your privacy
-notice. Users targeted by broadcast mentions need to know whether their
-mute setting protects them.
+The default-bypass behavior and opt-out controls MUST be documented in the
+deployment's privacy notice. Users targeted by broadcast mentions need to
+know whether their mute setting protects them.
 
 ### 6.2 Receipt-sharing scope and granularity
 
@@ -1241,18 +1251,18 @@ defaults, and UI exposure.
 **Recommended starting point.**
 
 Default `PresenceStatus.receiptSharing: true` (WhatsApp/iMessage-style).
-Provide per-account toggle in settings to disable.
+Deployments SHOULD provide a per-account toggle in settings to disable.
 
-Expose `Chat.receiptSharing` per-chat override in the chat-info pane.
-Default to absent (inherit account-level); allow user to set explicitly
-for sensitive conversations.
+`Chat.receiptSharing` per-chat override SHOULD be exposed in the chat-info
+pane. The default SHOULD be absent (inherit account-level); users MAY set
+it explicitly for sensitive conversations.
 
-Document the bidirectional rule in plain language: "Turning off read
-receipts means you won't see when others read your messages either."
+The bidirectional rule MUST be documented in plain language: "Turning off
+read receipts means you won't see when others read your messages either."
 
-For federated deployments: trust the federation suppression rules at both
-sender and receiver sides; do not attempt to bypass them with a "show
-unofficial read time" UI.
+For federated deployments: implementations MUST trust the federation
+suppression rules at both sender and receiver sides; implementations MUST
+NOT bypass them with a "show unofficial read time" UI.
 
 ### 6.3 Blocked-sender ephemeral-event suppression
 
@@ -1314,26 +1324,26 @@ blocking is surfaced and managed at the UI level.
 
 **Recommended starting point.**
 
-Per-account block via `ChatContact.blocked: true`. Confirm via a dialog
-that explains: blocked users' messages are silently dropped; blocked
-users see neither your typing indicators nor your presence; you no longer
-see theirs.
+Per-account block via `ChatContact.blocked: true`. Clients SHOULD confirm
+via a dialog that explains: blocked users' messages are silently dropped;
+blocked users see neither the user's typing indicators nor presence; the
+user no longer sees theirs.
 
-Do NOT surface block status to the blocked party in any form. This is the
-spec's privacy property; respecting it requires not leaking via UI side
-channels either.
+Implementations MUST NOT surface block status to the blocked party in any
+form. This is the spec's privacy property; respecting it requires not
+leaking via UI side channels either.
 
-Keep the block list in user-facing settings (account settings → "Blocked
-users"); make it easy to unblock.
+The block list SHOULD be accessible in user-facing settings (account
+settings → "Blocked users") and easy to unblock from.
 
 Shared Space membership: per the spec's rule, blocking does not exit
-shared Spaces. Make this explicit in the block-confirmation dialog so
-users aren't surprised when they still see the blocked user in a
-mutual Space.
+shared Spaces. The block-confirmation dialog SHOULD make this explicit so
+users aren't surprised when they still see the blocked user in a mutual
+Space.
 
-Mute and block are distinct UI affordances. Mute affects notifications
-(per-chat suppression); block affects the identity-level relationship.
-Don't collapse them.
+Mute and block SHOULD be distinct UI affordances. Mute affects
+notifications (per-chat suppression); block affects the identity-level
+relationship. Implementations SHOULD NOT collapse them.
 
 ---
 
