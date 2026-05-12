@@ -43,9 +43,7 @@ informative:
   JMAP-BLOBEXT:
     title: JMAP Blob Management Extensions
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-blobext/
-  JMAP-QUOTAS:
-    title: JMAP Quotas
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-quotas/
+  RFC9425:
 
 --- abstract
 
@@ -104,7 +102,7 @@ The value of `capabilities["urn:ietf:params:jmap:chat:filenode"]` at the session
 The value of `accountCapabilities["urn:ietf:params:jmap:chat:filenode"]` is a JSON object with the following fields:
 
 `maxSpaceStorageBytes` (UnsignedInt, optional):
-: Maximum total blob storage in bytes across all FileNodes in a single Space's file tree. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{JMAP-QUOTAS}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
+: Maximum total blob storage in bytes across all FileNodes in a single Space's file tree. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{RFC9425}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
 
 `autoCreateFileTree` (Boolean):
 : When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. Default is `false`.
