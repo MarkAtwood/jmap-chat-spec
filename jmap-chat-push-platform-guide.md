@@ -156,10 +156,64 @@ Servers MUST derive the platform urgency from `ChatPushConfig.urgency` using the
 mapping tables in the platform delivery guide.
 
 If `ChatPushConfig.mentionUrgency` is set and at least one entry in `messages` has
-`hasMention: true` or `hasMentionAll: true`, the server MUST use `mentionUrgency`
-instead of `urgency` for the entire push. When a batch mixes mention and non-mention
-messages, all messages in that payload MUST share the elevated urgency — the mention
-notification MUST NOT be silently demoted.
+`hasMention: true` or a non-empty `mentionScopes` array, the server MUST use
+`mentionUrgency` instead of `urgency` for the entire push. When a batch mixes mention
+and non-mention messages, all messages in that payload MUST share the elevated urgency
+— the mention notification MUST NOT be silently demoted.
+
+`mentionScopes` is per-recipient: the receiving server lists only the broadcast scopes
+for which the account owner was in the locally-resolved recipient set at delivery time
+(per `draft-atwood-jmap-chat-push-00` §`mentionScopes` and the federation draft's
+Broadcast Mention Resolution rules). A recipient who received a message tagged `@here`
+but who did not satisfy the deployment's "active" predicate at delivery time gets
+`mentionScopes: []` and therefore no urgency elevation from that message alone.
+
+### Per-scope urgency recommendations
+
+The wire contract collapses all three broadcast scopes into a single elevation gate
+(non-empty `mentionScopes` triggers `mentionUrgency`). Deployments that want finer
+control over per-scope urgency typically run multiple `PushSubscription` records with
+different `mentionUrgency` values, gated by the scope set on the client side, or filter
+in the client itself. There is no wire field for "elevate `@everyone` but not `@here`"
+because the spec defers per-scope preference to deployment policy (see
+`draft-atwood-jmap-chat-00` §Chat.muted and §Broadcast Mention Abuse).
+
+When choosing the deployment default for `mentionUrgency`, consider:
+
+| Scope | Sender intent | Typical default elevation |
+|---|---|---|
+| `@everyone` | Page everyone in the Chat | High urgency; bypass mute |
+| `@here` | Page currently-active members | High urgency; bypass mute |
+| `@admins` | Page administrative staff | High urgency for admins; non-admins are not in the recipient set so do not see this scope at all |
+| `@user` (per-user `hasMention: true`) | Page a specific person | High urgency, equal to broadcast |
+
+Because the spec uses one `mentionUrgency` value for all four cases, deployments that
+want a softer @here than @everyone need to handle it at the application layer (separate
+PushSubscriptions, client-side filtering, or per-account UI rules). The push wire format
+itself is intentionally simple.
+
+### Client UI interpretation
+
+The `mentionScopes` array is a signal for the client UI as well as a server-side
+elevation trigger. Clients SHOULD use the array to differentiate notification
+appearance:
+
+- Empty `mentionScopes`: regular message; standard notification appearance.
+- `["everyone"]`: a `@everyone` broadcast targeted the owner. Render a distinctive
+  banner or sound that conveys "the whole room was paged"; users have a low tolerance
+  for misuse of this scope and want it visually obvious.
+- `["here"]`: a `@here` broadcast targeted the owner. Render similarly to a `@user`
+  mention; the owner satisfied the deployment's "active" predicate at delivery time so
+  the elevation matches their direct-attention expectations.
+- `["admins"]`: an `@admins` broadcast targeted the owner. Render with an
+  administrative-attention banner if the deployment offers one; the owner has been
+  paged in an admin capacity.
+- Multiple scopes (for example, `["everyone","admins"]`): a message that tags more
+  than one scope. Clients SHOULD pick the highest-priority appearance among them
+  rather than rendering separate banners.
+
+Clients MUST silently ignore unknown scope values in `mentionScopes` (forward
+compatibility for future scope additions).
 
 ---
 
@@ -191,7 +245,7 @@ delivered by default or because the client requested them via `properties`). If 
 will already be absent and SHOULD be skipped in the sequence.
 
 Servers MUST NOT drop: `@type`, `accountId`, `state` (on the outer object), `messageId`,
-`chatId`, `chatKind`, `senderId`, `hasMention`, `hasMentionAll`, `encrypted`.
+`chatId`, `chatKind`, `senderId`, `hasMention`, `mentionScopes`, `encrypted`.
 
 A client receiving a `ChatMessageEntry` with no `bodySnippet` SHOULD display a generic
 "new message" notification and fetch full content via `Message/changes` on next
