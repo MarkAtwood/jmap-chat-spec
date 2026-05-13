@@ -721,7 +721,7 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 : If `true`, any user may join this Space via `Space/join` without an invite code. Default is `false`. Mutable by members with `"manage_space"` permission.
 
 `isPubliclyPreviewable` (Boolean):
-: If `true`, users who are not members of this Space may discover its existence via `Space/query` and fetch a restricted view of it via `Space/get`. The restricted view is defined in the `Space/get` section. Default is `false`. Mutable by members with `"manage_space"` permission.
+: If `true`, users who are not members of this Space may fetch a restricted view of it via `Space/get`. When the Space also has `isPublic: true`, non-members may discover its existence via `Space/query` requests that include an `isPublic: true` filter condition. The restricted view is defined in the `Space/get` section. Default is `false`. Mutable by members with `"manage_space"` permission.
 
 `memberCount` (UnsignedInt, server-set):
 : Current number of members in this Space.
