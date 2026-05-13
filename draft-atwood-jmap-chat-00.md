@@ -721,7 +721,7 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 : If `true`, any user may join this Space via `Space/join` without an invite code. Default is `false`. Mutable by members with `"manage_space"` permission.
 
 `isPubliclyPreviewable` (Boolean):
-: If `true`, users who are not members of this Space may query it via `Space/query` and receive the fields `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, and `isPubliclyPreviewable`. Default is `false`. Mutable by members with `"manage_space"` permission.
+: If `true`, users who are not members of this Space may discover its existence via `Space/query` and fetch a restricted view of it via `Space/get`. The restricted view is defined in the `Space/get` section. Default is `false`. Mutable by members with `"manage_space"` permission.
 
 `memberCount` (UnsignedInt, server-set):
 : Current number of members in this Space.
@@ -1103,7 +1103,14 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 ### Space/get
 
-Standard JMAP `/get`.
+Standard JMAP `/get`, with the following additional rules for non-member callers.
+
+When the caller is not a member of a requested Space:
+
+* If the Space has `isPubliclyPreviewable: true`, the server MUST return a restricted view of the Space containing only the fields `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, and `isPubliclyPreviewable`. All other Space fields MUST be omitted from the returned object, even if explicitly requested via the `properties` argument. The server MUST NOT include the Space `id` in the `notFound` array.
+* If the Space has `isPubliclyPreviewable: false` (or the Space does not exist), the server MUST include the requested Space `id` in the `notFound` array of the response and MUST NOT include the Space in the `list` array.
+
+When the caller is a member of a requested Space, the full Space object is returned subject to the standard JMAP `/get` `properties` filter; the restricted view above does not apply.
 
 ### Space/changes
 
@@ -1179,7 +1186,9 @@ Standard JMAP `/query`.
 Filter properties: `name` (String, substring match), `isPublic` (Boolean).
 Default sort: `name` ascending.
 
-When the request includes an `isPublic: true` filter condition, servers MUST include Spaces for which the requesting account is not a member but which have `isPubliclyPreviewable: true`. For such non-member results, the server MUST return only the fields `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, and `isPubliclyPreviewable`; all other fields MUST be omitted. For Spaces where the requesting account is a member, full Space objects are returned regardless of the filter.
+`Space/query` follows the standard {{RFC8620}} Section 5.5 response shape and returns only the matching `ids`. Field-level visibility restrictions for non-member callers are applied by `Space/get` (see the `Space/get` section above).
+
+When the request includes an `isPublic: true` filter condition, the server MUST include in the result `ids` array the identifiers of Spaces for which the caller is not a member but which have both `isPublic: true` and `isPubliclyPreviewable: true`. For Spaces where the caller is a member, identifiers are included irrespective of `isPubliclyPreviewable` per the standard `/query` semantics. Callers retrieve the (possibly restricted) Space objects by chaining a `Space/get` call against the returned `ids`, typically via a `#ids` ResultReference.
 
 ### Space/queryChanges
 
