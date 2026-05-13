@@ -119,6 +119,7 @@ Non-normative companion documents for implementers. These explain *how* to imple
 - [JMAP FileNode](https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/) — hierarchical file storage for Space file trees
 - [JMAP Blob Management](https://datatracker.ietf.org/doc/draft-ietf-jmap-blobext/) — extended blob operations
 - [MLS / RFC 9420](https://www.rfc-editor.org/rfc/rfc9420) — end-to-end encryption key schedule for relay deployments
+- [W3C DID Core](https://www.w3.org/TR/did-core/) — Decentralized Identifier data model used by the DID companion spec for self-sovereign and institutional federated identity
 - [JMAP Quotas](https://datatracker.ietf.org/doc/draft-ietf-jmap-quotas/), [JMAP Metadata](https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/), [JMAP Calendars](https://datatracker.ietf.org/doc/draft-ietf-jmap-calendars/), [JMAP Tasks](https://datatracker.ietf.org/doc/draft-ietf-jmap-tasks/)
 
 ---
