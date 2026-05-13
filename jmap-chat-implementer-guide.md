@@ -1363,8 +1363,9 @@ relationship. Implementations SHOULD NOT collapse them.
 | Calendar integration (`Space.calendarId`, RSVPs, availability lookup) | `jmap-chat-calendars-guide.md` |
 | Task list integration (`Space.taskListId`, `Task.chatId`, workflows) | `jmap-chat-tasks-guide.md` |
 | Space file storage operations (backend, scanning, quotas, previews, grace-period implementation) | `jmap-chat-filenode-guide.md` |
+| DID-based identity (method support, federation signature mechanism, DID resolution, DID document conventions) | `jmap-chat-did-guide.md` |
 
 This guide focuses on deployment-policy decisions for the core JMAP Chat
 draft. Transport-specific, push-specific, federation-specific, calendar-
-specific, task-specific, and filenode-specific implementation details live
-in their dedicated guides.
+specific, task-specific, filenode-specific, and DID-specific implementation
+details live in their dedicated guides.

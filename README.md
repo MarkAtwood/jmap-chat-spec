@@ -38,6 +38,7 @@ Both topologies use the same client-facing API.
 | [draft-atwood-jmap-chat-filenode-00](draft-atwood-jmap-chat-filenode-00.md) | `urn:ietf:params:jmap:chat:filenode` | Space-scoped shared file storage via JMAP FileNode |
 | [draft-atwood-jmap-chat-calendars-00](draft-atwood-jmap-chat-calendars-00.md) | `urn:ietf:params:jmap:chat:calendars` | Binds Spaces to JMAP Calendars; surfaces CalendarEvents, RSVP, and availability in chat |
 | [draft-atwood-jmap-chat-tasks-00](draft-atwood-jmap-chat-tasks-00.md) | `urn:ietf:params:jmap:chat:tasks` | Binds Spaces to JMAP Tasks TaskLists; surfaces Tasks in chat with Task↔Chat back-references |
+| [draft-atwood-jmap-chat-did-00](draft-atwood-jmap-chat-did-00.md) | `urn:ietf:params:jmap:chat:did` | Decentralized Identifier support: mandatory DID methods, ChatContact extensions, federation auth |
 | [draft-atwood-jmap-cid-00](draft-atwood-jmap-cid-00.md) | `urn:ietf:params:jmap:cid` | SHA-256 content identifiers on blob upload responses and FileNode objects |
 
 ---
@@ -102,6 +103,7 @@ Non-normative companion documents for implementers. These explain *how* to imple
 | [jmap-chat-filenode-guide.md](jmap-chat-filenode-guide.md) | Server operators: running Space file storage at scale — backends, scanning, quotas, previews, grace-period |
 | [jmap-chat-calendars-guide.md](jmap-chat-calendars-guide.md) | Server and client implementers: deployment posture for calendar binding, RSVP, availability, ICS parsing |
 | [jmap-chat-tasks-guide.md](jmap-chat-tasks-guide.md) | Server and client implementers: deployment posture for TaskList binding, Task↔Chat back-references, workflow |
+| [jmap-chat-did-guide.md](jmap-chat-did-guide.md) | Server and client implementers: federation auth realization, DID resolution caching, DID document conventions, provisioning, recovery |
 
 ---
 
@@ -131,6 +133,7 @@ draft-atwood-jmap-chat-wss-00.md        WebSocket extension
 draft-atwood-jmap-chat-filenode-00.md   File storage extension
 draft-atwood-jmap-chat-calendars-00.md  Calendar binding extension
 draft-atwood-jmap-chat-tasks-00.md      Task binding extension
+draft-atwood-jmap-chat-did-00.md        DID-based identity extension
 draft-atwood-jmap-cid-00.md             Blob content identifiers
 jmap-chat-implementer-guide.md          Core implementer's guide (non-normative)
 jmap-push-platform-guide.md             Platform delivery guide (non-normative)
@@ -140,6 +143,7 @@ jmap-chat-federation-guide.md           Federation implementer's guide (non-norm
 jmap-chat-filenode-guide.md             File storage implementer's guide (non-normative)
 jmap-chat-calendars-guide.md            Calendars implementer's guide (non-normative)
 jmap-chat-tasks-guide.md                Tasks implementer's guide (non-normative)
+jmap-chat-did-guide.md                  DID implementer's guide (non-normative)
 references/                             Referenced IETF drafts and RFCs
 ```
 
