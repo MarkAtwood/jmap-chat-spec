@@ -1358,11 +1358,13 @@ relationship. Implementations SHOULD NOT collapse them.
 | The WebSocket transport and ephemeral events | `jmap-chat-wss-guide.md` |
 | Inline push payloads (`ChatMessagePush`) | `jmap-chat-push-platform-guide.md` |
 | Platform-specific push delivery (FCM, APNs, WNS, etc.) | `jmap-push-platform-guide.md` |
-| Federation between mailbox servers | `draft-atwood-jmap-chat-federation-00.md` |
+| Federation wire protocol | `draft-atwood-jmap-chat-federation-00.md` |
+| Federation operations (peer auth mechanism, allowlist / denylist, onboarding, abuse mitigation, observability) | `jmap-chat-federation-guide.md` |
 | Calendar integration (`Space.calendarId`, RSVPs, availability lookup) | `jmap-chat-calendars-guide.md` |
 | Task list integration (`Space.taskListId`, `Task.chatId`, workflows) | `jmap-chat-tasks-guide.md` |
+| Space file storage operations (backend, scanning, quotas, previews, grace-period implementation) | `jmap-chat-filenode-guide.md` |
 
 This guide focuses on deployment-policy decisions for the core JMAP Chat
 draft. Transport-specific, push-specific, federation-specific, calendar-
-specific, and task-specific implementation details live in their dedicated
-guides.
+specific, task-specific, and filenode-specific implementation details live
+in their dedicated guides.

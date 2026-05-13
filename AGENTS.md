@@ -36,6 +36,8 @@ Eight drafts are currently in the corpus: the core (`draft-atwood-jmap-chat-00.m
 | Deployment-defined / impl-defined posture in the core draft | `jmap-chat-implementer-guide.md` for the topic's section |
 | Calendar binding / RSVP / availability behavior | `jmap-chat-calendars-guide.md` |
 | TaskList binding / Task-Chat back-reference / task workflow | `jmap-chat-tasks-guide.md` |
+| Peer auth mechanism / allowlist / abuse mitigation / federation observability | `jmap-chat-federation-guide.md` |
+| File storage backend / scanning / quotas / previews / grace-period implementation | `jmap-chat-filenode-guide.md` |
 
 Always `grep -r <term> . --include='*.md'` before and after a change to catch all occurrences.
 
