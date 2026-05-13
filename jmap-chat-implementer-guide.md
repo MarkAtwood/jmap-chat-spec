@@ -311,7 +311,7 @@ audit log records the action; the chat UI does not need to.
 
 The spec defines a closed permission vocabulary (`view`, `send`, `pin`,
 `manage_channels`, `manage_members`, `manage_roles`, `manage_space`, `ban`,
-`mention_all`) and a receiver-side authorization model. It defers the mapping
+`mention_broadcast`) and a receiver-side authorization model. It defers the mapping
 from those wire-level permission names to deployment-internal authorization
 decisions, and several method-level "Requires X" clauses are explicitly
 softened to recommended defaults.
@@ -470,9 +470,11 @@ mention design) makes the predicate definitions deployment-defined:
   roles qualify, and whether controller principals (§1.1) are included, is
   server-defined.
 
-(Note: `fig9.2` implementation of broadcast-scope mentions is pending at the
-time of writing. This subsection covers the predicate design once broadcast
-mentions land.)
+The main draft now defines the `BroadcastMention` type, the `broadcastMentions`
+field on `Message`, the `"broadcast"` rich-body span, and the
+`"mention_broadcast"` permission that gates all three scopes. The predicate
+definitions for `@here` and `@admins` remain deployment-defined; the wire
+format is fixed.
 
 **What you must decide.**
 
@@ -1145,9 +1147,11 @@ position: broadcast mentions (`@everyone`, `@here`, `@admins`) bypass
 with no new wire field added. Per-scope opt-out (mute `@here` but not
 `@everyone`) is explicitly deferred to a future bead.
 
-(Note: `fig9.2` main-draft implementation of broadcast-scope mentions is
-pending at the time of writing. This subsection covers the suppression model
-once broadcast mentions land.)
+The main draft now codifies this bypass in the `Chat.muted` definition and
+adds a Security Considerations subsection on broadcast-mention abuse vectors,
+including the rule that a receiving server MUST NOT use the sending server's
+send-time recipient set for elevation decisions. The opt-out mechanism
+remains deployment-defined.
 
 **What you must decide.**
 
