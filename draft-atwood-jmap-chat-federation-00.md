@@ -211,7 +211,8 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `bodyType` (String) — MIME type of `body`. Validated against `supportedBodyTypes`.
   - `sentAt` (UTCDate) — Sender's claimed composition time. Stored as-is; MUST NOT be used for ordering.
   - `attachments` (Object[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob.
-  - `mentions` (Mention[], optional) — Structured @mention annotations.
+  - `mentions` (Mention[], optional) — Structured per-user @mention annotations.
+  - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). The receiving server is authoritative for computing the local recipient set; the sending server's set is informational only. See {{broadcast-mention-resolution}}.
   - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection.
   - `replyTo` (String, optional) — The `senderMsgId` of the message being replied to, as assigned by the sending server. The receiver resolves this to a local message `id` via the `senderMsgId` index. See {{outbound-preparation}} for how the sending server constructs this value.
   - `threadRootId` (String, optional) — The `senderMsgId` of the thread root message, as assigned by the sending server. The receiver resolves this similarly. See {{outbound-preparation}}.
@@ -225,7 +226,8 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `body` (String) — New body content. Validated against `maxBodyBytes`.
   - `bodyType` (String) — MIME type of the new body. Validated against `supportedBodyTypes`.
   - `editedAt` (UTCDate) — Claimed edit time. Stored as-is.
-  - `mentions` (Mention[], optional) — Structured @mention annotations for the new body.
+  - `mentions` (Mention[], optional) — Structured per-user @mention annotations for the new body.
+  - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations for the new body. Receiver-side resolution rules are identical to the new-message case (see {{broadcast-mention-resolution}}).
 
   The receiver MUST verify the sender is the original sender of the identified message before applying the edit.
 
@@ -238,6 +240,16 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `customEmojiId` (String, optional) — Space-scoped custom emoji id, if applicable.
   - `action` (String) — `"add"` or `"remove"`.
   - `sentAt` (UTCDate) — Time of the reaction event.
+
+### Broadcast Mention Resolution {#broadcast-mention-resolution}
+
+The `broadcastMentions` field on `message` and `edit` payloads carries the wire form defined by the BroadcastMention type in {{JMAP-CHAT}}: a list of `{scope, offset, length}` triples. The `scope` value identifies a member set (`"everyone"`, `"here"`, or `"admins"`) whose composition is resolved by the receiving server at delivery time against its own local view of membership, presence, and administrative permissions.
+
+The receiving server's delivery-time set is authoritative for that server's owners. The sending server MAY have computed its own send-time set for sender-side UX; that set is informational only. The Peer/deliver wire payload does not carry a resolved id list for broadcast mentions, and a receiving server MUST NOT use any out-of-band "send-time set" hint from the sender for authorization, push elevation, or notification routing. Each receiving server evaluates its own predicate.
+
+Two servers federating the same Chat will commonly produce different recipient sets for `"here"` and `"admins"` on the same message: each server sees only its own local owners, and the deployment-defined predicates may differ between deployments. This is expected; the wire contract does not require predicate alignment between peers.
+
+Send-side authorization (the `"mention_broadcast"` permission gate defined in {{JMAP-CHAT}}) is enforced at the sending server. The receiving server MUST NOT re-check the sender's permission state — it does not have authority over the sending deployment's permission graph. The receiving server's enforcement responsibility is limited to wire-format validation (scope enum, offset/length bounds) and to its own targeted owners' opt-out preferences (which are deployment-defined and NOT exposed via federation).
 
 ### Outbound Message Preparation {#outbound-preparation}
 
@@ -259,14 +271,15 @@ Before storing a new message, the server MUST perform the following steps in ord
 6. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type SHOULD include it in `supportedBodyTypes`.
 7. Validate each attachment `filename` (MUST NOT contain `/`, `\`, or null bytes), `contentType` (MUST be a syntactically valid MIME type string), and `size`.
 8. Fetch each attachment blob from its `fetchUrl`; verify the byte count against `size` and the content against `sha256`. Reject with `invalidArguments` if either check fails. See {{ssrf}} for restrictions on `fetchUrl` targets.
-9. Validate each mention `offset + length` against the body byte length. Reject with `invalidArguments` if any mention exceeds the body bounds.
-10. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. If `burnOnRead` is also `true`, register a trigger to hard-delete the message when `readAt` is set.
+9. Validate each `mentions` entry's `offset + length` against the body byte length. Reject with `invalidArguments` if any entry exceeds the body bounds.
+10. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, `"admins"`, or if `offset + length` exceeds the body byte length. The receiving server MUST NOT use the sending server's send-time recipient set (if any) for authorization or push-elevation decisions; the recipient set is computed by the receiving server at delivery time as defined in {{broadcast-mention-resolution}}.
+11. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. If `burnOnRead` is also `true`, register a trigger to hard-delete the message when `readAt` is set.
 
 Failure at any step MUST result in rejection with no data stored and no side effects.
 
 ### Edit and Reaction Validation
 
-For `edit` payloads: perform steps 1 through 4 of {{new-message-validation}}, then validate `body` and `bodyType` per steps 5 and 6. Verify that the identified message exists in the given chat and that `senderUserId` matches the recorded sender of that message. Reject if the sender does not match.
+For `edit` payloads: perform steps 1 through 4 of {{new-message-validation}}, then validate `body` and `bodyType` per steps 5 and 6, and validate `mentions` and `broadcastMentions` against the new body per steps 9 and 10. Verify that the identified message exists in the given chat and that `senderUserId` matches the recorded sender of that message. Reject if the sender does not match.
 
 For `reactionUpdate` payloads: perform steps 1 through 4. Validate `emoji` as a non-empty string. For `"add"`, verify the target message exists. For `"remove"`, verify the target reaction exists and was originally added by `senderUserId`. Reject if any check fails.
 
@@ -668,6 +681,12 @@ Messages from a contact whose `blocked` field is `true` MUST be silently dropped
 ## Cross-Server Message Injection
 
 A malicious peer could attempt to inject messages into chats it is not a party to by forging `chatId` or `senderUserId` values. The validation steps in {{new-message-validation}} — particularly the authenticated identity check in step 2, the chat membership check in step 3, and the chatId correspondence check for direct chats — collectively prevent this attack. Implementations MUST perform all of these steps and MUST NOT skip any of them.
+
+## Broadcast Mention Resolution Trust
+
+The recipient set targeted by a broadcast mention (`@everyone`, `@here`, or `@admins`) is computed by the receiving server at delivery time per {{broadcast-mention-resolution}}. A receiving server MUST NOT accept any out-of-band hint from the sending server about which recipients were "intended" by the sender; trusting such a hint would let a hostile or buggy peer force broadcast-mention push elevation against recipients who would not qualify under the receiving server's own predicate. The wire payload defined in this document does not carry a resolved id list, and any extension that does carry one MUST treat it as informational only.
+
+A receiving server's targeted-owner opt-out preferences (for example, "always honor mute for this account") are deployment-defined and MUST NOT be exposed via the federation protocol. Disclosing whether a remote owner has chosen to suppress broadcast elevation would let a sender confirm which recipients are silently filtering them; servers MUST NOT reveal this state in any Peer/* response or error.
 
 ## Presence Subscription Abuse
 
