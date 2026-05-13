@@ -116,13 +116,13 @@ A `ChatPushConfig` specifies which messages trigger inline push and what content
 : An explicit list of Chat ids for which push is enabled. If absent or null, push is enabled for all Chats of the matching kinds that the account is a member of. If both `kinds` and `chatIds` are present, a Chat matches only if its id appears in `chatIds` and its kind appears in `kinds`. A Chat whose id is in `chatIds` but whose kind is not in `kinds` receives no push; clients SHOULD ensure the two fields are consistent to avoid unexpected gaps in coverage.
 
 `properties` (String[], optional):
-: The `ChatMessageEntry` fields to include in each payload entry. If absent, the server uses the default set: `messageId`, `chatId`, `chatKind`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `hasMentionAll`, `encrypted`, and `bodySnippet`. The `properties` list is authoritative: the server returns exactly the requested fields. The server MUST support at minimum the following properties: `messageId`, `chatId`, `chatKind`, `chatName`, `spaceId`, `spaceName`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `hasMentionAll`, `encrypted`, and `bodySnippet`.
+: The `ChatMessageEntry` fields to include in each payload entry. If absent, the server uses the default set: `messageId`, `chatId`, `chatKind`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, `encrypted`, and `bodySnippet`. The `properties` list is authoritative: the server returns exactly the requested fields. The server MUST support at minimum the following properties: `messageId`, `chatId`, `chatKind`, `chatName`, `spaceId`, `spaceName`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, `encrypted`, and `bodySnippet`.
 
 `urgency` (String, optional):
 : The Web Push urgency level for notifications generated from this configuration. MUST be one of the values in `supportedUrgencyValues`. Default is `"normal"`. If the client supplies a value not in `supportedUrgencyValues`, the server MUST return an `invalidArguments` SetError on `PushSubscription/set` and MUST NOT store the configuration.
 
 `mentionUrgency` (String, optional):
-: When present, overrides `urgency` for payloads that contain a direct @user mention (`hasMention: true`) or a Space-wide mention (`hasMentionAll: true`). MUST be one of the values in `supportedUrgencyValues`. If absent, mention messages use the same urgency as all other messages. The same `invalidArguments` rule applies as for `urgency`.
+: When present, overrides `urgency` for payloads that contain a direct @user mention (`hasMention: true`) or a broadcast-scope mention (`mentionScopes` is non-empty). MUST be one of the values in `supportedUrgencyValues`. If absent, mention messages use the same urgency as all other messages. The same `invalidArguments` rule applies as for `urgency`.
 
 # Push Payload {#push-payload}
 
@@ -176,8 +176,8 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 `hasMention` (Boolean):
 : `true` if the account owner is directly @-mentioned in the message; `false` otherwise. The server MUST set this to `true` when the account owner's ChatContact.id appears in the message's `Message.mentions` array, OR when the message's `bodyType` is `"application/jmap-chat-rich"` and any span of `type: "mention"` carries the owner's ChatContact.id in its `userId` field. (For rich-body messages, `Message.mentions` is mandated empty by {{JMAP-CHAT}}; mention information is carried inline within the spans.) Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
 
-`hasMentionAll` (Boolean):
-: `true` if the message was sent with Space-wide mention scope — that is, by a sender holding the `"mention_all"` permission in {{JMAP-CHAT}} — regardless of whether the owner's id appears in `mentions`; `false` otherwise. A message MAY have both `hasMention` and `hasMentionAll` set to `true`.
+`mentionScopes` (String[]):
+: The broadcast-mention scopes by which the account owner was targeted in this message. Each element is one of `"everyone"`, `"here"`, or `"admins"` as defined by the `BroadcastMention` type in {{JMAP-CHAT}}. The server MUST compute the candidate scopes as the deduplicated union of (a) the `scope` values appearing in `Message.broadcastMentions[]` and (b) the `scope` values of any `"broadcast"` spans when `bodyType` is `"application/jmap-chat-rich"` (for rich-body messages, `Message.broadcastMentions` is mandated empty by {{JMAP-CHAT}}; broadcast-mention information is carried inline within the spans). The server MUST then filter this candidate set to those scopes for which the receiving account owner is in the locally-resolved recipient set: `"everyone"` is included whenever the owner is a member of the Chat; `"here"` is included only when the owner satisfies the deployment-defined "active" predicate at delivery time; `"admins"` is included only when the owner satisfies the deployment-defined "administrative authority" predicate at delivery time. The empty array means either that no broadcast scopes were used or that the owner was not targeted by any of them. A message MAY have both `hasMention: true` and a non-empty `mentionScopes`. Order within the array is not significant; clients SHOULD treat it as a set. Send-side authorization for any non-empty broadcast mention is gated by the `"mention_broadcast"` permission in {{JMAP-CHAT}}; per-recipient resolution is described in Broadcast Mention Resolution in {{JMAP-CHAT-FED}}.
 
 `encrypted` (Boolean):
 : `true` if the message body is end-to-end encrypted and the server cannot produce a plaintext snippet; `false` otherwise. See {{e2ee}} for how servers determine this value. When `true`, `bodySnippet` MUST be absent.
@@ -191,7 +191,7 @@ In relay deployments using end-to-end encryption (see {{JMAP-CHAT}} Security Con
 
 The server determines the `encrypted` field value from the message's `bodyType`. For the plaintext body types defined by {{JMAP-CHAT}} — `"text/plain"`, `"text/markdown"`, and `"application/jmap-chat-rich"` — the server MUST set `encrypted` to `false`. For all other `bodyType` values, the server MUST set `encrypted` to `true` unless it has explicit knowledge that the type represents a plaintext format. The server MUST omit `bodySnippet` when `encrypted` is `true` and MUST NOT include ciphertext in `bodySnippet`.
 
-The remaining fields — `messageId`, `chatId`, `chatKind`, `chatName`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `hasMentionAll`, and `encrypted` — carry enough context for clients to display a useful notification such as "New message from Alice" or "@mention in #general" without exposing message content. Servers MUST NOT decrypt message content to generate a snippet.
+The remaining fields — `messageId`, `chatId`, `chatKind`, `chatName`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, and `encrypted` — carry enough context for clients to display a useful notification such as "New message from Alice" or "@mention in #general" without exposing message content. Servers MUST NOT decrypt message content to generate a snippet.
 
 # Delivery {#delivery}
 
@@ -206,7 +206,7 @@ The server MUST NOT deliver a `ChatMessagePush` in any of the following cases:
 
 ## Urgency
 
-The server uses `urgency` as the Web Push urgency for the delivery. If the `ChatPushConfig` specifies a `mentionUrgency` and at least one entry in `messages` has `hasMention` or `hasMentionAll` set to `true`, the server MUST use `mentionUrgency` for the entire payload instead. When a batch contains both mention and non-mention messages, all messages share the elevated urgency to ensure the mention notification is not silently demoted.
+The server uses `urgency` as the Web Push urgency for the delivery. If the `ChatPushConfig` specifies a `mentionUrgency` and at least one entry in `messages` has `hasMention: true` or a non-empty `mentionScopes`, the server MUST use `mentionUrgency` for the entire payload instead. When a batch contains both mention and non-mention messages, all messages share the elevated urgency to ensure the mention notification is not silently demoted.
 
 ## Batching and Retry
 
@@ -237,7 +237,7 @@ Servers SHOULD rate-limit `ChatMessagePush` delivery per `PushSubscription`. Whe
       "senderDisplayName": "Alice",
       "sentAt": "2026-04-26T14:32:00Z",
       "hasMention": true,
-      "hasMentionAll": false,
+      "mentionScopes": [],
       "encrypted": false,
       "bodySnippet": "Hey @bob, the deploy is ready for review"
     }
@@ -245,7 +245,36 @@ Servers SHOULD rate-limit `ChatMessagePush` delivery per `PushSubscription`. Whe
 }
 ~~~
 
-In this example the message body is plain text, so `hasMention` was computed from `Message.mentions`. When the underlying message uses `bodyType: "application/jmap-chat-rich"`, `Message.mentions` is mandated empty by {{JMAP-CHAT}} and the server computes `hasMention` from inline `mention` spans instead (see {{chat-message-entry}}); the resulting payload structure is otherwise identical.
+In this example the message body is plain text, so `hasMention` was computed from `Message.mentions` and `mentionScopes` is empty because the body contains no broadcast mention. When the underlying message uses `bodyType: "application/jmap-chat-rich"`, both `Message.mentions` and `Message.broadcastMentions` are mandated empty by {{JMAP-CHAT}}; the server computes `hasMention` from inline `"mention"` spans and `mentionScopes` from inline `"broadcast"` spans instead (see {{chat-message-entry}}). The resulting payload structure is otherwise identical.
+
+The following variant shows the payload when the same channel message also tags `@here`:
+
+~~~json
+{
+  "@type": "ChatMessagePush",
+  "accountId": "u1",
+  "state": "d35ecb040aab",
+  "messages": [
+    {
+      "messageId": "01J3YKZQP5MWVT8PPBEHTJ3HX",
+      "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
+      "chatKind": "channel",
+      "chatName": "general",
+      "spaceId": "01J2WKZQM3LVST7OOBDHSI2GW",
+      "spaceName": "ACME Corp",
+      "senderId": "user:alice@example.com",
+      "senderDisplayName": "Alice",
+      "sentAt": "2026-04-26T14:32:00Z",
+      "hasMention": true,
+      "mentionScopes": ["here"],
+      "encrypted": false,
+      "bodySnippet": "Hey @bob and @here, the deploy is ready for review"
+    }
+  ]
+}
+~~~
+
+The receiving server set `mentionScopes` to `["here"]` because the owner appeared in the `@here` recipient set under the deployment's `@here` predicate at delivery time (see Broadcast Mention Resolution in {{JMAP-CHAT-FED}}). The owner's id was also in `Message.mentions`, so `hasMention` remains `true`.
 
 # Security Considerations {#security}
 
