@@ -52,6 +52,13 @@ informative:
   JMAP-CHAT-FED:
     title: JMAP Chat Federation
     target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
+  JMAP-VTC-WSS:
+    title: JMAP VTC over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-vtc-wss-00
+    date: 2026
   JMAP-CALENDARS:
     title: JMAP for Calendars
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-calendars/
@@ -922,7 +929,7 @@ Before delivering a `VTCCallPush`, the server MUST check whether the initiator c
 
 ## WebSocket: VTCRingEvent {#ring-event}
 
-When the target participant has an active WebSocket connection (per {{JMAP-CHAT-WSS}} or an equivalent JMAP WebSocket capability), the server SHOULD deliver a `VTCRingEvent` as an ephemeral event in addition to the push notification.
+When the target participant has an active WebSocket connection (per {{JMAP-CHAT-WSS}} or {{JMAP-VTC-WSS}}), the server SHOULD deliver a `VTCRingEvent` as an ephemeral event in addition to the push notification.
 
 `@type` (String):
 : `"VTCRingEvent"`.
@@ -992,7 +999,7 @@ Moderators MAY send outbound VTCGatewaySignals by including them in a VTCPartici
 
 ## In-Call Ephemeral Events {#in-call-events}
 
-The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message (when {{JMAP-CHAT-WSS}} is present) or an equivalent VTC-specific stream-enable mechanism. These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
+The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message (when {{JMAP-CHAT-WSS}} is present) or via `VTCStreamEnable` (when {{JMAP-VTC-WSS}} is present). These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
 
 ### VTCParticipantEvent
 

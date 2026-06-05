@@ -46,6 +46,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-00
     date: 2026
+  JMAP-VTC-WSS:
+    title: JMAP VTC over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-vtc-wss-00
+    date: 2026
 
 --- abstract
 
