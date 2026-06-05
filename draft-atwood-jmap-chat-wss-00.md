@@ -62,7 +62,7 @@ JMAP Chat has two categories of real-time server-push events with different char
 Carried as `StateChange` objects ({{RFC8620}} Section 7.1). These reference state tokens and allow the client to issue `/changes` calls to retrieve the updated objects. {{RFC8887}} handles these without modification via `WebSocketPushEnable`.
 
 **Ephemeral events** (typing indicators, real-time presence updates):
-These do not correspond to persistent state changes and carry no state token. They must be delivered immediately and require no subsequent data-fetch call. {{RFC8887}}'s push mechanism addresses only the state-change category; this document fills the gap for the ephemeral category.
+These do not correspond to persistent state changes and carry no state token. A typing indicator is useful for seconds; a presence transition is useful for tens of seconds. Routing either through the `StateChange`-then-`/changes`-then-`/get` round-trip would impose connection setup, authentication, and method-call latency on signals that are valuable only if delivered immediately and silently discarded otherwise. There is nothing to persist, nothing to sync on reconnection, and no state to catch up on after a disconnect — missed typing events are simply irrelevant by the time the client reconnects. {{RFC8887}}'s push mechanism addresses only the state-change category; this document fills the gap for the ephemeral category.
 
 ## Relationship to RFC 8887
 
@@ -305,7 +305,8 @@ WS_DATA
 {
   "@type": "Request",
   "id": "R1",
-  "using": ["urn:ietf:params:jmap:chat"],
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
   "methodCalls": [["Message/set", {
     "accountId": "u1",
     "create": {
