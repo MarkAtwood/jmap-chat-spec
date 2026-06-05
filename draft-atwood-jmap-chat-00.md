@@ -505,7 +505,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `messageExpirySeconds` (UnsignedInt, optional):
 : A local expiry policy. When set and non-zero, messages in this chat older than this many seconds are deleted by this mailbox. Each mailbox enforces its own policy independently. This is a local setting, not a bilateral negotiated commitment.
 
-Note: {{JMAP-METADATA}} defines a generic annotation layer that can be attached to any JMAP object. Implementations MAY support JMAP Metadata for private client-side annotations on `Chat` objects (using `objectType: "Chat"`), enabling use cases such as per-chat color coding or custom labels without modifying the shared chat record.
+Note: {{JMAP-METADATA}} defines per-type `metadata` and `privateMetadata` properties for data types declared in the `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. Implementations MAY include `Chat` in that map, enabling use cases such as per-chat color coding or custom labels readable and writable via `Chat/get` and `Chat/set` without modifying the shared chat record.
 
 ## Message {#message}
 
@@ -605,7 +605,7 @@ Note: {{JMAP-OBJ-HISTORY}} defines a general JMAP mechanism for retrieving histo
 `deletedForAll` (Boolean, optional, server-set):
 : `true` when deletion was propagated to all participants via `Peer/retract`.
 
-Note: {{JMAP-METADATA}} defines a generic annotation layer that can be attached to any JMAP object. Implementations MAY support JMAP Metadata for private client-side annotations on `Message` objects (using `objectType: "Message"`), enabling use cases such as per-message bookmarks or personal labels without modifying the message record itself.
+Note: {{JMAP-METADATA}} defines per-type `metadata` and `privateMetadata` properties for data types declared in the `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. Implementations MAY include `Message` in that map, enabling use cases such as per-message bookmarks or personal labels readable and writable via `Message/get` and `Message/set` without modifying the message record itself.
 
 ## SpaceRole {#space-role}
 
@@ -730,7 +730,7 @@ Note: {{RFC9670}} defines a general JMAP sharing framework (`shareWith`, `myRigh
 
 Note: {{JMAP-FILENODE}} defines a hierarchical file-storage extension for JMAP. A future companion specification could define Space-scoped file storage by associating a Filenode namespace with each Space, analogous to how server-to-server federation methods are defined in a separate companion draft.
 
-Note: {{JMAP-METADATA}} defines a generic annotation layer that can be attached to any JMAP object. Implementations MAY support JMAP Metadata for private client-side annotations on `Space` objects (using `objectType: "Space"`), enabling use cases such as per-Space color tags or custom labels without server-side semantic significance.
+Note: {{JMAP-METADATA}} defines per-type `metadata` and `privateMetadata` properties for data types declared in the `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. Implementations MAY include `Space` in that map, enabling use cases such as per-Space color tags or custom labels readable and writable via `Space/get` and `Space/set` without server-side semantic significance.
 
 ## CustomEmoji {#custom-emoji}
 
