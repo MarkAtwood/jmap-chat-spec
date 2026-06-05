@@ -48,8 +48,13 @@ carry no state token; require no follow-up API call; are not durable — the ser
 not buffer them for disconnected clients. On reconnect, missed ephemeral events are gone.
 
 Receiving a `ChatTypingEvent` MUST NOT trigger a `ChatContact/changes` call. Receiving a
-`ChatPresenceEvent` MUST NOT trigger a `ChatContact/changes` call. Ephemeral events are
-complete as received; their only job is to update transient UI state.
+`ChatPresenceEvent` MUST NOT trigger a `ChatContact/changes` call. The reason is
+latency: a typing indicator has sub-second relevance, and a presence transition is useful
+for tens of seconds. By the time a client receives a `StateChange`, issues a `/changes`
+call, and fetches the result, the signal is stale — the user may have already stopped
+typing or sent the message. There is nothing to persist, nothing to sync on reconnection,
+and no state to catch up on after a disconnect. Ephemeral events are complete as received;
+their only job is to update transient UI state.
 
 ---
 
