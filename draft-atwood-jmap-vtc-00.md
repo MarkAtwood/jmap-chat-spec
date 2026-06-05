@@ -645,7 +645,7 @@ A participant joins by calling `VTCParticipant/set` with a `create`:
 : The VTCCall to join.
 
 `joinMethod` (String, required):
-: How this participant is connecting (`"webrtc"`, `"sip"`, `"pstn"`).
+: How this participant is connecting (`"webrtc"`, `"sip"`, `"pstn"`, `"h323"`).
 
 The server sets `id`, `userId`, `displayName`, `role`, `joinedAt`, `mediaState` (defaults), and `speakerTimeMs` (to `0`).
 
