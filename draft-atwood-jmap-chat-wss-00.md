@@ -39,6 +39,13 @@ normative:
 
 informative:
   RFC9325:
+  JMAP-VTC:
+    title: JMAP for Video/Voice Teleconferencing
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-vtc-00
+    date: 2026
 
 --- abstract
 
@@ -148,7 +155,7 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 : MUST be `"ChatStreamEnable"`.
 
 `dataTypes` (String[]):
-: A non-empty list containing one or both of `"typing"` and `"presence"`. Specifies which ephemeral event categories the client wishes to receive.
+: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`; companion specifications MAY register additional values (e.g., `"vtc"` for in-call events defined by {{JMAP-VTC}}).
 
 `chatIds` (String[]|null):
 : Applicable when `"typing"` is in `dataTypes`. An explicit list of Chat ids for which typing events are requested, or `null` to receive typing events for all Chats of which the owner is a current member. Ignored if `"typing"` is not in `dataTypes`.

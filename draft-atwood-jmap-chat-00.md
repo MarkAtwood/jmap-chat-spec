@@ -67,6 +67,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-cid-00
     date: 2026
+  JMAP-VTC:
+    title: JMAP for Video/Voice Teleconferencing
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-vtc-00
+    date: 2026
   JMAP-METADATA:
     title: JMAP Metadata
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
@@ -251,7 +258,7 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
 `metadata` (Object, optional):
 : Type-specific key-value pairs. Clients MUST ignore unknown keys. Examples by type:
 
-  - `vtc`: `{"protocol": "webrtc", "roomName": "...", "password": "..."}`
+  - `vtc`: `{"protocol": "webrtc", "callId": "...", "joinPassword": "..."}`
   - `payment`: `{"network": "lightning", "currency": "BTC"}`
   - `blob`: `{"maxBytes": 10485760}`
   - `calendar-event`: `{"title": "...", "startTime": "..."}`
@@ -502,6 +509,9 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `receiptSharing` (Boolean, optional):
 : Per-Chat override of the account-level `PresenceStatus.receiptSharing` preference (see {{presence-status}}). When present, this value takes precedence over the account-level setting for this Chat only. When absent, the account-level preference applies. Owner-side preference; not shared with peers.
 
+`activeCallId` (String|null, server-set):
+: When `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}) is present: the id of a VTCCall that is currently active and bound to this Chat via the VTCCall's `chatId` field. The server sets this when a bound VTCCall enters the `"active"` state and clears it to `null` when the call ends. `null` when no call is active or VTC is not available. Clients MAY use this to display a "join call" banner.
+
 `messageExpirySeconds` (UnsignedInt, optional):
 : A local expiry policy. When set and non-zero, messages in this chat older than this many seconds are deleted by this mailbox. Each mailbox enforces its own policy independently. This is a local setting, not a bilateral negotiated commitment.
 
@@ -632,8 +642,9 @@ A SpaceRole is a named set of permissions within a Space. Roles are ordered by `
   - `"manage_space"` — edit Space name, description, and icon
   - `"ban"` — ban and unban members
   - `"mention_broadcast"` — use broadcast-scope @mentions (`@everyone`, `@here`, `@admins`); see {{broadcast-mention}}
+  - `"start_call"` — initiate a voice or video call in a channel (see {{JMAP-VTC}} when present)
 
-  Servers MUST ignore unrecognized permission names.
+  Companion specifications MAY register additional permission names. Servers MUST ignore unrecognized permission names.
 
 `position` (UnsignedInt):
 : Role hierarchy position, sorted descending: higher `position` values outrank lower ones. Position `0` is reserved for the implicit `@everyone` role, which every member of a Space holds and which serves as the permission floor; defined SpaceRoles MUST have `position` > 0. No two roles in a Space SHOULD share the same value.
