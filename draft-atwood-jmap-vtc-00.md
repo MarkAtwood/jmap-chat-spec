@@ -186,7 +186,7 @@ A VTCGateway advertises a protocol gateway through which external telephony or v
 JMAP VTC defines the call lifecycle (create, join, leave, end) and participant state (media, role, lobby). Protocol-specific signaling beyond this lifecycle — SIP REFER, DTMF, hold/resume, codec renegotiation, H.245 commands, or any future verb added by an external specification — passes through as opaque data via VTCGatewaySignal events (see {{gateway-signal}}). This design ensures that changes to PSTN, SIP, or ITU-T specifications never require amendments to this document.
 
 `protocol` (String):
-: The gateway protocol. Values: `"pstn"`, `"sip"`, `"h323"`. Deployments MAY define additional values; clients MUST ignore unrecognized values.
+: A reverse-domain identifier for the gateway protocol. This specification registers `"pstn"`, `"sip"`, and `"h323"` as short aliases for the three common telephony protocols. Vendor-specific or proprietary protocols SHOULD use reverse-domain notation (e.g., `"com.apple.facetime"`, `"org.signal"`, `"com.zoom.zoomphone"`). Clients MUST ignore unrecognized values.
 
 `displayName` (String, optional):
 : Human-readable label for this gateway (e.g., `"US PSTN"`, `"Corporate SIP Trunk"`, `"H.323 MCU"`).
@@ -292,7 +292,7 @@ VTCParticipant IDs are opaque server-assigned identifiers. For authenticated use
 : For ring-call targets: the participant's response to the ring. Values: `"pending"` (not yet responded), `"accepted"`, `"declined"`. `null` for participants who were not ring targets (room/scheduled call joins, dial-out participants). The server sets this to `"pending"` when creating VTCParticipant records for ring targets, to `"accepted"` when the participant answers, and clients set it to `"declined"` to decline.
 
 `joinMethod` (String):
-: How this participant connected. Values: `"webrtc"`, `"sip"`, `"pstn"`, `"h323"`. The value corresponds to a VTCGateway `protocol` when the participant arrived via a gateway. Deployments MAY define additional values; clients MUST ignore unrecognized values.
+: How this participant connected. This specification registers `"webrtc"`, `"sip"`, `"pstn"`, and `"h323"` as short aliases. When the participant arrived via a gateway, this value corresponds to the VTCGateway `protocol`. Vendor-specific connection methods SHOULD use reverse-domain notation (e.g., `"com.apple.facetime"`). Clients MUST ignore unrecognized values.
 
 `gatewayData` (Object|null):
 : Protocol-specific state for participants who joined via a gateway (`joinMethod` other than `"webrtc"`). Opaque to JMAP VTC; the server stores and relays this object without interpretation. Clients that understand the protocol MAY inspect it; all others MUST ignore it. `null` for WebRTC participants and when no gateway-specific data is available. Examples:
@@ -645,7 +645,7 @@ A participant joins by calling `VTCParticipant/set` with a `create`:
 : The VTCCall to join.
 
 `joinMethod` (String, required):
-: How this participant is connecting (`"webrtc"`, `"sip"`, `"pstn"`, `"h323"`).
+: How this participant is connecting. One of the registered short aliases (`"webrtc"`, `"sip"`, `"pstn"`, `"h323"`) or a reverse-domain identifier.
 
 The server sets `id`, `userId`, `displayName`, `role`, `joinedAt`, `mediaState` (defaults), and `speakerTimeMs` (to `0`).
 
@@ -714,7 +714,7 @@ A moderator may bridge an external party into a call by calling `VTCParticipant/
 : The VTCCall to bridge the external party into.
 
 `joinMethod` (String, required):
-: The gateway protocol to use (`"pstn"`, `"sip"`, `"h323"`). MUST match a VTCGateway `protocol` whose `supportsDialOut` is `true`.
+: The gateway protocol to use. MUST match a VTCGateway `protocol` whose `supportsDialOut` is `true`. One of the registered short aliases (`"pstn"`, `"sip"`, `"h323"`) or a reverse-domain identifier.
 
 `gatewayData` (Object, required):
 : Protocol-specific addressing for the outbound call. The server passes this to the gateway without interpretation. Examples:
@@ -975,7 +975,7 @@ A VTCGatewaySignal carries a protocol-specific signal between a gateway and a ca
 : The VTCParticipant this signal pertains to (the gateway participant).
 
 `protocol` (String):
-: The gateway protocol (`"pstn"`, `"sip"`, `"h323"`). Matches VTCGateway `protocol`.
+: The gateway protocol. Matches VTCGateway `protocol`. One of the registered short aliases (`"pstn"`, `"sip"`, `"h323"`) or a reverse-domain identifier.
 
 `signal` (String):
 : The signal type. Opaque to JMAP VTC; defined by the external protocol. Examples:
