@@ -726,7 +726,7 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 `memberCount` (UnsignedInt, server-set):
 : Current number of members in this Space.
 
-Note: {{RFC9670}} defines a general JMAP sharing framework (`shareWith`, `myRights`) for simple read/write/admin access control. The Space permission model (role hierarchy, named permissions, per-channel overrides) is intentionally richer than that framework and is not expressed using it. In deployments that also implement {{RFC9670}}, server implementations may choose to align `Principal.id` values with `ChatContact.id` values (both ultimately derived from the same authentication identity), but this alignment is implementation-defined and not required by either specification.
+Note: {{RFC9670}} defines a general JMAP sharing framework (`shareWith`, `myRights`) designed for binary resource sharing — "can this principal read/write/admin this object." That model maps a single principal to a flat rights set on a single resource. Space permissions are structurally different: a member holds multiple named roles, each role carries a set of named permissions, roles are ordered by hierarchy position, and individual channels within the Space can override the role-derived permissions on a per-role or per-member basis. This is a full role-based access control (RBAC) system, not a simple ACL, and it cannot be projected onto `shareWith` without losing the role hierarchy, multi-role membership, and per-channel override dimensions. The Space permission model is therefore not expressed using {{RFC9670}}. In deployments that also implement {{RFC9670}}, server implementations may choose to align `Principal.id` values with `ChatContact.id` values (both ultimately derived from the same authentication identity), but this alignment is implementation-defined and not required by either specification.
 
 Note: {{JMAP-FILENODE}} defines a hierarchical file-storage extension for JMAP. A future companion specification could define Space-scoped file storage by associating a Filenode namespace with each Space, analogous to how server-to-server federation methods are defined in a separate companion draft.
 
@@ -1120,7 +1120,9 @@ Standard JMAP `/changes`. The Space object is returned in full on each change; t
 
 Standard JMAP `/set`.
 
-The `update` operation for Space uses semantic mutation keys (`addRoles`, `removeRoles`, `addMembers`, etc.) rather than JSON Pointer paths. This departure from the standard RFC 8620 PatchObject model is intentional: Space membership and role lists are ordered, server-enforced collections subject to permission checks and cascading side effects (e.g., peer notifications, role hierarchy enforcement) that cannot be expressed as simple pointer-path assignments. Each key names a discrete, permission-checked mutation operation rather than a direct property assignment.
+The `update` operation for Space uses semantic mutation keys (`addRoles`, `removeRoles`, `addMembers`, etc.) rather than JSON Pointer paths. This departure from the standard RFC 8620 PatchObject model is intentional.
+
+Other JMAP extensions — including those with server-enforced access control such as {{JMAP-FILENODE}} — mutate a single property map on a single object and can express that naturally as a PatchObject pointer path. Space mutations are structurally different: each operation is an atomic transaction across multiple concerns. Adding a member checks role-hierarchy constraints, enforces per-Space membership quotas, cascades default-channel subscriptions, and triggers outbound `Peer/groupUpdate` notifications in federated deployments. Removing a role demotes affected members, recalculates effective permissions across every channel's override table, and may trigger last-administrator protection. These cross-cutting effects cannot be reliably expressed as a bag of independent pointer-path assignments that the server reassembles into a coherent operation — the server needs to know the caller's intent, not just which bytes changed. Each semantic key names a discrete, permission-checked mutation operation rather than a direct property assignment.
 
 #### Creating a Space
 
@@ -1429,6 +1431,10 @@ Before delivering this event, the server MUST silently drop it if the identified
 
 The `statusText` and `statusEmoji` fields reflect the contact's current PresenceStatus values; they are `null` when the contact has no active custom status. Clients SHOULD update their displayed status immediately upon receiving this event without waiting for a `/changes` poll.
 
+## Why Ephemeral Events Are Not State Changes
+
+The RFC 8620 push model delivers a `StateChange` containing an opaque state token; the client then calls `/changes` to discover what changed and `/get` to fetch the updated objects. This model is well-suited to durable data: a new email, a modified calendar event, an updated contact. Chat typing indicators and real-time presence transitions are not durable data. A typing indicator has sub-second relevance; by the time a client receives a `StateChange`, issues a `/changes` call, and fetches the result, the signal is stale — the user may have already stopped typing or sent the message. There is nothing to persist, nothing to sync, and nothing to catch up on after reconnection. Routing these signals through the state/changes machinery would impose a full round-trip on information that is useful only if delivered immediately and silently discarded if not. The ephemeral event types defined here and in {{JMAP-CHAT-WSS}} are therefore delivered inline as fire-and-forget signals with no state token, no `/changes` participation, and no persistence requirement.
+
 # Blob Storage {#blobs}
 
 Standard JMAP blob upload and download per {{RFC8620}} Section 6, using the `uploadUrl` and `downloadUrl` Session templates.
@@ -1442,6 +1448,8 @@ verification guidance, and security considerations.
 Servers SHOULD support `Blob/lookup` (defined in {{JMAP-BLOBEXT}}) and register `"Message"` as a participating data type, enabling clients to perform reverse lookups from a blobId to all Messages that reference it as an attachment.
 
 Servers MAY support `Blob/convert` (defined in {{JMAP-BLOBEXT}}) for image media types, enabling server-side thumbnail generation for chat attachment previews.
+
+Chat file-sharing workflows typically upload a blob and reference it in a `Message/set` within seconds. Servers MUST NOT garbage-collect unreferenced blobs so aggressively that a blob uploaded moments before the referencing `Message/set` arrives has already been reclaimed. Servers SHOULD retain unreferenced blobs for at least the duration of `maxCallsInRequest` round trips; a minimum retention of 60 seconds is RECOMMENDED.
 
 ## Upload
 

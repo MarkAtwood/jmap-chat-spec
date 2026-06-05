@@ -38,8 +38,8 @@ informative:
     author:
       fullname: Neil Jenkins
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-emailpush-02
-    date: 2025
+      Internet-Draft: draft-ietf-jmap-emailpush-03
+    date: 2026
   JMAP-CHAT-FED:
     title: JMAP Chat Federation
     target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
@@ -53,9 +53,11 @@ This document defines JMAP Chat Push Notifications, a companion specification to
 
 # Introduction
 
-{{JMAP-CHAT}} defines a push model based on the RFC 8620 PushSubscription mechanism. When a new message arrives, the server delivers a `StateChange` event carrying a state token for the `Message` data type. The client must then issue a `Message/changes` call to determine which messages are new, followed by a `Message/get` call to retrieve content. This round-trip is acceptable for desktop clients on persistent connections but is costly for mobile clients: each notification requires the device to wake, establish a connection, authenticate, and fetch before it can display any content.
+The RFC 8620 push model was designed as an edge trigger: the server delivers a small `StateChange` event carrying an opaque state token, and the client calls `/changes` to discover what is new. This "edge trigger then resync" pattern works well for email, where the client application is typically already running and maintains a persistent connection or periodic sync interval.
 
-This document follows the pattern established by {{JMAP-EMAILPUSH}} for JMAP Mail: it extends `PushSubscription` with a `chatPush` property that instructs the server to deliver a `ChatMessagePush` object — a standalone push payload carrying message metadata and an optional body snippet — directly to the push endpoint. A mobile client receiving this payload can render a complete notification immediately, without any follow-up request.
+Chat notifications have a different operational constraint. Every chat message is time-sensitive, and mobile platforms (iOS, Android) penalize applications that receive a push, wake, perform network requests, and fail to display a notification promptly. A `StateChange` push requires the device to wake, establish a TLS connection, authenticate, issue `Message/changes`, issue `Message/get`, parse the response, and render — a sequence that routinely exceeds mobile platform budgets for background execution time. The result is missed or delayed notifications, OS-imposed throttling, and degraded user experience.
+
+{{JMAP-EMAILPUSH}} recognized this same constraint for email delivery notifications and introduced a pattern in which the server includes message content directly in the push payload, eliminating the follow-up round-trip. This document applies that pattern to chat: it extends `PushSubscription` with a `chatPush` property that instructs the server to deliver a `ChatMessagePush` object — a standalone push payload carrying message metadata and an optional body snippet — directly to the push endpoint. A mobile client receiving this payload can render a complete notification immediately, without any follow-up request. The underlying push infrastructure ({{RFC8620}}, {{RFC8030}}) is unchanged; the extension is purely in what the payload contains.
 
 ## Design Principles
 
