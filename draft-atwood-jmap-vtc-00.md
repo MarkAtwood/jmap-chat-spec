@@ -1,0 +1,1259 @@
+---
+title: JMAP for Video/Voice Teleconferencing
+abbrev: JMAP VTC
+docname: draft-atwood-jmap-vtc-00
+category: std
+stream: ietf
+
+ipr: trust200902
+
+stand_alone: yes
+smart_quotes: no
+pi: [toc, sortrefs, symrefs]
+
+author:
+  -
+    fullname: Mark Atwood
+    email: mark@reviewcommit.com
+
+normative:
+  RFC2119:
+  RFC8174:
+  RFC8620:
+  RFC8030:
+  ULID:
+    title: Universally Unique Lexicographically Sortable Identifier
+    target: https://github.com/ulid/spec
+
+informative:
+  RFC3261:
+  RFC8291:
+  JMAP-CHAT:
+    title: JMAP for Chat
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-00
+    date: 2026
+  JMAP-CHAT-PUSH:
+    title: JMAP Chat Push Notifications
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-push-00
+    date: 2026
+  JMAP-CHAT-WSS:
+    title: JMAP Chat over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-wss-00
+    date: 2026
+  JMAP-CHAT-FED:
+    title: JMAP Chat Federation
+    target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
+  JMAP-CALENDARS:
+    title: JMAP for Calendars
+    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-calendars/
+
+--- abstract
+
+This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; five data types (VTCCall, VTCParticipant, VTCRecording, VTCLivestream, and VTCMediaState); standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
+
+The specification models call *state* — who is in a call, what state the call is in, and how to join it — without prescribing the media transport. Actual voice and video media travel through a deployment-chosen stack (WebRTC, SIP/RTP, or any other media framework); the JMAP server is a call-state database, not a media server.
+
+The capability is standalone (`urn:ietf:params:jmap:vtc`). When JMAP Chat ({{JMAP-CHAT}}) is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars ({{JMAP-CALENDARS}}) is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
+
+--- middle
+
+# Introduction
+
+Video and voice calling is a core function of modern communication systems, yet the signaling, state management, and notification layers are typically tightly coupled to a specific media stack or platform. SIP {{RFC3261}} defines a comprehensive session initiation protocol but conflates signaling, registration, routing, and presence into a single system. Production calling products (Jitsi Meet, Zoom, Google Meet, Slack Huddles, Discord Voice Channels, FaceTime) each implement their own call-state model, and none expose it as a generic, standards-based API.
+
+This document defines a JMAP capability that models call state as JMAP data types with standard get/set/changes/query methods. The server tracks who created a call, who is in it, what media types are active, and how to join — but the server does not participate in media negotiation or transport. The `joinUri` field on every VTCCall points to the deployment's media-layer entry point; JMAP VTC has no opinion on what lives behind that URI.
+
+## Design Philosophy
+
+- **Call state, not call media.** The JMAP server is a call-state database. It knows a call exists, who is in it, and whether someone is recording. It does not negotiate codecs, route RTP, or manage ICE candidates. Media signaling is the media stack's job.
+- **Three call models, one object.** Ring calls (caller rings, callee answers), room calls (persistent or ephemeral drop-in), and scheduled calls (bound to a calendar event) are three state-machine paths through the same VTCCall type.
+- **Ring notification is first-class.** Getting a reliable incoming-call notification to a mobile device within two seconds, with the correct OS-level call UI (CallKit on iOS, ConnectionService on Android), is the hardest and most valuable part of the spec. The push integration is designed around this constraint.
+- **Standalone with optional bindings.** The capability stands alone. Chat, calendar, and federation integrations are optional foreign keys, not dependencies.
+
+## Relationship to SIP
+
+SIP {{RFC3261}} defines session initiation, registration, routing, forking, and presence in a single protocol. JMAP VTC takes only the session state model: a call has a lifecycle (creating → ringing → active → ended), participants join and leave, and the initiator can cancel. The remaining SIP functions map to other JMAP capabilities or deployment infrastructure:
+
+- **Registration** → JMAP Session ({{RFC8620}}).
+- **Presence** → PresenceStatus in {{JMAP-CHAT}} (optional).
+- **Routing/proxy/redirect** → deployment infrastructure.
+- **Forking** (ring multiple devices) → push delivery to all registered endpoints.
+- **Media negotiation** (SDP offer/answer) → out-of-band, media stack's responsibility.
+
+Protocol-specific signaling beyond the core lifecycle — call transfer (SIP REFER), DTMF, hold/resume, codec renegotiation, and any future SIP or ITU-T verb — is carried as opaque VTCGatewaySignal events (see {{gateway-signal}}). JMAP VTC provides the pass-through mechanism without defining or constraining individual signals, ensuring that external protocol evolution does not require amendments to this specification.
+
+## Relationship to JMAP Chat (recommended) {#chat-delegation}
+
+Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:ietf:params:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
+
+- **In-call text chat** is the Chat bound via `chatId`. The server creates or binds a Chat when the call starts; messages sent to that Chat appear as in-call chat.
+- **In-call reactions** (emoji floats) are Reaction objects on Messages in the bound Chat, or ephemeral events on the Chat's WebSocket connection ({{JMAP-CHAT-WSS}}).
+- **Live captions and transcription** are delivered as ephemeral events on the bound Chat's WebSocket connection, with `senderId` providing speaker attribution.
+- **Lobby communication** uses the bound Chat: lobby participants can message moderators before being admitted.
+- **Scheduled-call invitees** are derived from the Space membership (for Space-bound calls) or the CalendarEvent invitees (for calendar-bound calls).
+- **Access control** is inherited from the Space/channel permission model (see {{access-control}}).
+- **Active call banner** is signaled via the `activeCallId` field on Chat (see {{JMAP-CHAT}}).
+
+The existing `urn:jmap:chat:cap:vtc` Endpoint and MessageAction type URIs defined in {{JMAP-CHAT}} provide the integration point in the other direction: a chat message can carry a VTC action whose `uri` points to the call's `joinUri`.
+
+Without JMAP Chat, the VTC capability is fully functional as a standalone call-state manager. Calls have no chat binding, and the delegated features above are unavailable.
+
+## Relationship to JMAP Calendars (optional)
+
+When `urn:ietf:params:jmap:calendars` ({{JMAP-CALENDARS}}) is also advertised, VTCCall objects MAY carry a `calendarEventId` to bind a scheduled call to a CalendarEvent. The call's `joinUri` becomes active at the event's start time. Without JMAP Calendars, scheduled calls use an explicit `scheduledStartAt` field instead of a calendar binding.
+
+# Conventions and Definitions
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear in all capitals, as shown here.
+
+Terminology from {{RFC8620}} is used throughout. The term "userId" refers to the authenticated user identity string provided by the transport layer, equivalent to `ChatContact.id` when {{JMAP-CHAT}} is present.
+
+# Capability {#capability}
+
+Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:vtc` capability in the JMAP Session object.
+
+## Session-Level Capability Object
+
+The value of `capabilities["urn:ietf:params:jmap:vtc"]` at the session level is an empty JSON object `{}`.
+
+## Account-Level Capability Object
+
+The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object with the following fields:
+
+`mayCreateCall` (Boolean):
+: `true` if the authenticated user may create new VTCCall objects.
+
+`supportsRingCalls` (Boolean):
+: `true` if the server supports the ring-and-answer call model (`callType: "ring"`).
+
+`supportsRoomCalls` (Boolean):
+: `true` if the server supports the drop-in room call model (`callType: "room"`).
+
+`supportsScheduledCalls` (Boolean):
+: `true` if the server supports scheduled calls (`callType: "scheduled"`).
+
+`supportsRecording` (Boolean):
+: `true` if the server supports call recording metadata via VTCRecording.
+
+`supportsLivestream` (Boolean):
+: `true` if the server supports livestream metadata via VTCLivestream.
+
+`supportsLobby` (Boolean):
+: `true` if the server supports lobby/waiting-room mode on calls.
+
+`supportsBreakoutRooms` (Boolean):
+: `true` if the server supports breakout rooms (parent/child VTCCall relationships).
+
+`supportedMediaTypes` (String[]):
+: Media types the deployment supports. Values: `"audio"`, `"video"`, `"screen"`. Servers MUST include at least `"audio"`.
+
+`maxParticipantsPerCall` (UnsignedInt|null):
+: Maximum participants per call. `null` means no server-imposed limit.
+
+`maxConcurrentCalls` (UnsignedInt|null):
+: Maximum concurrent active calls per account. `null` means no limit.
+
+`maxBreakoutRooms` (UnsignedInt|null):
+: Maximum breakout rooms per call. `null` means no limit. Absent when `supportsBreakoutRooms` is `false`.
+
+`gateways` (VTCGateway[], optional):
+: Protocol gateways available for this deployment. See {{vtc-gateway}}.
+
+# Data Types
+
+Data types are defined in dependency order: embedded sub-types precede the types that reference them.
+
+## VTCGateway {#vtc-gateway}
+
+A VTCGateway advertises a protocol gateway through which external telephony or video-conferencing systems can interoperate with JMAP VTC calls. VTCGateways are advertised in the account-level capability object and are not JMAP objects with their own methods.
+
+JMAP VTC defines the call lifecycle (create, join, leave, end) and participant state (media, role, lobby). Protocol-specific signaling beyond this lifecycle — SIP REFER, DTMF, hold/resume, codec renegotiation, H.245 commands, or any future verb added by an external specification — passes through as opaque data via VTCGatewaySignal events (see {{gateway-signal}}). This design ensures that changes to PSTN, SIP, or ITU-T specifications never require amendments to this document.
+
+`protocol` (String):
+: The gateway protocol. Values: `"pstn"`, `"sip"`, `"h323"`. Deployments MAY define additional values; clients MUST ignore unrecognized values.
+
+`displayName` (String, optional):
+: Human-readable label for this gateway (e.g., `"US PSTN"`, `"Corporate SIP Trunk"`, `"H.323 MCU"`).
+
+`supportsDialOut` (Boolean):
+: `true` if a moderator may initiate an outbound call through this gateway to bridge an external party into a VTCCall. See {{dial-out}}.
+
+`supportedMediaTypes` (String[]):
+: Media types this gateway supports. Subset of the account-level `supportedMediaTypes`. A PSTN gateway typically supports only `["audio"]`; a SIP or H.323 gateway may support `["audio", "video"]`.
+
+`dialInNumbers` (VTCDialInEntry[], optional):
+: For gateways that support inbound calls (PSTN, SIP): addresses external callers can use to reach a call. See {{dial-in-entry}}.
+
+`metadata` (Object, optional):
+: Protocol-specific gateway configuration. Clients MUST ignore unknown keys. Examples:
+  - PSTN: `{}`
+  - SIP: `{"registrar": "sip.example.com", "transport": "tls"}`
+  - H.323: `{"gatekeeper": "h323gk.example.com"}`
+
+### VTCDialInEntry {#dial-in-entry}
+
+A VTCDialInEntry is an address through which an external caller can reach a VTCCall via a gateway.
+
+`address` (String):
+: The dial-in address. Format depends on the parent gateway's protocol:
+  - PSTN: E.164 phone number (e.g., `"+14155551234"`)
+  - SIP: SIP URI (e.g., `"sip:meet@example.com"`)
+  - H.323: H.323 alias or E.164 number
+
+`region` (String, optional):
+: A human-readable region label (e.g., `"US West"`, `"EU"`, `"Asia-Pacific"`).
+
+`tollFree` (Boolean):
+: `true` if this is a toll-free number. Applicable to PSTN gateways; `false` for other protocols.
+
+## VTCMediaState {#media-state}
+
+VTCMediaState is an embedded object describing a participant's self-reported media state. The server relays this information without verification; it has no media-layer visibility. See {{media-state-accuracy}} for security implications.
+
+`audio` (Boolean):
+: `true` if the participant's microphone is active.
+
+`video` (Boolean):
+: `true` if the participant's camera is active.
+
+`screen` (Boolean):
+: `true` if the participant is sharing their screen.
+
+`raisedHand` (Boolean):
+: `true` if the participant has raised their hand.
+
+## VTCCallPolicy {#vtc-call-policy}
+
+VTCCallPolicy is an embedded object on VTCCall containing moderator-controlled media policies for the call. Non-moderators MUST receive `forbidden` when attempting to update these fields via `VTCCall/set`.
+
+`muteOnEntry` (Boolean):
+: When `true`, participants join with `mediaState.audio` set to `false`. Default: `false`.
+
+`videoOffOnEntry` (Boolean):
+: When `true`, participants join with `mediaState.video` set to `false`. Default: `false`.
+
+`participantsCanUnmute` (Boolean):
+: When `false`, non-moderator participants MUST receive `forbidden` when attempting to set their own `mediaState.audio` to `true` via `VTCParticipant/set`. The moderator must use the ask-to-unmute signal (see {{ask-to-unmute}}) or unmute them directly. Default: `true`.
+
+`participantsCanShareScreen` (Boolean):
+: When `false`, non-moderator participants MUST receive `forbidden` when attempting to set their own `mediaState.screen` to `true`. Default: `true`.
+
+`participantsCanStartVideo` (Boolean):
+: When `false`, non-moderator participants MUST receive `forbidden` when attempting to set their own `mediaState.video` to `true`. Default: `true`.
+
+## VTCParticipant {#vtc-participant}
+
+A VTCParticipant describes one participant in a VTCCall. It is a top-level JMAP data type with its own get/set/changes/query methods.
+
+### VTCParticipant ID Assignment
+
+VTCParticipant IDs are opaque server-assigned identifiers. For authenticated users, the server SHOULD use the userId as the id within a given call; for unauthenticated participants (PSTN callers, anonymous guests), the server assigns a unique id.
+
+### VTCParticipant Object Fields
+
+`id` (String, immutable, server-set):
+: Opaque server-assigned identifier.
+
+`callId` (String, immutable):
+: The id of the VTCCall this participant belongs to.
+
+`userId` (String|null, immutable, server-set):
+: The authenticated user identity string. `null` for unauthenticated participants (PSTN callers, anonymous guests).
+
+`displayName` (String):
+: Display name for this participant. For authenticated users, derived from the user profile or ChatContact record when {{JMAP-CHAT}} is present. For PSTN callers, derived from caller ID. For anonymous guests, a server-assigned or self-reported name.
+
+`role` (String):
+: `"moderator"` or `"participant"`. Moderators may perform moderation actions (see {{moderator-actions}}). The call initiator receives `"moderator"` by default; the server MAY grant moderator status to additional participants based on deployment policy.
+
+`joinedAt` (UTCDate|null, server-set):
+: Time this participant joined the call. `null` if the participant has been invited but has not yet joined (e.g., in a ringing call).
+
+`leftAt` (UTCDate|null):
+: Time this participant left the call. `null` if currently in the call.
+
+`callResponse` (String|null):
+: For ring-call targets: the participant's response to the ring. Values: `"pending"` (not yet responded), `"accepted"`, `"declined"`. `null` for participants who were not ring targets (room/scheduled call joins, dial-out participants). The server sets this to `"pending"` when creating VTCParticipant records for ring targets, to `"accepted"` when the participant answers, and clients set it to `"declined"` to decline.
+
+`joinMethod` (String):
+: How this participant connected. Values: `"webrtc"`, `"sip"`, `"pstn"`, `"h323"`. The value corresponds to a VTCGateway `protocol` when the participant arrived via a gateway. Deployments MAY define additional values; clients MUST ignore unrecognized values.
+
+`gatewayData` (Object|null):
+: Protocol-specific state for participants who joined via a gateway (`joinMethod` other than `"webrtc"`). Opaque to JMAP VTC; the server stores and relays this object without interpretation. Clients that understand the protocol MAY inspect it; all others MUST ignore it. `null` for WebRTC participants and when no gateway-specific data is available. Examples:
+  - PSTN: `{"callerIdNumber": "+14155559876", "callerIdName": "Alice Smith"}`
+  - SIP: `{"sipUri": "sip:alice@example.com", "userAgent": "Opal/4.0"}`
+  - H.323: `{"alias": "alice", "endpointType": "terminal"}`
+
+`lobbyState` (String|null):
+: Present only when the call has `lobbyEnabled: true`. Values: `"waiting"`, `"admitted"`, `"rejected"`. `null` when lobby is not active or the participant bypassed the lobby (moderators).
+
+`mediaState` (VTCMediaState):
+: The participant's current self-reported media state.
+
+`speakerTimeMs` (UnsignedInt, server-set):
+: Cumulative milliseconds of talk time for this participant, tracked by the server or media layer. Servers that cannot track speaker time MUST set this to `0`.
+
+`kickedBy` (String|null, server-set):
+: The userId of the moderator who removed this participant from the call. `null` if the participant left voluntarily or is still in the call.
+
+`e2eeFingerprint` (String|null):
+: When the call has `e2eeEnabled: true`: the participant's public key fingerprint for E2EE verification, as reported by the media layer. Clients SHOULD display this to enable out-of-band verification (e.g., reading the fingerprint aloud). The format is media-layer-defined. `null` when E2EE is not active or the participant has not yet completed key exchange.
+
+`unmuteRequested` (Boolean):
+: `true` when a moderator has requested that this participant unmute. Cleared to `false` when the participant unmutes or explicitly dismisses the request. Default: `false`.
+
+## VTCCall {#vtc-call}
+
+A VTCCall represents a voice or video call session. It is the primary JMAP data type defined by this specification.
+
+### VTCCall ID Assignment
+
+VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is created.
+
+### VTCCall Object Fields
+
+`id` (String, immutable, server-set):
+: A ULID assigned at creation.
+
+`accountId` (String, server-set):
+: The account that owns this VTCCall record.
+
+`callType` (String, immutable):
+: `"ring"`, `"room"`, or `"scheduled"`. Determines the state machine path (see {{state-machine}}).
+
+`state` (String, server-set):
+: Current call state. See {{state-machine}} for valid values and transitions.
+
+`createdAt` (UTCDate, immutable, server-set):
+: Time the call was created.
+
+`endedAt` (UTCDate|null, server-set):
+: Time the call ended. `null` while the call is active or pending.
+
+`endReason` (String|null, server-set):
+: Reason the call ended. Values: `"completed"`, `"missed"`, `"declined"`, `"cancelled"`, `"failed"`, `"timeout"`. `null` while the call has not ended.
+
+`initiatorId` (String, immutable, server-set):
+: The userId of the participant who created the call.
+
+`subject` (String|null):
+: Optional human-readable call title (e.g., `"Standup"`, `"1:1 with Alice"`).
+
+`joinUri` (String):
+: The media-layer entry point for this call. Opaque to the JMAP server. May be a WebRTC room URL, a Jitsi Meet room URL, a SIP URI, or any other media endpoint. Peer-supplied; MUST be treated as untrusted. Clients MUST NOT connect to this URI without explicit user initiation.
+
+`joinPassword` (String|null):
+: Optional password or PIN required to join the call at the media layer.
+
+`mediaTypes` (String[]):
+: Media types active for this call. Subset of `supportedMediaTypes`. Example: `["audio", "video"]`.
+
+`activeParticipantCount` (UnsignedInt, server-set):
+: Number of participants currently in the call (joined and not yet left). Clients use `VTCParticipant/query` with a `callId` filter to retrieve the full participant list.
+
+`lobbyEnabled` (Boolean):
+: When `true`, new participants enter a waiting room and must be admitted by a moderator before joining the call. Default: `false`.
+
+`policy` (VTCCallPolicy):
+: Call-level media policies. See {{vtc-call-policy}}. Mutable by moderators only.
+
+`parentCallId` (String|null, immutable):
+: For breakout rooms: the id of the parent VTCCall. `null` for top-level calls.
+
+`breakoutRoomIds` (String[], server-set):
+: For parent calls: ids of child breakout-room VTCCalls. Empty for non-parent calls and when breakout rooms are not in use.
+
+`scheduledStartAt` (UTCDate|null):
+: For scheduled calls: the intended start time. Clients SHOULD display this to invitees. The server transitions the call from `"pending"` to `"active"` when a participant joins at or after this time; the server does not auto-transition based on the clock alone (a scheduled call with no participants stays `"pending"`).
+
+`gatewayPin` (String|null):
+: PIN or access code for joining this call via a protocol gateway. Present when a gateway (PSTN, SIP, H.323) requires a PIN to associate an inbound connection with this call. `null` when no gateway requires a PIN or no gateways are configured.
+
+`e2eeEnabled` (Boolean):
+: `true` when end-to-end encryption is active for this call's media streams. The mechanism (WebRTC Insertable Streams, SFrame, or other) is media-layer-defined; this field is the state signal for client UI (e.g., displaying a lock icon). Default: `false`. When `true`, features that require server-side media access (recording, livestreaming, gateway participants) are typically unavailable; the server SHOULD reject VTCRecording and VTCLivestream creates with `forbidden` when `e2eeEnabled` is `true`.
+
+### Optional Binding Fields
+
+The following fields are present only when the corresponding companion capability is advertised on the same account:
+
+`chatId` (String|null):
+: When `urn:ietf:params:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this call. `null` if the call has no chat binding. Same-account only.
+
+`spaceId` (String|null):
+: When `urn:ietf:params:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this call. `null` if the call has no Space context.
+
+`channelId` (String|null):
+: When `urn:ietf:params:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the call is Space-wide or has no channel context.
+
+`calendarEventId` (String|null):
+: When `urn:ietf:params:jmap:calendars` is present: the id of a CalendarEvent ({{JMAP-CALENDARS}}) bound to this call. Same-account only. `null` if the call has no calendar binding.
+
+### State Machine {#state-machine}
+
+The VTCCall `state` field follows one of three paths depending on `callType`. State transitions are server-enforced; clients request transitions via `VTCCall/set` and the server validates them.
+
+#### Ring Calls (`callType: "ring"`)
+
+Valid states: `"creating"`, `"ringing"`, `"active"`, `"ended"`.
+
+- `"creating"` → `"ringing"`: Server transitions automatically when the call is created and ring notifications have been dispatched.
+- `"ringing"` → `"active"`: A target participant answers (see {{answering}}).
+- `"ringing"` → `"ended"`: Timeout, all targets decline, or initiator cancels.
+- `"active"` → `"ended"`: All participants leave or a moderator ends the call.
+
+#### Room Calls (`callType: "room"`)
+
+Valid states: `"active"`, `"ended"`.
+
+- Room calls transition directly to `"active"` on creation. They are immediately joinable.
+- `"active"` → `"ended"`: A moderator explicitly closes the room, or a deployment-defined inactivity timeout fires.
+
+#### Scheduled Calls (`callType: "scheduled"`)
+
+Valid states: `"pending"`, `"active"`, `"ended"`.
+
+- `"pending"`: The call has been created but the scheduled start time has not arrived or no participant has joined yet.
+- `"pending"` → `"active"`: A participant joins at or after `scheduledStartAt`.
+- `"active"` → `"ended"`: All participants leave or a moderator ends the call.
+
+For all call types, `"ended"` is a terminal state. The server MUST NOT transition a call out of `"ended"`.
+
+## VTCRecording {#vtc-recording}
+
+A VTCRecording tracks the metadata of a recording session within a VTCCall. It is a top-level JMAP data type.
+
+`id` (String, immutable, server-set):
+: Opaque server-assigned identifier.
+
+`callId` (String, immutable):
+: The VTCCall this recording belongs to.
+
+`state` (String):
+: `"recording"`, `"paused"`, `"stopped"`, `"processing"`, `"available"`, or `"failed"`.
+
+`startedAt` (UTCDate, server-set):
+: Time recording started.
+
+`stoppedAt` (UTCDate|null, server-set):
+: Time recording stopped. `null` while recording is active or paused.
+
+`initiatedBy` (String):
+: The userId of the participant who started the recording.
+
+`blobId` (String|null, server-set):
+: JMAP blob reference for the recording file. Available only when `state` is `"available"`.
+
+`size` (UnsignedInt|null, server-set):
+: Recording file size in bytes. Available only when `state` is `"available"`.
+
+`duration` (UnsignedInt|null, server-set):
+: Recording duration in seconds. Available only when `state` is `"available"` or `"stopped"`.
+
+`mediaType` (String|null, server-set):
+: MIME type of the recording file (e.g., `"video/webm"`, `"video/mp4"`, `"audio/ogg"`). Available only when `state` is `"available"`.
+
+## VTCLivestream {#vtc-livestream}
+
+A VTCLivestream tracks the metadata of an outbound livestream from a VTCCall to an external platform. It is a top-level JMAP data type.
+
+`id` (String, immutable, server-set):
+: Opaque server-assigned identifier.
+
+`callId` (String, immutable):
+: The VTCCall this livestream belongs to.
+
+`state` (String):
+: `"starting"`, `"live"`, `"stopped"`, or `"failed"`.
+
+`platform` (String|null):
+: Target platform identifier (e.g., `"youtube"`, `"twitch"`). Deployment-defined; clients MUST ignore unrecognized values.
+
+`streamUri` (String):
+: The RTMP or equivalent ingest endpoint. Treated as sensitive; see {{livestream-key-exposure}}.
+
+`streamKey` (String):
+: The stream key or authentication credential for the ingest endpoint. This field is write-only for non-moderators: the server MUST return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}.
+
+`startedAt` (UTCDate|null, server-set):
+: Time the stream went live. `null` before the stream is live.
+
+`stoppedAt` (UTCDate|null, server-set):
+: Time the stream stopped. `null` while the stream is active.
+
+# Methods
+
+## VTCCall Methods
+
+### VTCCall/get
+
+Standard JMAP `/get` ({{RFC8620}} Section 5.1).
+
+### VTCCall/changes
+
+Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
+
+### VTCCall/set {#vtc-call-set}
+
+Standard JMAP `/set` ({{RFC8620}} Section 5.3).
+
+VTCCall/set manages call lifecycle: creating calls, ending calls, and updating call-level settings. Participant management (joining, leaving, muting, kicking) is handled by `VTCParticipant/set` (see {{vtc-participant-methods}}).
+
+#### Creating a Ring Call
+
+`create` with `callType: "ring"` accepts:
+
+`targetParticipantIds` (String[], required):
+: The userIds of the participants to ring. The server creates a VTCParticipant record for each target (with `joinedAt: null`) and for the initiator, dispatches ring notifications (see {{ring-notification}}) to all targets, and transitions the call to `"ringing"`.
+
+`mediaTypes` (String[], required):
+: The media types for this call (e.g., `["audio", "video"]`).
+
+Optional: `subject` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+
+The server sets `id`, `initiatorId`, `createdAt`, `state`, and `joinUri`. The server generates `joinUri` pointing to the deployment's media stack.
+
+#### Creating a Room Call
+
+`create` with `callType: "room"` accepts:
+
+`mediaTypes` (String[], required):
+: The media types for this call.
+
+Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+
+The server sets `id`, `initiatorId`, `createdAt`, `state` (to `"active"`), and `joinUri`.
+
+#### Creating a Scheduled Call
+
+`create` with `callType: "scheduled"` accepts:
+
+`scheduledStartAt` (UTCDate, required):
+: The intended start time. MUST be in the future; servers MUST reject past values with `invalidArguments`.
+
+`mediaTypes` (String[], required):
+: The media types for this call.
+
+Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String), `chatId` (String), `spaceId` (String), `channelId` (String), `calendarEventId` (String).
+
+The server sets `id`, `initiatorId`, `createdAt`, `state` (to `"pending"`), and `joinUri`.
+
+#### Ending a Call
+
+A moderator calls `VTCCall/set` to transition `state` to `"ended"`. The server sets `endedAt` and `endReason: "completed"` and dispatches state-change notifications to all participants.
+
+#### Moderator Actions on VTCCall {#moderator-actions}
+
+Participants with `role: "moderator"` MAY use `VTCCall/set` to perform the following call-level actions. Non-moderators MUST receive `forbidden` for these operations. Participant-level moderator actions (mute, kick, admit, role changes) are performed via `VTCParticipant/set` (see {{vtc-participant-methods}}).
+
+**Create a breakout room:**
+: Create a new VTCCall with `parentCallId` set to the current call's id. The server adds the new call's id to the parent's `breakoutRoomIds`.
+
+**Close a breakout room:**
+: Transition a child VTCCall to `"ended"`. The server removes its id from the parent's `breakoutRoomIds`.
+
+**Toggle lobby:**
+: Patch `lobbyEnabled` between `true` and `false`.
+
+### VTCCall/query {#vtc-call-query}
+
+Standard JMAP `/query` ({{RFC8620}} Section 5.5).
+
+Filter properties:
+
+`state` (String):
+: Filter by call state.
+
+`callType` (String):
+: Filter by call type.
+
+`initiatorId` (String):
+: Filter to calls initiated by this userId.
+
+`chatId` (String):
+: Filter to calls associated with this Chat.
+
+`spaceId` (String):
+: Filter to calls associated with this Space.
+
+`hasParticipant` (String):
+: Filter to calls in which this userId is or was a participant.
+
+`createdAfter` (UTCDate):
+: Calls created at or after this time.
+
+`createdBefore` (UTCDate):
+: Calls created before this time.
+
+`endedAfter` (UTCDate):
+: Calls ended at or after this time.
+
+`endedBefore` (UTCDate):
+: Calls ended before this time.
+
+Sort properties: `createdAt`, `endedAt`. Default sort: `createdAt` descending.
+
+### VTCCall/queryChanges
+
+Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
+
+## VTCParticipant Methods {#vtc-participant-methods}
+
+### VTCParticipant/get
+
+Standard JMAP `/get` ({{RFC8620}} Section 5.1).
+
+### VTCParticipant/changes
+
+Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
+
+### VTCParticipant/set
+
+Standard JMAP `/set` ({{RFC8620}} Section 5.3).
+
+#### Answering a Ring Call {#answering}
+
+For ring calls, the server creates VTCParticipant records for all targets (with `joinedAt: null`) when the call is created. A target participant answers by calling `VTCParticipant/set` with an `update` on their existing record, setting `joinMethod` to their connection type. The server sets `joinedAt` to the current time.
+
+The server MUST validate that:
+
+1. The call is in state `"ringing"`.
+2. The caller's userId matches the VTCParticipant record's userId.
+
+On success, the server transitions the call to `"active"` and dispatches a `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other ringing devices (see {{multi-device-forking}}).
+
+#### Joining a Room or Scheduled Call
+
+A participant joins by calling `VTCParticipant/set` with a `create`:
+
+`callId` (String, required):
+: The VTCCall to join.
+
+`joinMethod` (String, required):
+: How this participant is connecting (`"webrtc"`, `"sip"`, `"pstn"`).
+
+The server sets `id`, `userId`, `displayName`, `role`, `joinedAt`, `mediaState` (defaults), and `speakerTimeMs` (to `0`).
+
+For **room calls**, the server validates that the call is in state `"active"`.
+
+For **scheduled calls**, the server validates that the call is in state `"pending"` or `"active"`. When a participant joins a `"pending"` scheduled call at or after `scheduledStartAt`, the server transitions the call to `"active"`.
+
+When `lobbyEnabled` is `true`, the server sets the new participant's `lobbyState` to `"waiting"`. The participant does not enter the call until a moderator admits them.
+
+#### Declining a Ring Call
+
+A target participant whose VTCParticipant record was created by the ring (with `joinedAt: null`) calls `VTCParticipant/set` with an `update` setting `callResponse` to `"declined"`. The server sets `leftAt` to the current time. When all target participants have declined, the server transitions the call to `"ended"` with `endReason: "declined"`.
+
+#### Updating Media State
+
+A participant calls `VTCParticipant/set` to `update` their own `mediaState` fields:
+
+~~~json
+{
+  "update": {
+    "participantId123": {
+      "mediaState/audio": false
+    }
+  }
+}
+~~~
+
+#### Leaving a Call
+
+A participant calls `VTCParticipant/set` with an `update` setting their own `leftAt` to the current time. When the last active participant leaves, the server transitions the VTCCall to `"ended"` with `endReason: "completed"`.
+
+#### Reconnecting {#reconnection}
+
+When a participant who has left (has a non-null `leftAt`) re-joins the same call, the server MUST update the existing VTCParticipant record rather than creating a new one: clear `leftAt` to `null`, update `joinedAt` to the current time, and preserve `role` and `speakerTimeMs`. This ensures a single continuous participant identity across disconnections.
+
+#### Participant-Level Moderator Actions
+
+Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipant/set` to update other participants' records. Non-moderators MUST receive `forbidden` for updates targeting other participants.
+
+**Mute another participant:**
+: Update the target's `mediaState/audio` to `false`. The media layer SHOULD honor this by muting the participant's audio stream; enforcement is media-layer-dependent.
+
+**Ask to unmute:** {#ask-to-unmute}
+: When `policy.participantsCanUnmute` is `false`, a moderator may request that a participant unmute by updating the target's `unmuteRequested` to `true`. The server delivers a `VTCUnmuteRequestEvent` (see {{unmute-request-event}}) to the target participant's WebSocket connections. The participant may then choose to unmute (which clears `unmuteRequested`) or ignore the request. This is a soft request, not a forced unmute.
+
+**Kick a participant:**
+: Update the target's `leftAt` to the current time. The server sets `kickedBy` to the moderator's userId.
+
+**Admit a lobby participant:**
+: Update the target's `lobbyState` from `"waiting"` to `"admitted"`.
+
+**Reject a lobby participant:**
+: Update the target's `lobbyState` from `"waiting"` to `"rejected"`.
+
+**Grant or revoke moderator role:**
+: Update a participant's `role` between `"moderator"` and `"participant"`. A moderator MUST NOT revoke their own moderator role if they are the last moderator; the server MUST reject this with `forbidden`.
+
+**Assign to a breakout room:**
+: Update a participant's `callId` from the parent call to a child breakout-room call. The server sets `leftAt` on the parent-call entry and creates (or reconnects) a VTCParticipant record on the child call.
+
+#### Gateway Dial-Out {#dial-out}
+
+A moderator may bridge an external party into a call by calling `VTCParticipant/set` with a `create` that specifies a gateway target:
+
+`callId` (String, required):
+: The VTCCall to bridge the external party into.
+
+`joinMethod` (String, required):
+: The gateway protocol to use (`"pstn"`, `"sip"`, `"h323"`). MUST match a VTCGateway `protocol` whose `supportsDialOut` is `true`.
+
+`gatewayData` (Object, required):
+: Protocol-specific addressing for the outbound call. The server passes this to the gateway without interpretation. Examples:
+  - PSTN: `{"dialNumber": "+14155559876"}`
+  - SIP: `{"sipUri": "sip:alice@example.com"}`
+  - H.323: `{"alias": "alice@mcu.example.com"}`
+
+Optional: `displayName` (String) — a label for the external participant before they are connected.
+
+The server creates a VTCParticipant with `joinedAt: null` and initiates the outbound call via the gateway. When the external party answers, the server sets `joinedAt`. If the outbound call fails or is not answered, the server sets `leftAt` and `endReason` information in `gatewayData`.
+
+Non-moderators MUST receive `forbidden` for dial-out creates.
+
+### VTCParticipant/query
+
+Standard JMAP `/query` ({{RFC8620}} Section 5.5).
+
+Filter properties:
+
+`callId` (String):
+: Filter to participants in this call. Required for most queries.
+
+`userId` (String):
+: Filter to a specific user.
+
+`role` (String):
+: Filter by role (`"moderator"` or `"participant"`).
+
+`isActive` (Boolean):
+: When `true`, filter to participants with `joinedAt != null` and `leftAt == null`. When `false`, filter to participants who have left.
+
+`lobbyState` (String):
+: Filter by lobby state.
+
+Sort properties: `joinedAt`, `displayName`. Default sort: `joinedAt` ascending.
+
+### VTCParticipant/queryChanges
+
+Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
+
+## VTCRecording Methods
+
+### VTCRecording/get
+
+Standard JMAP `/get`.
+
+### VTCRecording/changes
+
+Standard JMAP `/changes`.
+
+### VTCRecording/set
+
+Standard JMAP `/set`.
+
+Only participants with `role: "moderator"` on the associated VTCCall MAY create, update, or destroy VTCRecording objects. Non-moderators MUST receive `forbidden`.
+
+`create` accepts:
+
+`callId` (String, required):
+: The VTCCall to record.
+
+The server sets `id`, `state` (to `"recording"`), `startedAt`, and `initiatedBy`.
+
+`update` supports patching `state`:
+
+- `"recording"` → `"paused"`: Pause recording.
+- `"paused"` → `"recording"`: Resume recording.
+- `"recording"` or `"paused"` → `"stopped"`: Stop recording. The server sets `stoppedAt` and transitions to `"processing"` when the recording file is being prepared, then to `"available"` when `blobId` is set, or to `"failed"` on error.
+
+When recording state changes, the server MUST deliver a state-change notification to all participants in the associated VTCCall. This is a consent signal: all participants are informed that recording has started, paused, resumed, or stopped.
+
+### VTCRecording/query
+
+Standard JMAP `/query` ({{RFC8620}} Section 5.5).
+
+Filter properties:
+
+`callId` (String):
+: Filter to recordings for this call.
+
+`state` (String):
+: Filter by recording state.
+
+`initiatedBy` (String):
+: Filter to recordings started by this userId.
+
+`startedAfter` (UTCDate):
+: Recordings started at or after this time.
+
+`startedBefore` (UTCDate):
+: Recordings started before this time.
+
+Sort properties: `startedAt`. Default sort: `startedAt` descending.
+
+### VTCRecording/queryChanges
+
+Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
+
+## VTCLivestream Methods
+
+### VTCLivestream/get
+
+Standard JMAP `/get`.
+
+`streamKey` MUST be returned as an empty string for non-moderators.
+
+### VTCLivestream/changes
+
+Standard JMAP `/changes`.
+
+### VTCLivestream/set
+
+Standard JMAP `/set`.
+
+Only participants with `role: "moderator"` on the associated VTCCall MAY create, update, or destroy VTCLivestream objects. Non-moderators MUST receive `forbidden`.
+
+`create` accepts:
+
+`callId` (String, required):
+: The VTCCall to stream.
+
+`streamUri` (String, required):
+: The RTMP or equivalent ingest endpoint.
+
+`streamKey` (String, required):
+: The stream key.
+
+Optional: `platform` (String).
+
+The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error.
+
+`update` supports:
+
+- Patching `state` to `"stopped"` to end the stream.
+- Updating `streamUri`, `streamKey`, or `platform` while the stream is stopped.
+
+### VTCLivestream/query
+
+Standard JMAP `/query` ({{RFC8620}} Section 5.5).
+
+Filter properties:
+
+`callId` (String):
+: Filter to livestreams for this call.
+
+`state` (String):
+: Filter by livestream state.
+
+`platform` (String):
+: Filter by platform.
+
+Sort properties: `startedAt`. Default sort: `startedAt` descending.
+
+### VTCLivestream/queryChanges
+
+Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
+
+# Ring Notification {#ring-notification}
+
+Ring notification is the mechanism by which the server alerts a callee that an incoming call is waiting to be answered. This is the most latency-sensitive path in the specification.
+
+## Push: VTCCallPush {#vtc-call-push}
+
+When a ring call is created, the server constructs a `VTCCallPush` payload and delivers it to all registered push endpoints for each target participant. The payload is standalone and sufficient to render an incoming-call UI without a follow-up request.
+
+`@type` (String):
+: MUST be `"VTCCallPush"`.
+
+`accountId` (String):
+: The account receiving the ring.
+
+`callId` (String):
+: The id of the ringing VTCCall.
+
+`callType` (String):
+: Always `"ring"` for ring notifications.
+
+`initiatorId` (String):
+: The userId of the caller.
+
+`initiatorDisplayName` (String, optional):
+: The caller's display name at push-generation time. Snapshot; not authoritative identity.
+
+`subject` (String|null):
+: The call subject, if set.
+
+`mediaTypes` (String[]):
+: The media types for this call.
+
+`joinUri` (String):
+: The media-layer entry point.
+
+`chatId` (String|null):
+: The associated Chat id, if any.
+
+`spaceId` (String|null):
+: The associated Space id, if any.
+
+### Urgency {#ring-urgency}
+
+Ring-call push notifications are time-critical: a ring that arrives five seconds late is a missed call. Servers MUST use the highest available urgency for ring notifications:
+
+- **Web Push ({{RFC8030}}):** `Urgency: high`, `TTL` SHOULD be 30–60 seconds.
+- **APNs:** `apns-push-type: voip`. VoIP pushes trigger PushKit, which wakes the app and presents the CallKit incoming-call UI. Servers MUST use the VoIP push type, not the standard alert type, for ring notifications on iOS.
+- **FCM:** `priority: high` with a data message. The Android app SHOULD use `ConnectionService` or `TelecomManager` to present the native incoming-call UI.
+
+Room-call and scheduled-call notifications (e.g., "A huddle started in #general") use normal urgency and are not ring-priority. Servers SHOULD deliver these as standard `StateChange` notifications or as `ChatMessagePush` payloads ({{JMAP-CHAT-PUSH}}) rather than `VTCCallPush`.
+
+### Blocked-Sender Suppression
+
+Before delivering a `VTCCallPush`, the server MUST check whether the initiator corresponds to a contact whose `blocked` field is `true` on the target participant's contact list (when {{JMAP-CHAT}} is present) or an equivalent deployment-defined block list. If the initiator is blocked, the server MUST silently drop the ring notification. The initiator is not informed.
+
+## WebSocket: VTCRingEvent {#ring-event}
+
+When the target participant has an active WebSocket connection (per {{JMAP-CHAT-WSS}} or an equivalent JMAP WebSocket capability), the server SHOULD deliver a `VTCRingEvent` as an ephemeral event in addition to the push notification.
+
+`@type` (String):
+: `"VTCRingEvent"`.
+
+`callId` (String):
+: The id of the ringing VTCCall.
+
+`initiatorId` (String):
+: The userId of the caller.
+
+`mediaTypes` (String[]):
+: The media types for this call.
+
+`joinUri` (String):
+: The media-layer entry point.
+
+The same blocked-sender suppression rule applies: the server MUST NOT deliver a `VTCRingEvent` if the initiator is blocked.
+
+## VTCCallEndEvent {#call-end-event}
+
+When a ringing call is answered, declined, cancelled, or times out, the server delivers a `VTCCallEndEvent` to all devices that received the ring. This tells ringing devices to stop ringing.
+
+`@type` (String):
+: `"VTCCallEndEvent"`.
+
+`callId` (String):
+: The id of the call.
+
+`endReason` (String):
+: The reason ringing stopped. Values: `"answered"`, `"answered_elsewhere"`, `"declined"`, `"cancelled"`, `"timeout"`, `"failed"`.
+
+## VTCGatewaySignal {#gateway-signal}
+
+A VTCGatewaySignal carries a protocol-specific signal between a gateway and a call participant. It is an ephemeral WebSocket event — not persisted as a JMAP object. This is the pass-through mechanism for any external protocol verb that does not map to a core VTC lifecycle operation (join, leave, mute, kick, end).
+
+`@type` (String):
+: `"VTCGatewaySignal"`.
+
+`callId` (String):
+: The VTCCall this signal pertains to.
+
+`participantId` (String):
+: The VTCParticipant this signal pertains to (the gateway participant).
+
+`protocol` (String):
+: The gateway protocol (`"pstn"`, `"sip"`, `"h323"`). Matches VTCGateway `protocol`.
+
+`signal` (String):
+: The signal type. Opaque to JMAP VTC; defined by the external protocol. Examples:
+  - PSTN: `"dtmf"`, `"flash"`
+  - SIP: `"refer"`, `"info"`, `"hold"`, `"unhold"`, `"reinvite"`
+  - H.323: `"h245cmd"`, `"facilityIndication"`
+
+`data` (Object):
+: Signal-specific payload. Opaque to JMAP VTC; the server relays without interpretation. Clients that understand the protocol and signal type MAY act on it; all others MUST ignore the event. Examples:
+  - DTMF: `{"digit": "5", "duration": 160}`
+  - SIP REFER: `{"referTo": "sip:bob@example.com", "referredBy": "sip:alice@example.com"}`
+  - SIP hold: `{"direction": "sendonly"}`
+
+`direction` (String):
+: `"inbound"` (from the external party toward the call) or `"outbound"` (from a moderator toward the external party).
+
+`timestamp` (UTCDate):
+: Time the signal was generated.
+
+Moderators MAY send outbound VTCGatewaySignals by including them in a VTCParticipant/set update on the target participant's `gatewayData` with a `"pendingSignal"` key. The server extracts the signal, delivers it to the gateway, and removes the key. This allows moderators to send DTMF, initiate transfers (SIP REFER), or perform other protocol-specific operations without JMAP VTC defining a method for each.
+
+## In-Call Ephemeral Events {#in-call-events}
+
+The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message (when {{JMAP-CHAT-WSS}} is present) or an equivalent VTC-specific stream-enable mechanism. These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
+
+### VTCParticipantEvent
+
+Delivered when a participant joins, leaves, or is kicked from a call.
+
+`@type` (String):
+: `"VTCParticipantEvent"`.
+
+`callId` (String):
+: The VTCCall id.
+
+`participantId` (String):
+: The VTCParticipant id.
+
+`event` (String):
+: `"joined"`, `"left"`, or `"kicked"`.
+
+`displayName` (String):
+: The participant's display name at event time.
+
+`role` (String):
+: The participant's role at event time.
+
+### VTCMediaStateEvent
+
+Delivered when a participant's media state changes (mute/unmute, camera on/off, screen share start/stop, hand raise).
+
+`@type` (String):
+: `"VTCMediaStateEvent"`.
+
+`callId` (String):
+: The VTCCall id.
+
+`participantId` (String):
+: The VTCParticipant id.
+
+`mediaState` (VTCMediaState):
+: The participant's updated media state.
+
+### VTCActiveSpeakerEvent
+
+Delivered when the active (dominant) speaker changes. The server or media layer determines the active speaker based on audio levels.
+
+`@type` (String):
+: `"VTCActiveSpeakerEvent"`.
+
+`callId` (String):
+: The VTCCall id.
+
+`participantId` (String):
+: The VTCParticipant id of the current active speaker.
+
+### VTCUnmuteRequestEvent {#unmute-request-event}
+
+Delivered to a specific participant when a moderator requests that they unmute.
+
+`@type` (String):
+: `"VTCUnmuteRequestEvent"`.
+
+`callId` (String):
+: The VTCCall id.
+
+`requestedBy` (String):
+: The userId of the moderator making the request.
+
+### VTCRecordingStateEvent
+
+Delivered to all participants when recording state changes. This is a mandatory consent signal.
+
+`@type` (String):
+: `"VTCRecordingStateEvent"`.
+
+`callId` (String):
+: The VTCCall id.
+
+`recordingId` (String):
+: The VTCRecording id.
+
+`state` (String):
+: The new recording state (`"recording"`, `"paused"`, `"stopped"`).
+
+`initiatedBy` (String):
+: The userId of the participant who initiated the state change.
+
+## Multi-Device Forking {#multi-device-forking}
+
+Ring notifications are delivered to ALL of the target participant's registered push subscriptions and active WebSocket connections. The first device to answer wins: the server accepts the first `VTCCall/set` update transitioning the call to `"active"` and dispatches `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other devices of that participant.
+
+When a call targets multiple participants, answering by any one target transitions the call to `"active"`. The server dispatches `VTCCallEndEvent` with `endReason: "answered"` to all devices of all other target participants that have not yet answered.
+
+## Ring Timeout
+
+Servers SHOULD enforce a ring timeout. If no target participant answers within a deployment-defined period (RECOMMENDED: 30 seconds), the server transitions the call to `"ended"` with `endReason: "missed"` and dispatches `VTCCallEndEvent` with `endReason: "timeout"` to all ringing devices.
+
+# Access Control {#access-control}
+
+## Chat-Bound Calls
+
+When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:ietf:params:jmap:chat` is present, access control is inherited from JMAP Chat's permission model:
+
+- **Visibility:** A call is visible to members of the bound Chat or Space channel. Non-members MUST receive `notFound` for `VTCCall/get` and `VTCParticipant/get` requests on the call.
+- **Join permission:** In a Space-bound call, the server SHOULD check the `"start_call"` permission (see {{JMAP-CHAT}}) before allowing `VTCParticipant/set create`. Participants who can `"view"` the channel MAY join an existing call even without `"start_call"` permission; `"start_call"` gates call creation, not joining.
+- **Recording and livestream access:** VTCRecording and VTCLivestream objects inherit visibility from their parent VTCCall.
+
+## Standalone Calls
+
+When no Chat binding is present (the VTC capability is used standalone), the server MUST enforce the following access rules:
+
+- Participants (current or past) may access VTCCall and VTCParticipant records for calls in which they have a VTCParticipant entry.
+- The call initiator may access VTCCall records they created.
+- Non-participants MUST receive `notFound` for calls they cannot access.
+- `VTCCall/query` MUST only return calls the authenticated user has access to.
+- Deployment-defined administrative roles MAY have broader access.
+
+# Federation {#federation}
+
+Cross-server VTCCall state synchronization is out of scope for this document.
+
+When used with JMAP Chat federation ({{JMAP-CHAT-FED}}), a call invitation MAY be delivered to remote participants via `Peer/deliver` carrying a MessageAction of type `"urn:jmap:chat:cap:vtc"` with the `joinUri` — using the existing out-of-band action mechanism defined in {{JMAP-CHAT}}. The receiving server MAY auto-create a local VTCCall record from the inbound MessageAction to provide call-state tracking on the remote side.
+
+Federated call state synchronization — maintaining a consistent VTCCall object across multiple servers, with synchronized participant lists and state transitions — is a significantly more complex problem and is deferred to a future companion specification.
+
+# Security Considerations {#security}
+
+## joinUri Is Untrusted
+
+`joinUri` is peer-supplied and opaque to the JMAP server. Clients MUST NOT connect to `joinUri` without explicit user initiation. Auto-joining a call is a privacy violation: it activates the microphone and potentially the camera without consent.
+
+Servers MUST NOT fetch, probe, or validate `joinUri` values. Doing so exposes the server to SSRF attacks.
+
+## Ring as Denial of Service {#ring-dos}
+
+Ring calls cause device-level interruption: vibration, sound, and a full-screen incoming-call UI. Without rate limiting, an attacker could use repeated ring calls to harass a target.
+
+Servers SHOULD enforce:
+
+- Per-caller ring rate limits (e.g., no more than 3 ring calls to the same target within 60 seconds).
+- Per-callee ring rate limits (e.g., no more than 10 incoming rings per minute from all callers combined).
+- Blocked contacts MUST NOT be able to ring (see {{ring-notification}}).
+
+Servers MAY temporarily suspend ring delivery for a target that is receiving rings at an abusive rate and fall back to silent `StateChange` notifications.
+
+## Recording Consent {#recording-consent}
+
+The server MUST notify all participants when recording state changes (started, paused, resumed, stopped). This notification is a mandatory consent signal. Jurisdictional requirements for recording consent (one-party vs. all-party) are deployment-defined, but the signaling mechanism MUST be present regardless of jurisdiction.
+
+Servers SHOULD provide a mechanism for participants to leave a call when recording starts, as an implicit decline of consent.
+
+## Call Metadata Exposure
+
+Even without access to the media stream, the JMAP server observes: who called whom, when, for how long, from which device, and who else was on the call. This metadata is privacy-sensitive. Deployments requiring metadata privacy SHOULD apply the same mitigations noted in the E2EE section of {{JMAP-CHAT}}: message padding, cover traffic, and other transport-layer techniques outside the scope of this document.
+
+## Media State Accuracy {#media-state-accuracy}
+
+VTCMediaState is client-reported and server-relayed. The server has no media-layer visibility and cannot verify that `audio: false` actually means the microphone is off. A malicious client could report `muted: true` while transmitting audio, or `video: false` while the camera is active.
+
+This is inherent to the media-agnostic design. Clients SHOULD NOT rely on VTCMediaState for security-critical decisions. The media layer is the only authority on what media is actually being transmitted.
+
+## Moderator Privilege Escalation
+
+The server MUST enforce role checks on all moderation actions ({{moderator-actions}}). A participant with `role: "participant"` MUST receive `forbidden` for any `VTCParticipant/set` update targeting another participant, and for any `VTCCall/set` operation restricted to moderators (ending a call, toggling lobby, creating or closing breakout rooms, toggling recording or livestream).
+
+## Lobby Bypass
+
+When `lobbyEnabled` is `true`, the server MUST NOT allow participants to skip the lobby via direct `VTCParticipant/set` manipulation. The lobby admission path — `lobbyState` transitioning from `"waiting"` to `"admitted"` — MUST require a moderator-initiated `VTCParticipant/set` update.
+
+## Livestream Key Exposure {#livestream-key-exposure}
+
+`streamKey` is an authentication credential for an external streaming platform. The server MUST NOT return the actual `streamKey` value in `VTCLivestream/get` responses for non-moderator participants. The server MUST return an empty string for the `streamKey` field for non-moderators.
+
+## Gateway Participant Identity
+
+`displayName` and `gatewayData` for participants who joined via a protocol gateway (`joinMethod` of `"pstn"`, `"sip"`, or `"h323"`) are derived from the external protocol's identity mechanisms (PSTN caller ID, SIP From header, H.323 alias). These identities are trivially spoofable on their respective networks and are not authenticated by the JMAP server. Clients SHOULD visually distinguish gateway participants from authenticated JMAP users to prevent impersonation.
+
+## Gateway Signal Injection
+
+VTCGatewaySignal events ({{gateway-signal}}) carry opaque protocol-specific data. The server MUST NOT interpret or execute gateway signal payloads; it relays them between the gateway infrastructure and the WebSocket connection. Outbound gateway signals (sent by moderators via `VTCParticipant/set`) MUST be restricted to moderators. The gateway infrastructure is responsible for validating that relayed signals are well-formed for its protocol.
+
+# IANA Considerations {#iana}
+
+## JMAP Capability Registration
+
+IANA is requested to register the following entry in the "JMAP Capabilities" registry:
+
+Capability Name:
+: `urn:ietf:params:jmap:vtc`
+
+Intended Use:
+: common
+
+Change Controller:
+: IETF
+
+Specification document:
+: This document.
+
+Security and privacy considerations:
+: See {{security}} of this document.
+
+## JMAP Data Type Registration
+
+IANA is requested to register the following entries in the "JMAP Data Types" registry:
+
+Type Name: VTCCall
+Can reference blobs: No
+Can use for state change: Yes
+Capability: `urn:ietf:params:jmap:vtc`
+Specification document: This document.
+
+Type Name: VTCParticipant
+Can reference blobs: No
+Can use for state change: Yes
+Capability: `urn:ietf:params:jmap:vtc`
+Specification document: This document.
+
+Type Name: VTCRecording
+Can reference blobs: Yes
+Can use for state change: Yes
+Capability: `urn:ietf:params:jmap:vtc`
+Specification document: This document.
+
+Type Name: VTCLivestream
+Can reference blobs: No
+Can use for state change: Yes
+Capability: `urn:ietf:params:jmap:vtc`
+Specification document: This document.
+
+--- back
+
+# Design Influences and Non-Normative Notes
+
+This non-normative section documents the design influences from production calling systems and the explicit non-decisions where deployment latitude was preferred over prescription.
+
+## Influences
+
+- **Jitsi Meet** provided the primary feature-set reference: room calls with lobby/waiting room, moderator controls (mute others, kick, admit), breakout rooms, recording, livestreaming, PSTN dial-in, and hand raise are all Jitsi Meet application features modeled as JMAP data types in this specification.
+- **Slack Huddles** inspired the room-call drop-in model. A Huddle is a persistent audio room in a channel that participants join and leave freely; VTCCall with `callType: "room"` captures this pattern.
+- **Discord Voice Channels** reinforced the room-call model and informed the Space/channel binding design. Discord voice channels are persistent per-server rooms with the same permission model as text channels.
+- **FaceTime** informed the ring-call push design. FaceTime's use of PushKit and CallKit on iOS to deliver a native incoming-call UI within one to two seconds is the benchmark for ring-call latency. The `VTCCallPush` payload and urgency guidance are designed to achieve equivalent behavior.
+- **Zoom** informed the scheduled-call model, lobby/waiting room, breakout rooms, recording, and livestreaming features.
+- **Google Meet** informed the lobby/waiting room and live-captions patterns. Live captions are delivered as chat messages (or ephemeral events in {{JMAP-CHAT}}) rather than a VTC-native type, following the simplification principle.
+- **SIP (RFC 3261)** provided the session-state model: a call has a lifecycle with well-defined states and transitions. The ring/answer/decline/cancel/timeout transitions map directly from SIP INVITE/ACK/BYE/CANCEL semantics.
+- **Signal** informed the ring-call E2EE model: minimal server state, push-to-ring, and the principle that the server should know as little as possible about the call beyond its existence.
+
+## Explicit Non-Prescriptions
+
+The following design choices were left to deployments rather than prescribed:
+
+- **Media stack selection.** WebRTC, SIP/RTP, proprietary SFU, or any other media transport. The spec is media-agnostic by design.
+- **SFU/MCU architecture.** Whether the deployment uses a Selective Forwarding Unit, a Multipoint Control Unit, peer-to-peer mesh, or a hybrid. The JMAP server does not participate in media routing.
+- **WebRTC signaling.** SDP offer/answer and ICE candidate exchange are the media stack's responsibility. A future companion specification may define JMAP-based signaling relay, but this document does not.
+- **STUN/TURN server deployment.** NAT traversal infrastructure is deployment-defined.
+- **Recording storage backend.** Where and how recording blobs are stored. The spec only models the metadata and the resulting `blobId`.
+- **Livestream ingest protocol.** RTMP is assumed but not prescribed; deployments may use SRT, HLS ingest, or any other protocol.
+- **Transcription engine.** Live captions and transcription are delivered as chat messages or ephemeral events via {{JMAP-CHAT}}, not as VTC-native types. The transcription engine (Whisper, Vosk, cloud ASR, or other) is entirely deployment-defined.
+- **Gateway carrier interconnection.** How PSTN, SIP, or H.323 gateways connect to their respective networks is deployment infrastructure.
+- **Protocol-specific signaling.** Call transfer (SIP REFER), DTMF relay, hold/resume, codec renegotiation, H.245 commands, and any future verb added by an external specification are carried as opaque VTCGatewaySignal events (see {{gateway-signal}}). JMAP VTC does not define or constrain protocol-specific signals; it provides the pass-through mechanism.
+- **Voicemail and IVR.** Out of scope. May be modeled as gateway-specific signal flows in deployments that support them.
+- **Call queuing (contact center).** Out of scope. May be modeled as gateway-specific signal flows.
+- **Virtual backgrounds, noise suppression, layout selection.** Client-side rendering concerns with no protocol surface.
+
+# Acknowledgements
+
+The author thanks the Jitsi Meet project for the comprehensive open-source reference implementation that informed this specification's feature set, the authors of {{JMAP-CHAT}} for the chat protocol whose design patterns this specification follows, and the authors of SIP {{RFC3261}} for the session-state model that underpins the VTCCall lifecycle.
