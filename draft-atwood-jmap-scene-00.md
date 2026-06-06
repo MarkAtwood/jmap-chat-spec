@@ -259,6 +259,9 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 `activeAvatarCount` (UnsignedInt, server-set):
 : Number of avatars currently present in the region.
 
+`viewHint` (String|null):
+: Advisory rendering mode for clients. Values defined by this specification: `"3d"` (standard 3D perspective), `"2d-topdown"` (top-down 2D view, as in virtual offices or board games), `"2d-side"` (side-scrolling 2D view, as in platformer games). `null` is treated as `"3d"`. This field is advisory; clients MAY ignore it and render the region in any mode they support. Clients MUST NOT fail when encountering an unrecognized value; they SHOULD fall back to `"3d"`. Deployment-specific view hints SHOULD use reverse-domain notation (e.g., `"com.example.isometric"`).
+
 `accessPolicy` (String):
 : Who may enter this region. Values: `"public"` (any authenticated user), `"invite"` (only users explicitly granted access), `"space"` (members of the bound Space, when {{JMAP-CHAT}} is present). Default: `"public"`.
 
@@ -302,6 +305,7 @@ The following fields are present only when the corresponding companion capabilit
     "gravity": 9.81
   },
   "simulationUri": "wss://sim.example.com/regions/01J5ABC",
+  "viewHint": "3d",
   "spawnPosition": [0, 0, 10],
   "spawnOrientation": [0, 0, 0, 1],
   "activeAvatarCount": 3,
@@ -577,7 +581,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `viewHint` (String), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `accountId`, `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
@@ -603,7 +607,7 @@ The server MUST return `forbidden` when `mayCreateRegion` is `false`. The server
 
 #### Updating a Region
 
-`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
+`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `viewHint`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
 The server MUST return `forbidden` when the caller is not the region owner and does not have deployment-defined administrative privileges.
 
@@ -1089,6 +1093,9 @@ Specification document: This document.
 - **Second Life** informed the persistent-world model: user-created objects with permissions, land ownership (modeled as region access control), and the separation between the world server and the voice server (Vivox, later WebRTC). The SceneObject permission model (owner, region owner, admin) follows SL's pattern.
 - **glTF 2.0** ({{GLTF}}) provided the coordinate system convention (right-handed, Y-up, meters, quaternion orientation) and the mandatory-to-implement visual asset format.
 - **A-Frame / Three.js** informed the scene graph model: objects with position/orientation/scale, parent-child hierarchy, and component-like custom properties.
+- **Gather** (and similar 2D spatial-video products like Amazon Chime's experimental spatial view) demonstrated that top-down 2D worlds with proximity-based video and spatial audio are a compelling subset of 3D environments, particularly for virtual offices and social spaces. The `viewHint` field on SceneRegion was designed to support this use case natively without requiring a separate specification.
+- **Video games** — both single-player and multiplayer — informed the decision to keep Scene independent of Chat and VTC. A game world needs spatial objects, avatars, physics modes, and interaction events but may not need chat channels or video calling. The `SceneInteractionEvent` action vocabulary (click, grab, release, activate, plus extensible custom actions) follows game input conventions.
+- **Board games and tabletop simulators** (Tabletop Simulator, Board Game Arena) influenced the SceneObject permission model and the 2D top-down view hint. A board game is a scene region with a fixed set of objects (pieces, cards, dice) that players interact with via grab/release/activate actions, rendered top-down.
 - **Game engine conventions** (Unity, Unreal, Godot) informed the physicsMode and interactable properties. The separation between physics modes (static, dynamic, kinematic, none) is standard across all major engines.
 
 ## Explicit Non-Prescriptions
@@ -1107,7 +1114,9 @@ The following design choices were left to deployments rather than prescribed:
 - **Economy and inventory.** Virtual currencies, item trading, user inventories. Out of scope.
 - **Terrain and heightmaps.** Terrain is a SceneObject with a visual representation. The spec does not define a terrain-specific data type.
 - **Building and editing tools.** Client-side concerns. Objects are created and modified via standard `SceneObject/set`; the UI for doing so is client-defined.
+- **2D rendering style.** For regions with `viewHint` of `"2d-topdown"` or `"2d-side"`, the rendering style (pixel art, vector, isometric projection, sprite sheets) is client-defined. The spec provides spatial coordinates and advisory view orientation; visual style is a client concern.
+- **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
 
 # Acknowledgements
 
-The author thanks the Mozilla Hubs project for the open-source reference implementation that demonstrated browser-based social 3D environments are viable, the Second Life team for two decades of persistent-world operation that informed the permission and region models, and the Khronos Group for glTF 2.0 whose coordinate conventions this specification adopts.
+The author thanks the Mozilla Hubs project for the open-source reference implementation that demonstrated browser-based social 3D environments are viable, the Second Life team for two decades of persistent-world operation that informed the permission and region models, the Khronos Group for glTF 2.0 whose coordinate conventions this specification adopts, and the Gather team for demonstrating that 2D spatial environments are a compelling and practical subset of 3D worlds.
