@@ -46,6 +46,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-wss-00
     date: 2026
+  JMAP-SCENE-WSS:
+    title: JMAP Scene over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-wss-00
+    date: 2026
 
 --- abstract
 

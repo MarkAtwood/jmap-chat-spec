@@ -62,6 +62,13 @@ informative:
   JMAP-CALENDARS:
     title: JMAP for Calendars
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-calendars/
+  JMAP-SCENE:
+    title: JMAP Scene
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-00
+    date: 2026
 
 --- abstract
 
@@ -113,6 +120,10 @@ Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongsi
 The existing `urn:jmap:chat:cap:vtc` Endpoint and MessageAction type URIs defined in {{JMAP-CHAT}} provide the integration point in the other direction: a chat message can carry a VTC action whose `uri` points to the call's `joinUri`.
 
 Without JMAP Chat, the VTC capability is fully functional as a standalone call-state manager. Calls have no chat binding, and the delegated features above are unavailable.
+
+## Relationship to JMAP Scene (optional)
+
+When `urn:ietf:params:jmap:scene` ({{JMAP-SCENE}}) is also advertised, SceneRegion objects MAY carry an `activeCallId` field referencing a VTCCall. This binding enables spatial audio: the Scene simulation layer can use SceneAvatar positions to spatialize VTC audio for participants in the region. The VTC capability itself is unaware of Scene; the binding is defined entirely in {{JMAP-SCENE}} and is optional. Without JMAP Scene, calls have no spatial component.
 
 ## Relationship to JMAP Calendars (optional)
 
