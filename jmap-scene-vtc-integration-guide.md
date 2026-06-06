@@ -881,6 +881,7 @@ Shortly after:
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
   "participantId": "user:bob@example.com",
   "event": "joined",
+  "role": "participant",
   "displayName": "Bob Martinez"
 }
 ```
@@ -933,6 +934,7 @@ Other clients receive:
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
   "participantId": "user:alice@example.com",
   "event": "left",
+  "role": "participant",
   "displayName": "Alice Chen"
 }
 ```

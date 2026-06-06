@@ -574,7 +574,7 @@ unaffected.
 
 # Event Delivery Semantics {#event-delivery}
 
-## General Principles
+## General Principles {#general-principles}
 
 Scene ephemeral events do not correspond to persistent state changes
 and carry no state token.  They are delivered as server-to-client
@@ -590,7 +590,7 @@ client MAY issue a `SceneObject/get` to retrieve the full object
 state.  This is optional; the event provides enough information
 (id, position, event type) for many UI updates without a round-trip.
 
-## Event Summary
+## Event Summary {#event-summary}
 
 | Event Type              | Scope        | Description                    |
 |-------------------------|--------------|--------------------------------|
@@ -680,7 +680,7 @@ Note that `updatedBy` is `null` in both events because the changes
 originated from a server-side physics simulation, not from a user
 action.
 
-## Event Ordering
+## Event Ordering {#event-ordering}
 
 Events are delivered in best-effort order.  The server SHOULD
 deliver events in the order they were generated, but clients MUST
@@ -688,7 +688,7 @@ NOT assume strict ordering.  Each event is self-contained; clients
 SHOULD use the event's `regionId` and `objectId` or `avatarId`
 fields to correlate events with local state.
 
-## Visibility Filtering
+## Visibility Filtering {#visibility}
 
 The server MUST apply the same visibility contract defined in
 {{JMAP-SCENE}} (Section "Visibility Contract") to ephemeral events.
