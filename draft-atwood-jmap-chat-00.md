@@ -74,6 +74,20 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-00
     date: 2026
+  JMAP-SCENE:
+    title: JMAP Scene
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-00
+    date: 2026
+  JMAP-SCENE-WSS:
+    title: JMAP Scene over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-wss-00
+    date: 2026
   JMAP-METADATA:
     title: JMAP Metadata
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
@@ -1575,6 +1589,8 @@ The send-time recipient set computed by the sending server (the informational li
 Messages from a ChatContact whose `blocked` field is `true` are silently dropped regardless of whether they arrive in a direct chat or a group chat context.
 
 Typing and presence push events whose sending or referenced ChatContact has `blocked: true` on the receiving owner's contact list are similarly dropped server-side before delivery to any of the owner's clients (see the `Chat/typing` server behavior in {{chat-typing}}, the typing and presence event sections in {{push}}, and the analogous rules in {{JMAP-CHAT-WSS}} and {{JMAP-CHAT-FED}}). The sender is not informed. This prevents a blocked user from leaking presence or attention patterns on any transport even though their messages are dropped.
+
+Companion capabilities also consume the `blocked` field for ephemeral event suppression: {{JMAP-VTC-WSS}} suppresses ring and call-end events from blocked contacts, and {{JMAP-SCENE-WSS}} suppresses spatial presence, object, and interaction events from blocked contacts. See those specifications for the per-event-type rules.
 
 When `Chat.receiveTypingIndicators` is `false`, typing push events for that Chat are suppressed server-side (see `receiveTypingIndicators` in {{chat}} and the `Chat/typing` server behavior in {{chat-typing}}) before delivery to the owner. The sender is not informed; `Chat/typing` succeeds normally. This prevents a sender from inferring that typing indicators are being suppressed.
 

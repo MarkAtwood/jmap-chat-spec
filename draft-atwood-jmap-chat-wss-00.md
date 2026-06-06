@@ -53,6 +53,20 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-wss-00
     date: 2026
+  JMAP-SCENE:
+    title: JMAP Scene
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-00
+    date: 2026
+  JMAP-SCENE-WSS:
+    title: JMAP Scene over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-wss-00
+    date: 2026
 
 --- abstract
 
@@ -162,7 +176,7 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 : MUST be `"ChatStreamEnable"`.
 
 `dataTypes` (String[]):
-: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`; companion specifications MAY register additional values (e.g., `"vtc"` for in-call events defined by {{JMAP-VTC}}).
+: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`; companion specifications MAY register additional values. Currently registered companion values: `"vtc"` for in-call events defined by {{JMAP-VTC-WSS}}, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}.
 
 `chatIds` (String[]|null):
 : Applicable when `"typing"` is in `dataTypes`. An explicit list of Chat ids for which typing events are requested, or `null` to receive typing events for all Chats of which the owner is a current member. Ignored if `"typing"` is not in `dataTypes`.
