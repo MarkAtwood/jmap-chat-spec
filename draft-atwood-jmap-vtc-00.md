@@ -504,6 +504,42 @@ A VTCLivestream tracks the metadata of an outbound livestream from a VTCCall to 
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
+Example response (properties abridged):
+
+~~~json
+{
+  "id": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callType": "ring",
+  "state": "active",
+  "createdAt": "2026-06-05T14:30:00Z",
+  "endedAt": null,
+  "endReason": null,
+  "initiatorId": "user:bob@example.com",
+  "subject": "Quick sync",
+  "joinUri": "https://meet.example.com/room/xkz",
+  "joinPassword": null,
+  "mediaTypes": ["audio", "video"],
+  "activeParticipantCount": 2,
+  "lobbyEnabled": false,
+  "policy": {
+    "muteOnEntry": false,
+    "videoOffOnEntry": false,
+    "participantsCanUnmute": true,
+    "participantsCanShareScreen": true,
+    "participantsCanStartVideo": true
+  },
+  "parentCallId": null,
+  "breakoutRoomIds": [],
+  "scheduledStartAt": null,
+  "gatewayPin": null,
+  "e2eeEnabled": false,
+  "chatId": "01J4XL2RN5NXWS9QQCFIUJ4BC",
+  "spaceId": null,
+  "channelId": null,
+  "calendarEventId": null
+}
+~~~
+
 ### VTCCall/changes
 
 Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
@@ -528,6 +564,40 @@ Optional: `subject` (String), `chatId` (String), `spaceId` (String), `channelId`
 
 The server sets `id`, `initiatorId`, `createdAt`, `state`, and `joinUri`. The server generates `joinUri` pointing to the deployment's media stack.
 
+Example create:
+
+~~~json
+{
+  "create": {
+    "c0": {
+      "callType": "ring",
+      "targetParticipantIds": ["user:alice@example.com"],
+      "mediaTypes": ["audio", "video"],
+      "subject": "Quick sync"
+    }
+  }
+}
+~~~
+
+The server creates VTCParticipant records for each target and for the initiator, dispatches `VTCCallPush` ({{vtc-call-push}}) and `VTCRingEvent` ({{ring-event}}) notifications to all targets, and returns:
+
+~~~json
+{
+  "created": {
+    "c0": {
+      "id": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "state": "ringing",
+      "initiatorId": "user:bob@example.com",
+      "createdAt": "2026-06-05T14:30:00Z",
+      "joinUri": "https://meet.example.com/room/xkz",
+      "activeParticipantCount": 0
+    }
+  }
+}
+~~~
+
+Servers MUST return `invalidArguments` when `targetParticipantIds` is empty. Servers MUST return `invalidArguments` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers MUST return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets; if all targets are blocked, the server MUST return `forbidden`.
+
 #### Creating a Room Call
 
 `create` with `callType: "room"` accepts:
@@ -538,6 +608,24 @@ The server sets `id`, `initiatorId`, `createdAt`, `state`, and `joinUri`. The se
 Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `initiatorId`, `createdAt`, `state` (to `"active"`), and `joinUri`.
+
+Example create:
+
+~~~json
+{
+  "create": {
+    "c0": {
+      "callType": "room",
+      "mediaTypes": ["audio"],
+      "subject": "Team Huddle",
+      "spaceId": "01J3ABCDEF0000000000000000",
+      "channelId": "01J3ABCDEF1111111111111111"
+    }
+  }
+}
+~~~
+
+Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsRoomCalls` is `false`. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the target Space or channel; if not, the server MUST return `forbidden`.
 
 #### Creating a Scheduled Call
 
@@ -553,9 +641,42 @@ Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String),
 
 The server sets `id`, `initiatorId`, `createdAt`, `state` (to `"pending"`), and `joinUri`.
 
+Example create:
+
+~~~json
+{
+  "create": {
+    "c0": {
+      "callType": "scheduled",
+      "mediaTypes": ["audio", "video"],
+      "scheduledStartAt": "2026-06-06T10:00:00Z",
+      "subject": "Sprint Planning",
+      "lobbyEnabled": true,
+      "spaceId": "01J3ABCDEF0000000000000000"
+    }
+  }
+}
+~~~
+
+Servers MUST return `invalidArguments` when `scheduledStartAt` is in the past. Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsScheduledCalls` is `false`.
+
 #### Ending a Call
 
 A moderator calls `VTCCall/set` to transition `state` to `"ended"`. The server sets `endedAt` and `endReason: "completed"` and dispatches state-change notifications to all participants.
+
+Example update:
+
+~~~json
+{
+  "update": {
+    "01J4XKZQN4MWVT8PPBEHTJ3AB": {
+      "state": "ended"
+    }
+  }
+}
+~~~
+
+The server MUST return `forbidden` if the caller is not a moderator on this call. The server MUST return `invalidArguments` if the call is already in state `"ended"`. The server MUST return `invalidArguments` for any `state` transition not permitted by the state machine ({{state-machine}}).
 
 #### Moderator Actions on VTCCall {#moderator-actions}
 
@@ -576,35 +697,37 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
 Filter properties:
 
-`state` (String):
-: Filter by call state.
+`state` (String, optional):
+: Filter by call state. One of `"creating"`, `"ringing"`, `"active"`, `"pending"`, or `"ended"`.
 
-`callType` (String):
-: Filter by call type.
+`callType` (String, optional):
+: Filter by call type. One of `"ring"`, `"room"`, or `"scheduled"`.
 
-`initiatorId` (String):
+`initiatorId` (String, optional):
 : Filter to calls initiated by this userId.
 
-`chatId` (String):
-: Filter to calls associated with this Chat.
+`chatId` (String, optional):
+: Filter to calls associated with this Chat. Only valid when `urn:ietf:params:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
 
-`spaceId` (String):
-: Filter to calls associated with this Space.
+`spaceId` (String, optional):
+: Filter to calls associated with this Space. Only valid when `urn:ietf:params:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
 
-`hasParticipant` (String):
+`hasParticipant` (String, optional):
 : Filter to calls in which this userId is or was a participant.
 
-`createdAfter` (UTCDate):
+`createdAfter` (UTCDate, optional):
 : Calls created at or after this time.
 
-`createdBefore` (UTCDate):
+`createdBefore` (UTCDate, optional):
 : Calls created before this time.
 
-`endedAfter` (UTCDate):
+`endedAfter` (UTCDate, optional):
 : Calls ended at or after this time.
 
-`endedBefore` (UTCDate):
+`endedBefore` (UTCDate, optional):
 : Calls ended before this time.
+
+All filter properties are combined with logical AND. The query MUST only return calls the authenticated user has access to (see {{access-control}}).
 
 Sort properties: `createdAt`, `endedAt`. Default sort: `createdAt` descending.
 
@@ -637,6 +760,20 @@ The server MUST validate that:
 
 On success, the server transitions the call to `"active"` and dispatches a `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other ringing devices (see {{multi-device-forking}}).
 
+Example update (target participant answers):
+
+~~~json
+{
+  "update": {
+    "user:alice@example.com": {
+      "joinMethod": "webrtc"
+    }
+  }
+}
+~~~
+
+The server MUST return `invalidArguments` if the call is not in state `"ringing"`. The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId. The server MUST return `notFound` if the VTCParticipant record does not exist.
+
 #### Joining a Room or Scheduled Call
 
 A participant joins by calling `VTCParticipant/set` with a `create`:
@@ -655,9 +792,68 @@ For **scheduled calls**, the server validates that the call is in state `"pendin
 
 When `lobbyEnabled` is `true`, the server sets the new participant's `lobbyState` to `"waiting"`. The participant does not enter the call until a moderator admits them.
 
+Example create (joining a room call):
+
+~~~json
+{
+  "create": {
+    "p0": {
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "joinMethod": "webrtc"
+    }
+  }
+}
+~~~
+
+The server responds with the complete VTCParticipant record:
+
+~~~json
+{
+  "created": {
+    "p0": {
+      "id": "user:alice@example.com",
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "userId": "user:alice@example.com",
+      "displayName": "Alice Chen",
+      "role": "participant",
+      "joinedAt": "2026-06-05T14:35:22Z",
+      "leftAt": null,
+      "callResponse": null,
+      "joinMethod": "webrtc",
+      "gatewayData": null,
+      "lobbyState": null,
+      "mediaState": {
+        "audio": true,
+        "video": true,
+        "screen": false,
+        "raisedHand": false
+      },
+      "speakerTimeMs": 0,
+      "kickedBy": null,
+      "e2eeFingerprint": null,
+      "unmuteRequested": false
+    }
+  }
+}
+~~~
+
+The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidArguments` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
+
 #### Declining a Ring Call
 
 A target participant whose VTCParticipant record was created by the ring (with `joinedAt: null`) calls `VTCParticipant/set` with an `update` setting `callResponse` to `"declined"`. The server sets `leftAt` to the current time. When all target participants have declined, the server transitions the call to `"ended"` with `endReason: "declined"`.
+
+~~~json
+{
+  "update": {
+    "user:alice@example.com": {
+      "callResponse": "declined"
+    }
+  }
+}
+~~~
+
+The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId. The server MUST return `invalidArguments` if the call is not in state `"ringing"` or the participant's `callResponse` is not `"pending"`.
 
 #### Updating Media State
 
@@ -673,9 +869,25 @@ A participant calls `VTCParticipant/set` to `update` their own `mediaState` fiel
 }
 ~~~
 
+A participant MUST only update their own `mediaState`; updates targeting another participant's `mediaState` are moderator actions (see below). The server MUST return `forbidden` when a non-moderator attempts to set `mediaState/audio` to `true` while `policy.participantsCanUnmute` is `false`, or `mediaState/video` to `true` while `policy.participantsCanStartVideo` is `false`, or `mediaState/screen` to `true` while `policy.participantsCanShareScreen` is `false`.
+
+When `policy.muteOnEntry` is `true`, the server sets `mediaState.audio` to `false` on the VTCParticipant record at join time, regardless of the client's requested value. Similarly for `policy.videoOffOnEntry` and `mediaState.video`.
+
 #### Leaving a Call
 
 A participant calls `VTCParticipant/set` with an `update` setting their own `leftAt` to the current time. When the last active participant leaves, the server transitions the VTCCall to `"ended"` with `endReason: "completed"`.
+
+~~~json
+{
+  "update": {
+    "user:alice@example.com": {
+      "leftAt": "2026-06-05T15:02:00Z"
+    }
+  }
+}
+~~~
+
+The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId (leaving on behalf of another participant is a kick and requires moderator role). The server MUST return `invalidArguments` if the participant has already left (`leftAt` is non-null).
 
 #### Reconnecting {#reconnection}
 
@@ -704,7 +916,24 @@ Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipan
 : Update a participant's `role` between `"moderator"` and `"participant"`. A moderator MUST NOT revoke their own moderator role if they are the last moderator; the server MUST reject this with `forbidden`.
 
 **Assign to a breakout room:**
-: Update a participant's `callId` from the parent call to a child breakout-room call. The server sets `leftAt` on the parent-call entry and creates (or reconnects) a VTCParticipant record on the child call.
+: Update a participant's `callId` from the parent call to a child breakout-room call. The server sets `leftAt` on the parent-call entry and creates (or reconnects) a VTCParticipant record on the child call. The server MUST return `invalidArguments` if the target `callId` is not a child of the participant's current call.
+
+Example — admitting a lobby participant and muting another:
+
+~~~json
+{
+  "update": {
+    "user:charlie@example.com": {
+      "lobbyState": "admitted"
+    },
+    "user:dave@example.com": {
+      "mediaState/audio": false
+    }
+  }
+}
+~~~
+
+The server MUST return `invalidArguments` when a lobby-state transition is invalid (e.g., `"admitted"` → `"waiting"` or `"rejected"` → `"admitted"`). The server MUST return `invalidArguments` when a moderator attempts to update a participant who is not in the same call.
 
 #### Gateway Dial-Out {#dial-out}
 
@@ -726,7 +955,22 @@ Optional: `displayName` (String) — a label for the external participant before
 
 The server creates a VTCParticipant with `joinedAt: null` and initiates the outbound call via the gateway. When the external party answers, the server sets `joinedAt`. If the outbound call fails or is not answered, the server sets `leftAt` and `endReason` information in `gatewayData`.
 
-Non-moderators MUST receive `forbidden` for dial-out creates.
+Example create (PSTN dial-out):
+
+~~~json
+{
+  "create": {
+    "g0": {
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "joinMethod": "pstn",
+      "gatewayData": {"dialNumber": "+14155559876"},
+      "displayName": "Alice (mobile)"
+    }
+  }
+}
+~~~
+
+Non-moderators MUST receive `forbidden` for dial-out creates. The server MUST return `invalidArguments` when `joinMethod` does not match any VTCGateway `protocol` whose `supportsDialOut` is `true`. The server MUST return `invalidArguments` when the call is in state `"ended"`.
 
 ### VTCParticipant/query
 
@@ -734,20 +978,25 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
 Filter properties:
 
-`callId` (String):
-: Filter to participants in this call. Required for most queries.
+`callId` (String, optional):
+: Filter to participants in this call. Servers SHOULD require this property on every query unless combined with `userId`; a query that omits both `callId` and `userId` MAY be rejected with `unsupportedFilter`.
 
-`userId` (String):
-: Filter to a specific user.
+`userId` (String, optional):
+: Filter to a specific user across calls. When used without `callId`, returns the user's participation history.
 
-`role` (String):
-: Filter by role (`"moderator"` or `"participant"`).
+`role` (String, optional):
+: Filter by role. One of `"moderator"` or `"participant"`.
 
-`isActive` (Boolean):
+`isActive` (Boolean, optional):
 : When `true`, filter to participants with `joinedAt != null` and `leftAt == null`. When `false`, filter to participants who have left.
 
-`lobbyState` (String):
-: Filter by lobby state.
+`lobbyState` (String, optional):
+: Filter by lobby state. One of `"waiting"`, `"admitted"`, or `"rejected"`. Only meaningful when the call has `lobbyEnabled: true`.
+
+`joinMethod` (String, optional):
+: Filter by connection method (e.g., `"webrtc"`, `"pstn"`).
+
+All filter properties are combined with logical AND.
 
 Sort properties: `joinedAt`, `displayName`. Default sort: `joinedAt` ascending.
 
@@ -759,32 +1008,70 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 ### VTCRecording/get
 
-Standard JMAP `/get`.
+Standard JMAP `/get` ({{RFC8620}} Section 5.1).
+
+All current and past participants of the associated VTCCall may retrieve VTCRecording objects. The server MUST return `notFound` for recording ids belonging to calls the authenticated user has no access to.
 
 ### VTCRecording/changes
 
-Standard JMAP `/changes`.
+Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 ### VTCRecording/set
 
-Standard JMAP `/set`.
+Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 Only participants with `role: "moderator"` on the associated VTCCall MAY create, update, or destroy VTCRecording objects. Non-moderators MUST receive `forbidden`.
+
+#### Starting a Recording
 
 `create` accepts:
 
 `callId` (String, required):
-: The VTCCall to record.
+: The VTCCall to record. The call MUST be in state `"active"`.
 
 The server sets `id`, `state` (to `"recording"`), `startedAt`, and `initiatedBy`.
 
+Example create:
+
+~~~json
+{
+  "create": {
+    "r0": {
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB"
+    }
+  }
+}
+~~~
+
+The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true`, because recording requires server-side media access that is incompatible with end-to-end encryption. The server MUST return `forbidden` when the account-level `supportsRecording` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
+
+On success, the server MUST deliver a `VTCRecordingStateEvent` ({{vtc-recording-state-event}}) with `state: "recording"` to all participants in the call. This is a mandatory consent signal (see {{recording-consent}}).
+
+#### Pausing, Resuming, and Stopping a Recording
+
 `update` supports patching `state`:
 
-- `"recording"` → `"paused"`: Pause recording.
-- `"paused"` → `"recording"`: Resume recording.
-- `"recording"` or `"paused"` → `"stopped"`: Stop recording. The server sets `stoppedAt` and transitions to `"processing"` when the recording file is being prepared, then to `"available"` when `blobId` is set, or to `"failed"` on error.
+- `"recording"` → `"paused"`: Pause recording. The server MUST deliver a `VTCRecordingStateEvent` with `state: "paused"`.
+- `"paused"` → `"recording"`: Resume recording. The server MUST deliver a `VTCRecordingStateEvent` with `state: "recording"`.
+- `"recording"` or `"paused"` → `"stopped"`: Stop recording. The server sets `stoppedAt` and delivers a `VTCRecordingStateEvent` with `state: "stopped"`.
 
-When recording state changes, the server MUST deliver a state-change notification to all participants in the associated VTCCall. This is a consent signal: all participants are informed that recording has started, paused, resumed, or stopped.
+Example update (stop recording):
+
+~~~json
+{
+  "update": {
+    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+      "state": "stopped"
+    }
+  }
+}
+~~~
+
+The server MUST return `invalidArguments` for any state transition not listed above (e.g., `"stopped"` → `"recording"`, `"available"` → anything). After stopping, the server transitions the recording through `"processing"` (while the recording file is prepared) to `"available"` (when `blobId`, `size`, `duration`, and `mediaType` are set), or to `"failed"` on error. These post-stop transitions are server-initiated and not client-controllable.
+
+#### Destroying a Recording
+
+`destroy` removes the VTCRecording metadata. If the recording is in state `"available"`, the associated blob is subject to the server's standard blob lifecycle (it is not guaranteed to be deleted immediately). The server MUST return `forbidden` when the caller is not a moderator on the associated call.
 
 ### VTCRecording/query
 
@@ -792,20 +1079,22 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
 Filter properties:
 
-`callId` (String):
+`callId` (String, optional):
 : Filter to recordings for this call.
 
-`state` (String):
-: Filter by recording state.
+`state` (String, optional):
+: Filter by recording state. One of `"recording"`, `"paused"`, `"stopped"`, `"processing"`, `"available"`, or `"failed"`.
 
-`initiatedBy` (String):
+`initiatedBy` (String, optional):
 : Filter to recordings started by this userId.
 
-`startedAfter` (UTCDate):
+`startedAfter` (UTCDate, optional):
 : Recordings started at or after this time.
 
-`startedBefore` (UTCDate):
+`startedBefore` (UTCDate, optional):
 : Recordings started before this time.
+
+All filter properties are combined with logical AND.
 
 Sort properties: `startedAt`. Default sort: `startedAt` descending.
 
@@ -817,39 +1106,77 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 ### VTCLivestream/get
 
-Standard JMAP `/get`.
+Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-`streamKey` MUST be returned as an empty string for non-moderators.
+All current and past participants of the associated VTCCall may retrieve VTCLivestream objects. The server MUST return the `streamKey` field as an empty string `""` for participants whose role is not `"moderator"` (see {{livestream-key-exposure}}). The server MUST return `notFound` for livestream ids belonging to calls the authenticated user has no access to.
 
 ### VTCLivestream/changes
 
-Standard JMAP `/changes`.
+Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 ### VTCLivestream/set
 
-Standard JMAP `/set`.
+Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 Only participants with `role: "moderator"` on the associated VTCCall MAY create, update, or destroy VTCLivestream objects. Non-moderators MUST receive `forbidden`.
+
+#### Starting a Livestream
 
 `create` accepts:
 
 `callId` (String, required):
-: The VTCCall to stream.
+: The VTCCall to stream. The call MUST be in state `"active"`.
 
 `streamUri` (String, required):
 : The RTMP or equivalent ingest endpoint.
 
 `streamKey` (String, required):
-: The stream key.
+: The stream key or authentication credential for the ingest endpoint.
 
-Optional: `platform` (String).
+Optional: `platform` (String) — a label identifying the target platform (e.g., `"youtube"`, `"twitch"`).
 
-The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error.
+Example create:
 
-`update` supports:
+~~~json
+{
+  "create": {
+    "s0": {
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "streamUri": "rtmp://live.example.com/ingest",
+      "streamKey": "sk_live_abc123def456",
+      "platform": "youtube"
+    }
+  }
+}
+~~~
 
-- Patching `state` to `"stopped"` to end the stream.
-- Updating `streamUri`, `streamKey`, or `platform` while the stream is stopped.
+The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error. The `"starting"` → `"live"` and `"starting"` → `"failed"` transitions are server-initiated.
+
+The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true`, because livestreaming requires server-side media access that is incompatible with end-to-end encryption. The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
+
+#### Stopping a Livestream
+
+`update` with `state: "stopped"` ends the stream. The server sets `stoppedAt` to the current time.
+
+~~~json
+{
+  "update": {
+    "01J4XQ7VN0SYWV2TTFHJVW7IJ": {
+      "state": "stopped"
+    }
+  }
+}
+~~~
+
+The server MUST return `invalidArguments` if the livestream is not in state `"starting"` or `"live"`. Once stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream by creating a new VTCLivestream object.
+
+#### Updating Stream Configuration
+
+`update` supports patching `streamUri`, `streamKey`, or `platform` only while the livestream is in state `"stopped"` or `"failed"`. The server MUST return `invalidArguments` for configuration updates while the stream is in state `"starting"` or `"live"`.
+
+#### Destroying a Livestream
+
+`destroy` removes the VTCLivestream metadata. The server MUST return `forbidden` when the caller is not a moderator. The server SHOULD stop an active stream before destroying the record; the server MUST NOT leave an orphaned stream running after the metadata is removed.
 
 ### VTCLivestream/query
 
@@ -857,14 +1184,16 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
 Filter properties:
 
-`callId` (String):
+`callId` (String, optional):
 : Filter to livestreams for this call.
 
-`state` (String):
-: Filter by livestream state.
+`state` (String, optional):
+: Filter by livestream state. One of `"starting"`, `"live"`, `"stopped"`, or `"failed"`.
 
-`platform` (String):
-: Filter by platform.
+`platform` (String, optional):
+: Filter by platform identifier.
+
+All filter properties are combined with logical AND.
 
 Sort properties: `startedAt`. Default sort: `startedAt` descending.
 
@@ -912,6 +1241,24 @@ When a ring call is created, the server constructs a `VTCCallPush` payload and d
 
 `spaceId` (String|null):
 : The associated Space id, if any.
+
+Example `VTCCallPush` payload:
+
+~~~json
+{
+  "@type": "VTCCallPush",
+  "accountId": "alice-account",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callType": "ring",
+  "initiatorId": "user:bob@example.com",
+  "initiatorDisplayName": "Bob Martinez",
+  "subject": "Quick sync",
+  "mediaTypes": ["audio", "video"],
+  "joinUri": "https://meet.example.com/room/xkz",
+  "chatId": null,
+  "spaceId": null
+}
+~~~
 
 ### Urgency {#ring-urgency}
 
@@ -961,6 +1308,16 @@ When a ringing call is answered, declined, cancelled, or times out, the server d
 `endReason` (String):
 : The reason ringing stopped. Values: `"answered"`, `"answered_elsewhere"`, `"declined"`, `"cancelled"`, `"timeout"`, `"failed"`.
 
+Example — call answered on another device:
+
+~~~json
+{
+  "@type": "VTCCallEndEvent",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "endReason": "answered_elsewhere"
+}
+~~~
+
 ## VTCGatewaySignal {#gateway-signal}
 
 A VTCGatewaySignal carries a protocol-specific signal between a gateway and a call participant. It is an ephemeral WebSocket event — not persisted as a JMAP object. This is the pass-through mechanism for any external protocol verb that does not map to a core VTC lifecycle operation (join, leave, mute, kick, end).
@@ -996,6 +1353,39 @@ A VTCGatewaySignal carries a protocol-specific signal between a gateway and a ca
 : Time the signal was generated.
 
 Moderators MAY send outbound VTCGatewaySignals by including them in a VTCParticipant/set update on the target participant's `gatewayData` with a `"pendingSignal"` key. The server extracts the signal, delivers it to the gateway, and removes the key. This allows moderators to send DTMF, initiate transfers (SIP REFER), or perform other protocol-specific operations without JMAP VTC defining a method for each.
+
+Example — inbound DTMF from a PSTN participant:
+
+~~~json
+{
+  "@type": "VTCGatewaySignal",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "participantId": "gw-pstn-14155559876",
+  "protocol": "pstn",
+  "signal": "dtmf",
+  "data": {"digit": "5", "duration": 160},
+  "direction": "inbound",
+  "timestamp": "2026-06-05T14:42:17Z"
+}
+~~~
+
+Example — moderator sends outbound SIP REFER (call transfer) via `VTCParticipant/set`:
+
+~~~json
+{
+  "update": {
+    "gw-sip-alice": {
+      "gatewayData/pendingSignal": {
+        "signal": "refer",
+        "data": {
+          "referTo": "sip:bob@example.com",
+          "referredBy": "sip:alice@example.com"
+        }
+      }
+    }
+  }
+}
+~~~
 
 ## In-Call Ephemeral Events {#in-call-events}
 
@@ -1065,7 +1455,7 @@ Delivered to a specific participant when a moderator requests that they unmute.
 `requestedBy` (String):
 : The userId of the moderator making the request.
 
-### VTCRecordingStateEvent
+### VTCRecordingStateEvent {#vtc-recording-state-event}
 
 Delivered to all participants when recording state changes. This is a mandatory consent signal.
 
@@ -1260,6 +1650,265 @@ The following design choices were left to deployments rather than prescribed:
 - **Voicemail and IVR.** Out of scope. May be modeled as gateway-specific signal flows in deployments that support them.
 - **Call queuing (contact center).** Out of scope. May be modeled as gateway-specific signal flows.
 - **Virtual backgrounds, noise suppression, layout selection.** Client-side rendering concerns with no protocol surface.
+
+# Complete Lifecycle Examples {#lifecycle-examples}
+
+## Ring Call: Create, Answer, Record, End
+
+This example shows a complete ring-call flow between Bob (initiator) and Alice (target).
+
+### Step 1: Bob creates a ring call
+
+Bob's client sends `VTCCall/set`:
+
+~~~json
+[["VTCCall/set", {
+  "accountId": "bob-account",
+  "create": {
+    "c0": {
+      "callType": "ring",
+      "targetParticipantIds": ["user:alice@example.com"],
+      "mediaTypes": ["audio", "video"],
+      "subject": "Quick sync"
+    }
+  }
+}, "0"]]
+~~~
+
+Server responds:
+
+~~~json
+[["VTCCall/set", {
+  "accountId": "bob-account",
+  "created": {
+    "c0": {
+      "id": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "state": "ringing",
+      "initiatorId": "user:bob@example.com",
+      "createdAt": "2026-06-05T14:30:00Z",
+      "joinUri": "https://meet.example.com/room/xkz",
+      "activeParticipantCount": 0
+    }
+  }
+}, "0"]]
+~~~
+
+The server creates two VTCParticipant records (Bob and Alice, both with `joinedAt: null`), delivers a `VTCCallPush` via APNs VoIP push to Alice's iOS device, and delivers a `VTCRingEvent` to Alice's active WebSocket connection.
+
+### Step 2: Alice's devices receive the ring
+
+Alice's iOS device receives a VoIP push with the `VTCCallPush` payload and presents the CallKit incoming-call UI. Simultaneously, Alice's desktop client receives via WebSocket:
+
+~~~json
+{
+  "@type": "VTCRingEvent",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "initiatorId": "user:bob@example.com",
+  "mediaTypes": ["audio", "video"],
+  "joinUri": "https://meet.example.com/room/xkz"
+}
+~~~
+
+### Step 3: Alice answers on her desktop
+
+Alice's desktop client sends `VTCParticipant/set`:
+
+~~~json
+[["VTCParticipant/set", {
+  "accountId": "alice-account",
+  "update": {
+    "user:alice@example.com": {
+      "joinMethod": "webrtc"
+    }
+  }
+}, "1"]]
+~~~
+
+The server sets `joinedAt`, transitions the VTCCall to `"active"`, and delivers a `VTCCallEndEvent` to Alice's iOS device:
+
+~~~json
+{
+  "@type": "VTCCallEndEvent",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "endReason": "answered_elsewhere"
+}
+~~~
+
+Alice's iOS dismisses the CallKit UI.
+
+### Step 4: Bob starts recording
+
+Bob's client sends `VTCRecording/set`:
+
+~~~json
+[["VTCRecording/set", {
+  "accountId": "bob-account",
+  "create": {
+    "r0": {
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB"
+    }
+  }
+}, "2"]]
+~~~
+
+Both participants receive a `VTCRecordingStateEvent` via WebSocket:
+
+~~~json
+{
+  "@type": "VTCRecordingStateEvent",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "state": "recording",
+  "initiatedBy": "user:bob@example.com"
+}
+~~~
+
+Alice's client displays a recording indicator.
+
+### Step 5: Alice mutes
+
+Alice's client sends `VTCParticipant/set`:
+
+~~~json
+[["VTCParticipant/set", {
+  "accountId": "alice-account",
+  "update": {
+    "user:alice@example.com": {
+      "mediaState/audio": false
+    }
+  }
+}, "3"]]
+~~~
+
+Bob receives via WebSocket:
+
+~~~json
+{
+  "@type": "VTCMediaStateEvent",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "participantId": "user:alice@example.com",
+  "mediaState": {
+    "audio": false,
+    "video": true,
+    "screen": false,
+    "raisedHand": false
+  }
+}
+~~~
+
+### Step 6: Bob ends the call
+
+Bob's client sends `VTCCall/set`:
+
+~~~json
+[["VTCCall/set", {
+  "accountId": "bob-account",
+  "update": {
+    "01J4XKZQN4MWVT8PPBEHTJ3AB": {
+      "state": "ended"
+    }
+  }
+}, "4"]]
+~~~
+
+The server sets `endedAt` and `endReason: "completed"`, stops the recording (transitioning it through `"stopped"` → `"processing"` → `"available"`), and delivers a `StateChange` to Alice's connection:
+
+~~~json
+{
+  "@type": "StateChange",
+  "changed": {
+    "alice-account": {
+      "VTCCall": "s201",
+      "VTCParticipant": "s202"
+    }
+  }
+}
+~~~
+
+Alice's client fetches the updated VTCCall via `VTCCall/get` and sees `state: "ended"`.
+
+## Room Call with Lobby: Create, Admit, Join, Leave
+
+This example shows a room call with lobby mode in a Space channel.
+
+### Step 1: Moderator creates a room call
+
+~~~json
+[["VTCCall/set", {
+  "accountId": "mod-account",
+  "create": {
+    "c0": {
+      "callType": "room",
+      "mediaTypes": ["audio", "video"],
+      "subject": "Office Hours",
+      "lobbyEnabled": true,
+      "spaceId": "01J3ABCDEF0000000000000000",
+      "channelId": "01J3ABCDEF1111111111111111"
+    }
+  }
+}, "0"]]
+~~~
+
+The call is immediately `"active"`. The Space's `activeCallId` is set to the new call's id (when {{JMAP-CHAT}} is present).
+
+### Step 2: Guest joins and enters lobby
+
+A channel member joins:
+
+~~~json
+[["VTCParticipant/set", {
+  "accountId": "guest-account",
+  "create": {
+    "p0": {
+      "callId": "01J4XL8QN5OWXU9RRBEIUS5CD",
+      "joinMethod": "webrtc"
+    }
+  }
+}, "1"]]
+~~~
+
+Because `lobbyEnabled` is `true`, the server sets `lobbyState: "waiting"`. The guest is not yet in the call. The moderator receives a `VTCParticipantEvent` (or `StateChange` for VTCParticipant) indicating a new lobby participant.
+
+### Step 3: Moderator admits the guest
+
+~~~json
+[["VTCParticipant/set", {
+  "accountId": "mod-account",
+  "update": {
+    "user:guest@example.com": {
+      "lobbyState": "admitted"
+    }
+  }
+}, "2"]]
+~~~
+
+The guest's `lobbyState` transitions to `"admitted"` and they can now see and hear other participants. The guest receives a `StateChange` for their VTCParticipant record.
+
+### Step 4: Guest leaves
+
+~~~json
+[["VTCParticipant/set", {
+  "accountId": "guest-account",
+  "update": {
+    "user:guest@example.com": {
+      "leftAt": "2026-06-05T15:45:00Z"
+    }
+  }
+}, "3"]]
+~~~
+
+The moderator receives a `VTCParticipantEvent`:
+
+~~~json
+{
+  "@type": "VTCParticipantEvent",
+  "callId": "01J4XL8QN5OWXU9RRBEIUS5CD",
+  "participantId": "user:guest@example.com",
+  "event": "left",
+  "displayName": "Guest User",
+  "role": "participant"
+}
+~~~
 
 # Acknowledgements
 

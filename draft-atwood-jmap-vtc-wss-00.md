@@ -425,7 +425,8 @@ A participant mutes their microphone:
   "mediaState": {
     "audio": false,
     "video": true,
-    "screenShare": false
+    "screen": false,
+    "raisedHand": false
   }
 }
 ~~~
