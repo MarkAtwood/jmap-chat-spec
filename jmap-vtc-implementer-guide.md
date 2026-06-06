@@ -435,11 +435,15 @@ evaluate OpenMLS or mls-rs as reference implementations.
 
 **Fingerprint display.** The spec says clients SHOULD display `e2eeFingerprint`
 to enable out-of-band verification (§VTCParticipant Object Fields,
-`e2eeFingerprint`). The format is media-layer-defined. A common format is a
-hex-encoded SHA-256 of the public key, displayed in groups of four hex digits
-(e.g., `"A1B2 C3D4 E5F6 ..."`). Clients SHOULD show these in the participant
-list when `e2eeEnabled` is `true`, with a "verified" indicator if the user has
-confirmed the fingerprint out-of-band.
+`e2eeFingerprint`). The format is media-layer-defined. Store the full
+hex-encoded SHA-256 of the public key in the field for interoperability, but
+display it as 4-6 words from a standardized word list (e.g., BIP-39 or PGP
+word list) — VTC has a built-in voice channel, so "read your code aloud" is
+the natural verification gesture, and words are far easier to speak than hex.
+Clients SHOULD show these in the participant list when `e2eeEnabled` is `true`,
+with a "verified" indicator if the user has confirmed the fingerprint
+out-of-band. See the E2EE Guide (§8. Fingerprint verification) for format
+comparison and derivation details.
 
 **TOFU vs. PKI.** Trust-on-first-use: the client records the fingerprint it
 first sees for a userId and warns on change. Simple to implement, effective
@@ -474,9 +478,9 @@ read-only for participants. This avoids the complexity of key management and
 the recording/gateway constraints.
 
 When adding E2EE: use WebRTC Insertable Streams on the media side and MLS for
-key agreement. Use a hex-encoded SHA-256 fingerprint in the
-`e2eeFingerprint` field, formatted in groups of four uppercase hex characters
-separated by spaces. Implement TOFU fingerprint verification in the client.
+key agreement. Store the full hex-encoded SHA-256 of the public key in
+`e2eeFingerprint`; display it as 4-6 words from a standardized word list
+for voice verification. Implement TOFU fingerprint verification in the client.
 Enforce the recording/livestream prohibition in the `VTCRecording/set` and
 `VTCLivestream/set` handlers. Make it clear to the user before enabling E2EE
 that PSTN dial-in and recording will be unavailable.
