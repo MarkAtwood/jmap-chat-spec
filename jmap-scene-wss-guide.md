@@ -512,8 +512,10 @@ reactively.
 
 ### Visibility filtering
 
-The visibility contract applies equally to ephemeral events and to `SceneObject/get`
-responses. The same filtering logic should be reused:
+The visibility contract from the spec applies to ephemeral events using the same logic as
+`SceneObject/get` responses. The spec uses SHOULD for server-side filtering — simple
+deployments that return all objects in `SceneObject/get` MAY deliver all ephemeral events
+without filtering. The filtering logic should be reused when present:
 
 - A simple deployment that returns all objects in `SceneObject/get` delivers all
   `SceneObjectEvent` frames.
@@ -562,6 +564,29 @@ matter. A `SceneObject/set` create will produce both a `StateChange` for SceneOb
 a `SceneObjectEvent` with `event: "created"`. These are independent signals — the
 `StateChange` drives the sync protocol, the ephemeral event drives the real-time UI.
 Clients MUST handle both arriving and MUST NOT treat them as duplicates.
+
+### Blocked-sender suppression
+
+When the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is available for the
+receiving account and the originating user is on the recipient's blocked list
+(`ChatContact.blocked` is `true`), the server MUST silently drop all Scene ephemeral
+events originating from that user before delivery. This applies to all three event types:
+
+- **SceneAvatarEvent**: Events for a blocked user's avatar (keyed on `userId`) MUST NOT
+  be delivered. The blocking user should not see the blocked user enter, leave, or get
+  ejected.
+- **SceneObjectEvent**: Events where `updatedBy` matches a blocked user MUST NOT be
+  delivered. Events where `updatedBy` is `null` (server-initiated, e.g., physics
+  simulation) are not subject to suppression and are delivered normally.
+- **SceneInteractionEvent**: Events where `userId` matches a blocked user MUST NOT be
+  delivered.
+
+The blocked user MUST NOT be informed of the suppression — their events flow normally to
+all other recipients. Without the Chat capability, no blocked-sender filtering applies
+(there is no blocked list to consult).
+
+Blocked-sender suppression is applied independently of and in addition to visibility
+filtering. An event may be suppressed by either mechanism.
 
 ### Handling ChatStreamEnable with "scene"
 

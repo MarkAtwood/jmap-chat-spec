@@ -1053,6 +1053,13 @@ a performance problem (e.g., generating excessive `StateChange` notifications),
 add a per-user rate limit on `SceneObject/set create` (RECOMMENDED: 60 creates
 per minute per region).
 
+**Interaction event rate limits.** When the Scene WebSocket capability is
+deployed, the server SHOULD enforce a rate limit of 5 `SceneInteractionEvent`
+events per user per region per second, and 2 `SceneObjectEvent` updates per
+object per second. These limits are defined in {{JMAP-SCENE-WSS}} and apply
+to outbound event delivery. Events that exceed the limit are silently dropped;
+the most recent state is delivered when the rate window reopens.
+
 **`null` means no server-imposed limit, not infinite.** Even when quota fields
 are `null`, physical limits exist (database size, memory, file descriptors).
 Document your deployment's practical limits even when the JMAP quota is
