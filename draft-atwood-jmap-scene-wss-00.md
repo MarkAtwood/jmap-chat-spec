@@ -304,6 +304,59 @@ Example — deployment-specific puzzle interaction:
 }
 ~~~
 
+Example — custom game action with structured payload:
+
+Deployments can define their own interaction actions using
+reverse-domain notation.  This avoids collisions with the registered
+short names (`"click"`, `"grab"`, `"release"`, `"activate"`) and with
+actions defined by other deployments.
+
+In this example, a game deployment defines a custom
+`"com.example.game.cast-spell"` action.  A user casts a fireball
+spell at a target object.  The client sends the interaction through
+the JMAP WebSocket, and the server relays it as a
+`SceneInteractionEvent` to all subscribers of that region.
+
+Server delivers to subscribers:
+
+~~~json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "01J5ABC0000000000000000001",
+  "objectId": "01J5OBJ0000000000000000077",
+  "userId": "user:alice@example.com",
+  "action": "com.example.game.cast-spell",
+  "data": {
+    "spellId": "fireball",
+    "targetId": "01J5OBJ0000000000000000033"
+  }
+}
+~~~
+
+Several things to note about this interaction:
+
+The `action` field uses reverse-domain notation
+(`com.example.game.cast-spell`) rather than a short name.  This is the
+RECOMMENDED approach for deployment-specific actions, as stated in the
+`SceneInteractionEvent` specification.  Clients that do not understand
+this action MUST ignore the event (per the spec: "Clients MUST ignore
+unrecognized values").
+
+The `data` field carries an opaque, action-specific payload.  The
+server relays this without interpretation -- it does not validate the
+structure of `data` beyond enforcing deployment-defined size limits.
+In this case, the payload identifies the spell being cast and the
+target object.  Only clients that understand the
+`com.example.game.cast-spell` action would interpret this payload; a
+generic Scene viewer would silently discard the event.
+
+The `objectId` identifies the object being interacted WITH (the
+target of the spell in this scenario), while `userId` identifies who
+performed the interaction.  The `data.targetId` is part of the
+application-layer payload and has no special meaning to the Scene
+protocol itself -- the deployment chose to include it for its own
+game logic.
+
 # Scene Stream Control Messages {#stream-control}
 
 ## SceneStreamEnable {#scene-stream-enable}
@@ -337,6 +390,78 @@ connection.
 }
 ~~~
 
+### Example — Event-Type Filtering
+
+A client rendering a region wants to receive only interaction events
+-- it already tracks avatar presence through JMAP `StateChange`
+notifications and handles object state via the simulation layer.  By
+setting `eventTypes` to a single-element list, the client suppresses
+`SceneAvatarEvent` and `SceneObjectEvent` delivery, reducing
+WebSocket traffic to only the events the client's UI actually
+consumes.
+
+Client sends:
+
+~~~json
+{
+  "@type": "SceneStreamEnable",
+  "regionIds": ["01J5ABC0000000000000000001"],
+  "eventTypes": ["SceneInteractionEvent"]
+}
+~~~
+
+The JMAP WebSocket protocol does not define an explicit acknowledgment
+frame for stream-enable messages.  Following the same pattern as
+`WebSocketPushEnable` (RFC 8887), the server processes the request
+silently on success.  The client infers success from the absence of a
+`RequestError` frame.  If the server cannot honor the request -- for
+example, because `eventTypes` contains only unrecognized values -- it
+responds with a `RequestError` (see the error response example below).
+
+After this message is processed, the server delivers only
+`SceneInteractionEvent` frames for region `01J5ABC0000000000000000001`.
+A `SceneAvatarEvent` for the same region would NOT be delivered, even
+though one occurred, because the client's `eventTypes` filter excludes
+it.
+
+### Example — Multiple Regions
+
+A client has avatars active in two adjacent regions -- perhaps a lobby
+and a main hall that the user is transitioning between.  The client
+subscribes to events from both regions in a single
+`SceneStreamEnable` message.
+
+Client sends:
+
+~~~json
+{
+  "@type": "SceneStreamEnable",
+  "regionIds": [
+    "01J5ABC0000000000000000001",
+    "01J5ABC0000000000000000002"
+  ],
+  "eventTypes": null
+}
+~~~
+
+Setting `eventTypes` to `null` means all three event types
+(`SceneAvatarEvent`, `SceneObjectEvent`, `SceneInteractionEvent`) are
+delivered for both regions.
+
+This message REPLACES any previous `SceneStreamEnable` subscription in
+its entirety.  There is no additive or incremental subscription
+mechanism.  If the client had previously subscribed to region
+`01J5ABC0000000000000000099` and now sends the message above, events
+for region `...0099` stop immediately.  The client must include every
+desired region in each `SceneStreamEnable` it sends.
+
+If the user does not have an active avatar in one of the listed
+regions -- say the avatar in region `...0002` has not yet been created
+via `SceneAvatar/set` -- that entry is silently ignored.  Events for
+region `...0001` are still delivered.  Once the user later enters
+region `...0002` (and the subscription is still active), events for
+that region begin without requiring a new `SceneStreamEnable`.
+
 ### Semantics
 
 A subsequent `SceneStreamEnable` message replaces the previous
@@ -355,6 +480,59 @@ unrecognized values, the server MUST respond with a `RequestError`
 frame ({{RFC8887}} Section 4.3.4) with a `type` of
 `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update
 the current ephemeral subscription state.
+
+### Example — Error Response for Invalid Arguments
+
+The `SceneStreamEnable` semantics distinguish between two cases:
+
+- **Inaccessible regions** in `regionIds` (the user has no active
+  avatar there) are silently ignored, not treated as errors.  This is
+  by design: a client may speculatively list regions it expects to
+  enter soon.
+
+- **Invalid `eventTypes`** -- an empty array, or an array containing
+  only unrecognized values -- produce a `RequestError`, because the
+  resulting subscription would have no defined behavior.
+
+The following example shows the error case.  A client sends an
+`eventTypes` array containing only a value the server does not
+recognize:
+
+Client sends:
+
+~~~json
+{
+  "@type": "SceneStreamEnable",
+  "regionIds": ["01J5ABC0000000000000000001"],
+  "eventTypes": ["SceneFooBarEvent"]
+}
+~~~
+
+The server does not recognize `"SceneFooBarEvent"` as a valid event
+type, and because it is the ONLY entry in `eventTypes`, no recognized
+values remain.  Per the spec, the server MUST respond with a
+`RequestError` frame and MUST NOT update the current subscription
+state.
+
+Server responds:
+
+~~~json
+{
+  "@type": "RequestError",
+  "type": "urn:ietf:params:jmap:error:invalidArguments",
+  "detail": "eventTypes contains no recognized values"
+}
+~~~
+
+The client's previous subscription (if any) remains unchanged.  This
+error does not close the WebSocket connection -- the client may
+correct its request and send a new `SceneStreamEnable`.
+
+Note the contrast: if the client had sent `"eventTypes":
+["SceneFooBarEvent", "SceneAvatarEvent"]`, the unrecognized value
+would be silently ignored and the subscription would proceed with
+`SceneAvatarEvent` only.  The error fires only when NO recognized
+values remain.
 
 ### Subscription Scope
 
@@ -443,6 +621,65 @@ exhaustion:
 
 Servers MAY apply additional rate limits to other event types.
 
+### Example — Rate-Limited Object Update Delivery
+
+The server enforces a rate limit of no more than two
+`SceneObjectEvent` frames per object per second for `"updated"`
+events.  This prevents high-frequency object mutations -- such as a
+physics simulation stepping an object's position many times per second
+-- from flooding the WebSocket connection.
+
+Consider an object `01J5OBJ0000000000000000050` that is being
+repositioned rapidly by a server-side physics script.  The object
+moves through positions (10,0,0), (10.1,0,0), (10.2,0,0), ...
+(10.9,0,0) over the course of one second -- ten updates in total.
+
+The server delivers the first update at T=0.0s:
+
+~~~json
+{
+  "@type": "SceneObjectEvent",
+  "regionId": "01J5ABC0000000000000000001",
+  "objectId": "01J5OBJ0000000000000000050",
+  "event": "updated",
+  "updatedBy": null,
+  "position": [10.0, 0, 0]
+}
+~~~
+
+The server delivers the second update at T=0.5s, reflecting the
+latest position at that moment, not the next sequential position:
+
+~~~json
+{
+  "@type": "SceneObjectEvent",
+  "regionId": "01J5ABC0000000000000000001",
+  "objectId": "01J5OBJ0000000000000000050",
+  "event": "updated",
+  "updatedBy": null,
+  "position": [10.5, 0, 0]
+}
+~~~
+
+The intermediate positions (10.1, 10.2, 10.3, 10.4) were coalesced --
+the server dropped those events and delivered only the most recent
+state when the rate window permitted the next delivery.  Similarly,
+positions 10.6 through 10.9 are coalesced, and the next delivered
+event (at T=1.0s) would carry the latest position at that time.
+
+This coalescing behavior means the delivered event always contains the
+object's latest known state, not every intermediate state.  Clients
+that need smooth, high-frequency position updates (e.g., for
+rendering a moving object at 60fps) should use the simulation layer
+behind the region's `simulationUri`, not the JMAP WebSocket.  The
+`SceneObjectEvent` stream is intended for discrete notifications that
+drive UI updates like inventory lists, property panels, or object
+highlight indicators.
+
+Note that `updatedBy` is `null` in both events because the changes
+originated from a server-side physics simulation, not from a user
+action.
+
 ## Event Ordering
 
 Events are delivered in best-effort order.  The server SHOULD
@@ -462,6 +699,87 @@ A deployment that performs server-side visibility filtering (e.g.,
 radius-based or occlusion-based) SHOULD apply the same filter to
 ephemeral events: a `SceneObjectEvent` for an object outside the
 client's visibility scope SHOULD be suppressed.
+
+## Blocked-Sender Suppression {#blocked-sender}
+
+When the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is
+available for the receiving account, the server MUST consult the
+recipient's ChatContact records before delivering Scene ephemeral
+events.  If the originating user corresponds to a ChatContact whose
+`blocked` field is `true` on the recipient's ChatContact record, the
+server MUST silently drop the event before delivery to that
+recipient.  The event is delivered normally to all other recipients
+whose ChatContact records do not block the originating user.
+
+The blocked user MUST NOT be informed of the suppression.  From the
+blocked user's perspective, events are sent normally; only the
+blocking user's delivery is affected.
+
+### Per-Event-Type Rules
+
+**SceneAvatarEvent:**  The server MUST NOT deliver a
+`SceneAvatarEvent` to a recipient who has blocked the user identified
+by the event's `userId` field.  This applies to all `event` values:
+`"entered"`, `"left"`, and `"ejected"`.  The blocking user does not
+see the blocked user's avatar appear, disappear, or get ejected from
+any region.
+
+**SceneObjectEvent:**  The server MUST NOT deliver a
+`SceneObjectEvent` to a recipient who has blocked the user identified
+by the event's `updatedBy` field.  Events where `updatedBy` is `null`
+(server-initiated changes) are not subject to blocked-sender
+suppression and are delivered normally.  Events for objects owned by
+other users or by the system are unaffected regardless of who
+triggered the update.
+
+**SceneInteractionEvent:**  The server MUST NOT deliver a
+`SceneInteractionEvent` to a recipient who has blocked the user
+identified by the event's `userId` field.
+
+### Without Chat Capability
+
+If the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is not
+present in the account's capabilities, no blocked-sender filtering
+is applied to Scene ephemeral events.  There is no blocked list to
+consult and the server delivers all events that pass the other
+delivery checks (authorization, visibility filtering, rate limiting).
+
+### Interaction with Visibility Filtering
+
+Blocked-sender suppression is applied independently of and in
+addition to the visibility filtering defined in {{visibility}}.
+An event may be suppressed by either mechanism.  For example, a
+`SceneObjectEvent` for an object outside the client's visibility
+scope is suppressed by visibility filtering regardless of whether
+the object's `updatedBy` user is blocked, and conversely a
+`SceneAvatarEvent` from a blocked user is suppressed by
+blocked-sender filtering even if the avatar would otherwise be
+visible.
+
+### Example
+
+The following `SceneAvatarEvent` is generated when a user enters a
+region.  It is delivered to all other users who have an active
+subscription covering this region — except for any recipient whose
+ChatContact record for `user:mallory@example.com` has
+`blocked: true`.  For those recipients, the event is silently
+dropped and no notification is sent to `user:mallory@example.com`
+indicating the suppression.
+
+~~~json
+{
+  "@type": "SceneAvatarEvent",
+  "regionId": "01J5ABC0000000000000000001",
+  "avatarId": "user:mallory@example.com",
+  "event": "entered",
+  "userId": "user:mallory@example.com",
+  "displayName": "Mallory Nguyen"
+}
+~~~
+
+This parallels the blocked-sender suppression rules for
+`ChatTypingEvent` and `ChatPresenceEvent` in {{JMAP-CHAT-WSS}} and
+the ring-event suppression rule in {{JMAP-VTC-WSS}}.
 
 ## Subscription Lifecycle
 
