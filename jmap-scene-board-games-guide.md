@@ -84,10 +84,11 @@ Pieces are SceneObjects with `interactable: true` and
 ```
 
 > **Note on `supportedVisualTypes`:** Deployments serving SVG game
-> assets should include `"image/svg+xml"` in the region's
-> `supportedVisualTypes` list alongside the spec-required
-> `"model/gltf-binary"`. Clients that do not support SVG will fall
-> back to the glTF asset when both are listed.
+> assets should include `"image/svg+xml"` in the account-level
+> `supportedVisualTypes` capability alongside the spec-required
+> `"model/gltf-binary"`. Each SceneObject has a single `visualRef`
+> and `visualType`; multi-format fallback is an application-layer
+> concern (e.g., serving different objects based on client capability).
 
 ### Game State Object
 
@@ -1587,21 +1588,22 @@ The simulation layer on receiving a `"shoot"` event:
 5. Updates all ball positions via `SceneObject/set`.
 6. Updates the game state object: pocketed sets, fouls, whose turn.
 
-**Server response after a shot:**
+**Simulation update after a shot:**
 
 ```json
 {
-  "methodResponses": [[
+  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:scene"],
+  "methodCalls": [[
     "SceneObject/set",
     {
       "accountId": "u1",
-      "updated": {
+      "update": {
         "pool-ball-cue": { "position": [0.82, 0, 0.71] },
         "pool-ball-03":  { "position": [1.27, 0, 0.98] },
         "pool-ball-07":  {
           "position": [0.0, 0, 0.0],
           "visible": false,
-          "customProperties/pocketed": true
+          "customProperties": { "pocketed": true }
         }
       }
     },
@@ -2273,7 +2275,7 @@ the Z axis from the side.
   "id": "pit-vine-002",
   "regionId": "region-pitfall-001",
   "name": "Vine",
-  "position": [47, 0, 8],
+  "position": [47, 8, 0],
   "visualRef": "blob-vine",
   "visualType": "image/png",
   "physicsMode": "static",
@@ -2281,7 +2283,7 @@ the Z axis from the side.
   "visible": true,
   "customProperties": {
     "objectType": "vine",
-    "grabPoint": [47, 0, 7],
+    "grabPoint": [47, 7, 0],
     "swingArc": 3.0
   }
 }
@@ -2294,7 +2296,7 @@ the Z axis from the side.
   "id": "pit-gold-012",
   "regionId": "region-pitfall-001",
   "name": "Gold Bar",
-  "position": [52, 0, 3],
+  "position": [52, 3, 0],
   "visualRef": "blob-gold-bar",
   "visualType": "image/png",
   "physicsMode": "none",
@@ -2611,9 +2613,9 @@ A flat arena with distant geometric mountains on the horizon.
 {
   "id": "region-battlezone-001",
   "name": "Battlezone Arena",
-  "bounds": { "min": [-200, 0, -200], "max": [200, 0, 200] },
+  "bounds": { "min": [-200, 0, -200], "max": [200, 10, 200] },
   "viewHint": "3d",
-  "spawnPosition": [0, 0, 0],
+  "spawnPosition": [0, 1, 0],
   "simulationUri": "wss://sim.example.com/games/battlezone/001",
   "accessPolicy": "public",
   "environment": {
@@ -3302,7 +3304,7 @@ the [Simulation Layer Guide](jmap-scene-simulation-guide.md).
   "userId": "user:alice@example.com",
   "displayName": "Alice",
   "position": [10, 2, -5],
-  "orientation": [0.1, 0.3, 0, 0.95],
+  "orientation": [0.1, 0.3, 0, 0.9487],
   "visualRef": "blob-quake-player-model",
   "visualType": "model/gltf-binary",
   "customProperties": {
@@ -3455,7 +3457,7 @@ gameplay significance.
   "regionId": "region-descent-mine1",
   "name": "Medium Hulk",
   "position": [30, -15, 42],
-  "orientation": [0.2, 0.5, -0.1, 0.83],
+  "orientation": [0.2, 0.5, -0.1, 0.8367],
   "visualRef": "blob-medium-hulk",
   "visualType": "model/gltf-binary",
   "physicsMode": "kinematic",
@@ -3701,7 +3703,7 @@ hint.
   "regionId": "region-flight-001",
   "name": "Dralthi Fighter",
   "position": [500, 50, -800],
-  "orientation": [0.1, 0.8, 0.1, 0.58],
+  "orientation": [0.1, 0.8, 0.1, 0.5831],
   "visualRef": "blob-dralthi-model",
   "visualType": "model/gltf-binary",
   "physicsMode": "kinematic",
@@ -4872,6 +4874,7 @@ raised their hand.
   "name": "Classroom State",
   "position": [0, 0, 0],
   "visualRef": null,
+  "visualType": null,
   "physicsMode": "none",
   "interactable": false,
   "visible": false,

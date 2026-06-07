@@ -44,11 +44,12 @@ truth. Where this guide and the draft disagree, the draft wins.
 ### What the spec provides
 
 SceneRegion has a `viewHint` field (String|null) that advises the client on
-how to render the region. The spec defines three values:
+how to render the region. The spec defines four values:
 
 - `"3d"` -- standard 3D perspective rendering.
 - `"2d-topdown"` -- top-down 2D view, as in virtual offices or board games.
 - `"2d-side"` -- side-scrolling 2D view, as in platformer games.
+- `"ar"` -- augmented reality overlay on the physical world (region coordinates anchored via `geoAnchor`).
 
 `null` is treated as `"3d"`. Clients MUST NOT fail on unrecognized values;
 they SHOULD fall back to `"3d"`. Deployment-specific hints SHOULD use

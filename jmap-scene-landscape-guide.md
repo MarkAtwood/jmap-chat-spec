@@ -1223,9 +1223,9 @@ protocol transports references to visuals; it does not interpret them.
 
 ### View-mode spectrum
 
-`viewHint` is an advisory field with three standard values: `"3d"`,
-`"2d-topdown"`, `"2d-side"`. This is not three separate specifications or
-three separate products. It is a spectrum controlled by a single field.
+`viewHint` is an advisory field with four standard values: `"3d"`,
+`"2d-topdown"`, `"2d-side"`, `"ar"`. This is not four separate specifications or
+four separate products. It is a spectrum controlled by a single field.
 
 - A Gather-like virtual office is a SceneRegion with `viewHint: "2d-topdown"`.
 - A Doom-like FPS is a SceneRegion with `viewHint: "3d"`.
@@ -1830,12 +1830,6 @@ presence, spatial state, or server-client communication. A Scene client running
 in a browser would likely use WebXR for rendering and input, but WebXR and
 Scene do not overlap in function.
 
-**Spatial.io.** Spatial pivoted from a 3D collaboration platform to a
-gaming-focused metaverse platform and then to an AI-avatar product. Its
-repeated pivots mean there is no stable architecture to analyze. The spatial
-collaboration phase was similar to Frame VR (covered in Section 5); the
-gaming phase was similar to Roblox (covered in Section 3). Spatial does not
-add a distinct architectural lesson beyond what those entries already cover.
 
 **High Fidelity.** High Fidelity (2013-2020), founded by Second Life creator
 Philip Rosedale, was an open-source social VR platform that attempted
