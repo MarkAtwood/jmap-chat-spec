@@ -137,10 +137,10 @@ their account holds an irrevocable governance role.
 ### 1.2 Group-chat bootstrap role assignment
 
 **What the spec leaves open.** Group chats use a closed two-role enum
-(`ChatMember.role`: `"admin" | "member"`). Commit `2fd3cf7` made the
-bootstrap-role assignment server-defined: the creator does not *have* to
-receive `"admin"` automatically. The wire contract is the role enum and the
-admin-action list, not the initial-seat policy.
+(`ChatMember.role`: `"admin" | "member"`). The spec makes the bootstrap-role
+assignment server-defined: the creator does not *have* to receive `"admin"`
+automatically. The wire contract is the role enum and the admin-action list,
+not the initial-seat policy.
 
 **What you must decide.**
 
@@ -189,11 +189,10 @@ without destroying message history.
 
 ### 1.3 Additional admin-equivalent principals
 
-**What the spec leaves open.** Commit `ic5s.4` added a paragraph
-(`draft-atwood-jmap-chat-00.md` near {#chat-member} anchor) noting that the
-`"admin" | "member"` role enum is the *wire-observable* representation, and
-that servers MAY designate additional internal principals as having
-admin-equivalent authority for the actions admins may perform. The means of
+**What the spec leaves open.** The main draft (near {#chat-member} anchor)
+notes that the `"admin" | "member"` role enum is the *wire-observable*
+representation, and that servers MAY designate additional internal principals
+as having admin-equivalent authority for the actions admins may perform. The means of
 designating such principals is deployment-defined. From a remote peer's
 perspective, all such actions appear to originate from a member with the
 `"admin"` role on the originating server.
@@ -252,11 +251,11 @@ Chat wire surface MUST remain identical whether or not the IdP is wired up.
 
 ### 1.4 Slow-mode exemption beyond `manage_channels`
 
-**What the spec leaves open.** Commit `ic5s.3` softened `slowModeSeconds`
-(main draft, near {#chat} anchor) to require a `rateLimited` error for
-non-exempt senders but make the exemption clause itself a SHOULD: servers
-SHOULD exempt members holding `"manage_channels"`, and deployments MAY
-define additional exempt principals.
+**What the spec leaves open.** The main draft (near {#chat} anchor)
+softened `slowModeSeconds` to require a `rateLimited` error for non-exempt
+senders but make the exemption clause itself a SHOULD: servers SHOULD exempt
+members holding `"manage_channels"`, and deployments MAY define additional
+exempt principals.
 
 **What you must decide.**
 
@@ -318,10 +317,10 @@ softened to recommended defaults.
 
 ### 2.1 Mapping deployment authorization to the wire permission vocabulary
 
-**What the spec leaves open.** Commit `38055ec` added a paragraph to §Space
-Permission Resolution making explicit that "Requires `X`" and "Mutable by
-members with `X` permission" clauses describe *recommended* mappings from the
-closed permission vocabulary to the actions those permissions gate.
+**What the spec leaves open.** The main draft's §Space Permission Resolution
+makes explicit that "Requires `X`" and "Mutable by members with `X`
+permission" clauses describe *recommended* mappings from the closed permission
+vocabulary to the actions those permissions gate.
 Deployments MAY substitute or augment these mappings with deployment-specific
 authorization policy — for example, gating an action on a different
 permission, requiring additional authorization beyond merely holding the
@@ -390,10 +389,9 @@ need to be able to find out why.
 
 ### 2.2 Custom emoji authorization
 
-**What the spec leaves open.** Commit `9344aec` removed the normative
-`manage_emoji` permission and server-admin emoji authorization. Who may
-create, modify, or destroy custom emojis at Space or server scope is
-deployment-defined. The `CustomEmoji` data type and the
+**What the spec leaves open.** The spec removed the normative `manage_emoji`
+permission and server-admin emoji authorization. Who may create, modify, or
+destroy custom emojis at Space or server scope is deployment-defined. The `CustomEmoji` data type and the
 `CustomEmoji/get|set|query|changes|queryChanges` methods remain wire
 contract; only the authorization is server-defined.
 
@@ -460,8 +458,8 @@ implications are larger than for Space-scoped emoji.
 
 ### 2.3 Mention scope predicates (`@here` and `@admins`)
 
-**What the spec leaves open.** Decision D4a of `fig9.1` (broadcast-scope
-mention design) makes the predicate definitions deployment-defined:
+**What the spec leaves open.** The broadcast-scope mention design makes the
+predicate definitions deployment-defined:
 
 - `@everyone`: all current members of the Space or Chat — fully deterministic.
 - `@here`: "members with active presence" — which presence states qualify is
@@ -500,10 +498,10 @@ format is fixed.
   §1.1) matches user intuition: a controller has admin-equivalent authority.
   Including non-member admin-equivalent principals (§1.3) is also defensible
   but exposes their existence to chat participants more loudly.
-- Resolution timing is delivery-time on each receiving server (per `fig9.1`
-  D4b). Each server's predicate evaluates against its own local view. This
-  means two servers may resolve `@here` to different recipient sets for the
-  same message; the spec accepts this.
+- Resolution timing is delivery-time on each receiving server (per the main
+  draft's delivery-time resolution rule). Each server's predicate evaluates
+  against its own local view. This means two servers may resolve `@here` to
+  different recipient sets for the same message; the spec accepts this.
 - Strict predicates (`@here` = online only) make `@here` reliable when it
   fires but cause frequent "I missed it because I was 'away'" complaints.
   Looser predicates (`@here` = online and away) reduce false-negatives at
@@ -529,7 +527,8 @@ format is fixed.
   `@admins` recipient set — they receive notifications via separate audit
   channels.
 - The predicate MUST be evaluated at delivery time on each receiving server
-  using that server's local view of presence and roles (per `fig9.1` D4b).
+  using that server's local view of presence and roles (per the main draft's
+  delivery-time resolution rule).
 - Deployments SHOULD document the predicate in user-facing documentation so
   users understand who'll be notified by their `@here` or `@admins`.
 
@@ -544,10 +543,10 @@ resolution layer that the spec leaves to deployment.
 
 ### 3.1 Identifier scheme
 
-**What the spec leaves open.** Commit `uy1m.1` softened seven id-field
-definitions (`SpaceRole.id`, `Category.id`, `Space.id`, `CustomEmoji.id`,
-`SpaceBan.id`, `ReadPosition.id`, `PresenceStatus.id`) to "Opaque
-server-assigned JMAP identifier" — no required encoding scheme. `Chat.id`,
+**What the spec leaves open.** The spec softened seven id-field definitions
+(`SpaceRole.id`, `Category.id`, `Space.id`, `CustomEmoji.id`, `SpaceBan.id`,
+`ReadPosition.id`, `PresenceStatus.id`) to "Opaque server-assigned JMAP
+identifier" — no required encoding scheme. `Chat.id`,
 `Message.id`, and `senderMsgId` retain explicit ULID requirements because the
 spec relies on their lexicographic time-ordering for message retrieval and
 unreadCount derivation. `ChatContact.id` is whatever the authentication layer
@@ -602,12 +601,11 @@ returns; the spec doesn't constrain its form.
 
 ### 3.2 DID URI handling
 
-**What the spec leaves open.** Commit `48b6a31` (q15f Option B) added a prose
-sentence acknowledging that `ChatContact.id` may take any URI form, including
-a Decentralized Identifier URI per W3C DID-Core. The core spec stops there:
-no DID resolution, no auth integration, no new capability. A future companion
-draft (`8sgn`) is filed but not yet written; it would define wire mechanics
-for DID-based federation auth, resolution, and method support.
+**What the spec leaves open.** The main draft acknowledges that
+`ChatContact.id` may take any URI form, including a Decentralized Identifier
+URI per W3C DID-Core. The core spec stops there: no DID resolution, no auth
+integration, no new capability. A future companion draft would define wire
+mechanics for DID-based federation auth, resolution, and method support.
 
 **What you must decide.**
 
@@ -616,12 +614,12 @@ for DID-based federation auth, resolution, and method support.
   opaque strings.
 - Whether to implement DID resolution (DNS-based `did:web`, blockchain-based
   `did:plc`/`did:ion`, etc.).
-- Whether to follow `8sgn` once it lands — and contribute to its design now
-  if you have a stake.
+- Whether to follow the DID companion draft once it lands — and contribute
+  to its design now if you have a stake.
 
 **Considerations.**
 
-- *Treat as opaque* (q15f Option B baseline): no special handling. DID URIs
+- *Treat as opaque* (the spec's baseline): no special handling. DID URIs
   appear in `ChatContact.id` as long strings; the rest of the protocol
   works unchanged. Lowest implementation cost; no portability benefit.
 - *Adding resolution*: lets your server fetch DID Document metadata, verify
@@ -632,8 +630,8 @@ for DID-based federation auth, resolution, and method support.
 - *`did:plc`* and *`did:ion`* are blockchain-derived; slower resolution,
   larger trust model, more dependencies.
 - *Future-proofing*: if you build resolution infrastructure ad-hoc, you may
-  end up with a custom flavor that doesn't match `8sgn`'s eventual
-  specification. Either follow `8sgn` or accept the rework cost when it
+  end up with a custom flavor that doesn't match the DID companion draft's
+  eventual specification. Either follow it or accept the rework cost when it
   lands.
 
 **Common patterns.**
@@ -646,12 +644,11 @@ for DID-based federation auth, resolution, and method support.
 **Recommended starting point.**
 
 Deployments SHOULD treat DID URIs as opaque `ChatContact.id` values. No
-special handling is required. This matches q15f Option B and keeps the
-deployment spec-conformant without committing to DID infrastructure.
+special handling is required. This keeps the deployment spec-conformant
+without committing to DID infrastructure.
 
-If user demand justifies real DID interop, deployments SHOULD follow `8sgn`
-rather than rolling custom resolution. The companion draft's design
-questions are already enumerated in `8sgn`'s description.
+If user demand justifies real DID interop, deployments SHOULD follow the
+DID companion draft rather than rolling custom resolution.
 
 Deployments SHOULD document acceptance criteria in their API reference:
 which DID methods (if any) are treated specially, which are accepted
@@ -659,10 +656,9 @@ opaquely, and which are rejected.
 
 ### 3.3 Federated mention textual form parsing and resolution
 
-**What the spec leaves open.** Commit `5bfb16d` (f13f resolution) added a
-paragraph to the Mention section noting that common composer-side textual
-forms include `@user@host` (Mastodon style) and DID URI forms (e.g.,
-`@did:web:alice.example`). Parsing the textual form into a candidate id, and
+**What the spec leaves open.** The main draft's §Mention section notes that
+common composer-side textual forms include `@user@host` (Mastodon style) and
+DID URI forms (e.g., `@did:web:alice.example`). Parsing the textual form into a candidate id, and
 resolving that candidate to a known ChatContact, are deployment-defined.
 Server-side validation of the resulting Mention (offset/length, ChatContact
 existence) is unchanged.
@@ -690,8 +686,8 @@ existence) is unchanged.
   anyway or downgrade the mention to plaintext.
 - *Auto-creation*: a mention to a previously-unknown user implies the
   sender wants to communicate with that user. Auto-creating a `ChatContact`
-  record (main draft `:810` permits this) lets the mention land as a real
-  mention rather than a broken reference. Be defensive: rate-limit
+  record (the main draft's §ChatContact Methods permits automatic creation)
+  lets the mention land as a real mention rather than a broken reference. Be defensive: rate-limit
   auto-creation per sender to prevent enumeration attacks.
 - *IDN / IRI*: international domain names should be normalized to punycode
   (`xn--...`) for `ChatContact.id`; the displayed textual form can keep
@@ -707,8 +703,8 @@ existence) is unchanged.
   out-of-band; servers auto-create Actor records on first reference.
 - Matrix: `@user:server` (Matrix-style; note the colon, not at-sign);
   resolution via `/.well-known/matrix` or homeserver discovery.
-- Most JMAP Chat deployments: no formal pattern yet; this guide and `f13f`
-  define the conventions.
+- Most JMAP Chat deployments: no formal pattern yet; this guide and the
+  main draft's §Mention section define the conventions.
 
 **Recommended starting point.**
 
@@ -743,9 +739,9 @@ similarly impl-defined.
 
 ### 4.1 Outbox durability mechanism
 
-**What the spec leaves open.** Commit `uy1m.2` softened the federation
-draft's outbox section to express durability as an outcome rather than a
-prescribed mechanism: "Outbound messages MUST be durable across local server
+**What the spec leaves open.** The federation draft's §Persistent Queue
+section expresses durability as an outcome rather than a prescribed
+mechanism: "Outbound messages MUST be durable across local server
 restart prior to delivery confirmation; the specific mechanism (persistent
 outbox, write-through queue, transactional store with the local message-store
 write, replicated in-memory queue backed by an upstream broker with
@@ -773,7 +769,8 @@ at-least-once delivery, etc.) is implementation-defined."
 - *In-memory* queue with snapshot-on-graceful-shutdown: NOT durable across
   crashes. Don't use this for federation outbound — the spec MUST is real.
 - *At-least-once* means receivers may see duplicates and must dedup. The
-  federation `senderMsgId` is designed for this (federation draft `:209`).
+  federation `senderMsgId` is designed for this (federation draft,
+  §Peer/deliver idempotency key).
 - *At-most-once* end-to-end is hard to guarantee without coordinated acks;
   most chat systems accept at-least-once and rely on receiver dedup.
 
@@ -790,9 +787,10 @@ at-least-once delivery, etc.) is implementation-defined."
 **Recommended starting point.**
 
 Deployments SHOULD use at-least-once delivery via `senderMsgId`-based dedup
-at the receiver. This matches what the federation draft already specifies
-at `:609` ("A message whose senderMsgId is already known for the given chat
-at the receiving server MAY be silently discarded by that server").
+at the receiver. This matches what the federation draft already specifies in
+§Group Chat Delivery ("A message whose senderMsgId is already known for the
+given chat at the receiving server MAY be silently discarded by that
+server").
 
 Backing store: a persistent queue alongside the message database. If the
 message store is already in a transactional DB (Postgres, MySQL, SQLite),
@@ -806,13 +804,12 @@ operational overkill for most deployments.
 
 ### 4.2 Edit-history retention policy
 
-**What the spec leaves open.** Commit `uy1m.5` made the MessageRevision push
-on edit conditional on retention. The main draft edit procedure now reads:
-"If the server retains edit history, push a MessageRevision onto editHistory
-with the current body, bodyType, and current server time as editedAt."
-Combined with the main draft `:546` retention paragraph ("Servers MAY limit
-the number of retained revisions; if so, older revisions MAY be elided"), a
-zero-retention deployment is fully spec-compliant.
+**What the spec leaves open.** The main draft makes the MessageRevision push
+on edit conditional on retention. The edit procedure now reads: "If the server
+retains edit history, push a MessageRevision onto editHistory with the current
+body, bodyType, and current server time as editedAt." Combined with the
+§Message.editHistory retention rule ("Servers MAY limit the number of retained
+revisions"), a zero-retention deployment is fully spec-compliant.
 
 **What you must decide.**
 
@@ -859,7 +856,7 @@ zero-retention deployment is fully spec-compliant.
 **Recommended starting point.**
 
 Deployments SHOULD retain the last 5 revisions per message. Older revisions
-SHOULD be elided per the spec's `:546` paragraph.
+SHOULD be elided per the spec's §Message.editHistory retention rule.
 
 The retention policy MUST be documented prominently in the deployment's
 user-facing TOS or privacy notice. Users editing sensitive content need to
@@ -880,8 +877,8 @@ products; users will assume the history is there unless told otherwise.
 
 ### 4.3 Federation contact resolution caching
 
-**What the spec leaves open.** Commit `uy1m.3` softened the federation
-draft's `receiveTypingIndicators` cache TTL guidance to remove the hardcoded
+**What the spec leaves open.** The federation draft softened the
+`receiveTypingIndicators` cache TTL guidance to remove the hardcoded
 60-second value. The current wording: "Servers that cache a remote
 participant's receiveTypingIndicators value SHOULD use a short TTL; the
 specific value is implementation-defined." More broadly, every server that
@@ -928,9 +925,9 @@ preferences) chooses its own freshness vs traffic trade-off.
 **Recommended starting point.**
 
 - `receiveTypingIndicators` cache TTL: **60 seconds**. This matches the
-  value previously hardcoded in the federation draft before `uy1m.3`
-  softened it; deployments SHOULD treat it as a sensible default and tune
-  based on volume and acceptable staleness window.
+  value previously hardcoded in the federation draft before it was softened
+  to implementation-defined; deployments SHOULD treat it as a sensible
+  default and tune based on volume and acceptable staleness window.
 - `ChatContact` record cache from peer Session: **1 hour** with on-demand
   refresh when the user explicitly initiates a contact interaction.
 - `Session.ownerEndpoints` cache: **1 hour**; the spec already treats these
@@ -953,9 +950,9 @@ deviate with reason.
 
 ### 5.1 Typing rate and decay calibration
 
-**What the spec leaves open.** Commits `ic5s.1` and `ic5s.2` reframed the
-typing rate-limit and client-side decay timer as SHOULD recommendations with
-explicit calibration rationale rather than MUST mandates. The main draft now
+**What the spec leaves open.** The main draft reframed the typing rate-limit
+and client-side decay timer as SHOULD recommendations with explicit
+calibration rationale rather than MUST mandates. The main draft now
 specifies a 3-second server-side rate-limit window and a 10-second client-side
 decay window, with a calibration paragraph explaining why these values pair:
 one accepted event per 3 seconds while typing means the receiver's decay timer
@@ -980,9 +977,9 @@ unnecessary network and federation traffic.
 **Considerations.**
 
 - The 3s rate is federation-wide via `Peer/typing` rate limits (federation
-  draft `:395`). If you deviate locally, your federated peers still
-  rate-limit at 3s; senders crossing the federation boundary will see the
-  federated rate even if your local rate is different.
+  draft, §Peer/typing rate-limit). If you deviate locally, your federated
+  peers still rate-limit at 3s; senders crossing the federation boundary
+  will see the federated rate even if your local rate is different.
 - The 10s decay is *client-side*. Different clients of the same account
   using different decay timers will look inconsistent ("desktop says still
   typing, mobile cleared it"). Pick one value per deployment and document
@@ -1012,8 +1009,8 @@ Deviations MUST be documented in the deployment's API reference.
 
 ### 5.2 Federation Peer/presence outbound rate
 
-**What the spec leaves open.** Commit `uy1m.4` removed the hardcoded
-30-second value from the federation `Peer/presence` outbound rate guidance.
+**What the spec leaves open.** The federation draft removed the hardcoded
+30-second value from the `Peer/presence` outbound rate guidance.
 The current wording: "Servers SHOULD rate-limit outbound `Peer/presence`
 calls per subscriber; the specific rate is implementation-defined."
 
@@ -1049,10 +1046,10 @@ calls per subscriber; the specific rate is implementation-defined."
 **Recommended starting point.**
 
 Deployments SHOULD use **30 seconds per subscriber** — matches the value
-previously hardcoded in the federation draft before `uy1m.4` softened it,
-and matches the WSS-layer 30s rate at
-`draft-atwood-jmap-chat-wss-00.md:253`. Consistent across federation and
-WSS layers; subscribers don't see unexpected behavioral differences.
+previously hardcoded in the federation draft and matches the WSS-layer 30s
+rate (WSS draft, §ChatPresenceEvent rate-limit). Consistent across
+federation and WSS layers; subscribers don't see unexpected behavioral
+differences.
 
 If tuning: implementations SHOULD NOT go below 10 seconds (federation
 traffic explodes) and SHOULD NOT go above 5 minutes (presence becomes too
@@ -1069,10 +1066,11 @@ The recommended starting point is **60 seconds**.
 
 ### 5.4 Retry and backoff intervals
 
-**What the spec leaves open.** The federation draft `:601` says: "The
-minimum initial retry interval, maximum retry interval, and total retry
-duration are implementation-defined, but implementations SHOULD apply a
-jitter factor to avoid synchronized retry storms from multiple servers."
+**What the spec leaves open.** The federation draft's §Retry and Backoff
+section says: "The minimum initial retry interval, maximum retry interval,
+and total retry duration are implementation-defined, but implementations
+SHOULD apply a jitter factor to avoid synchronized retry storms from
+multiple servers."
 
 **What you must decide.**
 
@@ -1117,7 +1115,7 @@ jitter factor to avoid synchronized retry storms from multiple servers."
   marked `deliveryState: "failed"`).
 - **Jitter**: ±20% of the computed interval (multiplied by a uniform
   random factor in [0.8, 1.2]). Implementations MUST apply jitter per the
-  federation draft `:601`.
+  federation draft's §Retry and Backoff.
 - **Backoff schedule**: exponential with base 2, capped at the maximum
   (so 5s → 10s → 20s → 40s → 80s → 160s → 300s [cap] → 300s ...).
 
@@ -1141,10 +1139,10 @@ to expose.
 
 ### 6.1 Broadcast-mention suppression and `Chat.muted` bypass
 
-**What the spec leaves open.** Decision D5 of `fig9.1` chose the D5-Impl
-position: broadcast mentions (`@everyone`, `@here`, `@admins`) bypass
-`Chat.muted` for targeted recipients by default; opt-out is deployment-defined
-with no new wire field added. Per-scope opt-out (mute `@here` but not
+**What the spec leaves open.** The spec chose the position that broadcast
+mentions (`@everyone`, `@here`, `@admins`) bypass `Chat.muted` for targeted
+recipients by default; opt-out is deployment-defined with no new wire field
+added. Per-scope opt-out (mute `@here` but not
 `@everyone`) is explicitly deferred to a future bead.
 
 The main draft now codifies this bypass in the `Chat.muted` definition and
@@ -1178,8 +1176,8 @@ remains deployment-defined.
   (deployment-side preference, client-side filter, etc.), not exposed via
   federation. Federated peers don't know your local preferences.
 - *Per-scope granularity* (mute `@here` only) is feasible client-side or
-  via deployment preferences but not via wire fields — `fig9.1`'s D5-sub
-  decision deferred wire-level per-scope to a future bead.
+  via deployment preferences but not via wire fields — the spec deferred
+  wire-level per-scope opt-out to a future revision.
 
 **Common patterns.**
 
@@ -1213,8 +1211,8 @@ know whether their mute setting protects them.
 
 **What the spec leaves open.** The main draft defines two receipt-sharing
 preferences: `PresenceStatus.receiptSharing` (account-level, default `true`)
-and `Chat.receiptSharing` (per-chat override). The bidirectional rule
-(main draft `:777`) means turning off your sharing also turns off your
+and `Chat.receiptSharing` (per-chat override). The bidirectional rule (main
+draft, §ReadPosition) means turning off your sharing also turns off your
 visibility into others' read times. Deployments choose finer granularity,
 defaults, and UI exposure.
 
@@ -1240,9 +1238,10 @@ defaults, and UI exposure.
 - *Per-chat overrides*: useful for contexts where receipt sharing is
   expected (work chat) versus where it isn't (sensitive personal contact).
 - *Federation*: receipt suppression at the sender's server stops outbound
-  `Peer/receipt` calls (federation `:318`); receipt suppression at the
-  receiver's server stops inbound `Peer/receipt` from being delivered to
-  clients (federation `:329`). Both ends enforce independently, providing defense in depth.
+  `Peer/receipt` calls (federation draft, §Peer/receipt Sender Behavior);
+  receipt suppression at the receiver's server stops inbound `Peer/receipt`
+  from being delivered to clients (federation draft, §Peer/receipt Receiver
+  Behavior). Both ends enforce independently, providing defense in depth.
 
 **Common patterns.**
 
@@ -1270,9 +1269,8 @@ NOT bypass them with a "show unofficial read time" UI.
 
 ### 6.3 Blocked-sender ephemeral-event suppression
 
-**What the spec covers.** Commits `dim0` (WSS) and `87qs` (corpus-wide)
-made blocked-sender suppression for typing and presence events normative in
-the WSS draft, main draft, and federation draft. The architectural property
+**What the spec covers.** Blocked-sender suppression for typing and presence
+events is normative in the WSS draft, main draft, and federation draft. The architectural property
 is documented in the main draft Security Considerations ({#blocked-contacts}
 anchor): typing and presence push events whose sending or referenced
 ChatContact has `blocked: true` are dropped server-side before delivery to

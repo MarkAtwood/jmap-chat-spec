@@ -146,7 +146,7 @@ After the WebSocket handshake completes, send these messages in order:
    }
    ```
 
-Clients MUST send both control messages before issuing JMAP API requests. The server
+Clients SHOULD send both control messages before issuing JMAP API requests. The server
 begins delivering events as soon as it processes each control message — if API requests
 arrive first, `StateChange` frames may arrive while catch-up is still in progress.
 Clients SHOULD queue any `StateChange` frames that arrive before startup is complete

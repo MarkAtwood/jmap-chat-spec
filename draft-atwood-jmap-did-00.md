@@ -114,7 +114,7 @@ A server supporting this extension MUST advertise the `urn:ietf:params:jmap:did`
 The value of `capabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
 
 `supportedMethods` (String[]):
-: The DID methods the server supports for account binding. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method.
+: The DID methods the server supports for account binding. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method. (Note: the Chat DID companion spec uses the field name `supportedDidMethods` for a semantically equivalent field in its own capability object. Servers advertising both capabilities SHOULD ensure the two lists are consistent.)
 
 `verificationEndpoint` (String|null):
 : A URL where clients can submit a DID for server-side verification. `null` if the server does not offer a verification endpoint. The verification protocol is out of scope for this document.
@@ -141,7 +141,10 @@ The value of `accountCapabilities["urn:ietf:params:jmap:did"]` is a JSON object 
 : The DID bound to this account. This is the canonical, globally resolvable identifier for the account holder. The value MUST be a valid DID as defined in {{DID-CORE}} Section 3.1.
 
 `didDocumentUri` (String|null):
-: A URI where the DID document can be fetched. For `did:web` this is derivable from the DID itself; for `did:key` the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method.
+: A URI where the DID document can be fetched. For `did:web` this is derivable from the DID itself; for `did:key` the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method. When `didDocumentUri` is non-null but unreachable (network error, HTTP 4xx/5xx), clients SHOULD fall back to standard method-specific resolution for the DID. The `didDocumentUri` is a convenience hint, not a binding constraint.
+
+`previousDid` (String|null):
+: The DID that was previously bound to this account, retained after rotation until the grace period expires. `null` when no rotation has occurred. See {{rotation}}.
 
 Example:
 
@@ -152,7 +155,8 @@ Example:
       "accountCapabilities": {
         "urn:ietf:params:jmap:did": {
           "did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
-          "didDocumentUri": null
+          "didDocumentUri": null,
+          "previousDid": null
         }
       }
     }
@@ -299,7 +303,7 @@ When a DID rotation occurs:
 
 1. The server MUST update the account-level capability object ({{account-capability}}) to reflect the new DID.
 2. The server MUST ensure that all `did` properties on the account's objects return the new DID in subsequent responses.
-3. The server MUST emit a JMAP StateChange ({{RFC8620}} Section 7.1) for every data type that has objects owned by the rotated account. Clients subscribed to those types will receive the change and can refetch.
+3. The server SHOULD emit a JMAP StateChange ({{RFC8620}} Section 7.1) for every data type that has objects owned by the rotated account. Clients subscribed to those types will receive the change and can refetch. Servers that compute DID-bearing properties at response time (rather than materializing them on stored objects) SHOULD emit StateChange only for the account's Session resource rather than for every data type, to avoid triggering unnecessary client re-syncs.
 4. The server SHOULD include the previous DID in a `previousDid` field on the account-level capability object for a deployment-defined transition period, to help clients that cached the old DID update their records.
 
 `previousDid` (String|null):

@@ -116,11 +116,13 @@ The Space data type defined in {{JMAP-CHAT}} is extended with one optional field
 
 The bound TaskList MUST belong to the same account that owns the Space. Cross-account TaskList references are not supported in this revision; deployments wishing to support cross-account or cross-server TaskList binding will require future spec work.
 
+When a TaskList referenced by `Space.taskListId` is destroyed, the server MUST clear the field (set to null) as part of the destroy operation, and MUST reflect this change in subsequent `Space/changes` responses.
+
 A Space MAY have at most one bound TaskList in this revision. Deployments wishing to expose multiple TaskLists per Space — for example, separate "open" and "archived" lists, or multiple work-stream lists — may achieve this by using multiple Spaces, or by treating the single bound TaskList as the canonical work list and managing additional lists out-of-band.
 
 ## Binding and unbinding
 
-Servers that advertise `mayBindTaskList: true` MUST accept patches to `Space.taskListId` from members holding the `"manage_space"` permission. Setting `taskListId` to a non-null value binds the Space to the identified TaskList; setting it to `null` unbinds the Space.
+Servers that advertise `mayBindTaskList: true` MUST accept patches to `Space.taskListId` from members holding the `"manage_space"` permission. Setting `taskListId` to a non-null value binds the Space to the identified TaskList; setting it to `null` unbinds the Space. If the `taskListId` value does not reference an existing TaskList on the same account, the server MUST return a SetError of type `invalidProperties` naming `taskListId`.
 
 Servers MAY automatically create a new TaskList when a Space is created and bind it (the deployment-defined "auto-bind on create" pattern). When this is done, the server MUST set `taskListId` to the new TaskList's id at Space creation time.
 
@@ -150,7 +152,7 @@ The Task data type defined in {{JMAP-TASKS}} is extended with one optional field
 `chatId` (String, optional):
 : A JMAP Chat `Chat.id` (per {{JMAP-CHAT}}) referencing a Chat used for discussion of this Task. When set, identifies a Chat (typically of `kind: "channel"` within the same Space whose TaskList contains this Task) that the Task's discussion thread occupies. When absent, this Task has no associated discussion thread.
 
-The referenced Chat MUST exist on the same account as the Task. Cross-account Chat references are not supported. The Chat is not required to be a member of the Space whose TaskList contains the Task; deployments MAY allow a Task to back-reference a Chat outside its bound Space (for example, to thread a task in a general-discussion channel even though the Task belongs to a project Space). In practice, a Chat of `kind: "channel"` within the bound Space's channel set is the most natural pairing.
+The referenced Chat, once it exists, MUST be on the same account as the Task. The server MUST NOT validate `chatId` existence at write time, allowing the two-step creation pattern described below. Cross-account Chat references are not supported. The Chat is not required to be a member of the Space whose TaskList contains the Task; deployments MAY allow a Task to back-reference a Chat outside its bound Space (for example, to thread a task in a general-discussion channel even though the Task belongs to a project Space). In practice, a Chat of `kind: "channel"` within the bound Space's channel set is the most natural pairing.
 
 ## Cardinality
 

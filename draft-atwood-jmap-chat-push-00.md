@@ -139,7 +139,7 @@ A `ChatMessagePush` object is the push payload delivered directly to the registe
 : The account id for which this payload was generated.
 
 `state` (String):
-: The `Message` state string for this account after all messages in the `messages` array have been applied, equivalent to the value that would appear in `StateChange.changed[accountId]["Message"]` following those deliveries. The server MUST set this field to the post-delivery state, so that a client using it as `sinceState` in a subsequent `Message/changes` call will not re-receive any message already present in this payload. Clients SHOULD update their locally cached `Message` state on receipt.
+: The `Message` state string for this account after all messages in the `messages` array have been applied, equivalent to the value that would appear in `StateChange.changed[accountId]["Message"]` following those deliveries. The server MUST set this field to the post-delivery state, so that a client using it as `sinceState` in a subsequent `Message/changes` call will not re-receive any message already present in this payload. Clients SHOULD update their locally cached `Message` state on receipt. If a client receives push notifications out of order (e.g., two pushes generated in quick succession delivered in reverse order), the client SHOULD use the lexicographically greatest `state` value as `sinceState` in subsequent `Message/changes` calls, discarding any `state` from a push whose `state` is less than the client's current known state.
 
 `messages` (ChatMessageEntry[]):
 : MUST be a non-empty array of message entries that triggered this push. Contains exactly one entry for a single new message, or multiple entries when the server batches messages that arrived in quick succession (see {{delivery}}).
@@ -186,6 +186,9 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 
 `bodySnippet` (String, optional):
 : A truncated plaintext rendering of the message body, suitable for display in a notification preview. At most `maxSnippetBytes` bytes, truncated on a UTF-8 character boundary. MUST be absent when `encrypted` is `true`. When the message's `bodyType` is `"text/markdown"` or `"application/jmap-chat-rich"`, the server SHOULD generate a plaintext approximation rather than including raw markup syntax.
+
+`unreadCount` (UnsignedInt|null, optional):
+: The account owner's total unread message count across all non-muted Chats at the time this push was generated. Servers SHOULD include this for platforms that support atomic badge updates (e.g., APNs `aps.badge`). When absent, the client MUST derive the badge count via a subsequent `Chat/get` request.
 
 # End-to-End Encrypted Deployments {#e2ee}
 

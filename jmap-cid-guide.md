@@ -121,11 +121,13 @@ in three ways:
 ```json
 {
   "blobId":  "B-a1b2c3d4",
-  "type":    "application/pdf",
-  "size":    102400,
+  "type":    "application/octet-stream",
+  "size":    0,
   "sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 }
 ```
+
+(Illustrative; the hash shown is SHA-256 of empty input.)
 
 The client then requests the same blob's digest via `Blob/get`:
 
@@ -407,7 +409,7 @@ creates interoperability fragmentation.
 | Core JMAP Chat (governance, authorization, identity) | `jmap-chat-implementer-guide.md` |
 | Space file storage (backend, scanning, quotas) | `jmap-chat-filenode-guide.md` |
 | Federation wire protocol | `draft-atwood-jmap-chat-federation-00.md` |
-| Blob Management Extensions (RFC 9404) | `draft-atwood-jmap-cid-00.md` Section 5 (relationship to BLOBEXT) |
+| Blob Management Extensions (RFC 9404) | `draft-atwood-jmap-cid-00.md` Section 3.2 (Relationship to JMAP Blob Management Extensions) |
 
 This guide focuses on the CID capability and its integration points.
 Transport, push, federation, and FileNode operational details live in their

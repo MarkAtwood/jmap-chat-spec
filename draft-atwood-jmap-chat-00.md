@@ -617,6 +617,8 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `deliveryState` (String, server-set):
 : `"pending"`, `"delivered"`, `"failed"`, or `"received"`. For group chats, reflects aggregate state across all recipients; see `deliveryReceipts` for per-recipient detail.
 
+  State transitions: `"pending"` → `"delivered"` (remote server accepted the message), `"pending"` → `"failed"` (delivery abandoned after retries exhausted), `"delivered"` → `"received"` (recipient returned a read receipt via `Peer/receipt`). The `"received"` state indicates the message was read, not merely delivered.
+
 `deliveryReceipts` (Object, optional, server-set):
 : For group chats, a JSON object mapping each non-owner participant's ChatContact.id to `{"deliveredAt": <UTCDate-or-null>, "deviceDeliveredAt": <UTCDate-or-null>, "readAt": <UTCDate-or-null>, "readDisposition": <String-or-null>}`. Present only when `senderId` is `"self"`. `deviceDeliveredAt` is optional and MAY be absent if the recipient's platform does not support device-delivery confirmation (e.g., APNs content-available callbacks or FCM data delivery receipts); implementations that cannot obtain this signal MUST omit the field rather than approximate it with `deliveredAt`. `readDisposition` is absent when `readAt` is null. See {{read-disposition-type}}. Unlike the top-level `deliveredAt` and `readAt` fields, `deviceDeliveredAt` has no top-level parallel because device-delivery confirmation is always a per-recipient event with no aggregate owner-side equivalent.
 
@@ -962,6 +964,8 @@ Optional at creation: `description` (String), `avatarBlobId` (String), `messageE
 
 The server assigns the chatId (a ULID), adds the creator to `members` with at least one role granting permissions sufficient to administer the chat (the specific bootstrap-role configuration is server-defined), and MUST send `Peer/groupUpdate` to each initial member before any messages are sent.
 
+Creating a Chat with `kind: "channel"` via `Chat/set` is not supported; the server MUST return a SetError of type `forbidden`. Channel Chats are created exclusively via the `addChannels` patch key in `Space/set`.
+
 #### Updating a Chat
 
 `update` supports the following patch keys for all chat kinds: `muted`, `muteUntil`, `receiveTypingIndicators`, `pinnedMessageIds`, `messageExpirySeconds`, `receiptSharing`.
@@ -980,6 +984,10 @@ Member list changes use the following patch keys (all require admin role):
 
 `updateMemberRoles` (Object[]):
 : Each entry: `id` (String) and `role` (String). The server MUST send `Peer/groupUpdate` to all members.
+
+### Destroying a Chat
+
+For direct and group Chats, `Chat/set` destroy removes the Chat from the caller's view. The server MUST NOT delete the underlying message history for other participants. For channel Chats, destroy via `Chat/set` is not supported; the server MUST return a SetError of type `forbidden`. Channel Chats are removed exclusively via the `removeChannels` patch key in `Space/set`.
 
 ### Chat/query
 
@@ -1056,6 +1064,10 @@ Standard JMAP `/set`.
 
 Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean).
 
+The server MUST verify the sender is a current member of the target Chat. For group chats, this means a ChatMember record exists; for channel chats, the sender must be a member of the containing Space. Non-members MUST receive a SetError of type `forbidden`.
+
+For channel Chats, the server MUST verify the sender holds the `"send"` permission (resolved per {{space-permissions}}) before accepting the message; if absent, the server MUST return a SetError of type `forbidden`.
+
 The server sets `id`, `senderMsgId`, `senderId`, `receivedAt`, `deliveryState`, and delivery timestamp fields, then enqueues the message for outbound delivery.
 
 A create request that includes any broadcast mention — a non-empty `broadcastMentions` array, or a rich-body `body` containing one or more `"broadcast"` spans ({{rich-body}}) — MUST be rejected with `forbidden` when the sender lacks the `"mention_broadcast"` permission in the target Space.
@@ -1130,7 +1142,9 @@ Filter properties:
 : Filter to messages with or without attachments.
 
 `hasMention` (Boolean, optional):
-: Filter to messages that mention the owner (owner's ChatContact.id appears in `mentions`).
+: Filter to messages that mention the owner: the owner's ChatContact.id appears in `mentions` (for plain/markdown bodies) or in a `"mention"` span with matching `userId` (for rich bodies), OR the message contains a broadcast mention whose resolved recipient set includes the owner.
+
+For channel Chats, the server MUST verify the caller holds the `"view"` permission before returning messages in `Message/get` or `Message/query` responses; messages in channels the caller cannot view MUST be omitted.
 
 Default sort: `receivedAt` ascending when `chatId` is present; `receivedAt` descending when `chatId` is absent.
 
@@ -1181,7 +1195,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 : Metadata fields. Require `"manage_space"` permission.
 
 `addRoles` (Object[]):
-: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String|Object|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeRoles` (String[]):
 : SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Requires `"manage_roles"`.
@@ -1194,6 +1208,8 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 
 `removeMembers` (String[]):
 : ChatContact.ids to remove. Requires `"manage_members"`. Servers SHOULD refuse to remove a member when doing so would leave the Space without any member holding `"manage_members"` or `"manage_space"`; the specific last-administrator protection policy is server-defined. Servers MUST return an `invalidProperties` SetError ({{RFC8620}} §5.3) naming `removeMembers` when refusing on this basis.
+
+  A member who does not hold `"manage_members"` permission MAY remove themselves from the Space by including only their own account's member id in `removeMembers`. The server MUST permit self-removal regardless of the caller's permission set.
 
 `updateMembers` (Object[]):
 : Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`.
