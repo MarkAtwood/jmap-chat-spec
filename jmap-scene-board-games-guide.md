@@ -9,7 +9,7 @@ turns, scores, and phase. The simulation layer (reached via
 `simulationUri`) enforces rules; the Scene spec provides only the
 spatial state layer.
 
-Games in this guide span all three `viewHint` values:
+Games in this guide span three of the spec's four `viewHint` values:
 
 - **`"2d-topdown"`** -- board games, card games, top-down arcade
   (Asteroids)
@@ -1489,7 +1489,7 @@ method calls alone; the simulation layer handles all of it.
   "visible": true,
   "customProperties": {
     "ballNumber": 7,
-    "ballType": "stripe",
+    "ballType": "solid",
     "pocketed": false
   }
 }
@@ -1623,7 +1623,7 @@ be restored on a cue-ball-pocketed foul.
 {
   "customProperties": {
     "gamePhase": "play",
-    "currentPlayer": "user:alice@example.com",
+    "currentTurn": "user:alice@example.com",
     "playerAssignments": {
       "user:alice@example.com": "solids",
       "user:bob@example.com": "stripes"
@@ -1682,8 +1682,6 @@ commit. This is local client-side UI; it is never sent to the
 server or the opponent. The server receives only the committed
 `"shoot"` event with angle and power.
 
-
----
 
 ---
 
@@ -4894,8 +4892,10 @@ raised their hand.
 }
 ```
 
-`visible: false` means students cannot see this object. Only the
-teacher (owner) and server-side logic can read it.
+`visible: false` is a rendering directive (clients SHOULD NOT render
+it). The server enforces access control separately via deployment-defined
+visibility filtering — withholding teacher-only objects from student
+`SceneObject/get` and `SceneObject/query` responses entirely.
 
 ### Role-Based Visibility Summary
 

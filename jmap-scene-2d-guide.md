@@ -107,6 +107,7 @@ new view hints can be introduced without breaking existing clients.
   "spawnOrientation": [0, 0, 0, 1],
   "simulationUri": "wss://sim.example.com/regions/01J5RGN",
   "accessPolicy": "space",
+  "spaceId": "01J5SPC0000000000000000001",
   "activeAvatarCount": 7,
   "environment": {
     "backgroundColor": "#F5F5F5",
