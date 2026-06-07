@@ -2213,6 +2213,8 @@ The server SHOULD apply visibility filtering to limit the objects returned based
 
 The spec does not dictate the algorithm. It requires that the access-control check is enforced (MUST) and that visibility optimization is available as a deployment choice (SHOULD).
 
+When a client attempts to interact with an object that is no longer within the client's visibility set (e.g., the object moved out of range, or the avatar moved away), the server MAY return `notFound` for JMAP method calls (`SceneObject/set`, `SceneObject/get`) targeting that object, or MAY silently discard the interaction with no error response. Both behaviors are valid. The server MUST NOT return `forbidden`, as that would confirm the object still exists. For interactions delivered via the simulation layer, the simulation layer MAY silently ignore stale targets without generating any JMAP-level error.
+
 # Access Control {#access-control}
 
 ## Region Access
