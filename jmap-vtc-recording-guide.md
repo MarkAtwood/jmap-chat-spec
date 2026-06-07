@@ -1089,10 +1089,40 @@ Response:
 Bob's client uses the `blobId` to download:
 
 ```
-GET /jmap/download/bob-account/G4c5b8a0e1f2d3c4b5a6978/meeting-recording.mp4?accept=video/mp4
+GET /jmap/download/alice-account/G4c5b8a0e1f2d3c4b5a6978/meeting-recording.mp4?accept=video/mp4
 ```
 
 The server returns the recording file.
+
+> **Cross-account blob access.** JMAP blob downloads are scoped to the account
+> that owns the blob (RFC 8620 §6.2). The `downloadUrl` template includes
+> `accountId` and the server MUST verify the authenticated user has access to
+> that account's blobs. In this walkthrough the recording blob lives in
+> `alice-account` (the moderator who created it), so Bob must reference
+> `alice-account` in the download URL — not his own account.
+>
+> For multi-account deployments where call participants span separate accounts,
+> the server must provide one of these mechanisms so all authorized participants
+> can retrieve recording blobs:
+>
+> (a) **Copy-on-create.** Store the recording blob in each participant's
+>     account when the recording becomes available. Each participant downloads
+>     from their own account. This is the simplest client experience but
+>     multiplies storage costs.
+>
+> (b) **Cross-account blob access via JMAP Sharing (RFC 8620 §1.6.2).** Grant
+>     participants read access to the recording-owning account's blobs. Bob
+>     authenticates as himself but downloads from `alice-account` because
+>     sharing grants permit it.
+>
+> (c) **Deployment-specific mechanism.** Use pre-signed URLs, a shared blob
+>     store, or a proxy endpoint that validates VTCRecording access control
+>     independently of JMAP account boundaries.
+>
+> The VTC spec's access control rule — all current and past participants may
+> retrieve recordings (see section 1, Access control) — implicitly requires one
+> of these mechanisms when participants span accounts. Implementers MUST
+> document which approach their deployment uses.
 
 ---
 

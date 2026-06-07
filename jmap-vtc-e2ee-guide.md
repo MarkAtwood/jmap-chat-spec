@@ -133,9 +133,11 @@ that handles:
 - Adding a participant (they need the current key)
 - Removing a participant (remaining participants must rotate to a key the
   removed participant does not have)
-- Forward secrecy (compromise of a current key does not reveal past sessions)
-- Post-compromise security (a compromised member who is later removed
-  cannot read future messages)
+- Forward secrecy (compromise of a current key does not reveal past
+  sessions — past messages remain secure)
+- Post-compromise security (after a compromise, security is restored once
+  the compromised party updates their key material — future sessions become
+  secure again after key rotation, even without removing the member)
 
 **MLS (RFC 9420)** is the IETF standard for this. It is designed for exactly
 this use case. It scales logarithmically with group size (unlike pairwise
@@ -274,7 +276,7 @@ When `e2eeEnabled` is `true` on a call:
 
 - **Reject gateway dial-in.** If a gateway connection arrives for a call with
   `e2eeEnabled: true`, the server SHOULD reject the connection and return an
-  appropriate error to the gateway (e.g., SIP location_status location_status location location SIP Location / location SIP 488 Not Acceptable Here).
+  appropriate error to the gateway (e.g., SIP 488 Not Acceptable Here).
 
 - **Warn on downgrade.** If a moderator attempts to set `e2eeEnabled: false`
   on an active E2EE call (to admit a gateway participant), this is a security
@@ -421,6 +423,12 @@ to the desired number of bits, and encode as word-list indices. Store the
 full SHA-256 in `e2eeFingerprint` — the display encoding is a client concern.
 The `e2eeFingerprint` field value SHOULD be the full hex-encoded SHA-256 for
 interoperability; clients choose how to present it.
+
+**Note on encoding format.** The display encoding of fingerprints (hex, base64,
+word list, emoji hash, etc.) is deployment-defined. Deployments SHOULD document
+which encoding(s) their clients use so that cross-client verification is
+possible. Without an agreed display encoding, two clients showing different
+representations of the same fingerprint will confuse users during verification.
 
 ### Verification UX patterns
 

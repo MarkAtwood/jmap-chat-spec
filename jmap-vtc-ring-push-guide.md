@@ -181,8 +181,8 @@ window it should:
 2. Authenticate to the JMAP server (token should be cached; do not prompt for
    credentials here).
 3. Call `VTCCall/get` to refresh call state.
-4. When the user answers, call `VTCParticipant/set` to set `joinedAt` and connect to
-   `joinUri`.
+4. When the user answers, call `VTCParticipant/set` update to set `joinMethod`
+   (the server sets `joinedAt` as a side effect), then connect to `joinUri`.
 
 If the app is killed by the user (swiped away from the app switcher), iOS will not
 deliver VoIP pushes to it on some configurations. Apps SHOULD inform users not to force-
@@ -263,7 +263,8 @@ In `onMessageReceived`, the app should:
    a reference to the `callId` so the `Connection` subclass can answer and hang up
    correctly.
 3. The `Connection.onAnswer()` callback fires when the user taps "answer". At that
-   point, call `VTCParticipant/set` to set `joinedAt` and connect to `joinUri`.
+   point, call `VTCParticipant/set` update to set `joinMethod` (the server sets
+   `joinedAt` as a side effect), then connect to `joinUri`.
 4. The `Connection.onDisconnect()` callback fires when the user declines or the call
    ends. Send `VTCParticipant/set` with `callResponse: "declined"` if in state
    `"ringing"`.
@@ -463,8 +464,8 @@ ensures the call is received regardless of which device is in the user's hand.
 ### First device wins
 
 The state machine resolves the race: the first `VTCParticipant/set` update that sets
-`joinedAt` on the target's VTCParticipant record wins. The server accepts it, transitions
-the call to `"active"`, and then:
+`joinMethod` on a target's VTCParticipant record wins (the server sets `joinedAt` as a
+side effect). The server accepts it, transitions the call to `"active"`, and then:
 
 1. Dispatches `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other
    push endpoints and WebSocket connections of the same user.

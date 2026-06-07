@@ -104,20 +104,23 @@ server creates the VTCCall, assigns a ULID as its id, generates a `joinUri` poin
 the deployment's media stack, and returns the new VTCCall. The Chat's `activeCallId`
 field is set server-side when the call enters the active state (see section 3).
 
-The client does not set `activeCallId` on the Chat. That field is server-set and
-read-only to clients.
+The client does not normally set `activeCallId` on the Chat. That field is server-set.
+Clients MAY clear a stale `activeCallId` (one that references an ended or nonexistent
+VTCCall) via `Chat/set` update as a lazy-repair mechanism, but MUST NOT set it to a
+new call id directly.
 
 ### Choosing the call model
 
 Two call models apply from a chat context. Use `callType: "ring"` or `callType: "room"`
 based on the chat type:
 
-**Direct chat (two participants) → ring call**
+**Direct chat or small group → ring call**
 
-A direct chat has one other participant. Use `callType: "ring"`. Pass the other
-participant's userId in `targetParticipantIds`. The server creates VTCParticipant
-records for both the initiator and the target, dispatches push ring notifications to
-the target's devices, and transitions the call to `"ringing"`.
+Use `callType: "ring"` when you want to explicitly notify participants. Pass all
+target userIds in `targetParticipantIds` (an array — ring calls support multiple
+targets, not just 1:1). The server creates VTCParticipant records for the initiator
+and all targets, dispatches push ring notifications to each target's devices, and
+transitions the call to `"ringing"`.
 
 ```json
 {
@@ -170,8 +173,9 @@ there is no ringing phase. Members join when they choose to.
 ```
 
 Pass `spaceId` and `channelId` in addition to `chatId` when the chat is a Space
-channel. These bindings allow the server to apply Space permission checks and allow
-`VTCCall/query` filtering by Space.
+channel. For a channel-bound call, `chatId` and `channelId` are the same value —
+both reference the channel's Chat id. These bindings allow the server to apply Space
+permission checks and allow `VTCCall/query` filtering by Space.
 
 ### Ring calls vs room calls: which to use when
 
@@ -192,7 +196,8 @@ for direct chats as well.
 ### What activeCallId is
 
 `Chat.activeCallId` is a `String|null` field on the Chat object, defined in
-`draft-atwood-jmap-chat-00`. It is server-set and read-only to clients. The spec says:
+`draft-atwood-jmap-chat-00`. It is server-set; clients MAY clear a stale value
+(referencing an ended or nonexistent call) but MUST NOT set it directly. The spec says:
 
 > When `urn:ietf:params:jmap:vtc` is present: the id of a VTCCall that is currently
 > active and bound to this Chat via the VTCCall's `chatId` field. The server sets this
@@ -235,12 +240,11 @@ the changed types, fetch the updated Chat object. If `activeCallId` has changed 
 
 When the user clicks the join banner:
 
-1. Create a VTCParticipant on the referenced call via `VTCParticipant/set create` with
+1. Fetch the VTCCall via `VTCCall/get` using `Chat.activeCallId` to retrieve the
+   `joinUri` field. (The `joinUri` is on VTCCall, not on VTCParticipant.)
+2. Create a VTCParticipant on the call via `VTCParticipant/set create` with
    `callId` set to `Chat.activeCallId` and `joinMethod` set to the client's connection
    type (typically `"webrtc"`).
-2. Read the `joinUri` from the VTCCall object: call `VTCCall/get` using `Chat.activeCallId`
-   to retrieve the VTCCall, then read its `joinUri` field. The `joinUri` is a field on
-   VTCCall, not on VTCParticipant.
 3. Open the `joinUri` in the media layer — only after explicit user action.
 
 Do not open `joinUri` automatically. The VTC spec is explicit: clients MUST NOT connect
@@ -283,9 +287,10 @@ SpaceRole vocabulary. It is one entry in the `permissions` array of a SpaceRole 
 
 This permission gates VTCCall creation for Space-bound chats. Before sending
 `VTCCall/set create` with a `spaceId`, your client can pre-flight check whether the
-current user holds a role that includes `"start_call"`. However, the server enforces
-this independently — a client that skips the pre-flight check and sends the create will
-receive `forbidden` if the user lacks the permission.
+current user holds a role that includes `"start_call"`. The server SHOULD enforce
+this independently (the VTC spec uses SHOULD, not MUST) — a client that skips the
+pre-flight check and sends the create will typically receive `forbidden` if the user
+lacks the permission.
 
 ### What start_call gates and does not gate
 
@@ -440,8 +445,14 @@ while the call is active.
 When the VTCCall transitions to `"ended"`, create a Message with the call duration:
 "Call ended — 5m 23s." Derive duration from `endedAt - createdAt` (or from the
 first participant's `joinedAt` if you want to exclude ringing time). Include
-`endReason` in the text when it is informative to the user: "Missed call" for
-`endReason: "missed"`, "Call declined" for `endReason: "declined"`.
+`endReason` in the text when it is informative to the user:
+
+- `"missed"` → "Missed call"
+- `"declined"` → "Call declined"
+- `"cancelled"` → "Call cancelled" (initiator withdrew before answer)
+- `"failed"` → "Call failed"
+- `"timeout"` → "Call timed out"
+- `"completed"` → normal end; show duration only
 
 **Missed ring call:**
 When a ring call ends with `endReason: "missed"`, create a Message visible to the

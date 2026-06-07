@@ -72,7 +72,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; five data types (VTCCall, VTCParticipant, VTCRecording, VTCLivestream, and VTCMediaState); standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
+This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) plus the embedded VTCMediaState object; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
 
 The specification models call *state* — who is in a call, what state the call is in, and how to join it — without prescribing the media transport. Actual voice and video media travel through a deployment-chosen stack (WebRTC, SIP/RTP, or any other media framework); the JMAP server is a call-state database, not a media server.
 
@@ -306,7 +306,7 @@ VTCParticipant IDs are opaque server-assigned identifiers. For authenticated use
 : How this participant connected. This specification registers `"webrtc"`, `"sip"`, `"pstn"`, and `"h323"` as short aliases. When the participant arrived via a gateway, this value corresponds to the VTCGateway `protocol`. Vendor-specific connection methods SHOULD use reverse-domain notation (e.g., `"com.apple.facetime"`). Clients MUST ignore unrecognized values.
 
 `gatewayData` (Object|null):
-: Protocol-specific state for participants who joined via a gateway (`joinMethod` other than `"webrtc"`). Opaque to JMAP VTC; the server stores and relays this object without interpretation. Clients that understand the protocol MAY inspect it; all others MUST ignore it. `null` for WebRTC participants and when no gateway-specific data is available. Examples:
+: Protocol-specific state for participants who joined via a gateway (`joinMethod` other than `"webrtc"`). The server stores and relays this object without interpretation, with one exception: the server MUST recognize and process the reserved `"pendingSignal"` key for outbound gateway signals (see {{gateway-signal}}). Clients that understand the protocol MAY inspect it; all others MUST ignore it. `null` for WebRTC participants and when no gateway-specific data is available. Examples:
   - PSTN: `{"callerIdNumber": "+14155559876", "callerIdName": "Alice Smith"}`
   - SIP: `{"sipUri": "sip:alice@example.com", "userAgent": "Opal/4.0"}`
   - H.323: `{"alias": "alice", "endpointType": "terminal"}`
@@ -358,7 +358,13 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 : Time the call ended. `null` while the call is active or pending.
 
 `endReason` (String|null, server-set):
-: Reason the call ended. Values: `"completed"`, `"missed"`, `"declined"`, `"cancelled"`, `"failed"`, `"timeout"`. `null` while the call has not ended.
+: Reason the call ended. `null` while the call has not ended. Values:
+  - `"completed"`: An active call was ended normally (moderator ended or all participants left).
+  - `"missed"`: A ring call timed out with no answer.
+  - `"declined"`: All ring-call targets declined.
+  - `"cancelled"`: The initiator withdrew a ringing or pending call before anyone answered/joined.
+  - `"failed"`: A server or media-layer error prevented the call from proceeding.
+  - `"timeout"`: A deployment-defined inactivity timeout fired on an active call with no participants.
 
 `initiatorId` (String, immutable, server-set):
 : The userId of the participant who created the call.
@@ -397,7 +403,7 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 : PIN or access code for joining this call via a protocol gateway. Present when a gateway (PSTN, SIP, H.323) requires a PIN to associate an inbound connection with this call. `null` when no gateway requires a PIN or no gateways are configured.
 
 `e2eeEnabled` (Boolean):
-: `true` when end-to-end encryption is active for this call's media streams. The mechanism (WebRTC Insertable Streams, SFrame, or other) is media-layer-defined; this field is the state signal for client UI (e.g., displaying a lock icon). Default: `false`. When `true`, features that require server-side media access (recording, livestreaming, gateway participants) are typically unavailable; the server SHOULD reject VTCRecording and VTCLivestream creates with `forbidden` when `e2eeEnabled` is `true`.
+: `true` when end-to-end encryption is active for this call's media streams. The mechanism (WebRTC Insertable Streams, SFrame, or other) is media-layer-defined; this field is the state signal for client UI (e.g., displaying a lock icon). Default: `false`. Only the call creator (at create time) or a moderator (via update) MAY set this field; the server MUST return `forbidden` if a non-moderator attempts to update `e2eeEnabled`. When `true`, features that require server-side media access (recording, livestreaming, gateway participants) are unavailable; the server MUST reject VTCRecording and VTCLivestream creates with `forbidden` when `e2eeEnabled` is `true`.
 
 ### Optional Binding Fields
 
@@ -443,6 +449,7 @@ Valid states: `"pending"`, `"active"`, `"ended"`.
 
 - `"pending"`: The call has been created but the scheduled start time has not arrived or no participant has joined yet.
 - `"pending"` → `"active"`: A participant joins at or after `scheduledStartAt`.
+- `"pending"` → `"ended"`: A moderator cancels the scheduled call before it starts.
 - `"active"` → `"ended"`: All participants leave or a moderator ends the call.
 
 For all call types, `"ended"` is a terminal state. The server MUST NOT transition a call out of `"ended"`.
@@ -679,7 +686,10 @@ Servers MUST return `invalidArguments` when `scheduledStartAt` is in the past. S
 
 #### Ending a Call
 
-A moderator calls `VTCCall/set` to transition `state` to `"ended"`. The server sets `endedAt` and `endReason: "completed"` and dispatches state-change notifications to all participants.
+A moderator (or the initiator of a ring call) calls `VTCCall/set` to transition `state` to `"ended"`. The server sets `endedAt` and dispatches state-change notifications to all participants. The server sets `endReason` based on context:
+
+- `"completed"`: The call was in state `"active"` when ended.
+- `"cancelled"`: The call was in state `"ringing"` when the initiator ended it (i.e., the initiator withdrew the ring before anyone answered).
 
 Example update:
 
@@ -768,7 +778,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 #### Answering a Ring Call {#answering}
 
-For ring calls, the server creates VTCParticipant records for all targets (with `joinedAt: null`) when the call is created. A target participant answers by calling `VTCParticipant/set` with an `update` on their existing record, setting `joinMethod` to their connection type. The server sets `joinedAt` to the current time.
+For ring calls, the server creates VTCParticipant records for all targets (with `joinedAt: null`) when the call is created. A target participant answers by calling `VTCParticipant/set` with an `update` on their existing record, setting `joinMethod` to their connection type. The server sets `joinedAt` to the current time and `callResponse` to `"accepted"`.
 
 The server MUST validate that:
 
@@ -854,7 +864,7 @@ The server responds with the complete VTCParticipant record:
 }
 ~~~
 
-The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidArguments` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. When the VTCCall carries a `chatId` binding and `urn:ietf:params:jmap:chat` is present, the server MUST verify the caller is a member of the bound Chat. The server MUST return `forbidden` if the caller is not a member. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
+The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidArguments` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. When the VTCCall carries a `chatId` binding and `urn:ietf:params:jmap:chat` is present, the server MUST verify the caller is a member of the bound Chat. The server MUST return `forbidden` if the caller is not a member. When `urn:ietf:params:jmap:chat` is present and the call initiator has blocked the joining user (`ChatContact.blocked` is `true` on the initiator's contact record for the joiner), the server MUST return `forbidden`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
 
 #### Declining a Ring Call
 
@@ -970,7 +980,7 @@ A moderator may bridge an external party into a call by calling `VTCParticipant/
 
 Optional: `displayName` (String) — a label for the external participant before they are connected.
 
-The server creates a VTCParticipant with `joinedAt: null` and initiates the outbound call via the gateway. When the external party answers, the server sets `joinedAt`. If the outbound call fails or is not answered, the server sets `leftAt` and `endReason` information in `gatewayData`.
+The server creates a VTCParticipant with `joinedAt: null` and initiates the outbound call via the gateway. When the external party answers, the server sets `joinedAt`. If the outbound call fails or is not answered, the server sets `leftAt` and records the gateway-specific failure reason in `gatewayData` (e.g., `{"failureReason": "busy"}`).
 
 Example create (PSTN dial-out):
 
@@ -1185,9 +1195,9 @@ The server MUST return `forbidden` when the caller is not a moderator on the ass
 }
 ~~~
 
-The server MUST return `invalidArguments` if the livestream is not in state `"starting"` or `"live"`. Once stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream by creating a new VTCLivestream object.
+The server MUST return `invalidArguments` if the livestream is not in state `"starting"` or `"live"`. Once stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream (see {{updating-stream-configuration}}) or by creating a new VTCLivestream object.
 
-#### Updating Stream Configuration
+#### Updating Stream Configuration {#updating-stream-configuration}
 
 `update` supports patching `streamUri`, `streamKey`, or `platform` only while the livestream is in state `"stopped"` or `"failed"`. The server MUST return `invalidArguments` for configuration updates while the stream is in state `"starting"` or `"live"`.
 
@@ -1259,6 +1269,9 @@ When a ring call is created, the server constructs a `VTCCallPush` payload and d
 `spaceId` (String|null):
 : The associated Space id, if any.
 
+`channelId` (String|null):
+: The associated channel id within the Space, if any.
+
 Example `VTCCallPush` payload:
 
 ~~~json
@@ -1325,7 +1338,7 @@ When a ringing call is answered, declined, cancelled, or times out, the server d
 : The id of the call.
 
 `endReason` (String):
-: The reason ringing stopped. Values: `"answered"`, `"answered_elsewhere"`, `"declined"`, `"cancelled"`, `"timeout"`, `"failed"`.
+: The reason ringing stopped for this device. Values: `"answered"` (a different target user answered), `"answered_elsewhere"` (the same user answered on a different device), `"declined"`, `"cancelled"` (initiator withdrew the ring), `"timeout"`, `"failed"`. Note: this is a per-device ring-disposition enum, distinct from VTCCall.endReason which records the call-level outcome.
 
 Example — call answered on another device:
 
@@ -1473,6 +1486,9 @@ Delivered to a specific participant when a moderator requests that they unmute.
 `callId` (String):
 : The VTCCall id.
 
+`participantId` (String):
+: The VTCParticipant id of the target participant being asked to unmute.
+
 `requestedBy` (String):
 : The userId of the moderator making the request.
 
@@ -1497,7 +1513,7 @@ Delivered to all participants when recording state changes. This is a mandatory 
 
 ## Multi-Device Forking {#multi-device-forking}
 
-Ring notifications are delivered to ALL of the target participant's registered push subscriptions and active WebSocket connections. The first device to answer wins: the server accepts the first `VTCCall/set` update transitioning the call to `"active"` and dispatches `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other devices of that participant.
+Ring notifications are delivered to ALL of the target participant's registered push subscriptions and active WebSocket connections. The first device to answer wins: the server accepts the first `VTCParticipant/set` update (setting `joinMethod`) and transitions the call to `"active"`, then dispatches `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other devices of that participant.
 
 When a call targets multiple participants, answering by any one target transitions the call to `"active"`. The server dispatches `VTCCallEndEvent` with `endReason: "answered"` to all devices of all other target participants that have not yet answered.
 
@@ -1566,7 +1582,7 @@ Even without access to the media stream, the JMAP server observes: who called wh
 
 ## Media State Accuracy {#media-state-accuracy}
 
-VTCMediaState is client-reported and server-relayed. The server has no media-layer visibility and cannot verify that `audio: false` actually means the microphone is off. A malicious client could report `muted: true` while transmitting audio, or `video: false` while the camera is active.
+VTCMediaState is client-reported and server-relayed. The server has no media-layer visibility and cannot verify that `audio: false` actually means the microphone is off. A malicious client could report `audio: false` while transmitting audio, or `video: false` while the camera is active.
 
 This is inherent to the media-agnostic design. Clients SHOULD NOT rely on VTCMediaState for security-critical decisions. The media layer is the only authority on what media is actually being transmitted.
 
@@ -1580,7 +1596,7 @@ When `lobbyEnabled` is `true`, the server MUST NOT allow participants to skip th
 
 ## Livestream Key Exposure {#livestream-key-exposure}
 
-`streamKey` is an authentication credential for an external streaming platform. The server MUST NOT return the actual `streamKey` value in `VTCLivestream/get` responses for non-moderator participants. The server MUST return an empty string for the `streamKey` field for non-moderators.
+`streamKey` is an authentication credential for an external streaming platform. The server MUST NOT return the actual `streamKey` value in `VTCLivestream/get` responses for non-moderator participants. The server MUST return an empty string for the `streamKey` field for non-moderators. The `streamUri` is also sensitive (it often contains account-identifying path components); the server SHOULD redact or omit `streamUri` for non-moderator participants.
 
 ## Gateway Participant Identity
 
@@ -1871,7 +1887,7 @@ This example shows a room call with lobby mode in a Space channel.
 }, "0"]]
 ~~~
 
-The call is immediately `"active"`. The Space's `activeCallId` is set to the new call's id (when {{JMAP-CHAT}} is present).
+The call is immediately `"active"`. The bound Chat's `activeCallId` is set to the new call's id (when {{JMAP-CHAT}} is present).
 
 ### Step 2: Guest joins and enters lobby
 

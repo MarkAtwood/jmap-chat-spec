@@ -204,7 +204,7 @@ through `gatewayData`. Those mappings are your gateway's job.
 4. **SIP REFER (call transfer).** REFER triggers a call transfer. Model it as
    a VTCGatewaySignal with `signal: "refer"` and a `data` object carrying the
    Refer-To URI. Moderators send outbound REFER by patching `gatewayData` with
-   a `pendingSignal` key (see Section 5 for the signal pattern). The gateway
+   a `pendingSignal` key (see Section 4 for the signal pattern). The gateway
    extracts it, sends the REFER, and removes the key.
 
 5. **Hold/resume.** SIP hold is a re-INVITE with `sendonly` or `inactive` SDP.
@@ -231,7 +231,7 @@ with `joinedAt: null` or to suppress the participant record until the call is
 fully established. Showing the participant as "connecting" is better UX for
 dial-out flows.
 
-SIP trunking with TLS and SRTP is strongly recommended. See Section 8 for
+SIP trunking with TLS and SRTP is strongly recommended. See Section 7 for
 security considerations. Advertise `"transport": "tls"` in `metadata` to
 signal this to clients.
 
@@ -258,7 +258,9 @@ Map the SIP dialog lifecycle to VTCParticipant as follows:
 | re-INVITE (resume) | emit VTCGatewaySignal `signal: "unhold"`         |
 | REFER received     | emit VTCGatewaySignal `signal: "refer"`          |
 | BYE received       | update: set `leftAt` to current time             |
-| CANCEL received    | update: set `leftAt`, `callResponse: "declined"` |
+| CANCEL received    | update: set `leftAt`, `endReason: "cancelled"`   |
+| 603 Decline        | update: set `leftAt`, `endReason: "declined"`    |
+| 486 Busy Here      | update: set `leftAt`, `endReason: "declined"`    |
 
 Populate `gatewayData` on the VTCParticipant with the SIP URI and negotiated
 codec at a minimum:
@@ -319,7 +321,7 @@ verification works, and how to handle DTMF relay are not prescribed.
 
 5. **DTMF relay.** After joining, callers often use DTMF to raise their hand,
    mute themselves, or interact with an IVR menu. Emit each DTMF event as a
-   VTCGatewaySignal (see Section 5). Decide which DTMF sequences to
+   VTCGatewaySignal (see Section 4). Decide which DTMF sequences to
    auto-handle in the gateway (e.g., `*6` to mute/unmute) versus which to pass
    through as signals for the JMAP application layer to handle.
 
@@ -343,7 +345,7 @@ accidentally entering a past call.
 
 PSTN media is G.711 (alaw or ulaw) almost universally in North America and
 Europe. Your gateway will transcode to whatever codec your conference mixer
-uses. See Section 7 for codec considerations.
+uses. See Section 6 for codec considerations.
 
 ### Common patterns
 
