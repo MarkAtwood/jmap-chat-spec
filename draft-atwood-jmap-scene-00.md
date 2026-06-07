@@ -276,7 +276,100 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 : Number of avatars currently present in the region.
 
 `viewHint` (String|null):
-: Advisory rendering mode for clients. Values defined by this specification: `"3d"` (standard 3D perspective), `"2d-topdown"` (top-down 2D view, as in virtual offices or board games), `"2d-side"` (side-scrolling 2D view, as in platformer games). `null` is treated as `"3d"`. This field is advisory; clients MAY ignore it and render the region in any mode they support. Clients MUST NOT fail when encountering an unrecognized value; they SHOULD fall back to `"3d"`. Deployment-specific view hints SHOULD use reverse-domain notation (e.g., `"com.example.isometric"`).
+: Advisory rendering mode for clients. Values defined by this specification: `"3d"` (standard 3D perspective), `"2d-topdown"` (top-down 2D view, as in virtual offices or board games), `"2d-side"` (side-scrolling 2D view, as in platformer games), `"ar"` (augmented reality overlay on the physical world; region coordinates are anchored to a physical location via `geoAnchor`). `null` is treated as `"3d"`. This field is advisory; clients MAY ignore it and render the region in any mode they support. Clients MUST NOT fail when encountering an unrecognized value; they SHOULD fall back to `"3d"`. Deployment-specific view hints SHOULD use reverse-domain notation (e.g., `"com.example.isometric"`).
+
+`geoAnchor` (GeoAnchor|null): {#geo-anchor}
+: When non-null, anchors the region's local coordinate system to a position within a reference frame. The region's coordinate origin `[0, 0, 0]` maps to the specified anchor point. `null` for purely virtual regions with no external anchoring. When `geoAnchor` is present, `viewHint` SHOULD be `"ar"` but MAY be `"3d"` (for VR experiences anchored to physical locations) or any other value.
+
+A GeoAnchor object has the following fields:
+
+`referenceFrame` (String|null):
+: Identifies the coordinate reference frame for this anchor. `null` is Earth WGS84 (the default). When non-null, the value identifies an alternative reference frame. Recognized forms include:
+
+  - `null` — Earth, WGS84 ellipsoid. The coordinate fields (`latitude`, `longitude`, `altitude`) use standard WGS84 interpretation.
+  - A URL (e.g., `"https://maps.example.com/worlds/middle-earth"`) — a map or scene server that defines the reference frame. The server at that URL is authoritative for the coordinate system's geometry and semantics.
+  - A DID (e.g., `"did:web:example.com:worlds:arrakis"`) — a decentralized identifier for a reference frame. The DID document MAY contain service endpoints for resolution and map data.
+  - A URN UUID (e.g., `"urn:uuid:550e8400-e29b-41d4-a716-446655440000"`) — an opaque identifier for a shared coordinate system, useful when multiple servers agree on a coordinate frame without centralized hosting.
+  - A DNS name (e.g., `"mars.example.com"`) — resolved via well-known conventions defined by the deployment.
+  - A reverse-domain identifier (e.g., `"com.example.starfield.planet-jemison"`) — deployment-specific reference frame using the same extensibility convention as `viewHint`.
+
+  Clients that do not recognize the `referenceFrame` value MUST NOT attempt to render the region in AR mode. Clients SHOULD fall back to rendering the region as a standalone virtual environment (ignoring the anchor) and SHOULD inform the user that the geographic context is unavailable.
+
+`latitude` (Number):
+: Latitude in decimal degrees on the reference frame's geoid or surface model. For Earth WGS84: range -90.0 to 90.0. For other reference frames: interpretation is defined by the reference frame.
+
+`longitude` (Number):
+: Longitude in decimal degrees on the reference frame's geoid or surface model. For Earth WGS84: range -180.0 to 180.0. For other reference frames: interpretation is defined by the reference frame.
+
+`altitude` (Number|null):
+: Altitude in meters above the reference frame's datum. For Earth WGS84: meters above the WGS84 ellipsoid. `null` if altitude is unknown or not applicable; clients SHOULD treat `null` as surface level at the given latitude/longitude.
+
+`heading` (Number):
+: Clockwise rotation in degrees from the reference frame's North (or equivalent polar direction) that maps to the region's positive Z axis. Default: `0` (positive Z = North). A heading of `90` means positive Z points East (or the reference frame's equivalent).
+
+When `referenceFrame` is `null` (Earth WGS84), the region's coordinate axes are: positive X points East, positive Z points North, positive Y points up. This is consistent with the spec's Y-up convention.
+
+Example — an AR region anchored to a park in Seattle (Earth):
+
+~~~json
+{
+  "name": "Volunteer Park AR Garden",
+  "viewHint": "ar",
+  "geoAnchor": {
+    "referenceFrame": null,
+    "latitude": 47.6301,
+    "longitude": -122.3154,
+    "altitude": 130.0,
+    "heading": 0
+  },
+  "bounds": {
+    "min": [-50, 0, -50],
+    "max": [50, 30, 50]
+  }
+}
+~~~
+
+Example — a region anchored to a location on a game world map:
+
+~~~json
+{
+  "name": "Rivendell Courtyard",
+  "viewHint": "3d",
+  "geoAnchor": {
+    "referenceFrame": "https://maps.example.com/worlds/middle-earth",
+    "latitude": 33.21,
+    "longitude": -12.84,
+    "altitude": 200.0,
+    "heading": 45
+  },
+  "bounds": {
+    "min": [-100, 0, -100],
+    "max": [100, 50, 100]
+  }
+}
+~~~
+
+Example — a region anchored to a DID-identified world:
+
+~~~json
+{
+  "name": "Arrakeen Spaceport",
+  "viewHint": "ar",
+  "geoAnchor": {
+    "referenceFrame": "did:web:example.com:worlds:arrakis",
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "altitude": 0.0,
+    "heading": 0
+  },
+  "bounds": {
+    "min": [-500, 0, -500],
+    "max": [500, 100, 500]
+  }
+}
+~~~
+
+SceneObjects within any anchored region are positioned in meters relative to the anchor point, regardless of reference frame.
 
 `accessPolicy` (String):
 : Who may enter this region. Values: `"public"` (any authenticated user), `"invite"` (only users explicitly granted access), `"space"` (members of the bound Space, when {{JMAP-CHAT}} is present). Default: `"public"`.
@@ -2576,6 +2669,7 @@ Specification document: This document.
 - **Gather** (and similar 2D spatial-video products like Amazon Chime's experimental spatial view) demonstrated that top-down 2D worlds with proximity-based video and spatial audio are a compelling subset of 3D environments, particularly for virtual offices and social spaces. The `viewHint` field on SceneRegion was designed to support this use case natively without requiring a separate specification.
 - **Video games** — both single-player and multiplayer — informed the decision to keep Scene independent of Chat and VTC. A game world needs spatial objects, avatars, physics modes, and interaction events but may not need chat channels or video calling. The `SceneInteractionEvent` action vocabulary (click, grab, release, activate, plus extensible custom actions) follows game input conventions.
 - **Board games and tabletop simulators** (Tabletop Simulator, Board Game Arena) influenced the SceneObject permission model and the 2D top-down view hint. A board game is a scene region with a fixed set of objects (pieces, cards, dice) that players interact with via grab/release/activate actions, rendered top-down.
+- **Location-based AR games** (Niantic's Ingress and Pokemon Go, and earlier experiments like Geocaching) demonstrated that GPS-anchored virtual objects in physical space create compelling shared experiences. The `geoAnchor` field on SceneRegion and the `"ar"` view hint enable the same pattern as an open protocol rather than a proprietary platform.
 - **Game engine conventions** (Unity, Unreal, Godot) informed the physicsMode and interactable properties. The separation between physics modes (static, dynamic, kinematic, none) is standard across all major engines.
 
 ## Explicit Non-Prescriptions
@@ -2595,6 +2689,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Terrain and heightmaps.** Terrain is a SceneObject with a visual representation. The spec does not define a terrain-specific data type.
 - **Building and editing tools.** Client-side concerns. Objects are created and modified via standard `SceneObject/set`; the UI for doing so is client-defined.
 - **2D rendering style.** For regions with `viewHint` of `"2d-topdown"` or `"2d-side"`, the rendering style (pixel art, vector, isometric projection, sprite sheets) is client-defined. The spec provides spatial coordinates and advisory view orientation; visual style is a client concern.
+- **AR compositing.** For regions with `viewHint` of `"ar"` and a `geoAnchor`, how virtual objects are composited onto the camera feed (occlusion, lighting estimation, shadow casting, surface detection) is client-defined. The spec provides geographic anchoring and object positions; the AR rendering pipeline is a client concern.
 - **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
 - **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments SHOULD follow the color representation convention defined in {{JMAP-CHAT}} ({{color-convention}}): W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
 
