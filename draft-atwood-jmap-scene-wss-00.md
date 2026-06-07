@@ -833,6 +833,20 @@ If `"scene"` was included in the `ChatStreamEnable` `dataTypes`,
 Scene events delivered through that path stop; events delivered
 through an active `SceneStreamEnable` subscription are unaffected.
 
+### Coexistence Rules
+
+SceneStreamEnable and ChatStreamEnable (with `"scene"` in
+`dataTypes`) are independent subscription mechanisms that MAY
+coexist on the same WebSocket connection.  Their subscriptions are
+unioned: if both are active, the server delivers the union of
+events matching either subscription.  The server MUST NOT deliver
+duplicate events when both subscriptions match the same event.
+Disabling one mechanism (via SceneStreamDisable or
+ChatStreamDisable) MUST NOT affect the other's subscriptions.
+Errors in one mechanism (e.g., invalid `regionIds` in
+SceneStreamEnable) MUST NOT affect the other's active
+subscriptions.
+
 ## Interoperability with JMAP VTC WebSocket {#vtc-wss-interop}
 
 Scene and VTC ephemeral subscriptions are fully independent.

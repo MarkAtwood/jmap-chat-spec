@@ -285,7 +285,9 @@ The following fields are present only when the corresponding companion capabilit
 : When `urn:ietf:params:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the region has no channel context.
 
 `activeCallId` (String|null):
-: When `urn:ietf:params:jmap:vtc` is present: the id of an active VTCCall ({{JMAP-VTC}}) bound to this region. `null` if no call is active.
+: When `urn:ietf:params:jmap:vtc` is present: the id of an active VTCCall ({{JMAP-VTC}}) bound to this region. `null` if no call is active. When the VTCCall referenced by `activeCallId` transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange` for the SceneRegion type. This update is a side effect of the VTCCall state transition.
+
+When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat also has an `activeCallId` field (per {{JMAP-CHAT}}), the two fields SHOULD reference the same VTCCall. If they diverge (e.g., due to independent client updates), the SceneRegion's `activeCallId` is authoritative for spatial audio binding and the Chat's `activeCallId` is authoritative for the text-channel call banner. Clients SHOULD treat divergence as transient and prefer the SceneRegion's value for in-region UI.
 
 ### Example
 
@@ -863,6 +865,8 @@ Example create:
 
 The server MUST return `forbidden` when `mayCreateRegion` is `false`. The server MUST return `overQuota` when `maxRegionsPerAccount` would be exceeded. The server MUST return `invalidArguments` when `bounds.min` components are not less than or equal to corresponding `bounds.max` components.
 
+When `chatId`, `spaceId`, or `channelId` is set to a non-null value, the server MUST verify that the referenced object exists and the caller has access to it. The server MUST return `invalidArguments` if the referenced object does not exist or the caller cannot access it.
+
 Example create request with full JMAP envelope:
 
 ~~~json
@@ -929,6 +933,8 @@ Response:
 
 `update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `viewHint`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
+When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidArguments` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
+
 The server MUST return `forbidden` when the caller is not the region owner and does not have deployment-defined administrative privileges.
 
 Example update -- patch a region's accessPolicy and bounds:
@@ -978,6 +984,8 @@ Response:
 #### Destroying a Region
 
 `destroy` removes the SceneRegion and all contained SceneObject and SceneAvatar records. Active avatars are ejected (their `leftAt` is set to the current time). The server MUST return `forbidden` when the caller is not the region owner.
+
+If the destroyed SceneRegion had a non-null `activeCallId`, the server MUST NOT automatically end the referenced VTCCall. The VTCCall continues independently; its participants are unaffected. The server SHOULD deliver a `StateChange` for the VTCCall type so that clients can detect the loss of the spatial context. Deployments that want region destruction to end the call MUST implement this as application logic outside the base protocol.
 
 Example destroy:
 
@@ -1034,6 +1042,8 @@ Response:
 | `spawnPosition` is not a valid 3-element numeric array | Position must be `[x, y, z]` finite Numbers. |
 | `spawnOrientation` is not a valid unit quaternion | Quaternion must be `[x, y, z, w]` with magnitude within epsilon of 1.0. |
 | `environment` contains values the server rejects | When the server validates environment sub-fields (deployment-defined schema), invalid field types or values trigger this error. |
+| `accessPolicy` is `"space"` but `urn:ietf:params:jmap:chat` is not in the server's capabilities | `accessPolicy "space" requires urn:ietf:params:jmap:chat`. |
+| `accessPolicy` is `"space"` but `spaceId` is null | `accessPolicy "space" requires spaceId`. |
 
 **`forbidden`** -- authorization failures:
 
@@ -2264,6 +2274,8 @@ Deployments that require position integrity SHOULD implement server-side positio
 
 The JMAP server observes who enters which regions, when, for how long, and (at periodic intervals) where they are. This metadata is privacy-sensitive. Deployments requiring spatial privacy SHOULD minimize the frequency of position reconciliation between the simulation layer and the JMAP server.
 
+When a SceneRegion's `activeCallId` references a VTCCall with `e2eeEnabled` set to `true`, the server SHOULD suppress `SceneAvatarEvent` delivery (enter, leave, and update events) for that region to subscribers who are not participants in the bound VTCCall. This prevents the Scene WebSocket channel from leaking real-time call participant presence metadata that E2EE is designed to protect. Servers that cannot implement this suppression MUST document the limitation.
+
 ## Object Density as Denial of Service
 
 Without limits, a malicious user could create thousands of objects in a region, overwhelming clients that attempt to render them all. Servers MUST enforce `maxObjectsPerRegion`. Servers SHOULD impose per-user object creation rate limits.
@@ -2375,6 +2387,8 @@ Scene data types differ significantly in mutation frequency:
 - **SceneRegion** and **SceneAsset** change infrequently: region creation, configuration updates, and asset uploads are low-frequency operations. Coalescing is generally unnecessary but remains at the server's discretion.
 
 Real-time avatar and object position synchronization at simulation-layer rates (10+ Hz) MUST NOT generate `StateChange` events at that frequency. The periodic position reconciliation described in {{simulation-layer}} produces JMAP-layer mutations at a much lower rate (every 5-30 seconds); only those reconciliation writes produce state changes. Clients connected to the simulation layer receive real-time positions through the simulation protocol; `StateChange` events for SceneAvatar and SceneObject serve clients that are not connected to the simulation layer or that need to detect structural changes (new avatars, removed objects).
+
+When Scene and Chat are co-deployed, the server SHOULD coalesce `StateChange` events across both capabilities to avoid overwhelming Chat-only clients. A `StateChange` containing only SceneAvatar or SceneObject state tokens SHOULD be coalesced within a 1-5 second window. Clients that do not use Scene types SHOULD ignore state tokens for types they do not track, avoiding unnecessary `/changes` calls.
 
 ## Push Urgency {#push-urgency}
 
