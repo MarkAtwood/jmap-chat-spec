@@ -92,18 +92,22 @@ the media protocol used to deliver those types is not part of the JMAP surface.
 ### Considerations
 
 **WebRTC** is the natural choice for browser and mobile clients. It provides
-end-to-end encryption by default (DTLS-SRTP), broad client library support
-(libwebrtc on iOS/Android, native in every major browser), and an established
-ecosystem of SFU implementations. Its signaling (SDP offer/answer, ICE
-candidate exchange) is the deployment's responsibility; JMAP VTC does not relay
-SDP or ICE candidates.
+hop-by-hop transport encryption (DTLS-SRTP) between each client and the media
+server, broad client library support (libwebrtc on iOS/Android, native in every
+major browser), and an established ecosystem of SFU implementations. Note:
+DTLS-SRTP provides transport security, not end-to-end encryption — in SFU
+deployments the SFU terminates and re-establishes each DTLS session.
+True E2EE requires an additional layer (see §4). WebRTC signaling (SDP
+offer/answer, ICE candidate exchange) is the deployment's responsibility;
+JMAP VTC does not relay SDP or ICE candidates.
 
 **SIP/RTP** is the right choice when interoperability with PSTN gateways,
 enterprise PBX systems, or existing SIP infrastructure is required. The
 VTCGateway object (§VTCGateway) and the `"sip"` joinMethod exist precisely to
 support this path. A SIP-based deployment may use a media server such as
-FreeSWITCH, Asterisk, or Kamailio; the JMAP layer sits atop the SIP signaling
-layer and tracks state as JMAP objects.
+FreeSWITCH or Asterisk (with Kamailio or similar as the SIP proxy/router);
+the JMAP layer sits atop the SIP signaling layer and tracks state as JMAP
+objects.
 
 **SFU vs. MCU vs. mesh:**
 
@@ -237,12 +241,11 @@ participants visible in the UI.
 
 **Reconnect identity.** The spec requires that a re-joining participant who
 already has a VTCParticipant record in the call MUST be reconnected to that
-record rather than assigned a new one (§Reconnecting). This preserves role and
-speaker time across brief network interruptions. Define your reconnect window:
-if a participant's `leftAt` was set within the last N seconds and they re-join
-with the same `userId`, treat it as a reconnect. A 5-minute window is
-reasonable; beyond that, create a new record. (The spec does not prescribe this
-threshold; choose one and document it.)
+record rather than assigned a new one (§Reconnecting). This is unconditional —
+the spec defines no time window. Any re-join by the same `userId` to the same
+call MUST reuse the existing record regardless of how long ago `leftAt` was set.
+This preserves role, speaker time, and call history across network interruptions
+of any duration.
 
 **Lobby flow.** When `lobbyEnabled` is `true`, the server sets a new
 participant's `lobbyState` to `"waiting"` at creation time. The participant
@@ -388,12 +391,12 @@ layer, but treat the JMAP rejection as the primary gate.
 
 The spec defines two fields: `e2eeEnabled` on VTCCall (Boolean, default
 `false`) and `e2eeFingerprint` on VTCParticipant (the participant's public key
-fingerprint). It specifies that features requiring server-side media access
-(recording, livestreaming, gateway participants) are typically unavailable when
-`e2eeEnabled` is `true`, and that the server SHOULD reject VTCRecording and
-VTCLivestream creates with `forbidden` in that case (§VTCCall Object Fields,
-`e2eeEnabled`). The key exchange mechanism, the encryption protocol, and the
-fingerprint format are explicitly out of scope for the spec.
+fingerprint). When `e2eeEnabled` is `true`, `VTCRecording/set` and
+`VTCLivestream/set` both mandate that the server MUST return `forbidden` for
+create operations — recording and livestreaming are incompatible with E2EE.
+Only the call creator or a moderator may set `e2eeEnabled`. The key exchange
+mechanism, the encryption protocol, and the fingerprint format are explicitly
+out of scope for the spec.
 
 ### What you must decide
 
@@ -465,8 +468,8 @@ recording on an E2EE call.
 
 | System | E2EE mechanism | Key agreement |
 |---|---|---|
-| Signal (desktop calling) | SRTP-DTLS + Signal Double Ratchet | Signal Protocol |
-| Jitsi Meet (E2EE mode) | WebRTC Insertable Streams | DTLS-SRTP + OlmKit / custom |
+| Signal (desktop calling) | DTLS with authenticated fingerprints | X3DH + Double Ratchet (for fingerprint authentication) |
+| Jitsi Meet (E2EE mode) | WebRTC Insertable Streams | OlmKit / custom ECDH |
 | Zoom E2EE | Proprietary | Zoom-managed key tree |
 | Element Calls (Matrix) | WebRTC Insertable Streams | MLS via Matrix |
 
@@ -492,9 +495,10 @@ that PSTN dial-in and recording will be unavailable.
 ### What the spec leaves open
 
 The spec defines the VTCRecording object, its lifecycle state machine
-(`recording` → `paused` → `stopped` → `processing` → `available` or
-`failed`), and the consent notification requirement (§Recording Consent,
-§VTCRecordingStateEvent). It does not specify: the recording storage backend,
+(`recording` ↔ `paused` → `stopped` → `processing` → `available` or
+`failed`; note that `recording` → `stopped` is also valid without pausing
+first, and `paused` → `recording` is the resume path), and the consent
+notification requirement (§Recording Consent, §VTCRecordingStateEvent). It does not specify: the recording storage backend,
 the audio/video format, whether to produce a composite or per-track recording,
 how long recordings are retained, or how the `blobId` is generated once
 `processing` completes.
@@ -548,7 +552,8 @@ log the error for operator review.
 **JMAP blob integration.** The `blobId` (§VTCRecording, `blobId`) is a
 standard JMAP blob reference (RFC 8620 §6). Once the recording file is stored,
 register it in the JMAP blob store and set `blobId` on the VTCRecording object.
-Clients retrieve the file via `JMAP/download` with `blobId`. If your recording
+Clients retrieve the file via the JMAP download URL (RFC 8620 §6.2) using the
+`blobId`. If your recording
 backend is an external object store (S3, GCS), the JMAP blob store MAY proxy
 the download URL or generate a pre-signed URL; either approach is compatible
 with the spec.
@@ -764,6 +769,13 @@ communication content. Persistent reactions on specific messages are Chat-layer
 objects. Implement both: ephemeral events for the floating reaction animation,
 persistent Reaction objects if users react to a specific in-call chat message.
 
+**Space ban enforcement.** When a user is banned from a Space, the spec
+requires that the server MUST immediately set `leftAt` on any active
+VTCParticipant record for that user in Space-bound calls, and emit a
+`VTCParticipantEvent` with `event: "left"`. Implement this as an internal
+side effect of the ban operation — do not rely on the banned user's client
+to disconnect voluntarily.
+
 **Lobby communication.** The spec mentions that lobby participants can
 message moderators via the bound Chat before being admitted (§Relationship
 to JMAP Chat). If you implement this, create the Chat binding and add the
@@ -888,9 +900,11 @@ state. Implement parent-call end as a cascade that ends all child calls first.
 **Per-account limits.** The account-level capability advertises
 `maxConcurrentCalls` (§Account-Level Capability Object). Enforce this limit in
 the `VTCCall/set create` handler: if the account already has the maximum number
-of active calls, return `forbidden` (or a deployment-defined `overQuota` error).
-Enforce the limit against calls in all non-ended states
-(`"creating"`, `"ringing"`, `"active"`, `"pending"`).
+of active calls, return `overQuota`. Similarly, enforce `maxParticipantsPerCall`
+in the `VTCParticipant/set create` handler — return `overQuota` when the call's
+`activeParticipantCount` has reached the limit. Enforce `maxConcurrentCalls`
+against calls in all non-ended states (`"creating"`, `"ringing"`, `"active"`,
+`"pending"`).
 
 ### Common patterns
 

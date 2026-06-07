@@ -43,6 +43,10 @@ A session advertising both capabilities looks like this:
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": { "...": "..." },
+    "urn:ietf:params:jmap:websocket": {
+      "url": "wss://jmap.example.com/ws",
+      "supportsPush": true
+    },
     "urn:ietf:params:jmap:scene": {},
     "urn:ietf:params:jmap:vtc": {},
     "urn:ietf:params:jmap:scene:websocket": {},
@@ -112,14 +116,15 @@ join. When `activeCallId` is `null`, the region has no associated voice channel.
 
 ### Server responsibilities
 
-Your server must implement both sides:
+Your server must implement the normative side, and should implement the binding side:
 
-**When a VTCCall bound to a SceneRegion enters `"active"` state:**
-Set `SceneRegion.activeCallId` to the VTCCall's id. This triggers a SceneRegion
-`StateChange` notification.
-
-**When that VTCCall transitions to `"ended"` state:**
+**When that VTCCall transitions to `"ended"` state (MUST per Scene spec):**
 Clear `SceneRegion.activeCallId` to `null`. This triggers a SceneRegion `StateChange`.
+
+**When a VTCCall bound to a SceneRegion enters `"active"` state (deployment policy):**
+Set `SceneRegion.activeCallId` to the VTCCall's id. This triggers a SceneRegion
+`StateChange` notification. Note: this direction (call→region binding) is not
+normatively required by either spec — it is recommended deployment behavior.
 
 The server should do this atomically with the VTCCall state transition. A VTCCall that has
 ended but whose SceneRegion still shows `activeCallId` set is a data integrity bug.
@@ -830,15 +835,24 @@ Create a SceneRegion and a persistent room call:
             "maxDistance": 20.0,
             "distanceModel": "inverse"
           }
-        },
+        }
+      }
+    }
+  }, "1"],
+  ["SceneRegion/set", {
+    "accountId": "acct1",
+    "update": {
+      "#r0": {
         "activeCallId": "#c0"
       }
     }
-  }, "1"]
+  }, "2"]
 ]
 ```
 
-The `"#c0"` back-reference sets `activeCallId` to the id of the just-created VTCCall.
+Note: `activeCallId` is not a valid create-time field on `SceneRegion/set` — it is
+only accepted on `update`. The example uses a two-step approach: create the region,
+then immediately patch `activeCallId` via a back-reference to the just-created call.
 The room call is immediately active and the region is ready for visitors.
 
 ### User enters the room

@@ -105,8 +105,8 @@ the initial VTCParticipant list. Ongoing, the server SHOULD keep membership in
 sync as participants join and leave:
 
 - When a VTCParticipant with a `userId` joins the call (i.e., `joinedAt` is
-  set), add that userId to the Chat's `members` list via `Chat/set` if they
-  are not already a member.
+  set), add that userId via the `addMembers` patch key on `Chat/set` update
+  if they are not already a member.
 - When a VTCParticipant leaves and will not rejoin (i.e., `leftAt` is set and
   the call has ended), the server MAY leave them as a member so they can
   read the post-call chat history, or remove them immediately depending on
@@ -299,11 +299,11 @@ requirements. Use different mechanisms for each.
 ### Persistent reactions: Reaction objects on Messages
 
 A participant reacting to a specific Message in the in-call chat should use
-the standard Reaction mechanism: a `Message/set` update that patches the
-`reactions` map on the target Message. The Reaction has an `emoji` field, a
-`senderId`, and a `sentAt` timestamp. This produces a permanent record of who
-reacted to what, visible in the post-call chat history, and rendered by any
-JMAP Chat client without VTC-specific logic.
+the standard Reaction mechanism: `Reaction/set create` with the target
+`messageId`, an `emoji`, and a `sentAt` timestamp. The client supplies a ULID
+as the reaction id. This produces a permanent record of who reacted to what,
+visible in the post-call chat history, and rendered by any JMAP Chat client
+without VTC-specific logic.
 
 This is the right path for reactions that are contextually tied to a message
 (thumbs-up on a question, checkmark on a decision).
@@ -325,7 +325,7 @@ events on the bound Chat's WebSocket stream, alongside caption events:
   "callId": "01J3XKZ...",
   "chatId": "01J3XKY...",
   "senderId": "user:alice@example.com",
-  "emoji": "\ud83d\udc4f",
+  "emoji": "👏",
   "sentAt": "2026-06-05T14:23:01Z"
 }
 ```
@@ -368,11 +368,14 @@ history before admission may not be desired.
 Two approaches are practical:
 
 **Option A: Separate lobby Chat.** Create a second `kind: "group"` Chat for
-lobby participants. When a moderator creates the call, also create a lobby Chat
-and record its id in `VTCCall` metadata (e.g., via JMAP Metadata if available,
-or in a deployment-defined field). Add lobby participants to the lobby Chat
-when their `lobbyState` is set to `"waiting"`. When they are admitted, add
-them to the main call Chat. They now see both conversations in their client.
+lobby participants. When a moderator creates the call, also create a lobby Chat.
+Note: the VTC spec does not define a field on VTCCall to store the lobby Chat
+id. Use `urn:ietf:params:jmap:metadata` on the VTCCall object to store it
+(e.g., key `"com.example.lobbyChat"` with the Chat id as value), or maintain
+the binding in your server's internal state. Add lobby participants to the
+lobby Chat when their `lobbyState` is set to `"waiting"`. When they are
+admitted, add them to the main call Chat via `Chat/set` update with the
+`addMembers` patch key. They now see both conversations in their client.
 
 The lobby Chat's membership is: waiting participants + moderators. This allows
 moderators to communicate with waiting participants and allows waiting
@@ -384,9 +387,11 @@ moderators and removes it from other members.
 
 **Option B: Restricted view of the main call Chat.** Do not create a separate
 Chat. Instead, structure the main call Chat as a Space channel and use
-`permissionOverrides` to restrict what waiting participants can see. This is
-more complex to implement correctly and is not recommended unless your
-deployment already uses Space channels as the primary call chat structure.
+`ChannelPermission` objects to restrict what waiting participants can see (e.g.,
+deny `"view_history"` for the lobby SpaceRole). This is more complex to
+implement correctly and is not recommended unless your deployment already uses
+Space channels as the primary call chat structure. Note: this approach requires
+a containing Space to exist for the call.
 
 For most deployments, Option A is simpler and more correct. The lobby Chat is
 ephemeral infrastructure; set `messageExpirySeconds` to a short window so it

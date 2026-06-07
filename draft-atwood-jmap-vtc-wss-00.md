@@ -298,6 +298,35 @@ This parallels the blocked-sender suppression rule for
 `ChatTypingEvent` in {{JMAP-CHAT-WSS}} and the ring push
 suppression rule in {{JMAP-VTC}}.
 
+### In-Call Event Suppression
+
+The server MUST extend blocked-sender suppression to in-call
+events.  If a per-call event originates from a participant whose
+corresponding contact has `blocked` set to `true` on the
+recipient's contact list (or an equivalent deployment-defined block
+list), the server MUST silently drop the event for that recipient.
+The blocked participant is not informed of the suppression.
+
+The following event types are subject to this rule:
+
+- `VTCParticipantEvent` — the recipient MUST NOT receive join,
+  leave, or role-change notifications for a blocked participant.
+
+- `VTCMediaStateEvent` — the recipient MUST NOT receive media-state
+  updates originating from a blocked participant.
+
+- `VTCActiveSpeakerEvent` — the recipient MUST NOT receive
+  active-speaker indications naming a blocked participant.
+
+- `VTCUnmuteRequestEvent` — the recipient MUST NOT receive unmute
+  requests sent by a blocked participant acting as moderator.
+
+This rule does NOT apply to `VTCRecordingStateEvent`, which is a
+mandatory consent signal and MUST be delivered to all participants
+regardless of block status.  It also does not apply to
+`VTCGatewaySignal`, which is already restricted to moderators per
+{{security}}.
+
 ## Subscription Lifecycle
 
 The ephemeral VTC subscription is bound to the WebSocket connection.
