@@ -128,6 +128,16 @@ streams are obtained, how SFU-side and client-side spatial audio mixing work,
 and how Scene's `activeCallId` binding connects the two -- see the
 [JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md).
 
+**Input channel.** Fastest, bidirectional, optional. Handles the question:
+what are the player's control surfaces doing right now, and what should their
+actuators feel? This is where HOTAS axes, racing wheel positions, and VR
+hand joint data arrive at 100-1000 Hz, and where force feedback, haptic
+rumble, and indicator light commands flow back. The endpoint is `inputUri`
+on SceneRegion. `null` when not needed (the common case). Separated from
+the simulation layer so that high-frequency I/O does not starve avatar sync
+and event delivery. Latency budget is under ~20ms round-trip for force
+feedback to feel responsive.
+
 **Asset CDN.** Bulk, cached, static. Handles the question: what does this
 object look like? Asset files (glTF, images, audio) are large and change
 infrequently. They are served from `assetUri` on SceneObject/SceneAsset or
@@ -135,25 +145,29 @@ from the JMAP blob download endpoint (`blobId`). Latency is measured in
 seconds for first load, milliseconds for cache hits. This path is
 independent of both the JMAP layer and the simulation layer.
 
-**Why three paths?** Conflating them produces bad outcomes. Pushing 60 Hz
+**Why four paths?** Conflating them produces bad outcomes. Pushing 60 Hz
 position updates through JMAP request/response would overwhelm the server.
 Serving 50 MB glTF files through the simulation WebSocket would starve
-position updates. Querying object metadata through the simulation layer would
-require reimplementing JMAP's query/filter/sort semantics. Each path has
-different latency, bandwidth, reliability, and caching characteristics; keeping
-them separate lets you optimize each independently.
+position updates. Pushing 200 Hz HOTAS axis reports through the same channel
+as 20 Hz avatar sync would starve the avatars. Querying object metadata
+through the simulation layer would require reimplementing JMAP's
+query/filter/sort semantics. Each path has different latency, bandwidth,
+reliability, and caching characteristics; keeping them separate lets you
+optimize each independently.
 
 **Client connection sequence.** A typical client enters a region in this order:
 
 1. `SceneRegion/get` -- discover the region, its bounds, spawn position,
-   `simulationUri`, and optional bindings (chatId, activeCallId).
+   `simulationUri`, `inputUri`, and optional bindings (chatId, activeCallId).
 2. `SceneObject/query` -- fetch objects in the region (possibly filtered by
    spatial proximity to spawn position).
 3. Begin asset downloads -- fetch visual assets via `assetUri` or `blobId` for
    each object. These downloads happen in parallel with step 4.
 4. Connect to `simulationUri` -- join the simulation layer, receive real-time
    avatar positions, begin sending own position.
-5. `SceneAvatar/set create` -- register presence in the region. This may
+5. If `inputUri` is non-null and the client has high-frequency input devices,
+   connect to `inputUri` for bidirectional I/O (control axes, force feedback).
+6. `SceneAvatar/set create` -- register presence in the region. This may
    happen before or after step 4, depending on whether the deployment wants
    presence to track JMAP state or simulation-layer connection.
 
@@ -686,10 +700,105 @@ demonstrates that bandwidth and server CPU are not bottlenecks.
 | Classic FPS (Doom-era 2.5D) | 35 Hz | Doom's original server tick rate; sufficient for hitscan and movement |
 | Modern FPS (Quake-style true 3D) | 60-77 Hz | Quake originally ran at 77 Hz (`sv_fps 77`); competitive play benefits from higher rates |
 | Social VR | 10-20 Hz | Avatar positions only; interpolation hides the low rate |
+| Flight simulator | 60-120 Hz | High tick rate for flight model; input axes at 100+ Hz via `inputUri` |
+| Racing simulator | 60-120 Hz | Tire/suspension model; wheel force feedback at 100-1000 Hz via `inputUri` |
 
 For concrete examples of authority models per genre -- how different game
 types assign simulation authority between client, server, and JMAP state --
 see the [JMAP Scene Games Implementer Guide](jmap-scene-board-games-guide.md).
+
+---
+
+## 5b. High-frequency input channel (inputUri)
+
+### What the spec leaves open
+
+The spec defines an optional `inputUri` field on SceneRegion (alongside
+`simulationUri`) for bidirectional high-frequency I/O. The spec does not
+prescribe the protocol, framing, or device model behind `inputUri`.
+
+### What you must decide
+
+- **Whether your deployment needs `inputUri` at all.** Most deployments do
+  not. Standard keyboard, mouse, and gamepad input travels through
+  `simulationUri` at the simulation tick rate and is fine for social VR,
+  board games, and standard FPS games. `inputUri` exists for experiences
+  where input or response rates significantly exceed the simulation tick
+  rate.
+- **Which direction(s) you need.** Some deployments need only high-frequency
+  inbound (VR hand tracking). Others need only high-frequency outbound
+  (haptic effects driven by game state). Flight and racing sims need both.
+- **Transport.** The latency and throughput requirements for `inputUri` are
+  stricter than for `simulationUri`. WebSocket adds framing overhead; raw
+  UDP or WebRTC data channels (unreliable mode) are better fits for 100+ Hz
+  bidirectional I/O.
+
+### Considerations
+
+**Why a separate channel.** A HOTAS with throttle, stick (2 axes + twist),
+rudder pedals, and a button panel can produce 100-200 input reports per
+second. A racing wheel with 900° rotation and brake/clutch pedals at 1 kHz
+polling generates even more. Force feedback commands flowing back (road
+surface texture, engine vibration, stall buffet) add a comparable outbound
+stream. Multiplexing this onto the same connection as 20 Hz avatar sync and
+discrete game events would starve lower-frequency traffic. Separate channels
+give each stream its own buffer and priority.
+
+**Inbound (device → server):**
+
+| Device class | Typical report rate | Data per report |
+|---|---|---|
+| HOTAS (stick + throttle) | 100-200 Hz | 6-12 axes, 20+ buttons (~20-40 bytes) |
+| Racing wheel + pedals | 200-1000 Hz | 3-5 axes, 10+ buttons (~12-24 bytes) |
+| Rudder pedals | 100-200 Hz | 2-3 axes (~6-12 bytes) |
+| VR hand/finger tracking | 90-120 Hz | 26 joints × 7 floats (~728 bytes per hand) |
+| Flight instrument panel (switches, knobs) | Event-driven | Button/axis state (~4-8 bytes per event) |
+
+**Outbound (server → device):**
+
+| Effect class | Typical update rate | Examples |
+|---|---|---|
+| Force feedback (constant/periodic) | 100-1000 Hz | Steering resistance, stick centering spring |
+| Rumble/haptics | 50-200 Hz | Explosion, terrain texture, engine vibration |
+| Indicator lights | Event-driven | Warning lights, gear indicator, caution panel |
+| Cockpit instrument servos | 10-60 Hz | Altimeter, airspeed indicator, tachometer |
+| Seat actuators (motion platform) | 60-120 Hz | G-force cues, turbulence |
+
+**The server is authoritative for response effects.** Force feedback
+commands, indicator states, and haptic events are computed server-side based
+on game state (airspeed, surface contact, damage model) and sent to the
+client. The client applies them to hardware without reinterpretation. This
+prevents a modified client from suppressing warning indicators or faking
+force feedback to gain an advantage.
+
+### Common patterns
+
+| System | Input channel | Response channel |
+|---|---|---|
+| DCS World | DirectInput at 100+ Hz, local | Force feedback via DirectInput |
+| iRacing | DirectInput/HID at 360+ Hz, local | Force feedback at 360 Hz, telemetry UDP out |
+| Microsoft Flight Simulator | DirectInput/HID, local | SimConnect for instruments + force feedback |
+| Star Citizen | DirectInput, local | Force feedback, rumble, local |
+
+Note that all current systems handle I/O locally. `inputUri` enables the
+same patterns over the network -- a flight sim client connects its HOTAS to
+a remote simulation server that computes flight dynamics and sends force
+feedback commands back. The key constraint: round-trip latency for force
+feedback must be under ~20ms to feel responsive. This favors low-latency
+transports (UDP, WebRTC unreliable data channels, QUIC datagrams) and
+colocated or edge-deployed simulation servers.
+
+### Recommended starting point
+
+For deployments that need `inputUri`: use WebRTC data channels in unreliable
+unordered mode. The signaling endpoint goes in `inputUri`. Authenticate with
+the same JWT used for `simulationUri`. Frame input reports as compact binary
+(not JSON) -- axis values as 16-bit integers, buttons as bitfields. Frame
+force feedback commands the same way. Target sub-10ms one-way latency for
+force feedback to feel responsive.
+
+For deployments that do not need `inputUri`: leave it `null`. Standard input
+through `simulationUri` is sufficient.
 
 ---
 
@@ -1062,6 +1171,13 @@ browser and native clients, WebTransport is a strong middle ground between
 WebSocket (reliable-only, browser-universal) and raw QUIC (full control,
 native-only).
 
+**inputUri transport.** When a deployment uses `inputUri` for high-frequency
+I/O (flight sticks, racing wheels, haptic feedback), the transport
+requirements are stricter than for `simulationUri`. Force feedback must
+arrive within ~20ms to feel responsive; TCP head-of-line blocking is
+unacceptable at 100+ Hz. WebRTC data channels (unreliable/unordered) or raw
+UDP are the only practical choices. WebSocket is not suitable for `inputUri`.
+
 ### Recommended starting point
 
 For browser-first deployments: WebSocket for the first version. Move to WebRTC
@@ -1071,6 +1187,12 @@ depending on team expertise. For future-proofing: design the simulation
 protocol as transport-agnostic (a message framing layer that can sit on any
 of these transports) so you can swap transports without rewriting the
 simulation logic.
+
+For `inputUri`: use the same transport as `simulationUri` when it already
+supports unreliable delivery (WebRTC data channels, UDP, QUIC). If
+`simulationUri` uses WebSocket, `inputUri` must use a different transport.
+Frame I/O as compact binary (axis values as 16-bit integers, buttons as
+bitfields, force feedback commands as structured binary) -- not JSON.
 
 ---
 

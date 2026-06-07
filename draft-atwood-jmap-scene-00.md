@@ -275,6 +275,9 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 `simulationUri` (String|null):
 : The real-time simulation layer endpoint for this region. Opaque to the JMAP server. May be a WebSocket ({{RFC6455}}) URL, a WebRTC signaling endpoint, a custom UDP endpoint, or any other simulation entry point. Peer-supplied; MUST be treated as untrusted (see {{simulation-uri-untrusted}}). `null` when the region has no real-time simulation layer (static scene, offline viewing). When the JMAP Scene WebSocket capability ({{JMAP-SCENE-WSS}}) is present, the JMAP WebSocket ({{RFC8887}}) carries discrete spatial events independently of `simulationUri`.
 
+`inputUri` (String|null):
+: An optional high-frequency bidirectional input/response channel endpoint, separate from `simulationUri`. Intended for experiences that require I/O rates significantly above the simulation tick rate. Inbound: flight simulator control surfaces (HOTAS, rudder pedals), racing simulator wheel/pedal axes, VR hand/finger tracking, or other high-frequency HID devices. Outbound: force feedback, haptic rumble, indicator lights, cockpit instrument servos, and other actuator commands. The separate channel prevents high-frequency I/O traffic from starving avatar position synchronization, spatial events, and VTC media on the simulation channel. Same trust model as `simulationUri`: peer-supplied, opaque to the JMAP server, MUST be treated as untrusted (see {{simulation-uri-untrusted}}). `null` when the region does not require a dedicated input channel (the common case; standard keyboard/mouse input travels via `simulationUri`).
+
 `spawnPosition` (Number[3]):
 : Default position where new avatars appear when entering the region. Default: `[0, 0, 0]`.
 
@@ -959,7 +962,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `accountId`, `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
@@ -1049,7 +1052,7 @@ Response:
 
 #### Updating a Region
 
-`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
+`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
 When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidArguments` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
 
@@ -2300,6 +2303,8 @@ The JMAP Scene specification defines spatial state at rest: what objects exist, 
 
 The simulation protocol is deployment-defined. This specification does not prescribe WebRTC data channels, UDP, QUIC, WebSocket, or any specific transport. Deployments choose their simulation stack based on their latency, scalability, and feature requirements.
 
+When `inputUri` is present, the region provides a separate high-frequency bidirectional I/O channel for specialized input devices (flight sticks, racing wheels, VR hand tracking) and actuator responses (force feedback, haptics, indicator lights). This separation prevents high-frequency I/O from starving avatar synchronization and event delivery on the simulation channel. The input channel protocol is deployment-defined and independent of the simulation protocol.
+
 ## Simulation Layer Responsibilities
 
 The simulation layer is responsible for:
@@ -2368,11 +2373,11 @@ Region owners and administrators MAY eject avatars by setting `leftAt` on anothe
 
 # Security Considerations {#security}
 
-## simulationUri Is Untrusted {#simulation-uri-untrusted}
+## simulationUri and inputUri Are Untrusted {#simulation-uri-untrusted}
 
-`simulationUri` is peer-supplied and opaque to the JMAP server. Clients MUST NOT connect to `simulationUri` without explicit user initiation. Auto-connecting to a simulation endpoint exposes the client to malicious servers.
+`simulationUri` and `inputUri` are peer-supplied and opaque to the JMAP server. Clients MUST NOT connect to either URI without explicit user initiation. Auto-connecting to a simulation or input endpoint exposes the client to malicious servers.
 
-Servers MUST NOT fetch, probe, or validate `simulationUri` values. Doing so exposes the server to SSRF attacks.
+Servers MUST NOT fetch, probe, or validate `simulationUri` or `inputUri` values. Doing so exposes the server to SSRF attacks.
 
 ## assetUri Is Untrusted {#asset-uri-untrusted}
 
@@ -2685,7 +2690,7 @@ Specification document: This document.
 
 The following design choices were left to deployments rather than prescribed:
 
-- **Simulation protocol.** WebRTC data channels, UDP, QUIC, WebSocket, or any other transport for real-time position synchronization. The spec is simulation-agnostic by design.
+- **Simulation protocol.** WebRTC data channels, UDP, QUIC, WebSocket, or any other transport for real-time position synchronization. The spec is simulation-agnostic by design. The same applies to `inputUri` for high-frequency I/O.
 - **Additional visual asset formats.** glTF 2.0 is mandatory-to-implement (see {{preferred-asset-format}}), but deployments may support gaussian splats, neural radiance fields, voxels, USD, or any future format via the `visualType` field and `supportedVisualTypes` capability.
 - **Rendering engine.** Three.js, Babylon.js, Unity, Unreal, native Vulkan/Metal, or any other renderer. The spec has no rendering-layer surface.
 - **Interest management algorithm.** Radius-based, frustum-based, occlusion-based, portal-based, or none. Deployment-defined.

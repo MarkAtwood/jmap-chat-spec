@@ -1280,6 +1280,15 @@ visible in the JMAP data model.
 | UDP/QUIC (custom game server) | `udp://sim.example.com:7777?region={regionId}` |
 | None (static scene) | `null` |
 
+**inputUri for high-frequency I/O.** When a region requires bidirectional
+high-frequency input/response (flight sim HOTAS, racing wheel force
+feedback, VR hand tracking, haptic actuators), set `inputUri` to a separate
+endpoint. This prevents high-frequency I/O from starving avatar sync and
+events on `simulationUri`. Use the same authentication pattern as
+`simulationUri`. Leave `inputUri` as `null` for standard keyboard/mouse/
+gamepad input -- those travel through `simulationUri` at the simulation tick
+rate.
+
 **Authentication at the simulation layer.** The JMAP client authenticates
 to the JMAP server via standard JMAP auth. When the client connects to
 `simulationUri`, the simulation layer needs to verify the user's identity.
