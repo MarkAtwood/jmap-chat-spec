@@ -177,6 +177,10 @@ Peer:
 id / userId:
 : A ChatContact's `id` is the stable, opaque identity string provided by the authentication layer for that user. These two terms are intentionally equivalent in this protocol: ChatContact.id IS the userId. There is no separate identity namespace. Servers MUST set ChatContact.id to the userId string obtained from the authentication layer. The specific form of the identifier (for example, a `user@host`-style string, a Decentralized Identifier URI {{?W3C-DID-CORE}}, or any other URI form) is not constrained by this specification; servers MUST treat it as opaque regardless of form.
 
+## Color Representation {#color-convention}
+
+Where this specification or companion specifications define color-valued fields, implementations SHOULD represent colors using the W3C Design Tokens Community Group color token format (a JSON object with `"$type": "color"` and a `"$value"` string in CSS Color Level 4 syntax, which supports multiple color spaces). When the Design Tokens format is not practical, implementations SHOULD use CAM16 uniform color space coordinates (`[J, a, b]` or `[J, M, h]`). As a baseline fallback, implementations MAY use sRGB hex strings (e.g., `"#5865f2"`). Servers MUST accept all three representations in color-valued fields and MUST preserve the representation provided by the client. Clients MUST handle all three representations gracefully.
+
 # The urn:ietf:params:jmap:chat Capability {#capability}
 
 The `urn:ietf:params:jmap:chat` capability is advertised in the JMAP Session object at both the top-level `capabilities` key and within each account's `accountCapabilities` map.
@@ -641,8 +645,8 @@ A SpaceRole is a named set of permissions within a Space. Roles are ordered by `
 `name` (String):
 : Display name of the role.
 
-`color` (String, optional):
-: Hex color string (e.g., `"#5865f2"`). Clients MAY use this to visually distinguish role holders.
+`color` (String|Object|null, optional):
+: Color for visually distinguishing role holders. Representations per {{color-convention}}: a Design Tokens color object, a CAM16 coordinate array, or an sRGB hex string (e.g., `"#5865f2"`). `null` means no color assigned.
 
 `permissions` (String[]):
 : Named permissions this role grants. Defined permission names:
