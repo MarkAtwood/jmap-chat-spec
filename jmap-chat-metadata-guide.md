@@ -4,7 +4,7 @@ For server and client implementers considering `draft-ietf-jmap-metadata`
 integration with `draft-atwood-jmap-chat-00`.
 Covers namespace design, suggested keys, and deployment considerations.
 
-Read `draft-ietf-jmap-metadata-02` and `draft-atwood-jmap-chat-00` first. This
+Read `draft-ietf-jmap-metadata` (current at time of writing) and `draft-atwood-jmap-chat-00` first. This
 guide does not re-state normative requirements; it covers what the specs leave
 to implementations and offers patterns and starting points.
 
@@ -28,7 +28,7 @@ specification:
 
 ## How to read this guide
 
-`draft-ietf-jmap-metadata-02` defines per-type `metadata` (shared) and
+`draft-ietf-jmap-metadata` defines per-type `metadata` (shared) and
 `privateMetadata` (per-user) properties for data types listed in the
 `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. The chat spec
 notes that servers MAY include `Chat`, `Message`, and `Space` in that map but
@@ -142,7 +142,7 @@ Private per-user annotations on a `Message` object.
 - **Translation cache**: avoid re-translating on every view; store the result
   once and display it inline.
 - **Linked tasks**: bridge between chat and project management without
-  requiring the `draft-atwood-jmap-chat-tasks` extension.
+  requiring the `draft-atwood-jmap-chat-tasks-00` extension.
 
 ### Considerations
 
@@ -292,7 +292,7 @@ Shared annotations on a `Space` visible to all members.
 
 ### Quota and size
 
-- `draft-ietf-jmap-metadata-02` allows servers to enforce per-type quota.
+- `draft-ietf-jmap-metadata` allows servers to enforce per-type quota.
   Clients SHOULD handle `overQuota` SetErrors gracefully.
 - Message-level metadata scales with message count. A deployment with
   millions of messages should set conservative per-type limits or restrict

@@ -54,6 +54,13 @@ informative:
   JMAP-FILENODE:
     title: JMAP Filenode
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/
+  JMAP-CHAT-FILENODE:
+    title: JMAP Chat File Storage
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-filenode-00
+    date: 2026
   JMAP-WEBPUSH-VAPID:
     title: JMAP WebPush VAPID
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-webpush-vapid/
@@ -769,7 +776,7 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 
 Note: {{RFC9670}} defines a general JMAP sharing framework (`shareWith`, `myRights`) designed for binary resource sharing — "can this principal read/write/admin this object." That model maps a single principal to a flat rights set on a single resource. Space permissions are structurally different: a member holds multiple named roles, each role carries a set of named permissions, roles are ordered by hierarchy position, and individual channels within the Space can override the role-derived permissions on a per-role or per-member basis. This is a full role-based access control (RBAC) system, not a simple ACL, and it cannot be projected onto `shareWith` without losing the role hierarchy, multi-role membership, and per-channel override dimensions. The Space permission model is therefore not expressed using {{RFC9670}}. In deployments that also implement {{RFC9670}}, server implementations may choose to align `Principal.id` values with `ChatContact.id` values (both ultimately derived from the same authentication identity), but this alignment is implementation-defined and not required by either specification.
 
-Note: {{JMAP-FILENODE}} defines a hierarchical file-storage extension for JMAP. A future companion specification could define Space-scoped file storage by associating a Filenode namespace with each Space, analogous to how server-to-server federation methods are defined in a separate companion draft.
+Note: {{JMAP-FILENODE}} defines a hierarchical file-storage extension for JMAP. {{JMAP-CHAT-FILENODE}} defines Space-scoped file storage by associating a FileNode namespace with each Space, analogous to how server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
 
 Note: {{JMAP-METADATA}} defines per-type `metadata` and `privateMetadata` properties for data types declared in the `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. Implementations MAY include `Space` in that map, enabling use cases such as per-Space color tags or custom labels readable and writable via `Space/get` and `Space/set` without server-side semantic significance.
 

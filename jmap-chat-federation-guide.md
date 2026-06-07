@@ -66,7 +66,7 @@ Each section follows the same shape as the broader
 ### What the spec leaves open
 
 The federation draft (`draft-atwood-jmap-chat-federation-00.md`,
-{#peer-authentication}) requires that a remote server authenticate before
+§Peer Authentication) requires that a remote server authenticate before
 invoking any `Peer/*` method, and requires the local server to verify
 that the authenticated identity equals the `ownerUserId` advertised in
 the remote's own `/.well-known/jmap` Session object. The specific
@@ -116,7 +116,7 @@ credentials (Tailscale node identity, etc.) — but does not pick one.
   uses mTLS, a small partner uses OAuth, an internal lab uses Tailscale.
   Increases code complexity in the auth layer; offers operational
   flexibility.
-- *Identity binding* (federation draft, {#peer-authentication}) is the
+- *Identity binding* (federation draft, §Peer Authentication) is the
   same requirement regardless of mechanism: whatever stable identity
   string the auth layer returns MUST equal the peer's advertised
   `ownerUserId`. The mechanism affects how the identity is verified, not
@@ -138,7 +138,7 @@ For most deployments: **OAuth 2.0 client credentials** with a per-peer
 client registration flow. Library support is broad, rotation is
 straightforward, and the authorization-server dependency is usually
 already present for end-user authentication. The federation draft's
-{#peer-authentication} examples list OAuth 2.0 first for this reason.
+§Peer Authentication examples list OAuth 2.0 first for this reason.
 
 The bearer token presented by the peer SHOULD carry (or be associated
 with, server-side) a `client_id` or claim that maps to a stable identity
@@ -194,8 +194,8 @@ which peers a deployment accepts.
 - *Open federation* maximizes reach but exposes the deployment to abuse.
   Every malicious or compromised peer in the wider network can attempt
   delivery. The federation draft's blocked-sender rules
-  ({#blocked-contacts}) and rate-limit requirements
-  ({#peer-typing}, {#peer-presence}) bound the damage; they do not
+  (federation draft, §Blocked Contacts) and rate-limit requirements
+  (federation draft, §Peer Typing and §Peer Presence) bound the damage; they do not
   eliminate it.
 - *Allowlist* is the safest model and the easiest to reason about: only
   enrolled peers can deliver. The cost is operational: every new peer
@@ -267,7 +267,7 @@ deployments. Log every policy change to an immutable audit trail.
 
 ### What the spec leaves open
 
-The federation draft ({#peer-discovery}) requires servers to cache
+The federation draft (§Peer Discovery) requires servers to cache
 discovered session data and to re-run discovery when delivery fails,
 but does not specify cache TTLs, refresh triggers beyond
 delivery-failure, or how to handle peers that are persistently
@@ -403,7 +403,7 @@ each other's capabilities (which `Peer/*` methods, which extensions).
   reachable and well-formed. This SHOULD happen before declaring
   federation active.
 - *Identity binding verification* is the federation draft's
-  {#peer-authentication} correspondence check, applied at first contact:
+  §Peer Authentication correspondence check, applied at first contact:
   authenticate the peer, fetch their `/.well-known/jmap`, confirm the
   authenticated identity equals the discovered `ownerUserId`. If this
   check fails at onboarding time, the federation cannot proceed; the
@@ -482,7 +482,7 @@ the federation registry for observability.
 The federation draft requires rate-limiting on specific `Peer/*`
 methods (`Peer/typing` rate is hardcoded; `Peer/presence` outbound rate
 is implementation-defined per main `jmap-chat-implementer-guide.md`
-§5.2) and requires blocked-sender suppression ({#blocked-contacts}).
+§5.2) and requires blocked-sender suppression (federation draft, §Blocked Contacts).
 The draft does not specify how to detect hostile-peer behavior in
 aggregate, how to escalate from rate-limiting to defederation, or how
 to coordinate abuse signals across multiple local accounts and Spaces.
@@ -515,14 +515,14 @@ to coordinate abuse signals across multiple local accounts and Spaces.
   under any per-recipient limit by spreading traffic across many
   recipients. Aggregate signals at the peer level: total `Peer/deliver`
   rate, total blocked-message rate (messages dropped under
-  {#blocked-contacts}), identity-binding failure rate, malformed-payload
+  federation draft, §Blocked Contacts), identity-binding failure rate, malformed-payload
   rate.
 - *Identity-binding failures* are a strong signal: a peer whose
   authenticated identity does not match their advertised `ownerUserId`
   is either misconfigured or attempting forgery. A burst of these
   failures from one peer should escalate immediately.
 - *SSRF attempts*: blob-fetch URLs that target loopback, link-local,
-  or private-network addresses (federation draft {#ssrf}). A peer
+  or private-network addresses (federation draft, §SSRF Prevention). A peer
   consistently supplying such URLs is hostile; log and escalate.
 - *Spam volume*: even without policy violations, a peer that delivers
   far more than typical traffic patterns is suspicious. Compare against
@@ -546,7 +546,7 @@ to coordinate abuse signals across multiple local accounts and Spaces.
   with users on the defederated peer. Some deployments notify affected
   users explicitly ("your contact X is no longer reachable because their
   server has been defederated"); others suppress the cause. The
-  spec-level blocked-contacts rule {#blocked-contacts} does not extend
+  spec-level blocked-contacts rule (federation draft, §Blocked Contacts) does not extend
   to defederation; this is operator UX policy.
 
 ### Common patterns
@@ -607,7 +607,7 @@ mistakes can affect their reachable contact set.
 ### What the spec leaves open
 
 The federation draft addresses identity-level abuse via blocked-sender
-suppression ({#blocked-contacts}) and addresses peer-level abuse via
+suppression (federation draft, §Blocked Contacts) and addresses peer-level abuse via
 the rate-limit and identity-binding mechanisms. It does not address the
 operational reality of cross-server moderation: a user on peer A
 misbehaves in a Space hosted on local server B, the Space admin on B
@@ -635,7 +635,7 @@ wants to moderate, but the offender's account is administered by A.
   is normal protocol behavior; nothing special is needed for federation.
 - *Local account-level block*: a local user on B blocks a user on peer
   A via `ChatContact.blocked: true`. The spec's blocked-contacts rule
-  ({#blocked-contacts}) silently suppresses incoming events from that
+  (federation draft, §Blocked Contacts) silently suppresses incoming events from that
   user. This is per-account; it does not affect other local users on B.
 - *Peer abuse reports*: there is no JMAP Chat protocol for sending
   abuse reports between operators. This is intentional: abuse reports

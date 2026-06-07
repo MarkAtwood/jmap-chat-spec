@@ -51,7 +51,7 @@ Each section follows the same shape as the broader `jmap-chat-implementer-guide.
 
 ### What the spec leaves open
 
-`Space.taskListId` (per `draft-atwood-jmap-chat-tasks-00.md` {#tasklist-binding})
+`Space.taskListId` (per `draft-atwood-jmap-chat-tasks-00.md`, the TaskList Binding section)
 is an optional field. The spec says deployments advertise
 `mayBindTaskList: true` if they support binding, and the binding can be set
 or cleared by members holding `"manage_space"`. The spec does not say *when*
@@ -232,7 +232,7 @@ expected to work needs to be able to find out why.
 
 ### What the spec leaves open
 
-`Task.chatId` (per `draft-atwood-jmap-chat-tasks-00.md` {#task-chatid}) is
+`Task.chatId` (per `draft-atwood-jmap-chat-tasks-00.md`, the Task.chatId section) is
 the optional back-reference from a Task to a discussion Chat. The spec
 permits at most one Chat per Task. It does not say *when* the back-reference
 is created, *who* creates the discussion Chat, *what kind* of Chat (channel

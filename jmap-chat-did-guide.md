@@ -76,7 +76,7 @@ canonical answer. Other deployment patterns are equally valid.
 
 ### What the spec leaves open
 
-The DID draft ({#federation-auth}) requires that a federated peer's
+The DID draft (§Federation Authentication) requires that a federated peer's
 DID-based identity be verified by validating a cryptographic signature
 made by a key bound in the peer's DID Document. The draft RECOMMENDS
 RFC 9421 HTTP Message Signatures with Ed25519 over a key from the
@@ -178,9 +178,9 @@ verification relationship. Sign the following components:
 "@target-uri"
 "@authority"
 "content-digest"      (POST requests with a body)
-"x-jmap-chat-did"     (requesting peer's DID URI)
-"x-jmap-chat-timestamp" (integer seconds Unix epoch)
-"x-jmap-chat-nonce"   (random 128-bit value, base64url)
+"JMAP-Chat-DID"       (requesting peer's DID URI)
+"JMAP-Chat-Timestamp" (integer seconds Unix epoch)
+"JMAP-Chat-Nonce"     (random 128-bit value, base64url)
 ```
 
 Reject any request whose timestamp differs from the receiving
@@ -198,7 +198,7 @@ and key-not-in-authentication-VM-list failures.
 
 ### What the spec leaves open
 
-The DID draft ({#resolution}) requires that a server refresh its
+The DID draft (§DID Resolution) requires that a server refresh its
 cached DID Document on signature-verification failure (the assumption
 being that the failure is the strongest available signal of key
 rotation). Beyond that single normative requirement, every aspect of
@@ -311,7 +311,7 @@ For each supported method:
 
 ### What the spec leaves open
 
-The DID draft ({#federation-auth}, "Explicit non-prescriptions") does
+The DID draft (§Federation Authentication, "Explicit non-prescriptions") does
 not prescribe DID Document conventions. Which verification
 relationships are used for which purpose, which key types are
 accepted, how multiple devices are represented in a single DID
@@ -676,7 +676,7 @@ step, not an optional afterthought.
 
 ### What the spec leaves open
 
-The DID draft ({#mentions}) reaffirms the core draft's convention
+The DID draft (§Mentions) reaffirms the core draft's convention
 that a DID-form mention is the textual sequence `@` followed by the
 DID URI verbatim (e.g., `@did:web:alice.example`). The draft does
 not specify how clients render these mentions, how they truncate
@@ -777,7 +777,7 @@ DID Document is refreshed.
 
 ### What the spec leaves open
 
-The DID draft ({#contact-extensions}) establishes a consistency rule:
+The DID draft (§ChatContact Extensions) establishes a consistency rule:
 if a ChatContact carries both an `id` field and a `did` field, and
 the `id` parses as a DID URI, the two MUST refer to the same DID.
 Beyond that single rule, the spec is silent on how a deployment
@@ -828,7 +828,7 @@ are linked, and what UX surfaces these relationships.
   user input. The user vouches for the relationship; the client
   surfaces it; no protocol-level verification is performed. This
   works for most deployment contexts.
-- *Pseudonymous-id case (DID draft {#did-field}).* The optional
+- *Pseudonymous-id case (DID draft, §Optional `did` Field).* The optional
   `did` field on a ChatContact accommodates an opaque `id` plus a
   bound `did` for crypto. This is NOT a multi-DID case; it is a
   single-DID-with-opaque-handle case. Multi-DID handling is
@@ -875,7 +875,7 @@ consistency rule.
 
 ### What the spec leaves open
 
-The DID draft ({#security}) lists security considerations at a
+The DID draft (§Security Considerations) lists security considerations at a
 spec-level granularity: DID-document trust, key compromise and
 rotation, did:plc operation-log integrity, did:web DNS/TLS
 dependency, did:key non-rotatability, cross-method consistency. The
@@ -1008,13 +1008,13 @@ document the recovery interaction.
 
 | Topic | Draft Section |
 |---|---|
-| Capability URN and account-level `supportedDidMethods` | `draft-atwood-jmap-chat-did-00.md` {#capability} |
-| Mandatory DID methods | `draft-atwood-jmap-chat-did-00.md` {#methods} |
-| ChatContact `id`-as-DID and optional `did` field | `draft-atwood-jmap-chat-did-00.md` {#contact-extensions} |
-| Federation authentication requirement | `draft-atwood-jmap-chat-did-00.md` {#federation-auth} |
-| DID resolution refresh-on-failure rule | `draft-atwood-jmap-chat-did-00.md` {#resolution} |
-| Mention textual form | `draft-atwood-jmap-chat-did-00.md` {#mentions} |
-| Security considerations | `draft-atwood-jmap-chat-did-00.md` {#security} |
+| Capability URN and account-level `supportedDidMethods` | `draft-atwood-jmap-chat-did-00.md` §Capability |
+| Mandatory DID methods | `draft-atwood-jmap-chat-did-00.md` §Methods |
+| ChatContact `id`-as-DID and optional `did` field | `draft-atwood-jmap-chat-did-00.md` §ChatContact Extensions |
+| Federation authentication requirement | `draft-atwood-jmap-chat-did-00.md` §Federation Authentication |
+| DID resolution refresh-on-failure rule | `draft-atwood-jmap-chat-did-00.md` §DID Resolution |
+| Mention textual form | `draft-atwood-jmap-chat-did-00.md` §Mentions |
+| Security considerations | `draft-atwood-jmap-chat-did-00.md` §Security Considerations |
 
 ### To other JMAP Chat documents
 

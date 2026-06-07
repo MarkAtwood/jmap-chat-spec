@@ -208,7 +208,7 @@ This document does not define a federated RSVP protocol; cross-server RSVP coord
 
 # ICS Attachment Handling {#ics-parsing}
 
-Servers MAY parse `.ics` ({{RFC5545}}) attachments dropped into chat messages and surface them as structured calendar information. When this capability is offered, servers MUST advertise `supportsIcsParsing: true` in the account capability object.
+Servers MAY parse `.ics` ({{RFC5545}}, with extensions per {{RFC9073}}) attachments dropped into chat messages and surface them as structured calendar information. When this capability is offered, servers MUST advertise `supportsIcsParsing: true` in the account capability object.
 
 ## Server-side parsing
 

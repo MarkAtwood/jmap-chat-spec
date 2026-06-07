@@ -469,7 +469,7 @@ Solid dependency rules:
 #### Mail Module
 
 **Capabilities:** `urn:ietf:params:jmap:mail` (RFC 8621),
-`urn:ietf:params:jmap:submission` (RFC 8620 Section 7)
+`urn:ietf:params:jmap:submission` (RFC 8621)
 
 **Data types managed:**
 - Mailbox (folder hierarchy: Inbox, Sent, Drafts, Trash, custom)
@@ -520,7 +520,7 @@ the tab bar shows Mail and Chat as peer top-level views.
 - PresenceStatus (owner's self-reported status)
 
 **Embedded types:** Attachment, Endpoint, MessageAction, Mention,
-BroadcastMention, MessageRevision, Reaction, ReadDisposition, ChatMember
+BroadcastMention, MessageRevision, Reaction, ReadDisposition (String enum), ChatMember
 
 **Ephemeral events consumed:** ChatTypingEvent, ChatPresenceEvent
 
