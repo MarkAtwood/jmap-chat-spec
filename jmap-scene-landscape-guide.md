@@ -35,42 +35,6 @@ honest accounting, not a sales pitch.
 
 ## 1. Open Standards and Protocols
 
-### OASIS (Ready Player One)
-
-**What it is.** The OASIS is the fictional universal metaverse from Ernest
-Cline's 2011 novel *Ready Player One*. It imagines a single virtual universe
-with one identity system, one economy, one protocol, one rendering engine, and
-one governance model. Every human on Earth uses the same system. It is the most
-culturally influential vision of what a "metaverse" could be.
-
-**What it got right.** The OASIS correctly identifies the core desire: a
-seamless spatial environment where identity, objects, and social presence work
-across contexts. The fiction understands that spatial presence is social — people
-want to be *somewhere* with other people, not just looking at a screen. It also
-correctly predicts that a universal spatial platform would have enormous
-economic and political consequences.
-
-**What is missing or wrong.** Everything. The OASIS is architecturally
-impossible and politically dangerous. A single universal protocol controlled by
-a single entity is a monoculture — it has a single point of failure, a single
-point of censorship, and a single point of rent extraction. The novel treats
-this as a plot point (control of the OASIS is the central conflict) but the
-tech industry spent 2021-2023 treating it as an aspiration. A monolithic
-metaverse requires solving rendering, physics, networking, identity, economy,
-governance, content moderation, and accessibility simultaneously, in one system,
-for all use cases. No system has ever done this. The web did not succeed by
-being one application; it succeeded by being a protocol that many applications
-use.
-
-**How Scene relates.** Scene is deliberately not the OASIS. It does not attempt
-to be a universal platform. It is a composable capability — one layer in a
-stack, handling spatial state and nothing else. It has no opinion on rendering,
-no opinion on economy, no opinion on governance. It is a protocol, not a
-platform. The OASIS is useful as a cautionary tale about monolithic design: if
-your architecture requires everything to be one thing, it will be nothing.
-
----
-
 ### Open Metaverse Interoperability Group (OMI)
 
 **What it is.** OMI is a community group focused on interoperability between
@@ -490,7 +454,7 @@ was ahead of its time.
 
 **What it got wrong.**
 
-- *X-rated coupling with the implementation.* Crista Lopes (UC Irvine,
+- *Coupling with the implementation.* Crista Lopes (UC Irvine,
   "Diva Canto" in OpenSimulator) delivered the definitive critique: the
   VWRAP drafts were not a generalized virtual world interoperability
   protocol but a wire-format description of what the Second Life viewer
@@ -1322,7 +1286,6 @@ conditional support.
 | System | Open Protocol | Persistent State | Composable | Format-Agnostic | View-Mode Range | Simulation-Agnostic |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Open Standards** | | | | | | |
-| OASIS (fiction) | -- | -- | -- | -- | -- | -- |
 | OMI | Yes | -- | -- | ~glTF-focused | -- | -- |
 | VRChat OSC | ~limited | -- | -- | -- | -- | -- |
 | IEEE 2888 | Yes | -- | -- | -- | -- | -- |
@@ -1356,6 +1319,16 @@ conditional support.
 | Quake / Unreal | ~source released | ~session only | -- | -- | 3D only | -- |
 | Fortnite Creative / UEFN | -- | Yes | -- | -- | 3D only | -- |
 | Board games (digital) | ~varies | Yes | -- | ~varies | 2D only | -- |
+| **Fictional Metaverses** | | | | | | |
+| Other Plane (True Names) | -- | -- | -- | -- | -- | -- |
+| Metaverse (Snow Crash) | -- | Yes | -- | -- | 3D only | -- |
+| Rainbows End | -- | ~edge/cloud | -- | -- | AR only | -- |
+| Darknet (Daemon) | -- | Yes | -- | -- | AR only | -- |
+| Halting State | -- | Yes | -- | -- | 3D only | -- |
+| Data Earth (Software Objects) | -- | ~platform-bound | -- | -- | 3D only | -- |
+| OASIS (Ready Player One) | -- | -- | -- | -- | -- | -- |
+| T'Rain (REAMDE) | -- | Yes | -- | -- | 3D only | -- |
+| Bitworld (Fall) | -- | Yes | -- | -- | 3D only | -- |
 | **JMAP Scene** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
 
 ### Reading the table
@@ -1377,6 +1350,462 @@ conditional support.
 - **Simulation-Agnostic**: Does the system allow the deployment to choose its
   real-time transport (WebRTC, UDP, WebSocket, none), or does it prescribe
   a specific simulation/networking approach?
+
+---
+
+## 8. Fictional Metaverses as Architectural References
+
+Science fiction has produced dozens of fictional virtual worlds. Most are
+literary devices — the architecture serves the story, not the other way around.
+A handful, however, describe systems that are self-consistent enough to analyze
+as engineering references: the economics don't cheat (no artificial scarcity for
+plot tension, no magical abundance that would actually require expensive compute),
+the infrastructure is plausible (someone pays for servers, bandwidth costs money),
+and the social dynamics follow from the architecture rather than from authorial
+convenience.
+
+This section evaluates fictional metaverses against those criteria, then maps
+each against the JMAP Scene + DID + CID stack to identify what validates our
+architecture and what stress-tests it.
+
+**Disclaimer.** Reference to a fictional work is not endorsement of its
+narrative, its author's views, or the social or political systems it depicts.
+Several works below portray surveillance, authoritarian governance, criminal
+infrastructure, or exploitative economies — these are analyzed as architectural
+patterns, not advocated as design goals. All works are the intellectual
+property of their respective authors and publishers. Titles and character names
+are used here for purposes of critical technical commentary under fair use.
+
+**Works cited in this section** (chronological by first publication):
+
+- Vernor Vinge. "True Names." In *Binary Star #5*, Dell, 1981.
+- Neal Stephenson. *Snow Crash*. Bantam Books, 1992.
+- Vernor Vinge. *Rainbows End*. Tor Books, 2006.
+- Daniel Suarez. *Daemon*. Dutton, 2009 (self-published 2006).
+- Daniel Suarez. *Freedom™*. Dutton, 2010.
+- Charles Stross. *Halting State*. Ace Books, 2007.
+- Ted Chiang. "The Lifecycle of Software Objects." Subterranean Press, 2010.
+- Ernest Cline. *Ready Player One*. Crown Publishers, 2011.
+- Neal Stephenson. *Reamde*. William Morrow, 2011.
+- Neal Stephenson. *Fall; or, Dodge in Hell*. William Morrow, 2019.
+
+---
+
+### The Other Plane (True Names — Vernor Vinge, 1981)
+
+**What it is.** A shared virtual environment accessed through home computers,
+described in a novella by a working mathematician and computer science professor
+(San Diego State University). Users adopt pseudonymous personas in a virtual
+space called the Other Plane. Multiple participants occupy the same virtual
+space simultaneously, interacting through avatars. The government ("the Great
+Enemy") monitors the Other Plane and can surveil or unmask participants.
+Knowing someone's real-world identity — their True Name — gives you power
+over them.
+
+**What it got right.** True Names is the first fictional shared virtual
+environment written by someone who understood computers professionally. Three
+architectural insights survive forty-five years later:
+
+1. *Identity is the critical infrastructure.* The entire plot turns on the
+   relationship between virtual pseudonyms and real-world identity. This is
+   not a metaphor — it is the actual security model. Pseudonymity is a
+   feature, not a bug, and deanonymization is an attack.
+2. *Compute is a real constraint.* Vinge describes processing power and
+   bandwidth as limiting factors, not as infinitely available. The quality
+   of your experience in the Other Plane depends on the hardware you can
+   access.
+3. *The infrastructure operator is a threat model.* The government runs the
+   underlying network and uses that position to surveil participants. This is
+   the first fictional treatment of the platform operator as adversary — a
+   concern that took the real world thirty years to internalize.
+
+**What is missing or wrong.** There is no server architecture, no protocol, no
+persistence model, no economics, and no multi-operator federation. The Other
+Plane is described from the user's perspective, not the infrastructure's. How
+shared state is synchronized, who pays for the compute, and how the virtual
+space is constructed are never addressed. It is a vision of *using* a shared
+virtual space, not of *building* one.
+
+**How Scene relates.** True Names identifies the problem that JMAP DID exists
+to solve: the relationship between virtual identity and real-world identity in
+shared spaces. The DID spec's privacy and correlation considerations — minimize
+cross-context correlation, support pseudonymity, resist deanonymization by
+infrastructure operators — are direct descendants of Vinge's insight that True
+Names are weapons. Scene's separation of identity (opaque `userId` from the
+auth layer) from spatial state (where you are and what you're doing) is the
+architectural response to the threat model True Names describes: the spatial
+protocol should not be the identity system, because whoever controls identity
+controls everything.
+
+---
+
+### The Metaverse (Snow Crash — Neal Stephenson, 1992)
+
+**What it is.** The Metaverse is a persistent shared virtual world accessed
+through personal terminals and public kiosks. Stephenson coined the term
+"metaverse" in this novel; it entered common use thirty years later during
+the 2021 industry hype cycle. The Metaverse has a defined geometry: a single
+boulevard called the Street running as a great circle (65,536 km circumference)
+around a black sphere. Land along the Street is purchased from the Global
+Multimedia Protocol Group (GMPG), a fictional governance body. Users appear as
+avatars whose quality varies from cheap off-the-rack models to custom-coded
+high-fidelity representations. Connection quality ranges from fiber optic (rich
+users, smooth rendering) to public terminals in strip malls (poor users, grainy
+black-and-white). The economic stratification of the real world is reproduced
+in the virtual world through hardware and avatar fidelity.
+
+**What it got right.** Snow Crash is the first fictional metaverse where
+economics are structurally visible in the user experience:
+
+1. *Governance body.* The GMPG is a standards organization that controls
+   the protocol and allocates land. This is the first fictional treatment of
+   a metaverse as an institution, not just a technology.
+2. *Economic stratification through hardware.* Rich users have better
+   avatars, faster connections, and nicer land. Poor users get public
+   terminals and off-the-rack avatars. The virtual world reproduces real-world
+   inequality because access costs money. This insight has proven correct —
+   every real platform since has exhibited the same pattern.
+3. *Avatar quality as social signal.* The difference between Hiro's custom
+   avatar and a mass-market Brandy/Clint is immediately visible and socially
+   meaningful. This correctly predicts VRChat, where avatar quality is the
+   primary social currency.
+4. *Real estate as governance.* Land allocation along the Street creates
+   economic incentives, rent-seeking, and political consequences. This
+   anticipates Decentraland's land model (and its problems) by twenty-five
+   years.
+
+**What is missing or wrong.** The Metaverse's technical infrastructure is
+entirely hand-waved. There is no server architecture, no state synchronization
+model, no explanation of how millions of simultaneous users share real-time
+spatial state on the same Street, no wire protocol, and no description of what
+happens at region boundaries. The GMPG governs the Metaverse, but its technical
+function — how does it actually run? — is never addressed. The Metaverse "just
+works" at a networking level. The social architecture is non-magical; the
+technical architecture is pure magic.
+
+The Metaverse is also a single monolithic instance. There is no federation, no
+competing implementations, no alternative Streets. The GMPG is a benevolent
+monopoly, which is a contradiction in terms over any long time horizon. Snow
+Crash asks "who governs?" but assumes the answer is "one body, competently."
+History suggests otherwise.
+
+**How Scene relates.** Snow Crash's social and economic insights are correct and
+inform Scene's design. Scene's responses to Snow Crash's architecture:
+
+| Snow Crash pattern | Scene response |
+|---|---|
+| Single governance body (GMPG) | No governance body; open protocol, anyone can implement |
+| Single Street, single geometry | Many SceneRegions on many servers; no universal geography |
+| Avatar quality = wealth | Avatar visuals are `visualRef` blobs; quality is a client/asset concern, not a protocol concern |
+| Land scarcity drives economics | No land model; SceneRegion creation is a server policy decision |
+| Monolithic instance | Federated by design; each server is independent |
+
+Snow Crash correctly identified that a metaverse is an economic and political
+system, not just a rendering engine. Scene takes that insight and removes the
+single point of control: the protocol is open, the governance is distributed,
+and the economics are the deployment's problem rather than the protocol's
+prescription.
+
+---
+
+### Rainbows End (Vernor Vinge, 2006)
+
+**What it is.** An augmented reality world built on commodity hardware (contact
+lens displays) and existing internet infrastructure. The physical world is the
+world; virtual objects are overlaid on it. There is no separate "virtual world"
+server — the real world is the scene, with computation at the edge (your lenses)
+and in the cloud. Belief circles — groups that share the same AR overlay filter —
+are the primary social structure. Multiple users in the same physical space may
+see completely different virtual layers depending on their belief circle
+membership.
+
+**What it got right.** Vinge builds on real infrastructure: internet, edge
+computing, standard networking. The bandwidth and compute costs are visible and
+constrain the experience. Belief circles are an elegant social construct:
+instead of one shared reality, users opt into overlapping realities filtered by
+group membership. This is architecturally cleaner than a single-reality model
+because it naturally handles the "different people want different things in the
+same space" problem without access control complexity.
+
+**What is missing or wrong.** The contact-lens display technology is speculative
+(still is, twenty years later). The governance model for belief circles is
+underdeveloped — who decides what content is in a belief circle, and what happens
+when belief circles conflict in the same physical space?
+
+**How Scene relates.** Rainbows End validates `geoAnchor` with Earth WGS84 and
+the `"ar"` viewHint directly. Belief circles map to multiple SceneRegions from
+different servers, all anchored to the same geographic location via `geoAnchor`,
+each with different SceneObjects. A user subscribes to the regions matching
+their chosen belief circles. The visibility contract (server decides what each
+client sees) already handles the filtering.
+
+Rainbows End implies but does not describe a **reality resolver** — a discovery
+service that answers "what SceneRegions exist at this location, from which
+servers, under which belief circles?" The current stack does not define this
+service, and deliberately so. The protocol already produces all the data a
+resolver would index: SceneRegions have `geoAnchor` coordinates, access
+policies, and server endpoints. A resolver is an index over existing protocol
+data, not a new protocol primitive. It could be a centralized directory (like
+DNS), a federated crawl (like web search), a peer-to-peer gossip protocol, or a
+user agent that simply asks known servers what they have at the user's current
+location. The right answer depends on deployment context — a corporate campus
+has different discovery needs than a public park — and premature standardization
+would lock in the wrong tradeoffs. When the ecosystem has enough AR-anchored
+SceneRegions to make discovery a real problem, the resolver pattern will emerge
+from practice. Until then, the protocol provides the anchoring primitive
+(`geoAnchor`) and the access control (`accessPolicy`) that any future resolver
+would need to reference.
+
+---
+
+### The Darknet (Daemon / Freedom™ — Daniel Suarez, 2006/2010)
+
+**What it is.** An augmented reality overlay on the physical world, controlled
+by a dead game designer's distributed AI. The Darknet runs on compromised
+machines and volunteer compute — no magical data center. AR via commodity
+glasses. Credits are earned by doing measurable real-world work (delivering
+packages, building infrastructure, growing food). Reputation is earned, not
+granted. Governance is algorithmic and decentralized.
+
+**What it got right.** The economics close: participants fund the network by
+participating in it, the same way BitTorrent peers fund the network by seeding.
+The compute cost is distributed across participants. Reputation-based access
+control (you see more of the world as your reputation increases) creates a
+natural onboarding ramp without centralized gatekeeping. The AR model — virtual
+objects anchored to physical locations, visible only to participants — is
+architecturally the same as SceneRegion with `geoAnchor` and `viewHint: "ar"`.
+
+**What is missing or wrong.** The Darknet's bootstrap depends on a botnet
+(compromised machines), which is criminal infrastructure. Suarez treats this as
+a necessary evil; a legitimate deployment would need volunteer compute or paid
+hosting. The AI governance layer (the dead designer's daemon making autonomous
+decisions) is a narrative device, not a deployable architecture.
+
+**How Scene relates.** The Darknet directly validates `geoAnchor` with
+`referenceFrame: null` (Earth WGS84) and the `"ar"` viewHint. AR objects
+anchored to GPS coordinates, visible to participants, invisible to
+non-participants — that's SceneRegion access control plus AR rendering. The
+Darknet's "layers" (increasing visibility at higher reputation levels) map to
+multiple overlapping SceneRegions at the same geoAnchor with progressively
+more permissive access policies, or to a reality resolver service that filters
+available regions by reputation. The reputation-based access model is the one
+thing the current stack doesn't express natively — `accessPolicy` is binary
+(in or out), not continuous (reputation score threshold). This could be handled
+by the application layer or by a future access-control extension.
+
+---
+
+### Halting State (Charles Stross, 2007)
+
+**What it is.** Near-future Edinburgh where game worlds run on commodity cloud
+infrastructure and in-game items have legally recognized real-world monetary
+value. Police investigate a virtual bank robbery because the stolen items are
+worth real money. The game companies have conventional business models
+(subscriptions, marketplace commission). The economics don't cheat: servers cost
+money, someone pays for them, and the financial infrastructure is real enough
+that legal systems interact with it.
+
+**What it got right.** Stross, a working technologist, builds the world on
+real infrastructure. Cloud hosting, standard game server architecture, real
+payment processing. The key insight is that once virtual objects have real value,
+every protocol decision becomes a financial infrastructure decision. Item
+duplication is counterfeiting. Server downtime is a service outage with
+financial liability. Identity spoofing is fraud.
+
+**What is missing or wrong.** The world is single-operator per game — there is
+no federation or cross-game interoperability. The legal framework (Scottish
+law applied to virtual theft) is explored as a plot driver but not resolved
+architecturally.
+
+**How Scene relates.** Halting State validates the stack straightforwardly:
+standard game servers behind simulationUri, SceneObject per item, JMAP DID for
+identity accountability. The novel's central question — what happens when
+virtual objects are valuable enough to steal? — stress-tests JMAP CID (content
+provenance), JMAP DID (identity verification for legal accountability), and the
+security considerations around object ownership. The protocol provides the
+technical infrastructure for valuable portable objects; the legal framework is
+out of scope but the protocol must not make it impossible.
+
+---
+
+### Data Earth (The Lifecycle of Software Objects — Ted Chiang, 2010)
+
+**What it is.** A virtual world where users raise digital creatures (digients)
+that learn and develop over time. The hosting company, Blue Gamma, goes
+bankrupt. Users must migrate their digients to a new platform. The new platform
+has different physics. Some digients don't survive the port cleanly. Data
+portability — or the lack of it — is the central drama.
+
+**What it got right.** Chiang, with characteristic precision, identifies the
+real cost of platform dependence: when a platform dies, everything on it dies.
+The story is about what happens when identity, assets, and learned behavior are
+locked to one operator's infrastructure. The economics are honest: running
+servers costs money, the company ran out of money, and there is no protocol-level
+guarantee that anything survives.
+
+**What is missing or wrong.** Data Earth has no portability story because it was
+designed as a proprietary platform. The migration crisis is the *absence* of
+what Scene provides. The one genuinely unsolvable problem Chiang identifies is
+behavior portability: a digient that learned to walk in Blue Gamma's physics
+engine stumbles in another engine's physics. Assets port. Identity ports.
+Learned behavior doesn't. This is the semantics problem — what does an object
+*mean* in a different world — and no one has solved it.
+
+**How Scene relates.** Data Earth is the strongest argument for the stack. JMAP
+CID means content-addressed assets survive server death. JMAP DID means identity
+survives server death. glTF means visual assets render on any engine. Open
+protocol means new servers can be stood up by anyone. The crisis in Chiang's
+story is exactly what happens when these things don't exist. The one gap the
+stack cannot close is behavior portability: `customProperties` on SceneObject
+can carry behavior data, but the spec cannot guarantee that behavior data means
+the same thing to a different simulation engine. This is acknowledged as an
+unsolved problem in the spec's "Explicit Non-Prescriptions" section under
+scripting and behaviors.
+
+---
+
+### OASIS (Ready Player One — Ernest Cline, 2011)
+
+**What it is.** The OASIS is the fictional universal metaverse from Ernest
+Cline's *Ready Player One*. It imagines a single virtual universe with one
+identity system, one economy, one protocol, one rendering engine, and one
+governance model. Every human on Earth uses the same system. It is the most
+culturally influential vision of what a "metaverse" could be, and the one the
+tech industry spent 2021-2023 trying to build.
+
+**What it got right.** The OASIS correctly identifies the core desire: a
+seamless spatial environment where identity, objects, and social presence work
+across contexts. The fiction understands that spatial presence is social — people
+want to be *somewhere* with other people, not just looking at a screen. It also
+correctly predicts that a universal spatial platform would have enormous
+economic and political consequences.
+
+**What is missing or wrong.** Everything. The OASIS is architecturally
+impossible and politically dangerous. A single universal system controlled by a
+single entity is a monoculture — it has a single point of failure, a single
+point of censorship, and a single point of rent extraction. The novel treats
+this as a plot point (control of the OASIS is the central conflict) but never
+questions whether a monolithic architecture is the right design. A monolithic
+metaverse requires solving rendering, physics, networking, identity, economy,
+governance, content moderation, and accessibility simultaneously, in one system,
+for all use cases. No system has ever done this. The web did not succeed by
+being one application; it succeeded by being a protocol that many applications
+use. The OASIS has no economic model for who pays for the servers beyond
+"Halliday was rich" — the infrastructure cost is hand-waved in a way that
+T'Rain, Bitworld, and Halting State do not.
+
+**How Scene relates.** Scene is deliberately not the OASIS. It does not attempt
+to be a universal platform. It is a composable capability — one layer in a
+stack, handling spatial state and nothing else. It has no opinion on rendering,
+no opinion on economy, no opinion on governance. It is a protocol, not a
+platform. The OASIS is the cautionary tale that motivates Scene's entire
+architecture: if your design requires everything to be one thing controlled by
+one entity, it will either be nothing (because no one can build it) or it will
+be a trap (because whoever controls it controls everything). Scene answers the
+OASIS by making the protocol open and the deployment distributed — a thousand
+independent Scene servers, each running their own worlds, interoperating through
+a shared protocol, are more resilient and more useful than one OASIS.
+
+---
+
+### T'Rain (REAMDE — Neal Stephenson, 2011)
+
+**What it is.** An MMORPG explicitly designed around real economics. The game
+world's geology is procedurally generated by a hired geologist so mineral
+distribution is realistic. Two in-game factions exist specifically to create
+economic friction that drives real-money trading. A professional economist
+designed the in-game economy. The game's business model embraces gold farming
+rather than fighting it — T'Rain channels gold farming into a legitimate revenue
+stream.
+
+**What it got right.** T'Rain is the most economically honest fictional game
+world in the genre. The economics are the architecture: the game world is shaped
+by what makes economic sense to operate, not by what makes a good story. Server
+infrastructure is conventional (sharded regions in data centers). The game's
+economic design explicitly accounts for real-money trading, exchange rates
+between in-game and real currency, and the labor economics of gold farming. No
+hand-waving.
+
+**What is missing or wrong.** T'Rain is a single-operator, proprietary platform.
+There is no federation, no open protocol, and no user-sovereign identity. The
+economic design is brilliant but centrally controlled — one company decides the
+rules.
+
+**How Scene relates.** T'Rain maps directly to the stack: SceneRegion per zone,
+SceneObject per item, simulationUri points to the game server handling combat
+and crafting. JMAP DID provides cross-server identity that T'Rain lacks. JMAP
+CID provides item provenance (content-addressed ownership of valuable in-game
+objects). The open question T'Rain poses for Scene is value capture: if anyone
+can run a T'Rain-like server on an open protocol, where does the economic design
+authority live? T'Rain's economic coherence depends on centralized control; an
+open-protocol version would need economic design to emerge from deployment
+conventions rather than a single operator.
+
+---
+
+### Bitworld (Fall; or, Dodge in Hell — Neal Stephenson, 2019)
+
+**What it is.** A digital afterlife simulation running on distributed compute.
+The critical architectural detail: compute costs real money, and the entire
+governance structure of Bitworld is shaped by who pays for the servers. An
+endowment funds the initial infrastructure. Participants who contribute compute
+get governance weight. Simulation fidelity is directly proportional to the
+hardware budget. When funding disputes happen, regions of Bitworld literally
+degrade in fidelity.
+
+**What it got right.** Bitworld is the only fictional metaverse that makes
+infrastructure cost structurally visible. Every other fictional world hand-waves
+the servers. Bitworld treats "who pays for the compute" as a first-class
+governance question, and the social dynamics of the world follow directly from
+the answer. The endowment model (large initial investment, ongoing returns fund
+operations) is a plausible funding mechanism for persistent virtual
+infrastructure.
+
+**What is missing or wrong.** Bitworld's inhabitants are not human users
+controlling avatars — they are simulated persons running inside the simulation.
+This is a philosophical mismatch with any protocol that assumes human users
+(including Scene). The compute requirements for simulating consciousness are
+science fiction. The governance model, while interesting, is a single-instance
+design — there is no federation or multi-operator model.
+
+**How Scene relates.** The protocol layer maps cleanly: SceneRegion, SceneObject,
+simulationUri all work. The conceptual gap is identity: JMAP DID binds accounts
+to human-controlled cryptographic keys, but a simulated person doesn't hold a
+private key. A simulation layer could manage SceneAvatars on behalf of simulated
+entities, but the DID model doesn't cover non-human principals. The deeper
+lesson is the infrastructure economics question: `simulationUri` points
+somewhere, but who pays for what's behind it? Bitworld makes that question
+unavoidable. Scene would need a payment or service-agreement layer (like
+relay service agreements or subscription models) to address it.
+
+---
+
+### Architectural Patterns Across Fictional Metaverses
+
+The nine systems above reveal consistent patterns:
+
+| Pattern | Where it appears | Scene's answer |
+|---|---|---|
+| Identity is the critical infrastructure problem | True Names, all subsequent | JMAP DID (pseudonymous by default, correlation-resistant) |
+| Infrastructure operator is a threat model | True Names | Protocol separates identity from spatial state; no single operator |
+| A metaverse is an economic and political system | Snow Crash, T'Rain, Halting State | Economics are deployment concerns, not protocol prescriptions |
+| Monolithic design is a single point of failure | OASIS, Snow Crash | Open protocol, composable capabilities, distributed deployment |
+| Servers cost money; governance follows funding | Bitworld, T'Rain, Halting State | Out of scope (deployment concern), but `simulationUri` and federation make the cost distributable |
+| Cross-server identity is essential | All nine | JMAP DID |
+| Asset portability prevents platform death | Data Earth | JMAP CID + glTF |
+| AR anchoring to the physical world | Darknet, Rainbows End | `geoAnchor` with `referenceFrame` |
+| Virtual objects with real value require provenance | T'Rain, Halting State | JMAP CID (content hash) + JMAP DID (owner identity) |
+| Behavior portability is unsolved | Data Earth | Acknowledged gap; `customProperties` carries data but semantics are not portable |
+| Reputation-based access is continuous, not binary | Darknet | Not natively supported; achievable via overlapping regions or application-layer logic |
+| Multiple overlapping realities in the same space | Rainbows End | Multiple SceneRegions from different servers at the same `geoAnchor` |
+| Discovery of available realities at a location | Rainbows End | Not defined today; a reality resolver is an index over existing protocol data, not a new primitive |
+| Non-human inhabitants need identity | Bitworld | Conceptual gap; JMAP DID assumes human key holders |
+
+The most important lesson: every fictional metaverse that survives the
+"real economics" filter treats infrastructure cost as a structural force, not a
+detail. The spec cannot prescribe who pays for servers, but the architecture —
+federation, open protocol, deployment-agnostic simulation layer — ensures that
+the cost can be distributed across operators rather than concentrated in one.
 
 ---
 
