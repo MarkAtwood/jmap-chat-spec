@@ -109,7 +109,7 @@ Protocol-specific signaling beyond the core lifecycle — call transfer (SIP REF
 
 Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:ietf:params:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
 
-- **In-call text chat** is the Chat bound via `chatId`. The server creates or binds a Chat when the call starts; messages sent to that Chat appear as in-call chat.
+- **In-call text chat** is the Chat bound via `chatId`. When `chatId` is supplied, the call is bound to that Chat for in-call text messaging; when omitted, the call has no text backchannel. Messages sent to the bound Chat appear as in-call chat.
 - **In-call reactions** (emoji floats) are Reaction objects on Messages in the bound Chat, or ephemeral events on the Chat's WebSocket connection ({{JMAP-CHAT-WSS}}).
 - **Live captions and transcription** are delivered as ephemeral events on the bound Chat's WebSocket connection, with `senderId` providing speaker attribution.
 - **Lobby communication** uses the bound Chat: lobby participants can message moderators before being admitted.
@@ -288,10 +288,10 @@ VTCParticipant IDs are opaque server-assigned identifiers. For authenticated use
 : The authenticated user identity string. `null` for unauthenticated participants (PSTN callers, anonymous guests).
 
 `displayName` (String):
-: Display name for this participant. For authenticated users, derived from the user profile or ChatContact record when {{JMAP-CHAT}} is present. For PSTN callers, derived from caller ID. For anonymous guests, a server-assigned or self-reported name.
+: Display name for this participant. For authenticated users, derived from the user profile or ChatContact record when {{JMAP-CHAT}} is present. For PSTN callers, derived from caller ID. For anonymous guests, a server-assigned or self-reported name. The server sets `displayName` at join time from the user profile or `ChatContact` record (or `SpaceMember.nick` when applicable). If the source display name changes during the call, the server is not required to update `displayName` on existing VTCParticipant records. Clients displaying call participants alongside Chat contacts SHOULD prefer the Chat-side display name for consistency.
 
 `role` (String):
-: `"moderator"` or `"participant"`. Moderators may perform moderation actions (see {{moderator-actions}}). The call initiator receives `"moderator"` by default; the server MAY grant moderator status to additional participants based on deployment policy.
+: `"moderator"` or `"participant"`. Moderators may perform moderation actions (see {{moderator-actions}}). The call initiator receives `"moderator"` by default; the server MAY grant moderator status to additional participants based on deployment policy. The VTC role (`"moderator"` / `"participant"`) is independent of any Chat or Space role. Deployments MAY choose to auto-promote Space administrators or Chat owners to `"moderator"` at join time, but this is not required by the protocol.
 
 `joinedAt` (UTCDate|null, server-set):
 : Time this participant joined the call. `null` if the participant has been invited but has not yet joined (e.g., in a ringing call).
@@ -411,6 +411,8 @@ The following fields are present only when the corresponding companion capabilit
 
 `channelId` (String|null):
 : When `urn:ietf:params:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the call is Space-wide or has no channel context.
+
+When a Space or channel Chat referenced by `spaceId` or `channelId` is destroyed, the server MUST clear the corresponding field to `null` on all VTCCalls that reference it. This is a side effect of the Space or Chat destruction and MUST emit a `StateChange` for the VTCCall type.
 
 `calendarEventId` (String|null):
 : When `urn:ietf:params:jmap:calendars` is present: the id of a CalendarEvent ({{JMAP-CALENDARS}}) bound to this call. Same-account only. `null` if the call has no calendar binding.
@@ -561,6 +563,8 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 VTCCall/set manages call lifecycle: creating calls, ending calls, and updating call-level settings. Participant management (joining, leaving, muting, kicking) is handled by `VTCParticipant/set` (see {{vtc-participant-methods}}).
 
+When creating a VTCCall with a `chatId` that is already referenced by another VTCCall in `"active"` or `"ringing"` state, the server MUST return `invalidArguments` with description "A call is already active on this Chat." This ensures that `Chat.activeCallId` is unambiguous and at most one call is active per Chat at any time.
+
 #### Creating a Ring Call
 
 `create` with `callType: "ring"` accepts:
@@ -572,6 +576,8 @@ VTCCall/set manages call lifecycle: creating calls, ending calls, and updating c
 : The media types for this call (e.g., `["audio", "video"]`).
 
 Optional: `subject` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+
+When `chatId` is supplied, the server SHOULD verify that each `targetParticipantId` corresponds to a member of the bound Chat. The server MAY reject targets that are not Chat members by omitting them from the created VTCParticipant records, or MAY create the records regardless and rely on the join-time membership check.
 
 The server sets `id`, `initiatorId`, `createdAt`, `state`, and `joinUri`. The server generates `joinUri` pointing to the deployment's media stack.
 
@@ -607,7 +613,7 @@ The server creates VTCParticipant records for each target and for the initiator,
 }
 ~~~
 
-Servers MUST return `invalidArguments` when `targetParticipantIds` is empty. Servers MUST return `invalidArguments` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers MUST return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets; if all targets are blocked, the server MUST return `forbidden`.
+Servers MUST return `invalidArguments` when `targetParticipantIds` is empty. Servers MUST return `invalidArguments` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers MUST return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets; if all targets are blocked, the server MUST return `forbidden`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidArguments` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidArguments`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the bound Space or channel; if not, the server MUST return `forbidden`.
 
 #### Creating a Room Call
 
@@ -636,7 +642,7 @@ Example create:
 }
 ~~~
 
-Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsRoomCalls` is `false`. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the target Space or channel; if not, the server MUST return `forbidden`.
+Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsRoomCalls` is `false`. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the target Space or channel; if not, the server MUST return `forbidden`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidArguments` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidArguments`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member.
 
 #### Creating a Scheduled Call
 
@@ -669,7 +675,7 @@ Example create:
 }
 ~~~
 
-Servers MUST return `invalidArguments` when `scheduledStartAt` is in the past. Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsScheduledCalls` is `false`.
+Servers MUST return `invalidArguments` when `scheduledStartAt` is in the past. Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsScheduledCalls` is `false`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidArguments` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidArguments`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member.
 
 #### Ending a Call
 
@@ -848,7 +854,7 @@ The server responds with the complete VTCParticipant record:
 }
 ~~~
 
-The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidArguments` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
+The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidArguments` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. When the VTCCall carries a `chatId` binding and `urn:ietf:params:jmap:chat` is present, the server MUST verify the caller is a member of the bound Chat. The server MUST return `forbidden` if the caller is not a member. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
 
 #### Declining a Ring Call
 
@@ -1281,6 +1287,8 @@ Ring-call push notifications are time-critical: a ring that arrives five seconds
 
 Room-call and scheduled-call notifications (e.g., "A huddle started in #general") use normal urgency and are not ring-priority. Servers SHOULD deliver these as standard `StateChange` notifications or as `ChatMessagePush` payloads ({{JMAP-CHAT-PUSH}}) rather than `VTCCallPush`.
 
+When a room or scheduled call starts in a Chat that has push subscribers, the server SHOULD suppress the VTCCall `StateChange` for users who will receive the event via `ChatMessagePush` or Chat `StateChange` (for `activeCallId` update). Clients receiving multiple notifications for the same call-start event SHOULD deduplicate by `VTCCall.id` within a 5-second window.
+
 ### Blocked-Sender Suppression
 
 Before delivering a `VTCCallPush`, the server MUST check whether the initiator corresponds to a contact whose `blocked` field is `true` on the target participant's contact list (when {{JMAP-CHAT}} is present) or an equivalent deployment-defined block list. If the initiator is blocked, the server MUST silently drop the ring notification. The initiator is not informed.
@@ -1328,6 +1336,8 @@ Example — call answered on another device:
   "endReason": "answered_elsewhere"
 }
 ~~~
+
+When a ring call is answered or declined on one device, the server SHOULD deliver a silent push notification (with `urgency: "low"`) to all other devices that received the original `VTCCallPush`, carrying the `endReason` (`"answered_elsewhere"`, `"declined"`, or `"timeout"`). This allows backgrounded devices without an active WebSocket to dismiss the incoming-call UI promptly rather than waiting for the push TTL to expire.
 
 ## VTCGatewaySignal {#gateway-signal}
 
@@ -1504,6 +1514,7 @@ When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:ie
 - **Visibility:** A call is visible to members of the bound Chat or Space channel. Non-members MUST receive `notFound` for `VTCCall/get` and `VTCParticipant/get` requests on the call.
 - **Join permission:** In a Space-bound call, the server SHOULD check the `"start_call"` permission (see {{JMAP-CHAT}}) before allowing `VTCParticipant/set create`. Participants who can `"view"` the channel MAY join an existing call even without `"start_call"` permission; `"start_call"` gates call creation, not joining.
 - **Recording and livestream access:** VTCRecording and VTCLivestream objects inherit visibility from their parent VTCCall.
+- **Space ban enforcement:** When a user is banned from a Space (via SpaceBan creation) and has an active VTCParticipant record in a call bound to that Space (via `spaceId`), the server MUST set `leftAt` on that VTCParticipant record and emit a `VTCParticipantEvent` with event `"left"`. The ban takes effect immediately on active calls.
 
 ## Standalone Calls
 

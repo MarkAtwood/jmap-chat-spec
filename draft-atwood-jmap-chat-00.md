@@ -530,6 +530,16 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `activeCallId` (String|null, server-set):
 : When `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}) is present: the id of a VTCCall that is currently active and bound to this Chat via the VTCCall's `chatId` field. The server sets this when a bound VTCCall enters the `"active"` state and clears it to `null` when the call ends. `null` when no call is active or VTC is not available. Clients MAY use this to display a "join call" banner.
 
+  When a VTCCall with a `chatId` matching this Chat's `id` transitions to state `"active"`, the server MUST set this field to that VTCCall's `id` and emit a `StateChange` for the Chat type. When that VTCCall transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange`. These updates are side effects of the VTCCall state transition and MUST be applied atomically with it from the client's perspective — a client polling `/changes` after receiving the VTCCall `StateChange` MUST see the corresponding Chat `activeCallId` update.
+
+  If `activeCallId` references a VTCCall whose state is `"ended"`, the server SHOULD clear it to `null` on next read (lazy repair). Clients encountering an `activeCallId` that resolves to an ended or nonexistent VTCCall SHOULD treat it as `null` for UI purposes and MAY issue a `Chat/set` update to clear it.
+
+  The server MUST NOT deliver a `StateChange` for the Chat type with an updated `activeCallId` until the corresponding VTCCall state transition has also been committed. If the VTCCall `StateChange` and Chat `StateChange` are delivered separately, the VTCCall `StateChange` MUST be delivered first or simultaneously.
+
+  Servers SHOULD coalesce rapid `activeCallId` transitions within a short window (e.g., 1-2 seconds) before emitting a Chat `StateChange`. This is particularly important for high-membership Chats where the fan-out cost of each `StateChange` is proportional to the subscriber count.
+
+  When a VTCCall ends, clients subscribed to both VTCCall and Chat state changes will receive two `StateChange` notifications for the same logical event (the call ending and `activeCallId` clearing). Clients SHOULD deduplicate by correlating the VTCCall id with the Chat's previous `activeCallId` value within a 5-second window.
+
 `messageExpirySeconds` (UnsignedInt, optional):
 : A local expiry policy. When set and non-zero, messages in this chat older than this many seconds are deleted by this mailbox. Each mailbox enforces its own policy independently. This is a local setting, not a bilateral negotiated commitment.
 

@@ -178,6 +178,8 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 `dataTypes` (String[]):
 : A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`; companion specifications MAY register additional values. Currently registered companion values: `"vtc"` for in-call events defined by {{JMAP-VTC-WSS}}, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}.
 
+> **Implementation Note:** The `"vtc"` dataType in ChatStreamEnable is a convenience alias. When present, the Chat WSS server delegates VTC event delivery to the VTC WSS event pipeline. The Chat WSS implementation SHOULD treat this as an opaque delegation — it activates VTC event delivery for the connection without the Chat WSS layer needing to understand VTC event semantics. When `urn:ietf:params:jmap:vtc:websocket` is not present in the server's capabilities, the server MUST silently ignore `"vtc"` in `dataTypes` (per the general unrecognized-value rule).
+
 `chatIds` (String[]|null):
 : Applicable when `"typing"` is in `dataTypes`. An explicit list of Chat ids for which typing events are requested, or `null` to receive typing events for all Chats of which the owner is a current member. Ignored if `"typing"` is not in `dataTypes`.
 
@@ -187,6 +189,8 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscription in its entirety. There is no partial-update mechanism; the client re-sends the full desired subscription state.
 
 If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"` or `"presence"`), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
+
+> **Note:** When a companion capability (e.g., `urn:ietf:params:jmap:vtc:websocket`) is not present, its corresponding `dataTypes` value (e.g., `"vtc"`) is treated as unrecognized and silently ignored. Clients SHOULD check the server's capability list before relying on companion dataTypes, as no error feedback is provided for absent capabilities.
 
 ~~~json
 {
