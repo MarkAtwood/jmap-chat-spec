@@ -1453,6 +1453,100 @@ VAPID when `urn:ietf:params:jmap:webpush-vapid` is advertised.
 
 ---
 
+## 13. GeoAnchor and augmented reality
+
+### What the spec defines
+
+The `geoAnchor` field on SceneRegion anchors the region's local coordinate
+system to a position within a reference frame (draft Section "SceneRegion
+Object Fields", `{#geo-anchor}`). The `referenceFrame` field identifies the
+coordinate system — `null` for Earth WGS84, or a URL, DID, URN UUID, DNS name,
+or reverse-domain identifier for other reference frames. The `"ar"` viewHint
+signals that the region is intended for augmented reality rendering.
+
+The spec defines **where objects are**. It does not define **how to show them**.
+
+### What the spec explicitly does not define
+
+The entire AR user experience is the client's responsibility. This is
+deliberate and follows the same philosophy as every other rendering concern in
+the spec. Specifically, the following are all client-defined:
+
+**Tracking and localization.** How the client determines the user's position
+within the anchored region. Options include GPS, visual-inertial odometry (VIO),
+LiDAR SLAM, UWB beacons, Wi-Fi fingerprinting, or any combination. The spec
+provides the anchor point; the client determines how to align the user's
+physical position to it. Drift correction, relocalization after tracking loss,
+and accuracy thresholds are all client concerns.
+
+**Compositing and rendering.** How virtual objects are blended with the
+physical world. Occlusion (virtual objects behind physical surfaces), lighting
+estimation (virtual objects matching ambient light), shadow casting, reflection
+probes, and depth-of-field matching are all client concerns. The quality of
+compositing varies dramatically between phone AR (camera feed + overlay),
+pass-through AR (headset cameras), and optical see-through AR (waveguide
+glasses). The spec does not distinguish between these.
+
+**Form factor.** The spec works identically on phones (ARKit/ARCore), AR
+glasses (HoloLens, Magic Leap, Apple Vision Pro), heads-up displays (car
+windshields), drone overlays, or any future AR hardware. The server sends the
+same SceneRegion and SceneObject data regardless of the client's form factor.
+How the client adapts the presentation — field of view, interaction model,
+display resolution, hand tracking vs. touch vs. gaze — is entirely
+client-defined.
+
+**Navigation UI.** Whether to show a minimap, compass, distance indicators,
+waypoint markers, or any other navigation aid is the client's decision. The
+spec provides positions; the client decides what navigational context to
+present.
+
+**Transition between AR and VR.** A region with `geoAnchor` and `viewHint:
+"ar"` may also be renderable as a fully virtual environment (ignoring the
+physical world). Whether and how the client supports switching between AR and
+VR modes is client-defined. The spec's `viewHint` is advisory; clients may
+render any region in any mode they support.
+
+### What you must decide (server)
+
+- Whether your deployment supports `geoAnchor` at all. Purely virtual
+  deployments (games, virtual offices) can ignore it entirely — `geoAnchor:
+  null` on all regions.
+- Which reference frames to support. Earth (WGS84) is the default and requires
+  no additional infrastructure. Custom reference frames (game world maps,
+  fictional planets) require a way for clients to resolve the reference frame
+  identifier to a coordinate system definition.
+- Validation rules for `geoAnchor` on region create/update: latitude range
+  (-90 to 90), longitude range (-180 to 180), altitude reasonableness, heading
+  range (0 to 360).
+
+### What you must decide (client)
+
+- Which AR frameworks to target (ARKit, ARCore, WebXR, OpenXR).
+- How to handle `geoAnchor` when the client has no location capability (desktop
+  browser, VR headset without GPS). The spec says clients SHOULD fall back to
+  rendering the region as a standalone virtual environment.
+- How to handle `referenceFrame` values the client does not recognize. The spec
+  says clients MUST NOT attempt AR rendering for unrecognized frames and SHOULD
+  fall back to standalone rendering.
+- Whether to support multiple anchored regions simultaneously (multiple AR
+  layers from different servers in the same physical space).
+
+### Recommended starting point
+
+**Server:** Accept `geoAnchor` on region create/update with the standard WGS84
+validation rules. Store it and return it. Do not attempt to validate that the
+anchor point corresponds to a real physical location — the server has no way to
+know, and fictional/planned/private locations are legitimate.
+
+**Client:** Start with phone AR (ARKit or ARCore) for Earth-anchored regions.
+Use the platform's geo-anchor API to place the coordinate origin at the
+specified latitude/longitude. Render SceneObjects as glTF models at their
+region-local positions. Ignore `geoAnchor` on platforms without location
+capability. Add support for additional reference frames and form factors as
+your deployment needs evolve.
+
+---
+
 ## Appendix: Decision checklist
 
 Before deploying JMAP Scene to production, verify that your implementation has
@@ -1542,3 +1636,11 @@ made and documented each of the following decisions:
 - [ ] Push urgency assignments implemented per urgency table
 - [ ] Cross-capability deduplication with Chat push (if co-deployed)
 - [ ] VAPID signing for Web Push messages (if webpush-vapid advertised)
+
+**GeoAnchor and AR (section 13)**
+- [ ] Decision: does deployment support `geoAnchor`? (may be no for purely virtual deployments)
+- [ ] `geoAnchor` validation on create/update (lat/lon range, heading range)
+- [ ] Supported reference frames documented (at minimum: `null` for Earth WGS84)
+- [ ] Client: AR framework selected (ARKit, ARCore, WebXR, or none)
+- [ ] Client: fallback behavior for unrecognized `referenceFrame` values
+- [ ] Client: behavior when location capability is unavailable
