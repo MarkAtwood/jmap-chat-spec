@@ -1,8 +1,8 @@
 # JMAP Unified Client Architecture
 
 A technical architecture specification for a desktop application that is a
-client for all JMAP protocols: Chat, VTC, Scene, Push, FileNode, Calendars,
-Tasks, DID, and CID.
+client for all JMAP protocols: Mail, Chat, VTC, Scene, Push, FileNode,
+Calendars, Tasks, DID, and CID.
 
 ---
 
@@ -15,12 +15,16 @@ personality is determined entirely by the capabilities advertised in the JMAP
 Session object. The same binary connects to different servers and becomes a
 different application:
 
+- A server advertising only `urn:ietf:params:jmap:mail` gives you
+  Thunderbird.
 - A server advertising only `urn:ietf:params:jmap:chat` gives you Slack.
 - Add `urn:ietf:params:jmap:vtc` and you get Slack with integrated Zoom.
 - Add `urn:ietf:params:jmap:scene` with `viewHint: "2d-topdown"` and you
   get Gather.
 - Add `urn:ietf:params:jmap:scene` with `viewHint: "3d"` and you get
   Mozilla Hubs.
+- A server advertising `urn:ietf:params:jmap:mail` and
+  `urn:ietf:params:jmap:chat` gives you Outlook.
 - A server advertising only `urn:ietf:params:jmap:vtc` gives you a
   standalone calling app.
 - A server advertising only `urn:ietf:params:jmap:scene` gives you a
@@ -47,8 +51,12 @@ trees (FileNode), calendars (Calendars), task lists (Tasks), and spatial
 regions (Scene). The sidebar organizes around Spaces; within a Space,
 the user navigates channels, files, events, and tasks.
 
+When Mail is present (with or without Chat), the Mailbox tree provides a
+parallel organizing hierarchy. Mail and Chat coexist as peer views in
+the tab bar (Section 6.6).
+
 When Chat is absent, the organizing principle shifts: VTC organizes around
-calls; Scene organizes around regions.
+calls; Scene organizes around regions; Mail organizes around mailboxes.
 
 ### 1.4 Server Wins
 
@@ -91,6 +99,8 @@ Example Session object (abbreviated):
       "url": "wss://chat.example.com/jmap/ws/",
       "supportsPush": true
     },
+    "urn:ietf:params:jmap:mail": {},
+    "urn:ietf:params:jmap:submission": {},
     "urn:ietf:params:jmap:chat": {},
     "urn:ietf:params:jmap:chat:websocket": {},
     "urn:ietf:params:jmap:chat:push": {},
@@ -108,6 +118,14 @@ Example Session object (abbreviated):
     "u1": {
       "name": "alice@example.com",
       "accountCapabilities": {
+        "urn:ietf:params:jmap:mail": {
+          "maxMailboxesPerEmail": null,
+          "maxSizeAttachmentsPerEmail": 50000000,
+          "mayCreateTopLevelMailbox": true
+        },
+        "urn:ietf:params:jmap:submission": {
+          "maxDelayedSend": 44236800
+        },
         "urn:ietf:params:jmap:chat": {
           "maxBodyBytes": 65536,
           "maxAttachmentBytes": 26214400,
@@ -146,6 +164,8 @@ Example Session object (abbreviated):
     }
   },
   "primaryAccounts": {
+    "urn:ietf:params:jmap:mail": "u1",
+    "urn:ietf:params:jmap:submission": "u1",
     "urn:ietf:params:jmap:chat": "u1",
     "urn:ietf:params:jmap:vtc": "u1",
     "urn:ietf:params:jmap:scene": "u1"
@@ -184,6 +204,7 @@ set. The client maintains per-account module state:
 ```
 +------------------+     +------------------+
 | Account A        |     | Account B        |
+| - Mail           |     | - Mail           |
 | - Chat           |     | - Chat           |
 | - VTC            |     | - VTC            |
 | - Scene          |     |   (no Scene)     |
@@ -375,9 +396,11 @@ On entering RECONNECTING:
                     +------+
                     | Core |
                     +------+
-                   /   |    \
-                  /    |     \
-                 /     |      \
+                  /  |  |   \
+                 / +------+  \
+                /  | Mail |   \
+               /   +------+   \
+              /      |    \    \
            +------+ +-----+ +-------+
            | Chat | | VTC | | Scene |
            +------+ +-----+ +-------+
@@ -396,10 +419,12 @@ On entering RECONNECTING:
 
 Solid dependency rules:
 - **Core** is always present (RFC 8620: session, auth, blobs, push).
+- **Mail** depends only on Core (RFC 8621, RFC 8620).
 - **Chat**, **VTC**, and **Scene** each depend only on Core.
 - **FileNode**, **Calendar**, and **Tasks** each require Chat.
 - **DID** requires Chat (extends ChatContact).
 - **CID** depends only on Core (extends blob upload).
+- **Mail** is independent of Chat; they are peer modules that coexist.
 - **VTC** optionally binds to Chat (via chatId/spaceId/channelId).
 - **VTC** optionally binds to Calendar (via calendarEventId).
 - **Scene** optionally binds to Chat (via chatId/spaceId/channelId).
@@ -438,8 +463,46 @@ Solid dependency rules:
 | - Push Manager   |------> PushSubscription CRUD
 +------------------+
     |
-    +---> dispatch to Chat, VTC, Scene, etc.
+    +---> dispatch to Mail, Chat, VTC, Scene, etc.
 ```
+
+#### Mail Module
+
+**Capabilities:** `urn:ietf:params:jmap:mail` (RFC 8621),
+`urn:ietf:params:jmap:submission` (RFC 8620 Section 7)
+
+**Data types managed:**
+- Mailbox (folder hierarchy: Inbox, Sent, Drafts, Trash, custom)
+- Email (message headers, body structure, body parts)
+- Thread (conversation grouping by `In-Reply-To` / `References`)
+- SearchSnippet (server-generated search result highlights)
+- Identity (sender identities for composition)
+- EmailSubmission (outbound message lifecycle)
+
+**Ephemeral events consumed:** None (Mail is a store-and-forward
+protocol; all updates arrive via `StateChange`).
+
+**State change types:** Mailbox, Email, Thread, Identity,
+EmailSubmission
+
+**Key behaviors:**
+- **Mailbox tree:** Rendered as a navigable tree in the mail tab's
+  sidebar. Standard roles (`inbox`, `sent`, `drafts`, `trash`,
+  `junk`, `archive`) are mapped to icons; custom mailboxes render by
+  name.
+- **Thread view:** Emails grouped by Thread ID. The client displays
+  threaded conversations with quoted-text collapsing.
+- **Composition:** Rich text (HTML) and plain text composition.
+  Attachments via blob upload. Identity selection for the `From`
+  header. `EmailSubmission/set` submits the message.
+- **Search:** `Email/query` with `FilterCondition` (subject, from, to,
+  body text, date range, hasAttachment, inMailbox). Server returns
+  matching Email IDs; client fetches `SearchSnippet/get` for result
+  highlighting.
+
+**No dependency on Chat.** Mail and Chat are independent modules. A
+server may advertise either, both, or neither. When both are present,
+the tab bar shows Mail and Chat as peer top-level views.
 
 #### Chat Module
 
@@ -593,6 +656,11 @@ tokens are opaque strings; the client never parses them.
 +-------------------+-------------------------------------------+
 | Data Type         | State Token Location                      |
 +-------------------+-------------------------------------------+
+| Mailbox           | per-account, updated on folder change     |
+| Email             | per-account, updated on new/edit/delete   |
+| Thread            | per-account, updated on thread change     |
+| Identity          | per-account, updated on identity change   |
+| EmailSubmission   | per-account, updated on submission state  |
 | Message           | per-account, updated on new/edit/delete   |
 | Chat              | per-account, updated on any chat change   |
 | ChatContact       | per-account, updated on contact change    |
@@ -618,6 +686,12 @@ local storage. The schema mirrors JMAP data types:
 +-----------------+-------------------+------------------------+
 | Table           | Cache Strategy    | Rationale              |
 +-----------------+-------------------+------------------------+
+| Mailbox         | Aggressive        | Folder tree rendering  |
+| Email           | Aggressive        | Offline reading, fast  |
+|                 |                   | scroll, search         |
+| Thread          | Aggressive        | Conversation grouping  |
+| Identity        | Aggressive        | Compose-from picker    |
+| EmailSubmission | Moderate          | Recent outbox only     |
 | Message         | Aggressive        | Offline reading, fast  |
 |                 |                   | scroll, search         |
 | Chat            | Aggressive        | Sidebar rendering,     |
@@ -680,12 +754,14 @@ from the WebSocket and dispatches them to the appropriate module:
 ```
 WebSocket frame: {"@type": "StateChange", "changed": {
   "u1": {
+    "Email": "state-token-9",
     "Message": "state-token-42",
     "VTCCall": "state-token-17"
   }
 }}
 
 Event Router:
+  -> Mail Module: Email state changed, token "state-token-9"
   -> Chat Module: Message state changed, token "state-token-42"
   -> VTC Module:  VTCCall state changed, token "state-token-17"
 ```
@@ -707,10 +783,14 @@ template:
 +---------------------------------------------------------+
 | Capabilities Present  | Layout Template                 |
 +---------------------------------------------------------+
+| Mail only             | Mailbox tree + Email list +     |
+|                       |   Reading pane                  |
 | Chat only             | Sidebar + Messages + RightPanel |
+| Mail + Chat           | Tab bar: [Mail] [Chat] tabs     |
 | Chat + VTC            | Above + Call Banner + FloatCall  |
 | Chat + VTC + Scene    | Above + Scene Viewport          |
 | Chat + Scene (no VTC) | Above + Scene Viewport (no call)|
+| Mail + Chat + Scene   | Tab bar: [Mail] [Chat] [Scene]  |
 | VTC only              | Call-centric: call list + call   |
 | Scene only            | Spatial-first: region browser    |
 | VTC + Scene (no Chat) | Spatial with call overlay        |
@@ -720,27 +800,93 @@ template:
 Layout template selection:
 
 ```
+active_tabs = []
+
+if mail_module.active:
+    active_tabs.append(MailTab)
+
 if chat_module.active:
-    layout = SpaceCentricLayout
+    tab = ChatTab(SpaceCentricLayout)
     if vtc_module.active:
-        layout.enable(CallBanner, FloatingCallWindow, RingOverlay)
+        tab.layout.enable(CallBanner, FloatingCallWindow, RingOverlay)
     if scene_module.active:
-        layout.enable(SceneViewport)
+        tab.layout.enable(SceneViewport)
     if filenode_module.active:
-        layout.enable(FileBrowser)
+        tab.layout.enable(FileBrowser)
     if calendar_module.active:
-        layout.enable(CalendarSidebar, EventLinks)
+        tab.layout.enable(CalendarSidebar, EventLinks)
     if task_module.active:
-        layout.enable(TaskSidebar, TaskLinks)
-elif scene_module.active:
-    layout = SpatialFirstLayout
+        tab.layout.enable(TaskSidebar, TaskLinks)
+    active_tabs.append(tab)
+
+if scene_module.active and not chat_module.active:
+    tab = SceneTab(SpatialFirstLayout)
     if vtc_module.active:
-        layout.enable(CallOverlay)
-elif vtc_module.active:
-    layout = CallCentricLayout
+        tab.layout.enable(CallOverlay)
+    active_tabs.append(tab)
+
+if vtc_module.active and not chat_module.active and not scene_module.active:
+    active_tabs.append(VTCTab(CallCentricLayout))
+
+# Each Scene region can also spawn its own tab (Section 6.6)
+layout = TabBarLayout(active_tabs) if len(active_tabs) > 1 else active_tabs[0].layout
 ```
 
-### 6.2 Space-Centric Navigation (when Chat present)
+### 6.2 Mail-Centric Navigation (when Mail present, no Chat)
+
+When Mail is the only high-level module, the layout is a classic
+three-pane email client:
+
+```
++------------------+---------------------+-----------------------+
+|                  |                     |                       |
+| Mailbox Tree     | Email List          | Reading Pane          |
+|                  |                     |                       |
+| [Inbox (3)]      | From: Alice         | Subject: Re: Project  |
+| [Drafts]         | Subject: Re: Proj.. | From: Alice <a@ex>    |
+| [Sent]           | 10:42 AM            | Date: 2026-06-06      |
+| [Trash]          |                     |                       |
+| [Archive]        | From: Bob           | Hi Mark,              |
+| [Custom...]      | Subject: Meeting    |                       |
+|                  | 9:15 AM             | Here are the notes... |
+|                  |                     |                       |
+| ----             | From: Carol         | [Attachment: spec.pdf]|
+| [Account 2]     | Subject: Review     |                       |
+|                  | Yesterday           |                       |
++------------------+---------------------+-----------------------+
+| [Compose]                                                      |
++----------------------------------------------------------------+
+```
+
+**Mailbox tree** (left):
+- Hierarchical mailbox tree from `Mailbox/get`
+- Standard role mailboxes at the top (Inbox, Drafts, Sent, Trash, Junk)
+- Custom mailboxes below
+- Unread count badges from `Mailbox.unreadEmails`
+- Multi-account: account switcher or unified inbox
+
+**Email list** (center-left):
+- `Email/query` with `inMailbox` filter, sorted by `receivedAt`
+- Thread grouping: collapsed threads show latest message, expand inline
+- Search bar triggers `Email/query` with text/header filters;
+  `SearchSnippet/get` for highlighted results
+- Swipe/keyboard actions: archive, delete, mark read/unread, move
+
+**Reading pane** (right):
+- Full email rendering: HTML body (sanitized), plain text fallback
+- Attachment list with download via JMAP blob endpoint
+- Reply/Forward/Reply-All compose inline
+- Thread view: full conversation with quoted-text collapsing
+
+**Composition:**
+- Full-window or split-pane compose
+- Identity selection (`Identity/get` for available From addresses)
+- Rich text (HTML) and plain text modes
+- Attachments via blob upload
+- Submit via `EmailSubmission/set`
+- Drafts auto-saved via `Email/set` to Drafts mailbox
+
+### 6.3 Space-Centric Navigation (when Chat present)
 
 ```
 +--------+--------------------+-----------+
@@ -784,7 +930,7 @@ elif vtc_module.active:
 - File attachments for current channel
 - Search results
 
-### 6.3 Spatial Viewport
+### 6.4 Spatial Viewport
 
 The Scene module renders a spatial viewport. The viewport's rendering
 mode is determined by the SceneRegion's `viewHint`:
@@ -834,7 +980,7 @@ updates), the client interpolates using simulation data. When
 `simulationUri` is null, the client falls back to polling
 `SceneAvatar/get` at a lower rate.
 
-### 6.4 Call UI
+### 6.5 Call UI
 
 The VTC module provides call UI surfaces that integrate with the
 layout:
@@ -880,19 +1026,102 @@ avatar-mounted video textures in the 3D scene.
 `VTCLivestream` objects exist for the active call, the UI displays
 persistent indicators ("Recording" / "Live").
 
-### 6.5 Notification System
+### 6.6 Tab System and Multi-View
+
+When more than one top-level module is active, the client renders a
+**tab bar** across the top of the window. Each tab is an independent
+view context with its own layout, state, and rendering pipeline.
+
+```
++------------------------------------------------------------------+
+| [Mail]  [Chat]  [Chess Game]  [Doom Arena]         [+]           |
++------------------------------------------------------------------+
+|                                                                  |
+|   (active tab's content fills the remaining window area)         |
+|                                                                  |
++------------------------------------------------------------------+
+```
+
+**Tab types:**
+
+| Tab Type | Source | Content |
+|---|---|---|
+| Mail | Mail module | Mailbox tree + email list + reading pane |
+| Chat | Chat module | Space sidebar + channel view + right panel |
+| Scene (standalone) | Scene module | Spatial viewport (full-window) |
+| Scene (in-Space) | Chat + Scene | Scene viewport within Space context |
+| VTC (standalone) | VTC module | Call-centric layout |
+
+**Scene regions as tabs:** Any SceneRegion can be opened in its own
+tab via a "Pop Out" action. This allows the user to have a chess game
+(`viewHint: "2d-topdown"`) in one tab while playing Doom
+(`viewHint: "3d"`) in another, while reading email in a third.
+
+**Tab lifecycle:**
+- **Static tabs** (Mail, Chat) are created at startup based on the
+  Session capabilities and persist for the session lifetime.
+- **Dynamic tabs** (Scene regions, standalone calls) are created on
+  user action ("Open in new tab", "Pop out") and closed when the user
+  closes them or the underlying object is destroyed.
+- Each tab maintains its own scroll position, selection state, and
+  (for Scene tabs) its own renderer instance.
+- Only the active tab's Scene renderer runs its frame loop. Background
+  Scene tabs suspend rendering but maintain WebSocket event processing
+  so state stays current.
+
+**Cross-tab awareness:**
+- VTC call banners and floating PiP windows render above the tab bar,
+  visible regardless of which tab is active.
+- OS notifications (new email, new chat message, incoming call) are
+  tab-independent.
+- Badge counts appear on tab labels: `[Mail (3)]` for unread email,
+  `[Chat (5)]` for unread messages.
+
+**Example: Email + Chess + Doom**
+
+A user connected to a server advertising `urn:ietf:params:jmap:mail`,
+`urn:ietf:params:jmap:chat`, and `urn:ietf:params:jmap:scene`:
+
+```
+Tab bar: [Mail (2)]  [Chat]  [Chess - Board Room]  [Doom - Arena]
+
+Mail tab (active):
++------------------+---------------------+-----------------------+
+| Mailbox Tree     | Email List          | Reading Pane          |
+| [Inbox (2)]      | From: Alice ...     | (email content)       |
+| [Sent]           | From: Bob ...       |                       |
++------------------+---------------------+-----------------------+
+
+Chess tab (background, suspended renderer):
+  SceneRegion "Board Room", viewHint: "2d-topdown"
+  PixiJS renderer, orthographic camera
+  8x8 grid with chess pieces as SceneObjects
+  Two SceneAvatars (players) with turn-based interaction
+
+Doom tab (background, suspended renderer):
+  SceneRegion "Arena", viewHint: "3d"
+  Three.js renderer, perspective camera, WASD controls
+  SceneObjects for weapons, items, architecture
+  SceneAvatars for other players
+  Simulation layer at simulationUri for physics/hit detection
+```
+
+### 6.7 Notification System
 
 **OS-native notifications:**
-- New message: sender name, chat name, body snippet
+- New email: sender name, subject line snippet
+- New chat message: sender name, chat name, body snippet
 - Incoming call: VTCRingEvent triggers OS call UI
 - Avatar enters region: SceneAvatarEvent with `event: "entered"`
 - Mention: elevated urgency for @mentions and broadcast mentions
 - Task updates: when task status changes via Task module
 
 **Badge counts:**
-- Unread messages: sum of `Chat.unreadCount` across all chats
+- Unread email: sum of `Mailbox.unreadEmails` (or Inbox only)
+- Unread chat messages: sum of `Chat.unreadCount` across all chats
 - Missed calls: VTCCall objects with `endReason: "missed"`
 - Per-Space unread: sum of unread across channels in a Space
+- Tab badges: each tab shows its own unread count
 
 **Do-not-disturb:**
 - Respects `Chat.muted` and `Chat.muteUntil` per chat
@@ -1149,7 +1378,9 @@ Workers or off-main-thread.
 When the network is unavailable, the client operates from the local
 cache:
 
-- **Messages:** Read cached messages. Compose queued for send on
+- **Email:** Read cached emails. Compose and queue drafts for send on
+  reconnect. Mailbox tree navigable from cache.
+- **Chat messages:** Read cached messages. Compose queued for send on
   reconnect.
 - **Contacts:** Display cached names, avatars, and last-known presence.
 - **Read positions:** Apply locally. Sync to server on reconnect.
@@ -1230,7 +1461,17 @@ When the simulation layer is disconnected:
 This section enumerates every place where two or more capabilities
 interact in the client UI.
 
-### 10.1 Chat + VTC
+### 10.1 Mail + Chat
+
+| Integration Point | Mechanism |
+|---|---|
+| Unified notification stream | Both modules feed into the same notification system; badge counts aggregate across Mail and Chat |
+| Contact correlation | ChatContact display names and avatars are used when rendering email from/to addresses that match a known ChatContact |
+| Shared blob storage | Email attachments and Chat attachments share the same JMAP blob infrastructure; CID deduplication applies across both |
+| Tab coexistence | Mail and Chat occupy peer tabs in the tab bar; switching tabs preserves independent state |
+| Link sharing | An email can contain a link to a Chat channel or Space (deployment-defined URI scheme); the client can deep-link from the Mail tab to the Chat tab |
+
+### 10.2 Chat + VTC
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1242,7 +1483,7 @@ interact in the client UI.
 | Ring notification context | Incoming VTCRingEvent displays caller's ChatContact.displayName and avatar |
 | VTC endpoints on contacts | ChatContact.endpoints with `type: "urn:jmap:chat:cap:vtc"` provide direct-call shortcuts on the contact profile |
 
-### 10.2 Chat + Scene
+### 10.3 Chat + Scene
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1252,7 +1493,7 @@ interact in the client UI.
 | Presence in Scene | ChatContact.presence is displayed on SceneAvatar nametags |
 | Proximity chat | Messages in the region-bound Chat appear as speech bubbles above avatars in 2D views, or as floating text in 3D views |
 
-### 10.3 VTC + Scene
+### 10.4 VTC + Scene
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1262,7 +1503,7 @@ interact in the client UI.
 | Avatar-follows-participant | When a VTC participant joins/leaves, the corresponding SceneAvatar enters/exits the region |
 | Video on avatar | Participant video tracks rendered as textures on avatar model billboards |
 
-### 10.4 Chat + FileNode
+### 10.5 Chat + FileNode
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1271,7 +1512,7 @@ interact in the client UI.
 | File links in messages | Attachments with `filenodeId` render as clickable links to the file in the Space's file browser |
 | File search | Search within a Space searches both messages and FileNode entries |
 
-### 10.5 Chat + Calendar
+### 10.6 Chat + Calendar
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1281,7 +1522,7 @@ interact in the client UI.
 | RSVP in chat | Calendar event MessageActions include RSVP buttons rendered inline |
 | Availability lookup | MessageAction with `type: "urn:jmap:chat:cap:availability"` renders a scheduling widget |
 
-### 10.6 Chat + Tasks
+### 10.7 Chat + Tasks
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1290,7 +1531,7 @@ interact in the client UI.
 | Task status updates | Changes to task status can generate system messages in the bound Chat (`Task.chatId`) |
 | Create task from message | Right-click context menu on a message offers "Create Task" which creates a Task with `chatId` set to the current Chat |
 
-### 10.7 VTC + Calendar
+### 10.8 VTC + Calendar
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1298,7 +1539,7 @@ interact in the client UI.
 | Join button on calendar | Calendar event cards with a bound VTCCall render a "Join" button that connects to `joinUri` |
 | Upcoming calls | The call list shows scheduled VTCCalls sorted by `scheduledStartAt`, cross-referenced with CalendarEvent details |
 
-### 10.8 Scene + FileNode
+### 10.9 Scene + FileNode
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1306,7 +1547,7 @@ interact in the client UI.
 | sha256 dedup | Assets with identical sha256 hashes share a single blob (CID integration) |
 | Asset browser | The file browser shows scene assets alongside other files |
 
-### 10.9 CID Everywhere
+### 10.10 CID Everywhere
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1316,7 +1557,7 @@ interact in the client UI.
 | Scene asset integrity | SceneAsset.sha256 verified on asset load |
 | Attachment integrity | Attachment.sha256 verified on download |
 
-### 10.10 DID + Contacts
+### 10.11 DID + Contacts
 
 | Integration Point | Mechanism |
 |---|---|
@@ -1467,7 +1708,7 @@ code for WebRTC and Scene rendering.
 | Layer | Responsibilities |
 |---|---|
 | Rust backend | JMAP HTTP client, WebSocket management, authentication, SQLite local cache, blob cache with sha256 verification, simulation layer client (connecting to `simulationUri`), DID resolution, push subscription management |
-| Web frontend | UI rendering (Chat, VTC controls, Calendar, Tasks, Files), Three.js for 3D Scene, PixiJS for 2D Scene, WebRTC via browser APIs, Web Audio for spatial audio, state management and event routing |
+| Web frontend | UI rendering (Mail, Chat, VTC controls, Calendar, Tasks, Files), Three.js for 3D Scene, PixiJS for 2D Scene, WebRTC via browser APIs, Web Audio for spatial audio, tab management, state management and event routing |
 | IPC (Tauri commands) | Structured commands for JMAP method calls, blob operations, cache queries, state token management |
 
 **Why Tauri over Electron:**
@@ -1595,6 +1836,20 @@ Settings) are built with standard web accessibility patterns:
   list only when the user has configured this preference
 
 ### 13.2 Keyboard Navigation
+
+**Tab bar:**
+- Ctrl+1..9 switches to tab by position
+- Ctrl+Tab / Ctrl+Shift+Tab cycles tabs
+- Ctrl+W closes dynamic tabs (Scene regions, calls)
+
+**Mail UI:**
+- Tab/Shift-Tab navigates between mailbox tree, email list, and
+  reading pane
+- Arrow keys navigate within the email list
+- Enter opens an email in the reading pane
+- R/A/F for Reply/Reply-All/Forward
+- Delete/Backspace moves to Trash
+- N for compose new email
 
 **Chat UI:**
 - Tab/Shift-Tab navigates between sidebar, message list, compose bar,
@@ -1755,6 +2010,8 @@ capabilities).
 
 | Spec | Capability URI | Primary Data Types |
 |---|---|---|
+| Mail | `urn:ietf:params:jmap:mail` | Mailbox, Email, Thread, SearchSnippet |
+| Mail Submission | `urn:ietf:params:jmap:submission` | Identity, EmailSubmission |
 | Chat | `urn:ietf:params:jmap:chat` | ChatContact, Chat, Message, Space, SpaceRole, SpaceMember, SpaceInvite, SpaceBan, CustomEmoji, ReadPosition, PresenceStatus |
 | Chat WSS | `urn:ietf:params:jmap:chat:websocket` | (events: ChatTypingEvent, ChatPresenceEvent) |
 | Chat Push | `urn:ietf:params:jmap:chat:push` | ChatPushConfig, ChatMessagePush, ChatMessageEntry |
@@ -1809,6 +2066,8 @@ by `@type`:
 | @type                     | Target Module    | Handler             |
 +---------------------------+------------------+---------------------+
 | StateChange               | Core (fan-out)   | route by data type  |
+|   Mailbox/Email/Thread    |   -> Mail        | mailbox/email sync  |
+|   Identity/EmailSubmission|   -> Mail        | outbox sync         |
 | Response                  | Core             | match to request id |
 | RequestError              | Core             | error handling      |
 | ChatTypingEvent           | Chat             | typing indicator UI |
@@ -1919,11 +2178,16 @@ User types message and presses Enter
     (WebRTC peer connection)         |
 ```
 
-## Appendix F: Layout Template -- Chat + VTC + Scene
+## Appendix F: Layout Template -- Mail + Chat + VTC + Scene (Tabbed)
 
-Full layout when all three primary capabilities are present:
+Full layout when all four primary capabilities are present, with
+tabbed multi-view:
 
 ```
++------------------------------------------------------------------+
+| [Mail (2)]  [Chat (1)]  [Chess - Board Room]  [Doom - Arena]     |
++------------------------------------------------------------------+
+| [PiP Call Window - always visible across tabs]                   |
 +--------+---------------------+------------------+-----------+
 |        |                     | Scene Viewport   |           |
 | Space  |   Channel View      | (or collapsed)   |  Right    |
@@ -1939,11 +2203,16 @@ Full layout when all three primary capabilities are present:
 |        | +----------------+  | [Scene Chat      |           |
 | [D1]   |                     |  Overlay]         |           |
 | [D2]   | [Call Banner]       |                  |           |
-|        | [PiP Call Window]   |                  |           |
 +--------+---------------------+------------------+-----------+
 ```
 
-The Scene viewport is resizable and can be expanded to full width
-(hiding the message list) or collapsed to a thumbnail. The chat
-overlay in the scene viewport shows messages from the region-bound
-Chat as semi-transparent text.
+This shows the Chat tab active. Switching to the Mail tab replaces
+everything below the tab bar with the three-pane mail layout (Section
+6.2). Switching to a Scene tab (Chess or Doom) replaces everything
+with a full-window spatial viewport.
+
+The PiP call window floats above the tab bar and is visible in all
+tabs. The Scene viewport within the Chat tab is resizable and can be
+expanded to full width (hiding the message list) or collapsed to a
+thumbnail. The chat overlay in the scene viewport shows messages
+from the region-bound Chat as semi-transparent text.
