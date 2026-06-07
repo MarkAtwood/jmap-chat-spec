@@ -108,6 +108,8 @@ Without JMAP VTC, the Scene capability is fully functional. Regions have no voic
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear in all capitals, as shown here.
 
+`Number[N]` denotes a JSON array of exactly N Number values. `Number[3]` represents a spatial coordinate triple `[x, y, z]`; `Number[4]` represents a quaternion `[x, y, z, w]`.
+
 Terminology from {{RFC8620}} is used throughout.
 
 # Coordinate System {#coordinate-system}
@@ -133,7 +135,7 @@ The identity orientation (no rotation) is `[0, 0, 0, 1]`.
 
 Quaternions are used because they are the minimal non-degenerate parameterization of 3D rotation, avoid gimbal lock, interpolate smoothly (slerp), and match glTF 2.0 and all major physics engines. The spec does not use Euler angles or axis-angle representations on the wire.
 
-Servers MUST normalize quaternions to unit length before storage. Clients SHOULD send unit quaternions; servers MAY reject quaternions whose magnitude deviates from 1.0 by more than a deployment-defined epsilon with `invalidArguments`.
+Clients SHOULD send unit quaternions. Servers MAY reject quaternions whose magnitude deviates from 1.0 by more than a deployment-defined epsilon with a SetError of type `invalidArguments`. If the server does not reject the value, it MUST normalize the quaternion to unit length before storage.
 
 ## Scale
 
@@ -1517,7 +1519,7 @@ Response:
 
 #### Updating an Object
 
-`update` supports patching all mutable fields: `parentId`, `name`, `position`, `orientation`, `scale`, `visualRef`, `visualType`, `assetUri`, `physicsMode`, `interactable`, `visible`, `customProperties`.
+`update` supports patching all mutable fields: `parentId`, `name`, `position`, `orientation`, `scale`, `visualRef`, `visualType`, `assetUri`, `physicsMode`, `interactable`, `visible`, `customProperties`. `regionId` is immutable and cannot be changed via update; to move an object between regions, destroy it and recreate it in the target region.
 
 Example update (move an object):
 
@@ -2492,7 +2494,7 @@ When JMAP Chat ({{JMAP-CHAT}}) is co-deployed, a single `StateChange` MAY carry 
 }
 ~~~
 
-Clients SHOULD call the corresponding `/changes` method for each type whose state string differs from the locally cached value. On `cannotCalculateChanges`, fall back to `/get`.
+Clients SHOULD call the corresponding `/changes` method for each type whose state string differs from the locally cached value. When the server cannot calculate changes, fall back to `/get`.
 
 ### State-Change Frequency
 
@@ -2674,7 +2676,7 @@ Specification document: This document.
 - **glTF 2.0** ({{GLTF}}) provided the coordinate system convention (right-handed, Y-up, meters, quaternion orientation) and the mandatory-to-implement visual asset format.
 - **A-Frame / Three.js** informed the scene graph model: objects with position/orientation/scale, parent-child hierarchy, and component-like custom properties.
 - **Gather** (and similar 2D spatial-video products like Amazon Chime's experimental spatial view) demonstrated that top-down 2D worlds with proximity-based video and spatial audio are a compelling subset of 3D environments, particularly for virtual offices and social spaces. The `viewHint` field on SceneRegion was designed to support this use case natively without requiring a separate specification.
-- **Video games** — both single-player and multiplayer — informed the decision to keep Scene independent of Chat and VTC. A game world needs spatial objects, avatars, physics modes, and interaction events but may not need chat channels or video calling. The `SceneInteractionEvent` action vocabulary (click, grab, release, activate, plus extensible custom actions) follows game input conventions.
+- **Video games** — both single-player and multiplayer — informed the decision to keep Scene independent of Chat and VTC. A game world needs spatial objects, avatars, physics modes, and interaction events but may not need chat channels or video calling. The `SceneInteractionEvent` action vocabulary (defined in {{JMAP-SCENE-WSS}}; includes click, grab, release, activate, plus extensible custom actions) follows game input conventions.
 - **Board games and tabletop simulators** (Tabletop Simulator, Board Game Arena) influenced the SceneObject permission model and the 2D top-down view hint. A board game is a scene region with a fixed set of objects (pieces, cards, dice) that players interact with via grab/release/activate actions, rendered top-down.
 - **Location-based AR games** (Niantic's Ingress and Pokemon Go, and earlier experiments like Geocaching) demonstrated that GPS-anchored virtual objects in physical space create compelling shared experiences. The `geoAnchor` field on SceneRegion and the `"ar"` view hint enable the same pattern as an open protocol rather than a proprietary platform.
 - **Game engine conventions** (Unity, Unreal, Godot) informed the physicsMode and interactable properties. The separation between physics modes (static, dynamic, kinematic, none) is standard across all major engines.

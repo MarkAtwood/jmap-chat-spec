@@ -112,7 +112,7 @@ A JMAP Scene deployment has three distinct data paths:
 what regions exist? what objects are in them? who is present? This is the
 source of truth for object existence, permissions, and metadata. Updates
 arrive via standard JMAP request/response or StateChange push. Latency is
-measured in hundreds of milliseconds. This is where a client goes to discover
+measured in tens to hundreds of milliseconds. This is where a client goes to discover
 what is in the world before connecting to the simulation layer.
 
 **Simulation layer.** Fast, real-time, ephemeral. Handles the questions: where
