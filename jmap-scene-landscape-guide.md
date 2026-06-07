@@ -202,33 +202,71 @@ Scene trades Croquet's mathematical elegance for practical heterogeneity.
 ### Meta Horizon Worlds
 
 **What it is.** Horizon Worlds is Meta's consumer virtual world platform.
-Initially Quest-only, later expanded to mobile. Users can create worlds using
-Meta's built-in tools, socialize in user-created spaces, and attend events.
-It is the flagship product of Meta's "metaverse" pivot, which involved renaming
-Facebook to Meta and investing tens of billions of dollars.
+Meta (formerly Facebook) acquired Oculus in 2014 for approximately $2 billion,
+then bet the company on the metaverse pivot — renaming to Meta in 2021 and
+pouring an estimated $50 billion or more into the Reality Labs division through
+2024. Horizon Worlds launched as Quest-exclusive, later expanded to mobile and
+web clients. Users can create worlds using Meta's built-in tools, socialize in
+user-created spaces, and attend events. Identity is Facebook/Meta accounts;
+there is no federation, no open identity, no interoperability with non-Meta
+systems. World state lives on Meta's servers; there is no self-hosting, no
+data portability. The protocol is proprietary and unpublished.
 
 **What it got right.** Significant investment in spatial audio — proximity-based
 voice in Horizon is genuinely well-implemented. Avatar expressiveness, despite
 the initial lack of legs, has improved substantially. The creation tools are
 accessible to non-developers. Meta's willingness to invest at scale in spatial
-computing, even at enormous financial cost, pushed the industry forward.
+computing, even at enormous financial cost, pushed the industry forward on
+hardware quality and manufacturing scale. The Quest headset line made
+standalone VR affordable in a way no previous hardware had.
 
-**What it got wrong.** Horizon is a walled garden: Meta's client, Meta's server,
-Meta's rendering engine, Meta's identity system, Meta's content moderation,
-Meta's rules. There is no interoperability with anything outside Meta's
-ecosystem. The "metaverse" branding triggered a cultural backlash that damaged
-the broader spatial computing industry — people who might have been interested
-in virtual worlds became skeptical because of the association with Meta's
-corporate ambitions. User engagement numbers have been consistently
+**What it got wrong.** Horizon is a walled garden in every dimension: Meta's
+client, Meta's server, Meta's rendering engine, Meta's identity system, Meta's
+content moderation, Meta's rules. There is no interoperability with anything
+outside Meta's ecosystem. The "metaverse" branding triggered a cultural backlash
+that damaged the broader spatial computing industry — people who might have been
+interested in virtual worlds became skeptical because of the association with
+Meta's corporate ambitions. User engagement numbers have been consistently
 disappointing relative to the investment.
 
-**How Scene relates.** Scene is the architectural opposite of Horizon. Open
-protocol, no platform lock-in, no specific hardware requirement, no specific
-rendering engine, no specific identity system. A Horizon-like experience could
-be built on Scene + VTC + Chat, but so could a minimal 2D spatial office, a
-board game, or a data visualization. Scene does not require a headset, does
-not require a Meta account, and does not require anyone to say the word
-"metaverse."
+The root cause is architectural, not cosmetic. Meta started from the goggles.
+Meta acquired Oculus because it controlled a display device, and then built
+everything else outward from that hardware relationship. Every design decision
+flows from "we own the display" — identity, because the device is tied to a
+Facebook account; the server, because the device needs a first-party backend;
+the protocol, because there is no reason to publish it when you control the
+only client. The result is a platform, not a protocol. This is the AOL
+strategy — own the walled garden, extract rent from the network — rather than
+the SMTP strategy, which is to define the protocol and let anyone implement it.
+AOL had more subscribers than the internet in 1995. It is gone.
+
+This failure mode is distinct from VWRAP's (see Section 3). VWRAP failed by
+trying to extract a protocol from an existing implementation — the spec was
+too coupled to what Second Life happened to do. Meta is not even attempting
+protocol extraction. Meta is building a platform and betting that network
+effects will make the walled garden self-sustaining. VWRAP's protocol was too
+coupled to one implementation; Meta's platform has no protocol at all. Both
+approaches fail for interoperability, but for different reasons: VWRAP was a
+protocol that could not escape its implementation; Horizon is an implementation
+that was never meant to become a protocol.
+
+**How Scene relates.** Scene is the architectural opposite of Horizon. The
+failure-mode mapping is direct:
+
+| Horizon pattern | Scene response |
+|---|---|
+| Hardware-first (starts from the headset) | Renderer-agnostic (`viewHint` is advisory, not prescriptive) |
+| Proprietary identity (Facebook account required) | Opaque `userId` from the auth layer — any identity provider |
+| Walled-garden state (Meta servers only) | Standard JMAP data types — self-hostable CRUD |
+| No interop (no published protocol) | The protocol is the interop layer; implementations compete on UX |
+
+A Horizon-like experience could be built on Scene + VTC + Chat, but so could
+a minimal 2D spatial office, a board game, or a data visualization. Scene does
+not require a headset, does not require a Meta account, and does not require
+anyone to say the word "metaverse." The difference is not in what experiences
+are possible — Horizon Worlds and Scene can render similar experiences. The
+difference is in who controls the protocol. In Horizon, Meta controls it. In
+Scene, nobody does.
 
 ---
 
@@ -1395,6 +1433,15 @@ protocols are durable. Every proprietary platform in this document has either
 shut down, is at risk of shutting down, or is locked to a single vendor's
 ecosystem. The protocols (HTTP, SMTP, JMAP, glTF, WebRTC) persist across
 vendor lifetimes. Scene is designed to be on the protocol side of that divide.
+
+Meta Horizon Worlds is the largest current example of the platform approach. It
+has more funding, more hardware scale, and more engineering talent behind it than
+any other spatial computing effort in history. It is also the clearest possible
+demonstration that the platform approach — even with $50 billion behind it — does
+not produce interoperability. It produces a walled garden. The AOL comparison is
+not hyperbole: AOL dominated consumer internet access at its peak and was gone
+within a decade of the open internet becoming the default. Scale is not a
+substitute for protocol.
 
 The systems that got the most things right — Second Life (persistence,
 permissions, voice separation), Hubs (browser-first, WebRTC voice, room model),
