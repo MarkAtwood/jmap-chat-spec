@@ -169,7 +169,7 @@ them separate lets you optimize each independently.
 ### Recommended starting point
 
 Deploy three separate services: the JMAP server (any RFC 8620 implementation),
-a simulation server (see section 6 for architecture options), and a CDN or
+a simulation server (see section 9 for architecture options), and a CDN or
 static file server for assets. Clients connect to all three. The JMAP server
 and simulation server share a database or message bus for state reconciliation
 (see section 3). The CDN is fully independent.
@@ -507,10 +507,10 @@ authority differently based on their needs:
 |---|---|
 | Own avatar position | Client (validated by server) |
 | Other avatars | Relayed from owning client |
-| Static objects (`physicsMode: "static"`) | JMAP state (immutable position) |
+| Static objects (`physicsMode: "static"`) | JMAP state (position set via `SceneObject/set`; simulation treats as immovable collider) |
 | Dynamic objects (`physicsMode: "dynamic"`) | Server (physics simulation) |
-| Kinematic objects (`physicsMode: "kinematic"`) | Server (scripted movement) |
-| No-collision objects (`physicsMode: "none"`) | JMAP state (moved via `SceneObject/set`; no simulation involvement) |
+| Kinematic objects (`physicsMode: "kinematic"`) | Server (scripted or server-driven movement) |
+| No-collision objects (`physicsMode: "none"`) | JMAP state (moved via `SceneObject/set`; no collision geometry; simulation involvement is deployment-defined) |
 | Interaction events | Client-initiated, server-validated |
 
 Pros: good balance of responsiveness and consistency; server CPU is spent only
@@ -726,8 +726,8 @@ Visibility filtering operates at two layers, and they serve different purposes:
 A client that never receives a SceneObject record does not know the object
 exists. This matters for security (hiding competitive game objects) and for
 bandwidth (avoiding thousands of object records for a large region). The spec's
-spatial query filters (`withinRadius`, `withinBounds` on SceneObject/query) are
-the client-facing mechanism for this.
+spatial query filters (`withinRadius`, `withinBounds` on `SceneObject/query`
+and `SceneAvatar/query`) are the client-facing mechanism for this.
 
 **Simulation-level interest management** controls which real-time updates the
 client receives from the simulation layer. A client that is subscribed to
@@ -804,7 +804,7 @@ A does NOT receive updates from P4 or P8.
 ```
 
 Pros: O(1) per avatar per tick (just check partition membership); scales well;
-naturally supports sharding (see section 8). Cons: partition boundaries cause
+naturally supports sharding (see section 10). Cons: partition boundaries cause
 discrete subscription changes; objects near a boundary may pop in/out.
 
 **Combining JMAP and simulation filtering.** For most deployments, JMAP-level

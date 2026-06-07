@@ -149,7 +149,7 @@ The spec defines SceneRegion fields, creation, update, and destruction
 (section 5.3, section 6.2), including the `bounds`, `accessPolicy`,
 `viewHint`, `environment`, `simulationUri`, and spawn point fields. It
 defines three access policies (`"public"`, `"invite"`, `"space"`) and
-advisory view hints (`"3d"`, `"2d-topdown"`, `"2d-side"`). What the spec
+advisory view hints (`"3d"`, `"2d-topdown"`, `"2d-side"`, `"ar"`). What the spec
 leaves open is how to enforce access policies beyond the JMAP layer, how
 to manage the `simulationUri` lifecycle, and how `environment` is structured.
 
@@ -192,7 +192,7 @@ and in every get/query handler that checks region access.
 `urn:ietf:params:jmap:chat` is co-deployed and `spaceId` is set on the
 region. The server resolves membership by querying the Space's member list.
 If JMAP Chat is not present and a region is created with `accessPolicy:
-"space"`, the server SHOULD reject the create with `invalidArguments` (there
+"space"`, the server MUST reject the create with `invalidArguments` (there
 is no Space to bind to).
 
 **`simulationUri` provisioning.** Three common patterns:
@@ -289,7 +289,7 @@ Example region creation:
 ### What the spec leaves open
 
 The spec defines SceneObject fields and the standard JMAP set operations
-(section 5.2, section 6.3). It specifies the permission model (owner, region
+(section 5.4, section 6.3). It specifies the permission model (owner, region
 owner, admin), the scene graph hierarchy via `parentId`, physics modes, and
 the `customProperties` extension point. What the spec leaves open is how to
 handle object creation at scale, how `customProperties` is validated, and how
@@ -446,7 +446,7 @@ Example object update (reposition and change physics mode):
 
 The spec defines how a user enters a region (`SceneAvatar/set create`), the
 one-avatar-per-region constraint, auto-eject from a previous region, avatar
-state updates, leaving (setting `leftAt`), and reconnecting (section 5.4,
+state updates, leaving (setting `leftAt`), and reconnecting (section 5.5,
 section 6.4). The spec notes that real-time position synchronization is handled
 by the simulation layer, not JMAP. What the spec leaves open is how the server
 detects silent disconnections, how long departed avatar records are retained,
@@ -723,7 +723,7 @@ client implementers.
 
 The spec defines two spatial filter properties — `withinRadius` and
 `withinBounds` — and declares them mandatory-to-implement for both
-`SceneObject/query` and `SceneAvatar/query` (section 6.3.5, section 6.4.5).
+`SceneObject/query` and `SceneAvatar/query` (section 6.3.4, section 6.4.4).
 The spec does not prescribe the spatial indexing algorithm, how to handle
 large result sets, or whether the server should support additional spatial
 filters beyond the two required ones.
@@ -857,7 +857,7 @@ first version.
 
 The spec defines SceneAsset as metadata about a JMAP blob: `blobId`,
 `mediaType`, `name`, `size`, `sha256`, and an optional `assetUri` CDN
-endpoint (section 5.1). Assets are uploaded via the standard JMAP upload
+endpoint (section 5.2). Assets are uploaded via the standard JMAP upload
 mechanism and then registered via `SceneAsset/set create`. The spec does
 not prescribe how assets are validated, how CDN distribution works, or how
 asset deduplication is handled.
@@ -890,7 +890,7 @@ is better but more expensive.
 `assetUri` automatically by mapping `blobId` to a CDN URL. If your blob
 store is backed by S3 or a similar service, generate a CDN URL at asset
 creation time and store it. If the client supplies `assetUri`, treat it as
-untrusted (spec section 8.2): clients fetching it must validate the scheme
+untrusted (spec section 9.2): clients fetching it must validate the scheme
 and should verify `sha256` when available.
 
 **`sha256` for integrity.** The spec defines `sha256` as optional but clients
@@ -964,9 +964,9 @@ Example response:
 
 ### What the spec leaves open
 
-The spec defines region-level access control via `accessPolicy` (section 9),
-object-level permissions via `ownerId` / region owner / admin (section 9.2),
-and avatar permissions (users modify only their own avatar, section 9.3). It
+The spec defines region-level access control via `accessPolicy` (section 8),
+object-level permissions via `ownerId` / region owner / admin (section 8.2),
+and avatar permissions (users modify only their own avatar, section 8.3). It
 requires returning `notFound` rather than `forbidden` for unauthorized
 get/query requests to prevent enumeration. It permits region owners and
 admins to eject avatars. What the spec leaves open is how administrative
@@ -1038,7 +1038,7 @@ caller the region owner? Is caller an admin? If none, return `forbidden`.
 ### Blocked-contact spatial presence filtering
 
 When `urn:ietf:params:jmap:chat` is co-deployed, the server has access to
-each user's ChatContact records and their `blocked` field. Spec section 8.5
+each user's ChatContact records and their `blocked` field. Spec section 9.8
 defines how blocking affects spatial queries:
 
 **What the spec requires:**
@@ -1120,7 +1120,7 @@ per minute per region).
 **Interaction event rate limits.** When the Scene WebSocket capability is
 deployed, the server SHOULD enforce a rate limit of 5 `SceneInteractionEvent`
 events per user per region per second, and 2 `SceneObjectEvent` updates per
-object per second. These limits are defined in {{JMAP-SCENE-WSS}} and apply
+object per second. These limits are defined in draft-atwood-jmap-scene-wss-00 and apply
 to outbound event delivery. Events that exceed the limit are silently dropped;
 the most recent state is delivered when the rate window reopens.
 
@@ -1130,7 +1130,7 @@ Document your deployment's practical limits even when the JMAP quota is
 `null`.
 
 **Object density as DoS.** The spec explicitly calls out object density as a
-denial-of-service vector (section 8.6). `maxObjectsPerRegion` is the primary
+denial-of-service vector (section 9.6). `maxObjectsPerRegion` is the primary
 defense. Enforce it strictly.
 
 ### Recommended starting point
@@ -1190,8 +1190,8 @@ some fail).
 | `maxAvatarsPerRegion` exceeded | `overQuota` | Avatar create (entering a full region). |
 | `maxAssetSizeBytes` exceeded | `overQuota` | Asset create with oversized blob. |
 | Concurrent modification | `stateMismatch` | Set with stale `ifInState`. |
-| Visual asset or text field violates content policy | `contentPolicy` | SceneObject/set create or update (spec section 8.6). |
-| Per-user create rate limit exceeded | `rateLimit` | SceneObject/set create (spec section 8.7). Include `retryAfter` (seconds). |
+| Visual asset or text field violates content policy | `contentPolicy` | SceneObject/set create or update (spec section 9.9). |
+| Per-user create rate limit exceeded | `rateLimit` | SceneObject/set create (spec section 9.9). Include `retryAfter` (seconds). |
 | SceneAvatar/set destroy attempted | `forbidden` | Destroy on any SceneAvatar record. Departure is modeled as an update setting `leftAt`; destroy is always forbidden (spec section 6.4). |
 
 **Error descriptions should be actionable.** Include the specific field name
@@ -1214,7 +1214,7 @@ Not:
 ```
 
 **`contentPolicy` and `rateLimit` are spec-defined SetError types.** The
-spec (sections 8.6-8.7) defines two SetError types beyond the standard JMAP
+spec (section 9.9) defines two SetError types beyond the standard JMAP
 set:
 
 - `contentPolicy`: returned when a visual asset (`visualRef`) or text field

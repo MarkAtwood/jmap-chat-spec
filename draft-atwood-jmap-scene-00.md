@@ -54,6 +54,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-wss-00
     date: 2026
+  JMAP-SCENE-WSS:
+    title: JMAP Scene over WebSocket
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-wss-00
+    date: 2026
 
 --- abstract
 
@@ -237,7 +244,7 @@ glTF 2.0 is the baseline because:
 
 Clients SHOULD prefer glTF when creating assets intended for cross-deployment portability. Assets in deployment-specific formats (gaussian splats, neural radiance fields, voxels, USD) are valid within deployments that advertise those media types in `supportedVisualTypes`, but are not guaranteed to be portable.
 
-For security considerations related to glTF parsing, see {{asset-uri-untrusted}}.
+For security considerations related to asset fetching and glTF parsing, see {{security}}.
 
 ## SceneRegion {#scene-region}
 
@@ -264,7 +271,7 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 : Deployment-defined environment settings for the region (e.g., sky, lighting, gravity, fog). Opaque to the JMAP Scene specification; clients that understand the deployment's environment schema MAY use it. Clients MUST ignore unrecognized keys.
 
 `simulationUri` (String|null):
-: The real-time simulation layer endpoint for this region. Opaque to the JMAP server. May be a WebSocket URL, a WebRTC signaling endpoint, a custom UDP endpoint, or any other simulation entry point. Peer-supplied; MUST be treated as untrusted (see {{simulation-uri-untrusted}}). `null` when the region has no real-time simulation layer (static scene, offline viewing).
+: The real-time simulation layer endpoint for this region. Opaque to the JMAP server. May be a WebSocket ({{RFC6455}}) URL, a WebRTC signaling endpoint, a custom UDP endpoint, or any other simulation entry point. Peer-supplied; MUST be treated as untrusted (see {{simulation-uri-untrusted}}). `null` when the region has no real-time simulation layer (static scene, offline viewing). When the JMAP Scene WebSocket capability ({{JMAP-SCENE-WSS}}) is present, the JMAP WebSocket ({{RFC8887}}) carries discrete spatial events independently of `simulationUri`.
 
 `spawnPosition` (Number[3]):
 : Default position where new avatars appear when entering the region. Default: `[0, 0, 0]`.
@@ -621,7 +628,7 @@ Example create:
 }
 ~~~
 
-The server MUST return `invalidArguments` if `blobId` does not reference a valid blob. The server MUST return `overQuota` if the asset exceeds `maxAssetSizeBytes`.
+The server MUST reject the create if `blobId` does not reference a valid blob (see SetError Conditions below for the applicable error type). The server MUST return `overQuota` if the asset exceeds `maxAssetSizeBytes`.
 
 Example create request with full JMAP envelope:
 
@@ -950,7 +957,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `viewHint` (String), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `accountId`, `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
@@ -1040,7 +1047,7 @@ Response:
 
 #### Updating a Region
 
-`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `viewHint`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
+`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
 When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidArguments` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
 
@@ -1147,7 +1154,7 @@ Response:
 | `bounds.min[i] > bounds.max[i]` for any component | Each component of `min` MUST be less than or equal to the corresponding component of `max`. |
 | `bounds.min` or `bounds.max` is not a 3-element numeric array | Position arrays MUST be `[x, y, z]` Numbers. |
 | `accessPolicy` is not one of `"public"`, `"invite"`, `"space"` | Unrecognized access-policy values are invalid. |
-| `viewHint` contains a value the server considers invalid | While clients tolerate unknown viewHint values, the server MAY reject nonsensical values at write time. Standard values: `"3d"`, `"2d-topdown"`, `"2d-side"`, or reverse-domain extensions. |
+| `viewHint` contains a value the server considers invalid | While clients tolerate unknown viewHint values, the server MAY reject nonsensical values at write time. Standard values: `"3d"`, `"2d-topdown"`, `"2d-side"`, `"ar"`, or reverse-domain extensions. |
 | `spawnPosition` is not a valid 3-element numeric array | Position must be `[x, y, z]` finite Numbers. |
 | `spawnOrientation` is not a valid unit quaternion | Quaternion must be `[x, y, z, w]` with magnitude within epsilon of 1.0. |
 | `environment` contains values the server rejects | When the server validates environment sub-fields (deployment-defined schema), invalid field types or values trigger this error. |
@@ -1234,7 +1241,7 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 : Exact match on access policy. One of `"public"`, `"invite"`, or `"space"`.
 
 `viewHint` (String, optional):
-: Exact match on the `viewHint` field. Standard values include `"3d"`, `"2d-topdown"`, and `"2d-side"`; deployment-specific values in reverse-domain notation are also valid filter values.
+: Exact match on the `viewHint` field. Standard values include `"3d"`, `"2d-topdown"`, `"2d-side"`, and `"ar"`; deployment-specific values in reverse-domain notation are also valid filter values.
 
 `hasSimulationUri` (Boolean, optional):
 : When `true`, filter to regions where `simulationUri` is non-null. When `false`, filter to regions where `simulationUri` is null.
@@ -1896,9 +1903,9 @@ A user enters a region by calling `SceneAvatar/set` with a `create`:
 `regionId` (String, required):
 : The SceneRegion to enter.
 
-Optional: `visualRef` (String), `visualType` (String), `customProperties` (Object).
+Optional: `displayName` (String), `visualRef` (String), `visualType` (String), `customProperties` (Object).
 
-The server sets `id`, `userId`, `displayName` (from the user profile or ChatContact when {{JMAP-CHAT}} is present), `position` (to the region's `spawnPosition`), `orientation` (to the region's `spawnOrientation`), `joinedAt`, and `leftAt` (to `null`).
+The server sets `id`, `userId`, `position` (to the region's `spawnPosition`), `orientation` (to the region's `spawnOrientation`), `joinedAt`, and `leftAt` (to `null`). If `displayName` is not supplied by the client, the server sets it from the user profile or ChatContact when {{JMAP-CHAT}} is present.
 
 Example create:
 
@@ -1933,7 +1940,7 @@ The server responds:
 }
 ~~~
 
-The server MUST return `notFound` when `regionId` does not exist or the caller does not have access. The server MUST return `forbidden` when the region's `accessPolicy` is `"invite"` and the caller has not been granted access, or `"space"` and the caller is not a member of the bound Space. The server MUST return `overQuota` when `maxAvatarsPerRegion` would be exceeded.
+The server MUST return `notFound` when `regionId` does not reference an existing SceneRegion (this error is also used when the caller lacks access, to prevent region-id enumeration; see Access Control). The server MUST return `forbidden` when the region exists and the caller is identified but denied by policy: `accessPolicy` is `"invite"` and the caller has not been granted access, or `"space"` and the caller is not a member of the bound Space. The server MUST return `overQuota` when `maxAvatarsPerRegion` would be exceeded.
 
 Example create request with full JMAP envelope:
 
@@ -2171,7 +2178,7 @@ Example error response -- forbidden (invite-only region):
 
 **One-avatar-per-region constraint:**
 
-When a user already has an active SceneAvatar (`leftAt: null`) in the same region, the server MUST NOT create a duplicate. Instead, the server MUST return the existing record in the `updated` map. This is not a SetError -- the server silently handles the idempotency by acknowledging the existing presence. Clients receive a successful response with the existing avatar's current state.
+When a user already has an active SceneAvatar (`leftAt: null`) in the same region, the server MUST NOT create a duplicate. Instead, the server MUST return an `alreadyExists` SetError in the `notCreated` map with an `existingId` property containing the id of the current avatar record. Clients can then use `SceneAvatar/get` to retrieve the existing avatar's state.
 
 When the user has an active avatar in a different region, the server MUST set `leftAt` on the previous avatar (auto-eject) before creating the new one, enforcing the one-region-at-a-time constraint. This is also not a SetError; it is implicit auto-eject behavior.
 
@@ -2385,7 +2392,7 @@ Deployments that require position integrity SHOULD implement server-side positio
 
 The JMAP server observes who enters which regions, when, for how long, and (at periodic intervals) where they are. This metadata is privacy-sensitive. Deployments requiring spatial privacy SHOULD minimize the frequency of position reconciliation between the simulation layer and the JMAP server.
 
-When a SceneRegion's `activeCallId` references a VTCCall with `e2eeEnabled` set to `true`, the server SHOULD suppress `SceneAvatarEvent` delivery (enter, leave, and update events) for that region to subscribers who are not participants in the bound VTCCall. This prevents the Scene WebSocket channel from leaking real-time call participant presence metadata that E2EE is designed to protect. Servers that cannot implement this suppression MUST document the limitation.
+When a SceneRegion's `activeCallId` references a VTCCall with `e2eeEnabled` set to `true`, the server SHOULD suppress `SceneAvatarEvent` ({{JMAP-SCENE-WSS}}) delivery (enter, leave, and update events) for that region to subscribers who are not participants in the bound VTCCall. This prevents the Scene WebSocket channel from leaking real-time call participant presence metadata that E2EE is designed to protect. Servers that cannot implement this suppression MUST document the limitation.
 
 ## Object Density as Denial of Service
 
@@ -2691,7 +2698,7 @@ The following design choices were left to deployments rather than prescribed:
 - **2D rendering style.** For regions with `viewHint` of `"2d-topdown"` or `"2d-side"`, the rendering style (pixel art, vector, isometric projection, sprite sheets) is client-defined. The spec provides spatial coordinates and advisory view orientation; visual style is a client concern.
 - **AR experience.** For regions with `viewHint` of `"ar"` and a `geoAnchor`, the entire augmented reality user experience is client-defined. The spec provides geographic anchoring (where in the reference frame) and object positions (where relative to the anchor); everything else is the client's responsibility. This includes: compositing virtual objects onto the camera feed; occlusion, lighting estimation, and shadow casting; surface detection and plane tracking; GPS, visual-inertial odometry, or other tracking mechanisms; drift correction and relocalization; minimap or navigation UI; how to present the experience on phones, AR glasses, heads-up displays, or any other form factor. The spec says where objects are. The client decides how to show them.
 - **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
-- **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments SHOULD follow the color representation convention defined in {{JMAP-CHAT}} ({{color-convention}}): W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
+- **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments SHOULD follow the color representation convention defined in {{JMAP-CHAT}}, Section 2.1: W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
 
 # Complete Lifecycle Examples {#lifecycle-examples}
 
@@ -3126,7 +3133,7 @@ The admin places three objects in a single batch: a static back wall, an interac
       "regionId": "01JXKRBN7KWMPS46GFHDJT9R10",
       "name": "Demo Physics Cube",
       "position": [15, 3, 0],
-      "orientation": [0.1, 0.2, 0.05, 0.974],
+      "orientation": [0.1, 0.2, 0.05, 0.9734],
       "scale": [1, 1, 1],
       "visualRef": "blob-gltf-cube-001",
       "visualType": "model/gltf-binary",

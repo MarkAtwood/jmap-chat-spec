@@ -152,9 +152,12 @@ advertises the Scene data model and methods.
 # Ephemeral Event Types {#event-types}
 
 This specification defines three ephemeral event types for spatial
-state.  These events are delivered as server-to-client text frames
-over the WebSocket connection.  They are not persisted as JMAP
-objects and carry no state token.
+state.  `SceneAvatarEvent` and `SceneObjectEvent` are server-to-client
+only.  `SceneInteractionEvent` is bidirectional: clients submit
+interactions by sending a `SceneInteractionEvent` frame to the server,
+and the server validates and relays it to subscribers (see
+{{scene-interaction-event}}).  Events are not persisted as JMAP objects
+and carry no state token.
 
 ## SceneAvatarEvent {#scene-avatar-event}
 
@@ -357,6 +360,24 @@ application-layer payload and has no special meaning to the Scene
 protocol itself -- the deployment chose to include it for its own
 game logic.
 
+### Client-to-Server Submission {#interaction-submission}
+
+A client initiates an interaction by sending a `SceneInteractionEvent`
+frame to the server over the JMAP WebSocket.  The `userId` MUST match
+the authenticated session's user.  Before relaying, the server MUST
+verify:
+
+1. The `userId` corresponds to the authenticated session.
+2. The user has an active avatar (`leftAt: null`) in the specified
+   `regionId`.
+3. The `objectId` references a SceneObject in that region with
+   `interactable: true`.
+
+If validation fails, the server MUST silently discard the frame (no
+error is returned to the sender).  On success, the server relays the
+event to all subscribers of that region per the delivery rules in
+{{visibility}} and blocked-sender suppression.
+
 # Scene Stream Control Messages {#stream-control}
 
 ## SceneStreamEnable {#scene-stream-enable}
@@ -469,9 +490,13 @@ ephemeral subscription in its entirety.  There is no partial-update
 mechanism; the client re-sends the full desired subscription state.
 
 If a `regionIds` entry refers to a region in which the authenticated
-user does not have an active avatar, that entry is silently ignored.
-If all entries are ignored (or `regionIds` is an empty array), the
-subscription is effectively empty: no events will be delivered.
+user does not have an active avatar, that entry produces no events
+but is retained in the subscription record.  If the user later
+enters (or re-enters) that region, events begin (or resume) without
+a new `SceneStreamEnable`.  If all entries refer to inactive regions
+(or `regionIds` is an empty array), the subscription is effectively
+empty: no events will be delivered until the user enters a listed
+region.
 
 Unrecognized values in `eventTypes` that appear alongside recognized
 values MUST be silently ignored; only the recognized values take
@@ -691,7 +716,7 @@ fields to correlate events with local state.
 ## Visibility Filtering {#visibility}
 
 The server MUST apply the same visibility contract defined in
-{{JMAP-SCENE}} (Section "Visibility Contract") to ephemeral events.
+{{JMAP-SCENE}}, Section 7.3 to ephemeral events.
 The server MUST NOT deliver a `SceneObjectEvent` for an object the
 client would not receive in a `SceneObject/get` response.
 
