@@ -207,7 +207,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
 : A new message to deliver. Fields:
 
   - `senderMsgId` (String) — Sender-assigned ULID. Functions as an idempotency key; if this value is already known for the given chat, the receiver MAY silently discard the duplicate.
-  - `body` (String) — Message content. Validated per step 5 of {{new-message-validation}}.
+  - `body` (String) — Message content. Validated per step 8 of {{new-message-validation}}.
   - `bodyType` (String) — MIME type of `body`. Validated against `supportedBodyTypes`.
   - `sentAt` (UTCDate) — Sender's claimed composition time. Stored as-is; MUST NOT be used for ordering.
   - `attachments` (Object[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob.
@@ -266,22 +266,25 @@ Before storing a new message, the server MUST perform the following steps in ord
 1. Verify caller identity via the authentication layer.
 2. Confirm `senderUserId` matches the verified identity. Reject immediately if they differ.
 3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id; otherwise create a new Chat record with this chatId and set `contactId` to the sender (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat.
-4. Confirm the sender is not blocked by the owner. If `blocked` is `true` on the sender's ChatContact record, silently drop the message and return success (to avoid disclosing block status to the sender).
-5. Validate `body` byte length against `maxBodyBytes`; reject with `invalidArguments` if exceeded. For plaintext `bodyType` values, also validate UTF-8 encoding. For encrypted `bodyType` values (e.g., `"application/mls-ciphertext"`), `body` is opaque ciphertext; servers MUST NOT parse or transform it beyond byte-length checking.
-6. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type SHOULD include it in `supportedBodyTypes`.
-7. Validate each attachment `filename` (MUST NOT contain `/`, `\`, or null bytes), `contentType` (MUST be a syntactically valid MIME type string), and `size`.
-8. Fetch each attachment blob from its `fetchUrl`; verify the byte count against `size` and the content against `sha256`. Reject with `invalidArguments` if either check fails. See {{ssrf}} for restrictions on `fetchUrl` targets.
-9. Validate each `mentions` entry's `offset + length` against the body byte length. Reject with `invalidArguments` if any entry exceeds the body bounds.
-10. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, `"admins"`, or if `offset + length` exceeds the body byte length. The receiving server MUST NOT use the sending server's send-time recipient set (if any) for authorization or push-elevation decisions; the recipient set is computed by the receiving server at delivery time as defined in {{broadcast-mention-resolution}}.
-11. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. If `burnOnRead` is also `true`, register a trigger to hard-delete the message when `readAt` is set.
+4. For channel chats: verify that no active SpaceBan exists for `senderUserId` in the Space containing the identified channel. If a SpaceBan exists, silently drop the message and return success.
+5. For channel chats: verify that `senderUserId` holds the `"send"` permission in the identified channel per the Space permission resolution defined in {{JMAP-CHAT}}. If the sender lacks `"send"`, reject with `forbidden`.
+6. For channel chats where the channel's `slowModeSeconds` is non-zero: verify that `senderUserId` is not rate-limited by the slow-mode policy. If the sender's last accepted message in this channel was received within `slowModeSeconds` seconds and the sender does not hold `"manage_channels"` permission, reject with `rateLimited`.
+7. Confirm the sender is not blocked by the owner. If `blocked` is `true` on the sender's ChatContact record, silently drop the message and return success (to avoid disclosing block status to the sender).
+8. Validate `body` byte length against `maxBodyBytes`; reject with `invalidArguments` if exceeded. For plaintext `bodyType` values, also validate UTF-8 encoding. For encrypted `bodyType` values (e.g., `"application/mls-ciphertext"`), `body` is opaque ciphertext; servers MUST NOT parse or transform it beyond byte-length checking.
+9. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type SHOULD include it in `supportedBodyTypes`.
+10. Validate each attachment `filename` (MUST NOT contain `/`, `\`, or null bytes), `contentType` (MUST be a syntactically valid MIME type string), and `size`.
+11. Fetch each attachment blob from its `fetchUrl`; verify the byte count against `size` and the content against `sha256`. Reject with `invalidArguments` if either check fails. See {{ssrf}} for restrictions on `fetchUrl` targets.
+12. Validate each `mentions` entry's `offset + length` against the body byte length. Reject with `invalidArguments` if any entry exceeds the body bounds. When `bodyType` is `"application/jmap-chat-rich"`, the `mentions` and `broadcastMentions` arrays MUST be empty (per {{JMAP-CHAT}}); if either is non-empty, reject with `invalidArguments`. The receiving server MUST parse the rich body to extract inline `"mention"` and `"broadcast"` spans for push-notification mention elevation and delivery-time recipient-set computation.
+13. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, `"admins"`, or if `offset + length` exceeds the body byte length. The receiving server MUST NOT use the sending server's send-time recipient set (if any) for authorization or push-elevation decisions; the recipient set is computed by the receiving server at delivery time as defined in {{broadcast-mention-resolution}}.
+14. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. If `burnOnRead` is also `true`, register a trigger to hard-delete the message when `readAt` is set.
 
 Failure at any step MUST result in rejection with no data stored and no side effects.
 
 ### Edit and Reaction Validation
 
-For `edit` payloads: perform steps 1 through 4 of {{new-message-validation}}, then validate `body` and `bodyType` per steps 5 and 6, and validate `mentions` and `broadcastMentions` against the new body per steps 9 and 10. Verify that the identified message exists in the given chat and that `senderUserId` matches the recorded sender of that message. Reject if the sender does not match.
+For `edit` payloads: perform steps 1 through 7 of {{new-message-validation}}, then validate `body` and `bodyType` per steps 8 and 9, and validate `mentions` and `broadcastMentions` against the new body per steps 12 and 13. Verify that the identified message exists in the given chat and that `senderUserId` matches the recorded sender of that message. Reject if the sender does not match.
 
-For `reactionUpdate` payloads: perform steps 1 through 4. Validate `emoji` as a non-empty string. For `"add"`, verify the target message exists. For `"remove"`, verify the target reaction exists and was originally added by `senderUserId`. Reject if any check fails.
+For `reactionUpdate` payloads: perform steps 1 through 7. Validate `emoji` as a non-empty string. For `"add"`, verify the target message exists. For `"remove"`, verify the target reaction exists and was originally added by `senderUserId`. Reject if any check fails.
 
 ### Response
 
@@ -324,7 +327,7 @@ Method name: `Peer/receipt`
 : The ReadDisposition value indicating why the message was acknowledged. SHOULD be present when `readAt` is present. If `readAt` is present and `readDisposition` is absent, the receiving server MUST store `"displayed"`. See ReadDisposition in {{JMAP-CHAT}}. Unrecognized values MUST be stored as-is.
 
 `readerUserId` (String):
-: The ChatContact.id of the acknowledging user. For group chats, used to update the per-recipient delivery receipt in `deliveryReceipts`.
+: The ChatContact.id of the acknowledging user. For group chats, used to update the per-recipient delivery receipt in `deliveryReceipts`. The `readerUserId` MUST match the authenticated identity of the calling server; the receiver MUST reject the request with `forbidden` if they differ.
 
 ### Sender Behavior
 

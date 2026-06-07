@@ -279,7 +279,7 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
   - `vtc`: `{"protocol": "webrtc", "callId": "...", "joinPassword": "..."}`
   - `payment`: `{"network": "lightning", "currency": "BTC"}`
   - `blob`: `{"maxBytes": 10485760}`
-  - `calendar-event`: `{"title": "...", "startTime": "..."}`
+  - `calendar-event`: `{"startsAt": "...", "endsAt": "..."}`
   - `task`: `{"title": "...", "status": "..."}`
   - `filenode`: `{"name": "...", "mediaType": "..."}`
 
@@ -341,7 +341,7 @@ The canonical textual forms presented by composers are `@everyone`, `@here`, and
 
 The set of recipients targeted by a BroadcastMention is computed at delivery time on each receiving server, against that server's local view of membership, presence, and administrative permissions. The sending server MAY compute its own set at send time for sender-side UX (for example, displaying "you mentioned N people") but its send-time set is informational only; the receiving server's delivery-time set is authoritative for push urgency, notification routing, and badging. Where the sending and receiving servers reside on different deployments and disagree on which members qualify for `"here"` or `"admins"`, each receiving server's view governs delivery on its own owners' accounts.
 
-Sending a Message with a non-empty `broadcastMentions` array, or with any rich-body `"broadcast"` span ({{rich-body}}), requires the `"mention_broadcast"` Space permission. Servers MUST reject `Message/set` create or update requests that would write a broadcast mention from a sender lacking this permission with `forbidden`.
+Sending a Message with a non-empty `broadcastMentions` array, or with any rich-body `"broadcast"` span ({{rich-body}}), requires the `"mention_broadcast"` Space permission. Servers MUST reject `Message/set` create or update requests that would write a broadcast mention from a sender lacking this permission with `forbidden`. For group chats that are not part of any Space (and thus have no SpaceRole permission graph), broadcast mentions are unrestricted; the `"mention_broadcast"` permission check applies only to channel chats within a Space.
 
 ## MessageRevision {#message-revision}
 
@@ -456,7 +456,7 @@ All Chat IDs are ULIDs {{ULID}} assigned by the creating server at the moment th
 
 For a **direct chat**, the creating server is the one whose owner sends the first message. Before assigning a new chatId, the server MUST check whether a direct chat with the relevant contactId already exists locally. If one exists, the server MUST use the existing chatId rather than creating a new one. When a `Peer/deliver` arrives for a direct chat with an unknown chatId, the receiving server creates a new Chat record with that chatId and sets `contactId` to the sender.
 
-For a **group chat**, the creating server assigns the chatId and distributes it to all initial members via `Peer/groupUpdate` ({{peer-groupupdate}}) before any messages are sent.
+For a **group chat**, the creating server assigns the chatId and distributes it to all initial members via `Peer/groupUpdate` ({{JMAP-CHAT-FED}}) before any messages are sent.
 
 **Channel** Chats are created as part of a Space via the `addChannels` patch key in `Space/set` ({{space-set}}). Their chatId is assigned by the server at that time.
 
@@ -623,7 +623,7 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `deliveredAt` (UTCDate, optional, server-set):
 : Time the first outbound delivery was acknowledged.
 
-`readAt` (UTCDate, optional, server-set):
+`readAt` (UTCDate, optional):
 : Time the owner acknowledged reading this message.
 
 `readDisposition` (String, optional, server-set):
@@ -637,10 +637,10 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 
 Note: {{JMAP-OBJ-HISTORY}} defines a general JMAP mechanism for retrieving historical object versions via `Foo/get` with `includeReplaced`. This specification instead embeds edit history inline within the Message object, trading on-demand retrieval for always-available history at the cost of response size. Servers implementing both specifications MAY register `"Message"` with `canRetrieveHistory: true` in the JMAP Data Types Registry, enabling `Message/get` with `includeReplaced` as an alternative retrieval path for clients that prefer on-demand history.
 
-`deletedAt` (UTCDate, optional, server-set):
+`deletedAt` (UTCDate, optional):
 : Time the message was deleted. When set, `body` is empty and `attachments` is empty. The record is retained as a tombstone unless a hard-delete rule applies.
 
-`deletedForAll` (Boolean, optional, server-set):
+`deletedForAll` (Boolean, optional):
 : `true` when deletion was propagated to all participants via `Peer/retract`.
 
 Note: {{JMAP-METADATA}} defines per-type `metadata` and `privateMetadata` properties for data types declared in the `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. Implementations MAY include `Message` in that map, enabling use cases such as per-message bookmarks or personal labels readable and writable via `Message/get` and `Message/set` without modifying the message record itself.
@@ -946,7 +946,7 @@ Standard JMAP `/set`.
 `create` with `kind: "direct"` accepts:
 
 `contactId` (String, required):
-: ChatContact.id of the other participant. If a direct Chat with this contactId already exists, the server MUST return it in `updated` rather than creating a duplicate. Otherwise the server assigns a new ULID per {{chat-id}}.
+: ChatContact.id of the other participant. If a direct Chat with this contactId already exists, the server MUST reject the create with a SetError of type `alreadyExists`, including the existing Chat's id in the `existingId` field. Otherwise the server assigns a new ULID per {{chat-id}}.
 
 #### Creating a Group Chat
 
@@ -1069,7 +1069,7 @@ The server MUST:
 1. If the server retains edit history, push a MessageRevision onto `editHistory` with the current `body`, `bodyType`, and current server time as `editedAt`.
 2. Replace `body` and `bodyType` with the submitted values.
 3. Set `editedAt` to the current server time.
-4. Send `Peer/deliver` carrying an `edit` payload to all recipients (see {{peer-deliver}}).
+4. Send `Peer/deliver` carrying an `edit` payload to all recipients (see {{JMAP-CHAT-FED}}).
 
 #### Adding and Removing Reactions
 
@@ -1247,6 +1247,8 @@ Request: `accountId` (String), and exactly one of `inviteCode` (String) or `spac
 
 **Joining a public Space:** When `spaceId` is supplied, the server MUST verify that the identified Space has `isPublic: true`. If the Space does not exist or has `isPublic: false`, the server MUST return a `notPermitted` method error. On success, the server adds the caller to the Space's member list with no roles beyond `@everyone`.
 
+The server MUST verify that no active SpaceBan exists for the requesting account's owner in the target Space. If a ban exists, the server MUST reject the request with a `forbidden` method error.
+
 Response: `accountId` (String), `spaceId` (String).
 
 ## ReadPosition Methods
@@ -1394,7 +1396,7 @@ Additional fields are type-specific:
 | `"broadcast"` | `scope` (String) | Broadcast-scope @mention; `scope` is one of `"everyone"`, `"here"`, or `"admins"` (see {{broadcast-mention}}). Servers MUST reject a `"broadcast"` span with an unrecognized `scope` value with `invalidArguments`. |
 | `"link"` | `uri` (String) | Hyperlink; `uri` MUST be treated as untrusted |
 
-Servers MUST reject messages containing unknown span types with `invalidArguments`. Clients MUST silently ignore unknown span types and render the `text` field as plaintext, preserving forward compatibility.
+Servers MUST NOT reject messages solely because they contain unrecognized span types; this allows protocol evolution. Clients MUST silently ignore unknown span types and render the `text` field as plaintext, preserving forward compatibility.
 
 ## Example
 
@@ -1604,7 +1606,7 @@ Messages from a ChatContact whose `blocked` field is `true` are silently dropped
 
 Typing and presence push events whose sending or referenced ChatContact has `blocked: true` on the receiving owner's contact list are similarly dropped server-side before delivery to any of the owner's clients (see the `Chat/typing` server behavior in {{chat-typing}}, the typing and presence event sections in {{push}}, and the analogous rules in {{JMAP-CHAT-WSS}} and {{JMAP-CHAT-FED}}). The sender is not informed. This prevents a blocked user from leaking presence or attention patterns on any transport even though their messages are dropped.
 
-Companion capabilities also consume the `blocked` field for ephemeral event suppression: {{JMAP-VTC-WSS}} suppresses ring and call-end events from blocked contacts, and {{JMAP-SCENE-WSS}} suppresses spatial presence, object, and interaction events from blocked contacts. See those specifications for the per-event-type rules.
+Companion capabilities also consume the `blocked` field for ephemeral event suppression: {{JMAP-SCENE-WSS}} suppresses ring, call-end, spatial presence, object, and interaction events from blocked contacts. See that specification for the per-event-type rules.
 
 When `Chat.receiveTypingIndicators` is `false`, typing push events for that Chat are suppressed server-side (see `receiveTypingIndicators` in {{chat}} and the `Chat/typing` server behavior in {{chat-typing}}) before delivery to the owner. The sender is not informed; `Chat/typing` succeeds normally. This prevents a sender from inferring that typing indicators are being suppressed.
 
@@ -1792,6 +1794,34 @@ Can Reference Blobs:
 
 Can Use for State Change:
 : Yes
+
+Capability:
+: `urn:ietf:params:jmap:chat`
+
+Reference:
+: This document
+
+## JMAP Error Types Registration
+
+IANA is requested to register the following entries in the "JMAP Error Types" registry ({{RFC8620}} Section 9.5):
+
+Error Type:
+: `rateLimited`
+
+Description:
+: The request was rejected because the sender has exceeded the per-channel slow-mode rate limit (`slowModeSeconds`). Clients SHOULD wait before retrying.
+
+Capability:
+: `urn:ietf:params:jmap:chat`
+
+Reference:
+: This document
+
+Error Type:
+: `notPermitted`
+
+Description:
+: The request was rejected because the caller does not have permission to perform the requested operation (for example, joining a non-public Space without a valid invite code).
 
 Capability:
 : `urn:ietf:params:jmap:chat`

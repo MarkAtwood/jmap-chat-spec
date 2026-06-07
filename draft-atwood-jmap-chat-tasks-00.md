@@ -183,6 +183,8 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
   - A `jmap:` URI in the form `jmap:task:<accountId>:<taskListId>:<taskId>`, referencing a Task on the named account.
   - A standard `https://` URL pointing to an external task representation (for example, a link to a third-party issue tracker that bridges to JMAP Tasks).
 
+The `jmap:` URI scheme is defined in {{JMAP-CHAT-CALENDARS}}.
+
 `label` (String, optional):
 : Display label (typically the Task's title). Servers SHOULD set this to the Task's `title` when constructing MessageActions from Task records they have access to.
 

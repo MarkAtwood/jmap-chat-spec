@@ -262,6 +262,8 @@ Delivered to the client when a ChatContact's presence state changes and that con
 `presence` (String):
 : The updated presence state: `"online"`, `"away"`, `"busy"`, `"invisible"`, or `"offline"`.
 
+When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST deliver `"offline"` in outbound `ChatPresenceEvent` frames. The `"invisible"` value MUST NOT appear in events delivered to other users; it is an internal state that controls suppression only.
+
 `lastActiveAt` (UTCDate, optional):
 : Updated last-active timestamp, if known.
 

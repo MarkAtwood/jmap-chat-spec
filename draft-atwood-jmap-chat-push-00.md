@@ -204,7 +204,10 @@ The server MUST NOT deliver a `ChatMessagePush` in any of the following cases:
 - The message was stored before the `PushSubscription` was created.
 - The sender is the account owner (push is for inbound messages from other participants only).
 - At the time of delivery, the account is no longer a member of the Chat containing the message.
-- The Chat is muted (`Chat.muted: true` or within an active `muteUntil` period).
+- The Chat is muted (`Chat.muted: true` or within an active `muteUntil` period), UNLESS the message contains a broadcast mention whose resolved recipient set includes the account owner (per {{JMAP-CHAT}} Section on broadcast-mention mute bypass).
+- The message sender's ChatContact record has `blocked: true` on the account owner's contact list.
+
+For clarity: a direct `@user` mention (`hasMention: true` with empty `mentionScopes`) in a muted Chat does NOT bypass the mute suppression. Only broadcast mentions with non-empty `mentionScopes` targeting the account owner bypass mute, per {{JMAP-CHAT}}.
 
 ## Urgency
 
