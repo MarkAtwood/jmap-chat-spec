@@ -213,6 +213,8 @@ baseline:
 - Close task (move to `"completed"` or `"cancelled"`): creator OR assignee
   OR `manage_channels`.
 
+(Note: this is a suggested mapping reusing the Chat permission vocabulary for convenience. The semantic fit is loose; deployments may define task-specific permissions outside the closed vocabulary if preferred.)
+
 For enterprise deployments: add an external authorization layer above this.
 Define per-project, per-assignee, or per-sensitivity restrictions that
 override the Space-side defaults. The wire contract stays the same; the

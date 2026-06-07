@@ -408,6 +408,8 @@ notification; omitting it queues indefinitely. Shorter expiries suit higher urge
 In alert mode, `"high"` uses priority `10` (immediate) and `"normal"` uses priority `5`
 (power-efficient). `"low"` and `"very-low"` remain background regardless of mode.
 
+Note: `"high"` urgency MUST use alert mode for timely delivery. The background column entry for `"high"` is unreachable in correct implementations per the requirement above.
+
 Background push cannot guarantee timely delivery regardless of urgency. For prompt
 delivery of high-urgency notifications, servers MUST use alert mode.
 

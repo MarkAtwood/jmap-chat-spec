@@ -29,7 +29,7 @@ specification:
 ## How to read this guide
 
 `draft-atwood-jmap-chat-calendars-00` deliberately specifies a minimal wire surface
-(two new optional fields, one new capability) and defers authorization, privacy
+(one new optional field on Space, one new capability with three configuration properties) and defers authorization, privacy
 policy, and operational defaults to implementations. Calendar authorization in
 production deployments ranges from "any team member can do anything" (small
 collaborative groups) to deeply layered enterprise models with LDAP/AD groups,
@@ -597,4 +597,4 @@ underlying spec to integrate.
 | Underlying JMAP Chat protocol | `draft-atwood-jmap-chat-00.md` |
 | The JMAP Chat Calendars spec | `draft-atwood-jmap-chat-calendars-00.md` |
 | Main draft deployment topics not specific to calendars | `jmap-chat-implementer-guide.md` |
-| Push notification rendering of calendar-event MessageActions | `jmap-chat-push-platform-guide.md` |
+| Push notification rendering of calendar-event MessageActions | `jmap-chat-push-platform-guide.md` (planned; not yet covered in the push platform guide) |

@@ -62,7 +62,7 @@ Under a vendor namespace (e.g., `chat.example.com`):
 | `color` | `String|Object|Array` | Color value per the Color Representation convention in {{JMAP-CHAT}} (sRGB hex string, W3C Design Tokens object, or CAM16 coordinate array). |
 | `category` | `String` | User-defined folder or grouping label. |
 | `starred` | `Boolean` | Secondary "favorites" tier beyond server-side pinning. |
-| `pinPosition` | `UnsignedInt` | Client-side sort key for pinned chats, independent of server `pinnedAt`. |
+| `pinPosition` | `UnsignedInt` | Client-side sort key for pinned chats in the sidebar. |
 | `snoozedUntil` | `UTCDate` | Hide the chat from default views until this time. |
 | `draftReminder` | `UTCDate` | Nudge the user to reply after this time. |
 | `notes` | `String` | Freeform scratchpad ("vendor chat for project X"). |
@@ -94,10 +94,7 @@ Under a vendor namespace (e.g., `chat.example.com`):
 
 ### Considerations
 
-- `pinPosition` is purely client-side. If the server also has a `pinnedAt`
-  field, clients must decide which takes precedence. A common pattern is:
-  server `pinnedAt` controls *whether* a chat is pinned; `pinPosition`
-  controls *order* among pinned chats.
+- `pinPosition` is purely client-side. The spec defines `pinnedMessageIds` for pinning messages within a chat. For pinning chats themselves in the sidebar, use private metadata (e.g., a `pinPosition` key). There is no server-side 'chat is pinned' indicator in the spec.
 - `snoozedUntil` requires the client to re-evaluate on each sync. Servers
   do not enforce snooze; it is a UI hint.
 - `wallpaper` referencing a `blobId` depends on the blob remaining available.
@@ -232,8 +229,7 @@ Use sparingly — most per-user preferences belong in `privateMetadata`.
 - Shared metadata is visible to all readers. Do not store anything sensitive
   or user-specific here.
 - Write access to shared metadata follows the same ACL as the parent object's
-  `/set`. In a Chat context this means all local participants can write shared
-  metadata unless the server layers additional restrictions.
+  `/set`. For direct chats, the owner may write freely. For group chats, servers SHOULD restrict shared metadata writes to admins (consistent with other shared-state mutations like `name` and `description`). For channel chats, servers SHOULD restrict writes to members with appropriate Space permissions (e.g., `"manage_channels"`).
 - Integration metadata (`integrationStatus`) is a natural fit for bot-written
   annotations. Bots SHOULD use a vendor namespace scoped to the integration
   (e.g., `jira.example.com`) to avoid collisions with user-facing namespaces.

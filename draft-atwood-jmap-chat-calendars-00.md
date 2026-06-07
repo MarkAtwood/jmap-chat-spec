@@ -101,7 +101,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:calendars"]` is a J
 : `true` if the server parses `.ics` ({{RFC5545}}) attachments to surface structured CalendarEvent representations; `false` otherwise. See {{ics-parsing}}.
 
 `supportsAvailabilityLookup` (Boolean):
-: `true` if the server exposes `Principal/getAvailability` ({{JMAP-CALENDARS}}) in the in-chat context defined here; `false` otherwise. See {{availability}}.
+: `true` if the server exposes `Principal/getAvailability` ({{JMAP-CALENDARS}}) in the in-chat context defined here; `false` otherwise. See {{availability}}. The method name `Principal/getAvailability` references the free/busy query mechanism defined in {{JMAP-CALENDARS}}. Implementations SHOULD track the actual method name in the version of JMAP Calendars they support, as it may have been renamed across draft revisions.
 
 # Space Extension: Calendar Binding {#calendar-binding}
 
@@ -190,7 +190,7 @@ This specification does not define a new method for RSVPing to events. RSVPs are
 A client receiving a chat message with a calendar-event MessageAction and wishing to expose an RSVP UI SHOULD:
 
 1. Identify the recipient user's `Principal.id` on the relevant account.
-2. Compose a `CalendarEvent/set` request patching the `participants/{principalId}/participationStatus` field on the referenced CalendarEvent to one of `"accepted"`, `"declined"`, `"tentative"`, or `"delegated"` per {{JMAP-CALENDARS}}.
+2. Compose a `CalendarEvent/set` request patching the `participants/{participantKey}/participationStatus` field on the referenced CalendarEvent to one of `"accepted"`, `"declined"`, `"tentative"`, or `"delegated"` per {{JMAP-CALENDARS}} (where `{participantKey}` is the map key of the current user's participant entry, which the client MUST look up by matching its own identity within the participants map).
 3. Submit the request via the standard JMAP transport.
 4. On success, the chat client SHOULD update its local view of the message (re-fetch the CalendarEvent or update the cached participant state).
 

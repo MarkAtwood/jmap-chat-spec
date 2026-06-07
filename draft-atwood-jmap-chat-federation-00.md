@@ -185,6 +185,8 @@ Servers MAY include the following additional field:
 
 The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
 
+All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `contactId` depending on the method). Despite the varying names, all serve the same role: the authenticated identity of the calling server's user. Servers MUST validate all such fields identically against the authenticated peer identity.
+
 ## Peer/deliver {#peer-deliver}
 
 Delivers a new message, an edit, or a reaction update from a remote mailbox. Exactly one of `message`, `edit`, or `reactionUpdate` MUST be present in a given request.
@@ -215,7 +217,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). The receiving server is authoritative for computing the local recipient set; the sending server's set is informational only. See {{broadcast-mention-resolution}}.
   - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection.
   - `replyTo` (String, optional) — The `senderMsgId` of the message being replied to, as assigned by the sending server. The receiver resolves this to a local message `id` via the `senderMsgId` index. See {{outbound-preparation}} for how the sending server constructs this value.
-  - `threadRootId` (String, optional) — The `senderMsgId` of the thread root message, as assigned by the sending server. The receiver resolves this similarly. See {{outbound-preparation}}.
+  - `threadRootId` (String, optional) — The `senderMsgId` of the thread root message, as assigned by the sending server. The receiver resolves this similarly. See {{outbound-preparation}}. If the receiver cannot resolve a `replyTo` or `threadRootId` senderMsgId to a local message id (because the referenced message was never received or was hard-deleted), the receiver MUST store the message with `replyTo` and/or `threadRootId` set to null. The message MUST NOT be rejected on this basis.
   - `senderExpiresAt` (UTCDate, optional) — Hard-deletion deadline. Servers MUST reject a value that is already in the past at delivery time with `invalidArguments`.
   - `burnOnRead` (Boolean, optional) — When `true`, the receiver MUST permanently hard-delete the message immediately after setting `readAt`. When the recipient's effective `receiptSharing` preference is `false`, no `Peer/receipt` notification will reach the sender's server after the message is read — but the hard-delete on the receiving mailbox still occurs. See `burnOnRead` in {{JMAP-CHAT}}.
 
@@ -343,6 +345,11 @@ Before invoking `Peer/receipt` on a remote peer's server, the sending server MUS
 When the receiving server processes an inbound `Peer/receipt` call, the
 server MUST determine the effective receipt-sharing preference for the
 relevant Chat using the same rule as the Sender Behavior (defined above).
+The receiving server (which hosts the original message sender's account)
+checks the *original sender's* effective `receiptSharing` preference for
+the relevant Chat. This is semantically distinct from the Sender Behavior
+check (which checks the *reader's* preference). The combined effect: read
+receipts are exchanged only when both parties opt in.
 
 If the effective preference is `false`, the server MUST NOT update
 `Message.deliveryReceipts` with the supplied `readAt` or `readDisposition`
@@ -476,9 +483,10 @@ Method name: `Peer/groupUpdate`
   - `"removeMembers"` — One or more members were removed from the group.
   - `"updateRoles"` — One or more members' roles within the group were changed.
   - `"updateMetadata"` — The group's `name`, `description`, or `avatarBlobId` was changed.
+  - `"leave"` — The sender is voluntarily departing the group. Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list without requiring admin authorization. This is equivalent to `"removeMembers"` with `removedMemberIds: [senderUserId]` but does not require admin role.
 
 `members` (ChatMember[], required for `"create"`):
-: Full membership list at the time of this update, including the calling server's owner.
+: Full membership list at the time of this update, including the calling server's owner. If the `members` list contains ChatContact ids unknown to the receiving server, the receiver SHOULD create placeholder ChatContact records for them optimistically, populated with the id only. Full contact details will be learned via subsequent interactions.
 
 `addedMembers` (ChatMember[], required for `"addMembers"`):
 : The newly added members.
@@ -508,6 +516,10 @@ On success, the receiving server updates its local Chat record to reflect the ch
 
 `accountId` (String):
 : The account ID from the request.
+
+### Space-Level Federation
+
+This specification defines federation for group chats only. Space-level operations (channel creation, permission changes, SpaceBan propagation) are enforced by the Space-hosting server at delivery time (per the validation steps in Peer/deliver) but are not proactively federated to remote members. Remote members discover Space-level changes through rejected delivery attempts or via periodic `Space/get` synchronization.
 
 ## Peer/subscribePresence {#peer-subscribepresence}
 
@@ -633,7 +645,17 @@ The `deliveryState` field on an outbound Message transitions as follows:
 - `"pending"` — Initial state. The message is queued but no successful delivery has occurred.
 - `"delivered"` — All recipients (for group chats: all participants) have acknowledged receipt.
 - `"failed"` — Delivery has been abandoned after exhausting retries for one or more recipients.
-- `"received"` — The message has been explicitly read by the recipient (indicated via `Peer/receipt`).
+- `"received"` — The message has been explicitly read by the recipient (indicated via `Peer/receipt`). (Note: despite the name, this state indicates the message was *read* by the recipient, not merely received by the server. The `"delivered"` state indicates server-level receipt.)
+
+In group chats delivered to multiple peers, `deliveryState` reflects the aggregate: `"delivered"` when at least one peer has accepted, `"failed"` only when ALL peers have permanently failed. Per-recipient granularity is available via `deliveryReceipts` if supported.
+
+### Message Ordering
+
+Message ordering is receiver-determined: each server assigns `receivedAt` independently upon acceptance, and message order MAY differ across servers in the same group chat. This is a known property of the decentralized model. There is no vector clock, causal ordering, or consensus mechanism. Concurrent operations (retract vs. react, edit vs. edit) resolve by last-write-wins on each server independently.
+
+### Error Handling
+
+Errors in Peer/* methods follow the standard JMAP method-level error format ({{RFC8620}} Section 3.6.2). Error types used: `invalidArguments` (permanent — do not retry), `forbidden` (permanent — do not retry), `rateLimited` (transient — retry after backoff), `serverFail` (transient — retry with exponential backoff). HTTP-level 5xx responses or timeouts are treated as transient failures. Error responses MAY include a `description` field for debugging but MUST NOT disclose private information such as block status.
 
 # Security Considerations {#security}
 

@@ -166,7 +166,7 @@ The `pushState` token mechanism defined in {{RFC8887}} Section 4.3.5.1 applies t
 
 Ephemeral chat events — typing indicators and real-time presence updates from other contacts — do not correspond to persistent state changes and carry no state token. They are delivered as additional server-to-client text frames over the WebSocket connection when ephemeral push has been enabled by the client.
 
-Ephemeral event frames are interleaved with `StateChange` and `Response` frames on the same WebSocket connection and SHOULD be processed independently. Receiving a `ChatTypingEvent` or `ChatPresenceEvent` SHOULD NOT cause the client to update any locally cached state token or issue any JMAP method call.
+Ephemeral event frames are interleaved with `StateChange` and `Response` frames on the same WebSocket connection and SHOULD be processed independently. No ordering relationship is guaranteed between ephemeral event frames and `Response` or `StateChange` frames. Clients MUST NOT assume causal ordering between them. Receiving a `ChatTypingEvent` or `ChatPresenceEvent` SHOULD NOT cause the client to update any locally cached state token or issue any JMAP method call.
 
 ## Enabling Ephemeral Push {#chat-stream-enable}
 
@@ -187,6 +187,8 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 : Applicable when `"presence"` is in `dataTypes`. An explicit list of ChatContact ids for which presence events are requested, or `null` to receive presence events for all known ChatContacts. Ignored if `"presence"` is not in `dataTypes`.
 
 A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscription in its entirety. There is no partial-update mechanism; the client re-sends the full desired subscription state.
+
+The server does not send an explicit acknowledgment for `ChatStreamEnable`. Clients SHOULD NOT assume the subscription is active until they have received at least one server-originated frame (of any type) after sending `ChatStreamEnable`.
 
 If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"` or `"presence"`), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
 

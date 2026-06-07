@@ -105,7 +105,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:filenode"]` is a JS
 : Maximum total blob storage in bytes across all FileNodes in a single Space's file tree. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{RFC9425}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
 
 `autoCreateFileTree` (Boolean):
-: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. Default is `false`.
+: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. Default is `false`. This field is REQUIRED in the account-level capability object when `urn:ietf:params:jmap:chat:filenode` is advertised.
 
 # Space File Tree {#space-file-tree}
 
@@ -136,6 +136,8 @@ To locate the file tree root for a given Space, clients issue a `FileNode/query`
 
 Clients MAY cache the file tree root `id` for the duration of the session and re-query on `cannotCalculateChanges`.
 
+FileNode/changes responses MUST be scoped to file trees the requesting user has access to. A user who is not a member of a Space MUST NOT receive change notifications for that Space's file tree.
+
 # Permission Mapping {#permissions}
 
 Access to a Space's file tree is governed entirely by the requesting user's Space membership and role permissions, as defined in {{JMAP-CHAT}}. Space `ChannelPermission` per-channel overrides do not apply to file tree access.
@@ -164,11 +166,10 @@ The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following op
 ## filenodeId {#filenode-field}
 
 `filenodeId` (String, optional):
-: The `id` of a FileNode in the Space's file tree. When present in a `Message/set` create request for a channel Chat (a Chat with `kind: "channel"` as defined in {{JMAP-CHAT}}), the server uses that FileNode's blob as the attachment blob. When `filenodeId` is present on an Attachment, the fields `blobId`, `filename`, `contentType`, and `size` become OPTIONAL for that Attachment entry; the server MUST populate any absent fields from the referenced FileNode's properties before storage. If `filenodeId` is absent, these fields retain their normal required status per {{JMAP-CHAT}}. If the client supplies these fields, the server MAY validate them against the FileNode and MAY reject the request with `invalidArguments` if they conflict.
+: The `id` of a FileNode in the Space's file tree. When present in a `Message/set` create request for a channel Chat (a Chat with `kind: "channel"` as defined in {{JMAP-CHAT}}), the server uses that FileNode's blob as the attachment blob. When `filenodeId` is present on an Attachment, the fields `blobId`, `filename`, `contentType`, `size`, and `sha256` become OPTIONAL for that Attachment entry; the server MUST populate any absent fields from the referenced FileNode's properties before storage. If `filenodeId` is absent, these fields retain their normal required status per {{JMAP-CHAT}}. If the client supplies these fields, the server MAY validate them against the FileNode and MAY reject the request with `invalidArguments` if they conflict.
 
-When `filenodeId` is present, the server SHOULD verify:
+When `filenodeId` is present, the server MUST verify that the referenced FileNode exists and belongs to the same Space. If validation fails, the server MUST return a SetError of type `invalidProperties` naming `filenodeId`. Additionally, the server MUST verify:
 
-- The FileNode exists and belongs to the Space file tree for the Space containing the channel Chat.
 - The sender has at least read access to the FileNode under the mapping in {{permissions}}.
 
 The FileNode is not modified when linked as an attachment. The message's attachment blob is stored by reference at send time. Subsequent modification or deletion of the FileNode by any member does not affect the stored message.
