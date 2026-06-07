@@ -51,7 +51,7 @@ travel over the JMAP WebSocket. That data belongs on the simulation layer behind
 `simulationUri`. Scene ephemeral events are discrete, low-frequency signals that
 complement the simulation layer — they are not a replacement for it.
 
-Receiving a `SceneAvatarEvent` with `event: "entered"` MUST NOT trigger a
+Receiving a `SceneAvatarEvent` with `event: "entered"` SHOULD NOT trigger a
 `SceneAvatar/changes` call. The event itself contains enough information (avatar id,
 display name, region) for the UI update. If the client needs the full SceneAvatar record
 (visual representation, custom properties), it MAY issue a `SceneAvatar/get`, but this is
@@ -200,7 +200,7 @@ avatar.
   leaves a listed region, events stop; if they re-enter, events resume without a new
   `SceneStreamEnable`.
 - Empty array — no events delivered; effectively the same as `SceneStreamDisable` but
-  the subscription remains "active" (a subsequent `SceneStreamEnable` replaces it).
+  the subscription remains active (a subsequent `SceneStreamEnable` replaces it).
 
 **Event-type filtering** via `eventTypes`:
 

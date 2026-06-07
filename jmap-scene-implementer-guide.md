@@ -225,7 +225,7 @@ might include:
 
 **Color values in `environment` SHOULD follow the JMAP Chat color
 convention** (spec appendix, referencing `draft-atwood-jmap-chat-00`
-section 2, `{#color-convention}`). The preferred representation is the W3C
+section 2.1). The preferred representation is the W3C
 Design Tokens Community Group color token format (`{"$type": "color",
 "$value": "..."}` in CSS Color Level 4 syntax). When Design Tokens are not
 practical, use CAM16 uniform color space coordinates (`[J, a, b]` or

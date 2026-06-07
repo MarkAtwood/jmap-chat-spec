@@ -29,7 +29,7 @@ Games in this guide span three of the spec's four `viewHint` values:
 > `createdAt`, `updatedAt`, `description`, `spawnOrientation`,
 > `activeAvatarCount`, and optional binding fields (`chatId`,
 > `spaceId`, `channelId`, `activeCallId` -- shown only when relevant
-> to the game). All fields are defined in `draft-atwood-jmap-scene-00`.
+> to the game). All fields are defined in the [JMAP Scene specification](draft-atwood-jmap-scene-00.md).
 
 ### Board Region
 
@@ -588,9 +588,9 @@ layer validates all standard chess rules:
 ```
 
 **Game end conditions:** Checkmate (`winner` set, `phase: "finished"`),
-stalemate (`phase: "draw"`, `drawReason: "stalemate"`), draw by
-agreement, threefold repetition, fifty-move rule, or insufficient
-material.
+stalemate (`phase: "draw"`, `drawReason: "stalemate"` in
+`customProperties`), draw by agreement, threefold repetition,
+fifty-move rule, or insufficient material.
 
 ### Hidden Information
 
@@ -2238,10 +2238,10 @@ the Z axis from the side.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "scale": [64, 1, 2],
+  "scale": [64, 1, 1],
   "customProperties": {
     "terrainType": "solid",
-    "collisionBox": [64, 1, 2]
+    "collisionBox": [64, 1, 1]
   }
 }
 ```
@@ -2259,7 +2259,7 @@ the Z axis from the side.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "scale": [4, 1, 2],
+  "scale": [4, 1, 1],
   "customProperties": {
     "terrainType": "hazard",
     "damage": "instant-death"

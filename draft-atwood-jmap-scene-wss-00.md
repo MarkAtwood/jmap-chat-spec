@@ -86,8 +86,8 @@ delivery without the round-trip of a `StateChange` followed by a
 - An object being placed, moved, or removed (collaborative editing).
 - A user interacting with an object (click, grab, activate).
 
-These events are fire-and-forget signals — ephemeral, not persisted
-as JMAP objects — that drive spatial user interfaces.
+These events are ephemeral signals — not persisted as JMAP objects —
+that drive spatial user interfaces.
 
 High-frequency continuous state (avatar position at 10+ Hz, physics
 simulation) is NOT carried over the JMAP WebSocket.  That data
@@ -337,8 +337,6 @@ Server delivers to subscribers:
   }
 }
 ~~~
-
-Several things to note about this interaction:
 
 The `action` field uses reverse-domain notation
 (`com.example.game.cast-spell`) rather than a short name.  This is the

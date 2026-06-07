@@ -1346,7 +1346,7 @@ conditional support.
 - **Format-Agnostic**: Does the system support arbitrary visual formats via a
   media-type registry, or is it locked to a specific rendering technology?
 - **View-Mode Range**: Does the system support 2D top-down, 2D side-scroll,
-  and 3D perspectives, or is it locked to one view mode?
+  3D, and AR perspectives, or is it locked to one view mode?
 - **Simulation-Agnostic**: Does the system allow the deployment to choose its
   real-time transport (WebRTC, UDP, WebSocket, none), or does it prescribe
   a specific simulation/networking approach?
