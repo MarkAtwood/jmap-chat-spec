@@ -54,10 +54,11 @@ board dimensions. One unit = one tile/square/cell.
 
 > **Note:** Purely turn-based games with no real-time physics MAY use
 > `simulationUri: null`. In that case the server handles all game logic
-> via JMAP method calls alone (`SceneObject/set` for moves, custom
-> methods for turn validation). The `wss://` examples throughout this
-> guide show the general case; omitting `simulationUri` is a valid
-> choice for simple board games.
+> via JMAP method calls alone (`SceneObject/set` for moves; the server
+> enforces turn validation as application logic before applying updates,
+> returning standard SetError responses on rejection). The `wss://`
+> examples throughout this guide show the general case; omitting
+> `simulationUri` is a valid choice for simple board games.
 
 ### Game Pieces
 
@@ -4249,7 +4250,7 @@ What makes it a useful spec exercise:
   calls. There is no real-time physics engine; the server validates
   interaction events and issues `SceneObject/set` patches directly.
 
-### SceneRegion
+### Region
 
 A single room (or a short sequence of rooms). The example uses a
 single-room escape with a 2D top-down view. A multi-room variant
