@@ -67,8 +67,8 @@ account for this when interpreting the absence of an expected event.
 
 The server silently drops a `ChatTypingEvent` for a recipient when:
 
-- `Chat.receiveTypingIndicators` is `false` for the recipient account. This applies to
-  direct and group chats only; channel chats are exempt.
+- `Chat.receiveTypingIndicators` is `false` for this Chat on the recipient's Chat record.
+  This applies to direct and group chats only; channel chats are exempt.
 - The recipient is no longer a member of the chat at delivery time.
 - The sender is blocked by the recipient.
 
@@ -278,8 +278,10 @@ the new ephemeral subscription is active.
 
 ### Handling presence events
 
-`ChatPresenceEvent` delivers partial updates — individual field changes when something
-changes. It does not deliver a full presence snapshot on connection.
+`ChatPresenceEvent` always includes the `contactId` and `presence` fields. The auxiliary
+fields (`lastActiveAt`, `statusText`, `statusEmoji`) are optional — absence means
+unchanged, while explicit `null` means cleared. Clients must initialize presence state
+from `ChatContact/get` at connection time.
 
 On first connect, clients SHOULD populate their presence display from the `ChatContact`
 objects returned by `ChatContact/get` — the `presence`, `lastActiveAt`, `statusText`,

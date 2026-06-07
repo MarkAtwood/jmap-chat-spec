@@ -186,9 +186,11 @@ A DID-bearing property is a String|null value, server-set, whose value is a DID 
 
 The property name is not required to be `did`. A consuming specification MAY define multiple DID-bearing properties on a single data type when different fields reference different identities. For example, a delegation record might carry both `delegatorDid` and `delegateeDid`.
 
+Properties that reference the DID of an entity other than the owning account (e.g., the DID of a remote peer on a ChatContact record) are not DID-bearing properties as defined in this section, even though they contain DID values. Such properties are governed by the consuming specification that defines them.
+
 All DID-bearing properties share these semantics:
 
-- **Server-set.** Clients MUST NOT include DID-bearing properties in create or update operations. Servers MUST reject such requests with `invalidArguments`.
+- **Server-set.** Clients MUST NOT include DID-bearing properties in create or update operations. Servers MUST reject such requests with a SetError of type `invalidProperties`, listing the DID-bearing property name in the `properties` array.
 - **Derived.** The value is always derived from the account binding, never stored independently. When the account's DID changes (rotation), all DID-bearing properties derived from that account reflect the new DID.
 - **Immutable per binding.** The value changes only when the underlying account-to-DID binding changes, never as a result of object mutation.
 
@@ -271,7 +273,7 @@ Clients receiving a `did` value on a JMAP object MAY verify the server's attesta
 
 1. Resolve the DID to a DID document using the standard resolution mechanism for the DID method ({{DID-CORE}} Section 7).
 2. Extract the authentication verification method from the DID document.
-3. Verify that the server's TLS certificate or session authentication key corresponds to a key authorized by the DID document.
+3. Verify that the server has demonstrated control of a key listed in the DID document's `authentication` verification relationship. For `did:web` where the JMAP server's domain matches the DID's domain component, successful TLS-authenticated retrieval of the DID document provides implicit domain binding. For all other cases, the server MUST present a signed assertion (e.g., a JWS or HTTP Message Signature) that validates against the DID document's authentication key.
 
 Verification is OPTIONAL. In a single-operator deployment where the client trusts the server, verification adds overhead with no security benefit. In a federated or zero-trust deployment, verification allows clients to detect a compromised or dishonest server that claims a DID it does not control.
 
@@ -358,6 +360,10 @@ A `did:web` DID is anchored to a domain name. An attacker who registers a visual
 ## Revoked DID Reuse
 
 DID methods that allow identifier reuse after revocation create a risk: a new controller could impersonate the previous controller's historical objects. Deployments SHOULD prefer DID methods where revoked identifiers cannot be reassigned (e.g., `did:key`, where the identifier is derived from the public key and cannot be reused with a different key).
+
+### Server-Generated DID Key Pairs
+
+When the server generates a `did:key` on behalf of a user and retains the private key (as in the server-generated binding model), the DID provides no cryptographic assurance independent of the server itself. The server can produce signatures indistinguishable from those of the user. Client verification (Section 6) provides no benefit in this model because the server trivially controls the signing key. Deployments that require DID verification to provide security guarantees independent of the server MUST use binding mechanisms where the private key is held exclusively by the user or by an independent identity provider.
 
 # IANA Considerations {#iana}
 

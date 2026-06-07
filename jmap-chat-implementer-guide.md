@@ -311,7 +311,7 @@ audit log records the action; the chat UI does not need to.
 
 The spec defines a closed permission vocabulary (`view`, `send`, `pin`,
 `manage_channels`, `manage_members`, `manage_roles`, `manage_space`, `ban`,
-`mention_broadcast`) and a receiver-side authorization model. It defers the mapping
+`mention_broadcast`, `start_call`) and a receiver-side authorization model. It defers the mapping
 from those wire-level permission names to deployment-internal authorization
 decisions, and several method-level "Requires X" clauses are explicitly
 softened to recommended defaults.
@@ -1242,7 +1242,7 @@ defaults, and UI exposure.
 - *Federation*: receipt suppression at the sender's server stops outbound
   `Peer/receipt` calls (federation `:318`); receipt suppression at the
   receiver's server stops inbound `Peer/receipt` from being delivered to
-  clients (federation `:329`). Both ends enforce; ` defense-in-depth.
+  clients (federation `:329`). Both ends enforce independently, providing defense in depth.
 
 **Common patterns.**
 
@@ -1307,11 +1307,12 @@ blocking is surfaced and managed at the UI level.
 - *Visibility of blocked status*: surfacing "you've been blocked" to the
   blocked party makes blocking hostile rather than protective. The spec's
   silent-suppression rule depends on the blocked party not knowing.
-- *Shared Space membership*: if Alice blocks Bob and they share a Space,
-  Alice still sees Space-level activity from Bob (messages in shared
-  channels). The block applies to direct messages and ephemeral events,
-  not full Space-membership invisibility. (Per the spec's blocked-contacts
-  Security Considerations rule.)
+- *Shared Space membership*: if Alice blocks Bob, messages from Bob are
+  silently dropped for Alice in ALL contexts — direct chats, group chats,
+  and shared channel chats. Bob remains a visible member of shared Spaces
+  (the block does not remove membership), but his messages are not
+  delivered to Alice's view. Other Space members still see Bob's messages
+  normally.
 - *UI affordance*: a clear "Block" action with a confirmation dialog
   explaining what blocking does. Avoid lossy euphemisms — "Mute" is for
   notifications; "Block" is for the relationship.

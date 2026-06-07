@@ -151,6 +151,8 @@ For Space members, the following table maps role permissions to FileNode access.
 | Member with `"manage_channels"` | Read + Create + Delete: remove any file or directory |
 | Member with `"manage_space"` | Read + Create + Delete + Administer: manage ACLs, rename the tree root |
 
+Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation SHOULD use separate Spaces.
+
 Creating the Space file tree root (a FileNode with `role: "urn:jmap:chat:filenode:space"`) requires `"manage_space"` permission. This is a higher bar than the general Create access granted by `"send"`, because establishing the root is a one-time structural operation that affects all Space members.
 
 The server MUST enforce this mapping on every FileNode operation, deriving the requesting user's membership and roles from its own authoritative state. Clients MUST NOT be trusted to assert their own access level. When a Space member's roles change, the server SHOULD reflect the updated FileNode access immediately, without requiring any client action.
@@ -162,7 +164,7 @@ The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following op
 ## filenodeId {#filenode-field}
 
 `filenodeId` (String, optional):
-: The `id` of a FileNode in the Space's file tree. When present in a `Message/set` create request for a channel Chat (a Chat with `kind: "channel"` as defined in {{JMAP-CHAT}}), the server uses that FileNode's blob as the attachment blob. Clients MAY omit the `blobId`, `filename`, `contentType`, and `size` fields; the server populates them from the FileNode's properties. If the client supplies these fields, the server MAY validate them against the FileNode and MAY reject the request with `invalidArguments` if they conflict.
+: The `id` of a FileNode in the Space's file tree. When present in a `Message/set` create request for a channel Chat (a Chat with `kind: "channel"` as defined in {{JMAP-CHAT}}), the server uses that FileNode's blob as the attachment blob. When `filenodeId` is present on an Attachment, the fields `blobId`, `filename`, `contentType`, and `size` become OPTIONAL for that Attachment entry; the server MUST populate any absent fields from the referenced FileNode's properties before storage. If `filenodeId` is absent, these fields retain their normal required status per {{JMAP-CHAT}}. If the client supplies these fields, the server MAY validate them against the FileNode and MAY reject the request with `invalidArguments` if they conflict.
 
 When `filenodeId` is present, the server SHOULD verify:
 

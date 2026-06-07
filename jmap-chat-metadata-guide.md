@@ -59,7 +59,7 @@ Under a vendor namespace (e.g., `chat.example.com`):
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `color` | `String` | CSS-style hex color or named color for visual grouping. |
+| `color` | `String|Object|Array` | Color value per the Color Representation convention in {{JMAP-CHAT}} (sRGB hex string, W3C Design Tokens object, or CAM16 coordinate array). |
 | `category` | `String` | User-defined folder or grouping label. |
 | `starred` | `Boolean` | Secondary "favorites" tier beyond server-side pinning. |
 | `pinPosition` | `UnsignedInt` | Client-side sort key for pinned chats, independent of server `pinnedAt`. |
@@ -167,7 +167,7 @@ Private per-user annotations on a `Space` object.
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `colorTag` | `String` | Visual color tag for the Space in sidebar/list views. |
+| `colorTag` | `String|Object|Array` | Color value per the Color Representation convention in {{JMAP-CHAT}} (sRGB hex string, W3C Design Tokens object, or CAM16 coordinate array). |
 | `sidebarPosition` | `UnsignedInt` | Client-side sort key for sidebar ordering. |
 | `collapsed` | `Boolean` | Whether the Space's channel tree is collapsed in the UI. |
 | `nickname` | `String` | Personal rename of a Space without changing the shared name. |

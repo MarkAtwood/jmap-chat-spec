@@ -136,6 +136,12 @@ this capability. This includes servers that perform antivirus,
 content-filtering, transcoding, or metadata-stripping transforms that
 alter blob bytes before storage.
 
+When this capability is advertised, the `sha256` field MUST be present
+in every successful upload response. If the server cannot compute the
+digest (for example, due to an internal error during streaming), the
+server MUST fail the upload request entirely rather than returning a
+response without `sha256`.
+
 Example upload response (field values are illustrative):
 
 ~~~json

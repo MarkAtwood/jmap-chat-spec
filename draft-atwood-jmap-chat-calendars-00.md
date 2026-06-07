@@ -65,7 +65,7 @@ This specification follows three principles consistent with the broader JMAP Cha
 
 {{JMAP-CALENDARS}} is the normative source of truth for calendar data types and methods. This document does not redefine Calendar, CalendarEvent, or their methods. It defines only:
 
-- A new optional `calendarId` field on the Space data type (introduced in {{JMAP-CHAT}}).
+- A new optional `calendarId` field on the Space data type (defined in {{JMAP-CHAT}}).
 - The semantics of the existing `urn:jmap:chat:cap:calendar-event` and `urn:jmap:chat:cap:availability` MessageAction / Endpoint type URIs (registered in {{JMAP-CHAT}}) in a JMAP Calendars context.
 - Server behavior for optional .ics attachment parsing.
 - Privacy considerations specific to in-chat availability lookup.
@@ -154,6 +154,8 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
   - A `jmap:` URI in the form `jmap:calendarevent:<accountId>:<calendarEventId>`, referencing a CalendarEvent on the named account. This form requires the receiving client to have JMAP Calendars access to the named account.
   - A standard `webcal://` or `https://` URL pointing to an iCalendar object retrievable out-of-band.
 
+The `jmap:` URI scheme used in this document is a private-use scheme for intra-system object references within a JMAP deployment. It is not intended for use outside the JMAP method-call context. The syntax is: `jmap:<type>:<accountId>:<objectId>` where `<type>` is a registered JMAP data type name (lowercased), `<accountId>` is a valid JMAP account identifier, and `<objectId>` is the object's `id` value. Servers MUST NOT expose these URIs to external systems without transformation. A formal IANA registration is deferred pending broader adoption.
+
 `label` (String, optional):
 : Display label (for example, the event's summary). Servers SHOULD set this to the event's `title` when constructing MessageActions from CalendarEvent records they have access to.
 
@@ -164,6 +166,8 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
   - `location` (String) — event location.
   - `participantCount` (UnsignedInt) — count of participants on the underlying CalendarEvent.
   Servers MAY include other type-specific metadata keys; clients MUST ignore unknown keys.
+
+  (Note: the main Chat spec's illustrative example for `calendar-event` metadata uses the key names defined in this section.)
 
 Servers MUST treat the `uri` and `metadata` values as peer-supplied and untrusted; clients MUST validate any URI they intend to dereference per the standard MessageAction handling rules in {{JMAP-CHAT}}.
 
