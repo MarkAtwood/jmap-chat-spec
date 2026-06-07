@@ -360,7 +360,9 @@ WebRTC.
 - *Proprietary protocol.* The Linden Lab Structured Data (LLSD) protocol was
   never formally specified as an open standard. It was documented, reverse-
   engineered, and eventually opened enough for third-party viewers, but never
-  became an IETF RFC or a W3C recommendation.
+  became an IETF RFC or a W3C recommendation. Linden Lab did attempt IETF
+  standardization (the VWRAP effort, 2009-2011) but it failed — see the
+  dedicated VWRAP section below.
 - *Viewer monoculture.* For years, the official Linden Lab viewer was the only
   usable client. Third-party viewers eventually appeared (Firestorm, Kokua)
   but they all implement the same protocol and rendering stack. There is no
@@ -423,6 +425,83 @@ OpenSim-like project built against Scene would implement JMAP methods
 specification with defined error conditions, defined data types, and defined
 semantics. Two independent implementations that pass the same conformance tests
 would interoperate. The specification is the contract, not the source code.
+
+---
+
+### VWRAP (Virtual World Region Agent Protocol)
+
+**What it was.** VWRAP was Linden Lab's attempt to standardize the Second
+Life protocol as an IETF specification. It went through three naming
+iterations — MMOX (Massively Multi-Player Games and Applications, BoF at
+IETF 74 in March 2009), OGPX (Open Grid Protocol), and finally VWRAP —
+before being chartered as an IETF working group in September 2009 and
+formally concluded in May 2011 without producing a single RFC.
+
+The effort was primarily driven by Meadhbh Hamrick and Mark Lentczner
+(Linden Lab) with David Levine (IBM). It produced roughly a dozen
+Internet-Drafts covering introduction/goals, authentication, an abstract
+type system (LLSD/LLIDL), client launch messages, and deployment patterns.
+Every draft reached only -00 or -01 revision before expiring.
+
+**What it got right.** The effort demonstrated genuine institutional
+willingness from Linden Lab and IBM to open up virtual world protocols.
+The separation into authentication, type system, and application protocol
+layers was architecturally sound in principle. The use of
+capability-based security (capability URLs rather than ambient authority)
+was ahead of its time.
+
+**What it got wrong.**
+
+- *X-rated coupling with the implementation.* Crista Lopes (UC Irvine,
+  "Diva Canto" in OpenSimulator) delivered the definitive critique: the
+  VWRAP drafts were not a generalized virtual world interoperability
+  protocol but a wire-format description of what the Second Life viewer
+  already did. The LLSD type system, the LLIDL interface description
+  language, the capability-URL security model, the event queue mechanism —
+  all were direct lifts from SL's existing internal architecture. A
+  virtual world with a different architecture (peer-to-peer truth model,
+  different asset pipeline, different region model) would have had to
+  adopt SL's entire worldview to implement the protocol. It was not a
+  specification that happened to have an implementation; it was an
+  implementation that was retroactively formatted as a specification.
+- *Single sponsor, single implementation.* Virtually all drafts were
+  authored by Linden Lab employees. When Linden Lab laid off 30% of its
+  staff in June 2010 and suspended its involvement in virtual world
+  interoperability, the effort lost its only source of technical momentum.
+  The only systems the protocol could apply to were Second Life and
+  OpenSimulator (which reverse-engineered SL).
+- *Community rejection from day one.* At the first MMOX BoF, participants
+  from non-SL virtual worlds (Forterra/IMVU, others) disengaged when it
+  became clear the effort was about standardizing OGP specifically, not
+  building a protocol any virtual world could use. The attempt to split
+  into OGP-specific vs. broader interoperability tracks "touched a nerve"
+  and was never resolved.
+- *Alien to web developers.* Hamrick herself later noted that the
+  technical documentation was "relatively foreign to the experience of
+  most web developers," which limited the reviewer and implementer pool.
+  The LLSD type system was a custom serialization format (not JSON, not
+  XML Schema, not Protocol Buffers) that required learning a new IDL.
+
+**How Scene relates.** VWRAP is the cautionary tale that Scene is
+designed to avoid repeating. The failure modes map directly to Scene
+design decisions:
+
+| VWRAP Failure | Scene Response |
+|---|---|
+| Custom type system (LLSD) | JMAP's existing JSON type system (RFC 8620) |
+| Custom transport | RFC 8620 HTTP + RFC 8887 WebSocket |
+| Custom auth | Standard JMAP authentication |
+| Coupled to one viewer | viewHint-driven, any renderer |
+| Single implementation | Spec-first, no reference implementation required |
+| Single sponsor | Built on IETF-published JMAP foundation with existing implementations |
+| Alien to web developers | JSON, HTTP, WebSocket — standard web stack |
+
+The core lesson: a protocol specification must be designed independently
+of any particular implementation. VWRAP attempted to standardize what
+Second Life *happened to do*. Scene specifies what a spatial state
+protocol *should do* using primitives (JMAP methods, JSON data types,
+WebSocket events) that have proven interoperability across multiple
+independent implementations in the email and calendaring domains.
 
 ---
 
@@ -1144,6 +1223,7 @@ conditional support.
 | Amazon Chime Spatial | -- | -- | -- | -- | 2D only | -- |
 | **Persistent Worlds** | | | | | | |
 | Second Life | ~partial | Yes | -- | -- | 3D only | -- |
+| VWRAP (SL at IETF) | failed | -- | -- | -- | 3D only | -- |
 | OpenSimulator | ~partial | Yes | -- | -- | 3D only | -- |
 | Decentraland | ~partial | Yes | -- | -- | 3D only | -- |
 | Roblox | -- | Yes | -- | -- | ~mostly 3D | -- |
@@ -1203,7 +1283,8 @@ permissions, voice separation), Hubs (browser-first, WebRTC voice, room model),
 Gather (2D spatial, proximity audio), Quake (authoritative server, client
 prediction) — are the systems Scene borrows from most heavily. The systems that
 got the most things wrong — monolithic platforms, proprietary protocols, vendor
-lock-in — are the patterns Scene deliberately rejects.
+lock-in, and implementation-coupled "standards" (VWRAP) — are the patterns
+Scene deliberately rejects.
 
 The result is a specification that is narrow by design. Scene manages spatial
 state. It does not render. It does not simulate. It does not prescribe visual
