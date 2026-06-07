@@ -2,8 +2,9 @@
 
 For client and server implementers building 2D experiences on top of
 `draft-atwood-jmap-scene-00`. Covers top-down virtual offices, side-scrolling
-games, board games, tile-grid mapping, sprite-based avatars, and integration
-with JMAP VTC for spatial video.
+games, tile-grid mapping, sprite-based avatars, and integration with JMAP
+VTC for spatial video. For board game patterns, see the companion guide
+`jmap-scene-board-games-guide.md`.
 
 Read the draft first. This guide does not re-state normative requirements. It
 covers how to use the Scene spec's 3D data model to build compelling 2D
@@ -56,10 +57,10 @@ reverse-domain notation (e.g., `"com.example.isometric"`).
 ### How clients should interpret viewHint
 
 **`"2d-topdown"`:** The client renders a bird's-eye view looking down the
-Y axis. The X axis maps to screen-horizontal and the Z axis maps to
-screen-vertical. The Y coordinate is ignored for rendering purposes (all
-objects appear on a flat plane). Clients SHOULD keep `position.y` at `0`
-for all objects and avatars.
+Y axis. The X axis maps to screen-right and the Z axis maps to
+screen-down (+Z = increasing row index). The Y coordinate is ignored for
+rendering purposes (all objects appear on a flat plane). Clients SHOULD
+keep `position.y` at `0` for all objects and avatars.
 
 **`"2d-side"`:** The client renders a side view. The X axis maps to
 screen-horizontal and the Y axis maps to screen-vertical. The Z coordinate
@@ -76,14 +77,18 @@ new view hints can be introduced without breaking existing clients.
 2d-topdown                          2d-side
 ==========                          =======
 
-     +Z (screen up)                      +Y (screen up)
-      |                                   |
-      |                                   |
-      +------ +X (screen right)           +------ +X (screen right)
-    origin                              origin
+      +------ +X (screen right)              +Y (screen up)
+      |                                       |
+      |                                       |
+     +Z (screen down)                         +------ +X (screen right)
+    origin                                  origin
 
-    Y axis is ignored                   Z axis is ignored
-    (keep y=0)                          (keep z=0)
+    Y axis is ignored                       Z axis is ignored
+    (keep y=0)                              (keep z=0)
+
+    In top-down view the camera looks down the -Y axis.
+    +X maps to screen-right and +Z maps to screen-down,
+    matching the row-major convention (row 0 at top).
 ```
 
 ### JSON example: a top-down region
@@ -181,20 +186,32 @@ rotation. In 2D, rotation is around a single axis:
 Clients rendering 2D SHOULD extract the relevant rotation component and
 ignore the others. Common facing directions for top-down:
 
-| Facing | Angle (rad) | Quaternion `[x, y, z, w]` |
-|---|---|---|
-| North (+Z) | 0 | `[0, 0, 0, 1]` |
-| East (+X) | -pi/2 | `[0, -0.707, 0, 0.707]` |
-| South (-Z) | pi | `[0, 1, 0, 0]` |
-| West (-X) | pi/2 | `[0, 0.707, 0, 0.707]` |
+| Facing | Screen direction | Angle (rad) | Quaternion `[x, y, z, w]` |
+|---|---|---|---|
+| +Z | Down | 0 | `[0, 0, 0, 1]` |
+| +X | Right | -pi/2 | `[0, -0.707, 0, 0.707]` |
+| -Z | Up | pi | `[0, 1, 0, 0]` |
+| -X | Left | pi/2 | `[0, 0.707, 0, 0.707]` |
 
 ### Scale
 
-Scale `[sx, sy, sz]` works the same in 2D. For a 2D sprite that is 1 tile
-wide and 1 tile tall, use `[1, 1, 1]`. For a 2-tile-wide desk, use
-`[2, 1, 1]` (top-down) or `[2, 1, 1]` (side-scrolling, where the desk is
-2 tiles wide and 1 tile tall). Negative scale values mirror the sprite,
-which is useful for side-scrolling characters that face left vs. right.
+Scale `[sx, sy, sz]` works the same in 2D, but only two components are
+visually meaningful in each view mode:
+
+| viewHint | `sx` | `sy` | `sz` |
+|---|---|---|---|
+| `"2d-topdown"` | screen width (right) | ignored (keep 1) | screen height (down) |
+| `"2d-side"` | screen width (right) | screen height (up) | ignored (keep 1) |
+
+For a 2D sprite that is 1 tile wide and 1 tile tall, use `[1, 1, 1]`.
+For a 2-tile-wide, 1-tile-tall desk: use `[2, 1, 1]` in top-down
+(`sx`=2 tiles wide on screen, `sz`=1 tile tall on screen) or `[2, 1, 1]`
+in side-scrolling (`sx`=2 tiles wide, `sy`=1 tile tall). A desk that is
+3 tiles wide and 2 tiles tall would be `[3, 1, 2]` in top-down (width
+in `sx`, height in `sz`) vs. `[3, 2, 1]` in side-scrolling (width in
+`sx`, height in `sy`). Negative scale values mirror the sprite, which is
+useful for side-scrolling characters that face left vs. right (negate
+`sx` to flip horizontally).
 
 ---
 
@@ -319,6 +336,32 @@ interpretation is the client's responsibility.
 }
 ```
 
+### Downloading sprite sheet blobs
+
+A `visualRef` value is a JMAP blob ID. Clients retrieve the image data via
+the standard JMAP blob download path (RFC 8620 Section 6.2):
+
+```
+GET /jmap/download/{accountId}/{blobId}/{name}
+```
+
+The same mechanism applies when `customProperties` references a secondary
+sprite sheet blob (e.g., `"spriteSheet": "blob-spritesheet-bob-001"`): the
+client issues a separate blob download request for that blob ID. The server
+treats all blob references identically regardless of whether they come from
+`visualRef` or from inside `customProperties`.
+
+For sprite sheets (texture atlases), the downloaded image contains multiple
+animation frames packed into a single file. `customProperties` carries the
+metadata needed to extract individual frames: the pixel dimensions of each
+frame, how many columns and rows are in the sheet, and which frame indices
+belong to each animation. See the recommended schema below.
+
+Clients MAY cache blob downloads by blob ID. Blob IDs are content-addressed:
+the same ID always refers to the same bytes. When a deployment changes an
+avatar's sprite sheet, it uploads a new blob and updates the avatar's
+`customProperties` to reference the new blob ID.
+
 ### Sprite sheets and animation
 
 The spec's `visualRef` points to a single asset. For animated sprites
@@ -336,6 +379,63 @@ Pattern 1 is simpler and requires fewer asset uploads. Pattern 2 allows
 per-animation asset swapping, which is useful when avatars have many
 costume options.
 
+### Recommended sprite sheet metadata schema
+
+The spec's `customProperties` is opaque, so sprite sheet layout is
+deployment-defined. The following schema is a recommended convention
+for interoperability between clients. Deployments MAY use a different
+schema, but clients that encounter these keys SHOULD interpret them as
+described here.
+
+**On the SceneAvatar or SceneObject that references the sprite sheet:**
+
+```json
+{
+  "customProperties": {
+    "spriteSheet": "blob-spritesheet-bob-001",
+    "spriteSheetMeta": {
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "columns": 4,
+      "rows": 4,
+      "animations": {
+        "idle":  { "frames": [0, 1, 2, 3], "fps": 4, "loop": true },
+        "walk":  { "frames": [4, 5, 6, 7, 8, 9, 10, 11], "fps": 8, "loop": true },
+        "interact": { "frames": [12, 13, 14, 15], "fps": 6, "loop": false }
+      }
+    },
+    "animationState": "idle",
+    "facingDirection": "east"
+  }
+}
+```
+
+**Field definitions for `spriteSheetMeta`:**
+
+| Field | Type | Description |
+|---|---|---|
+| `frameWidth` | Number | Width of one frame in pixels. |
+| `frameHeight` | Number | Height of one frame in pixels. |
+| `columns` | Number | Number of frame columns in the sheet image. |
+| `rows` | Number | Number of frame rows in the sheet image. |
+| `animations` | Object | Map of animation name to animation descriptor. |
+
+**Animation descriptor fields:**
+
+| Field | Type | Description |
+|---|---|---|
+| `frames` | Number[] | Ordered list of frame indices (0-based, left-to-right then top-to-bottom). |
+| `fps` | Number | Playback rate in frames per second. |
+| `loop` | Boolean | `true` to loop; `false` to play once and hold the last frame. |
+
+Frame index `0` is the top-left cell of the sheet. Index `n` maps to
+column `n % columns`, row `floor(n / columns)`. The pixel region for
+frame `n` is `(col * frameWidth, row * frameHeight, frameWidth,
+frameHeight)`.
+
+When `spriteSheetMeta` is absent, the client falls back to
+deployment-specific conventions or treats `visualRef` as a static image.
+
 ### Orientation as facing direction
 
 In a top-down 2D view, the avatar's quaternion orientation encodes facing
@@ -345,10 +445,10 @@ etc.). For a 4-direction sprite sheet:
 
 ```
 Quaternion Y rotation   ->   Sprite direction
-[0, 0, 0, 1]                North (up on screen)
-[0, -0.707, 0, 0.707]       East (right on screen)
-[0, 1, 0, 0]                South (down on screen)
-[0, 0.707, 0, 0.707]        West (left on screen)
+[0, 0, 0, 1]                +Z facing (down on screen)
+[0, -0.707, 0, 0.707]       +X facing (right on screen)
+[0, 1, 0, 0]                -Z facing (up on screen)
+[0, 0.707, 0, 0.707]        -X facing (left on screen)
 ```
 
 For 8-direction sprite sheets, use 45-degree increments. Clients MAY also
@@ -618,184 +718,35 @@ a collection animation.
 
 ## 7. Board game patterns
 
-### The board as a region
+Board games map naturally to the Scene spec: the board is a SceneRegion
+with `viewHint: "2d-topdown"`, pieces are SceneObjects, and players are
+SceneAvatars. The coordinate conventions from sections 2-3 apply
+directly -- each board square is one meter, and piece positions map to
+grid coordinates.
 
-A board game maps naturally to the Scene spec: the board is a SceneRegion,
-pieces are SceneObjects, and players are SceneAvatars (though the avatars
-may not have a visible sprite -- they represent the player's seat, not a
-character on the board).
+For comprehensive coverage of board game implementation patterns
+including chess, Go, checkers, card games, dice, hidden information,
+turn enforcement, and game state tracking, see
+**`jmap-scene-board-games-guide.md`**. That guide covers:
 
-```json
-{
-  "id": "01J5RGN0000000000000000003",
-  "name": "Chess Match: Alice vs Bob",
-  "bounds": {
-    "min": [0, 0, 0],
-    "max": [8, 0, 8]
-  },
-  "viewHint": "2d-topdown",
-  "spawnPosition": [4, 0, -1],
-  "spawnOrientation": [0, 0, 0, 1],
-  "simulationUri": "wss://sim.example.com/games/chess/01J5RGN003",
-  "accessPolicy": "invite",
-  "activeAvatarCount": 2,
-  "environment": {
-    "boardTheme": "classic-wood",
-    "gridVisible": true
-  }
-}
-```
-
-The 8x8 chess board is an 8-meter by 8-meter region. Each square is 1
-meter. Piece positions map directly to grid coordinates.
-
-### Pieces as SceneObjects
-
-Each game piece is a SceneObject with `interactable: true`. The piece's
-grid position is its Scene coordinate.
-
-```json
-{
-  "id": "01J5OBJ0000000000000000050",
-  "regionId": "01J5RGN0000000000000000003",
-  "name": "White King",
-  "position": [4, 0, 0],
-  "orientation": [0, 0, 0, 1],
-  "scale": [1, 1, 1],
-  "visualRef": "blob-chess-white-king",
-  "visualType": "image/svg+xml",
-  "physicsMode": "none",
-  "interactable": true,
-  "visible": true,
-  "ownerId": "user:alice@example.com",
-  "customProperties": {
-    "pieceType": "king",
-    "color": "white",
-    "hasMoved": false
-  }
-}
-```
-
-### Grab/release interactions for moving pieces
-
-The natural interaction pattern for board games is grab-move-release:
-
-1. Player clicks a piece -> simulation layer fires `grab` interaction event.
-2. Player moves the piece to a new square -> client sends the target
-   position.
-3. Player releases the piece -> simulation layer fires `release` interaction
-   event with the target position.
-
-The simulation layer (or application logic above it) validates the move.
-If the move is legal, the server updates the SceneObject position via
-`SceneObject/set update`. If illegal, the server rejects the move and the
-client snaps the piece back to its original position.
-
-```json
-{
-  "update": {
-    "01J5OBJ0000000000000000050": {
-      "position": [4, 0, 2]
-    }
-  }
-}
-```
-
-This moves the White King from (4,0,0) to (4,0,2) -- two squares forward.
-
-### Cards and hidden information
-
-Cards in a card game are SceneObjects with a face-up and face-down visual.
-Hidden cards (in a player's hand) use the visibility contract: the server
-returns face-down visuals for cards the requesting player is not allowed to
-see. Implement this via the deployment-defined visibility filtering
-described in the spec's visibility contract section.
-
-A card in a player's hand:
-
-```json
-{
-  "id": "01J5OBJ0000000000000000060",
-  "regionId": "01J5RGN0000000000000000004",
-  "name": "Card",
-  "position": [2, 0, -1],
-  "orientation": [0, 0, 0, 1],
-  "scale": [0.6, 1, 0.9],
-  "visualRef": "blob-card-ace-spades",
-  "visualType": "image/png",
-  "physicsMode": "none",
-  "interactable": true,
-  "visible": true,
-  "ownerId": "user:alice@example.com",
-  "customProperties": {
-    "cardId": "AS",
-    "faceUp": false,
-    "inHand": true,
-    "handOwner": "user:alice@example.com"
-  }
-}
-```
-
-The server's visibility filter checks `customProperties.handOwner`: if the
-requesting user does not match, the response replaces `visualRef` with the
-card-back blob and omits `customProperties.cardId`. This is a
-deployment-defined behavior, not a spec requirement.
-
-### Dice
-
-Dice are SceneObjects. A roll is modeled as:
-
-1. Player triggers a `activate` interaction on the die object.
-2. The simulation layer generates a random result.
-3. The server updates the die's `customProperties.value` and `visualRef`
-   (to show the rolled face).
-4. All clients receive the `StateChange` and render the new face.
-
-### Turn enforcement
-
-The spec does not define turn logic. Turn enforcement is application logic
-above the Scene spec. Common patterns:
-
-- **customProperties on the region or a dedicated object:** A "game state"
-  SceneObject (invisible, `visible: false`) tracks whose turn it is, the
-  game phase, and scores.
-- **Server-side validation:** The simulation layer rejects interaction
-  events from players when it is not their turn. The JMAP
-  `SceneObject/set` handler also rejects position updates from
-  non-current players.
-- **Chat integration:** When JMAP Chat is co-deployed, game events (moves,
-  captures, turn changes) can be posted as Chat messages to the bound
-  Chat.
-
-### JSON example: game state tracker object
-
-```json
-{
-  "id": "01J5OBJ0000000000000000070",
-  "regionId": "01J5RGN0000000000000000003",
-  "name": "Game State",
-  "position": [0, 0, 0],
-  "orientation": [0, 0, 0, 1],
-  "scale": [1, 1, 1],
-  "visualRef": null,
-  "visualType": null,
-  "physicsMode": "none",
-  "interactable": false,
-  "visible": false,
-  "customProperties": {
-    "currentTurn": "user:alice@example.com",
-    "turnNumber": 14,
-    "phase": "main",
-    "scores": {
-      "user:alice@example.com": 3,
-      "user:bob@example.com": 5
-    }
-  }
-}
-```
-
-Clients query for this object (by name or by a deployment-defined
-convention) to display turn indicators and scoreboards.
+- **Board region setup** -- bounds, environment, and access policy.
+- **Piece modeling** -- SceneObjects with `interactable: true` and
+  `physicsMode: "none"`, with piece identity in `customProperties`.
+- **Move mechanics** -- click-to-select and drag-and-drop (grab/release)
+  patterns with server-side validation.
+- **Game state tracking** -- invisible SceneObject (`visible: false`)
+  holding turn, phase, and score data in `customProperties`.
+- **Hidden information** -- visibility filtering for card games
+  (server replaces `visualRef` and redacts `customProperties` for
+  non-owners).
+- **Dice** -- `activate` interaction triggering server-side random
+  result with `StateChange` broadcast.
+- **Turn enforcement** -- simulation layer rejecting out-of-turn
+  interaction events.
+- **Chat integration** -- game events posted to the bound Chat via
+  `chatId`.
+- **Worked examples** -- Tic-Tac-Toe, Go, Checkers, Chess, Sorry!,
+  Monopoly, Battleship, Poker, Mahjong, and more.
 
 ---
 
@@ -967,7 +918,7 @@ implementation has made and documented each of the following decisions:
 - [ ] For side-scrolling: gravity and jump physics implemented in
   simulation layer
 
-**Board games (section 7)**
+**Board games (section 7; see `jmap-scene-board-games-guide.md`)**
 - [ ] Piece interaction model defined (grab/release vs. click-to-move)
 - [ ] Turn enforcement implemented in simulation layer or application
   logic

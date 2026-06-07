@@ -167,6 +167,9 @@ to manage the `simulationUri` lifecycle, and how `environment` is structured.
   when a region is destroyed.
 - **`viewHint` handling**: whether your client renders differently for
   `"2d-topdown"` and `"2d-side"` regions, or treats everything as `"3d"`.
+  Deployment-specific view hints SHOULD use reverse-domain notation (e.g.,
+  `"com.example.isometric"`). Clients MUST NOT fail on unrecognized values;
+  they SHOULD fall back to `"3d"`.
 
 ### Considerations
 
@@ -219,6 +222,17 @@ might include:
   "fogDensity": 0.0
 }
 ```
+
+**Color values in `environment` SHOULD follow the JMAP Chat color
+convention** (spec appendix, referencing `draft-atwood-jmap-chat-00`
+section 2, `{#color-convention}`). The preferred representation is the W3C
+Design Tokens Community Group color token format (`{"$type": "color",
+"$value": "..."}` in CSS Color Level 4 syntax). When Design Tokens are not
+practical, use CAM16 uniform color space coordinates (`[J, a, b]` or
+`[J, M, h]`). As a baseline fallback, sRGB hex strings (e.g., `"#87CEEB"`)
+are acceptable. Servers MUST accept all three representations and preserve
+whichever the client provides. The examples in this guide use raw hex for
+brevity; production implementations should support the full range.
 
 **Region destruction cascade.** The spec requires that destroying a region
 removes all contained SceneObject and SceneAvatar records and ejects active
@@ -537,8 +551,12 @@ Steps 2-6 should be atomic.
 Detect silent disconnections via simulation layer callbacks. Set a 30-minute
 reconnect window. Reconcile avatar positions every 15 seconds. Retain
 departed avatar records for 24 hours. Serialize avatar creation per user
-to prevent race conditions. Source `displayName` from the user profile;
-override from ChatContact when JMAP Chat is co-deployed.
+to prevent race conditions. Source `displayName` from the user profile or
+ChatContact when JMAP Chat is co-deployed (spec section 6.4: "the server
+sets `displayName` from the user profile or ChatContact when
+`urn:ietf:params:jmap:chat` is present"). The client MAY supply
+`displayName` in the create request, but the server is the authoritative
+source.
 
 Example — entering a region:
 
@@ -1007,6 +1025,42 @@ get/query code path to ensure `notFound` masking is applied. For
 `SceneObject/set`, check permissions in order: is caller the owner? Is
 caller the region owner? Is caller an admin? If none, return `forbidden`.
 
+### Blocked-contact spatial presence filtering
+
+When `urn:ietf:params:jmap:chat` is co-deployed, the server has access to
+each user's ChatContact records and their `blocked` field. Spec section 8.5
+defines how blocking affects spatial queries:
+
+**What the spec requires:**
+
+- SceneAvatar records belonging to a blocked ChatContact SHOULD be excluded
+  from `SceneAvatar/get`, `SceneAvatar/query`, and
+  `SceneAvatar/queryChanges` responses delivered to the blocking user. The
+  blocked avatar still exists; it is simply invisible to the blocker's client.
+- The blocked user MUST NOT learn they have been blocked. No error, no
+  filtered-result indicator, no signal that distinguishes "filtered because
+  blocked" from "not present." From the blocked user's perspective, the
+  blocker's query behavior looks normal.
+- Filtering is applied AFTER visibility filtering (spec section 7.3):
+  compute the visibility set, then remove avatars whose `userId` matches a
+  `blocked: true` ChatContact.
+
+**`activeAvatarCount` implications.** The spec notes that the server MAY
+return either the true count (includes blocked users) or a filtered count
+(excludes them). Both leak information: a true count reveals unseen
+presences; a filtered count that changes on block reveals the act of
+blocking. The spec recommends the true count because it is consistent for
+all observers and does not leak per-user blocking decisions.
+
+**Implementation notes:**
+
+- Add a ChatContact lookup to the SceneAvatar query path. Cache the
+  blocker's blocked-userId set per request to avoid repeated lookups.
+- If JMAP Chat is not present, this filtering does not apply. The Scene
+  capability alone has no concept of blocked users.
+- Test that blocking is symmetric in its invisibility: the blocked user
+  sees no difference in their own query results.
+
 ---
 
 ## 9. Quota enforcement
@@ -1126,6 +1180,9 @@ some fail).
 | `maxAvatarsPerRegion` exceeded | `overQuota` | Avatar create (entering a full region). |
 | `maxAssetSizeBytes` exceeded | `overQuota` | Asset create with oversized blob. |
 | Concurrent modification | `stateMismatch` | Set with stale `ifInState`. |
+| Visual asset or text field violates content policy | `contentPolicy` | SceneObject/set create or update (spec section 8.6). |
+| Per-user create rate limit exceeded | `rateLimit` | SceneObject/set create (spec section 8.7). Include `retryAfter` (seconds). |
+| SceneAvatar/set destroy attempted | `forbidden` | Destroy on any SceneAvatar record. Departure is modeled as an update setting `leftAt`; destroy is always forbidden (spec section 6.4). |
 
 **Error descriptions should be actionable.** Include the specific field name
 and the constraint that was violated. For example:
@@ -1145,6 +1202,27 @@ Not:
   "description": "Invalid position"
 }
 ```
+
+**`contentPolicy` and `rateLimit` are spec-defined SetError types.** The
+spec (sections 8.6-8.7) defines two SetError types beyond the standard JMAP
+set:
+
+- `contentPolicy`: returned when a visual asset (`visualRef`) or text field
+  (`name`, `customProperties`) violates a deployment-defined content
+  moderation policy. Servers MAY defer visibility of newly created objects
+  until asset scanning completes; if the asset fails the content policy, the
+  server SHOULD destroy the object and notify the creator via `contentPolicy`.
+- `rateLimit`: returned when per-user `SceneObject/set create` rate limits
+  are exceeded. The error SHOULD include a `retryAfter` property (integer,
+  seconds until the client may retry). This is independent of the
+  `maxObjectsPerRegion` capacity quota.
+
+**SceneAvatar destroy is always forbidden.** The spec (section 6.4) is
+explicit: SceneAvatar records are never destroyed via `/set destroy`.
+Departure is modeled as an update that sets `leftAt`. Servers MUST return
+`forbidden` for any destroy operation on SceneAvatar. Clients that attempt
+`SceneAvatar/set destroy` instead of setting `leftAt` will always receive
+an error.
 
 **Compound errors follow JMAP semantics.** In a batch `SceneObject/set` with
 multiple creates, each create succeeds or fails independently. Successful
@@ -1255,6 +1333,116 @@ is covered in a separate simulation integration guide.
 
 ---
 
+## 12. Push notifications
+
+### What the spec leaves open
+
+The spec defines push notification behavior for Scene data types in the
+"Push Notifications" section (subsections: State-Change Events, Push
+Urgency, PushSubscription Filtering, Interaction with Chat Push, and Scene
+Push Does Not Carry Inline Content). All four Scene types (SceneRegion,
+SceneObject, SceneAvatar, SceneAsset) participate in the RFC 8620
+(Section 7) state-change mechanism. The spec requires EventSource support
+(RFC 8620 Section 7.3) and permits push subscription support (RFC 8620
+Section 7.2) for mobile delivery. What the spec leaves open is how to tune
+coalescing windows, how to handle cross-capability deduplication with JMAP
+Chat, and how to manage push subscription filtering in practice.
+
+### What you must decide
+
+- **EventSource and push subscription support**: EventSource is MUST;
+  push subscriptions are SHOULD. Decide whether to support both from
+  launch.
+- **State-change coalescing window**: how long to buffer rapid mutations
+  before emitting a `StateChange` event.
+- **Push urgency assignments**: how to map Scene events to Web Push
+  `Urgency` header values.
+- **Cross-capability deduplication**: when JMAP Chat is co-deployed,
+  whether the server deduplicates avatar enter/leave notifications that
+  also appear as Chat events.
+- **VAPID signing**: whether to sign Web Push messages with VAPID JWTs
+  (recommended when `urn:ietf:params:jmap:webpush-vapid` is advertised).
+
+### Considerations
+
+**`StateChange` events cover all four Scene types.** Each Scene data type
+has its own state string in the `StateChange` payload. A single
+`StateChange` MAY include a subset of types (e.g., only `SceneAvatar` when
+a user enters or leaves). Clients call the corresponding `/changes` method
+for each type whose state string differs from the locally cached value.
+
+**Push is for discrete events, not continuous state.** JMAP push
+(`StateChange` via EventSource or Web Push) is the right channel for
+discrete, low-frequency events: avatar entering or leaving a region,
+region configuration changes, object creation or destruction. It is the
+wrong channel for continuous position updates. Avatar position changes at
+simulation rates (10+ Hz) MUST travel through the simulation layer behind
+`simulationUri` — not through JMAP push. If the JMAP Scene WebSocket
+capability (`urn:ietf:params:jmap:scene:websocket`) is deployed, discrete
+events such as avatar entry/exit and object placement can also travel over
+the JMAP WebSocket as ephemeral `SceneAvatarEvent` and `SceneObjectEvent`
+frames (see the WSS spec), giving lower latency than the
+`StateChange`+`/changes` round-trip without the frequency concerns of
+push infrastructure. Push is for clients that are not connected to the
+WebSocket or simulation layer; the WebSocket and simulation layer are for
+clients that are actively rendering a region.
+
+**Coalescing is critical for SceneAvatar and SceneObject.** These types
+mutate frequently (avatar enter/leave, periodic position reconciliation,
+object creation/destruction). The spec recommends coalescing rapid
+mutations within a 1-5 second window before emitting a `StateChange`, to
+avoid overwhelming subscribers. Real-time position updates at simulation
+rates (10+ Hz) MUST NOT generate `StateChange` events at that frequency;
+only periodic reconciliation writes (every 5-30 seconds) produce state
+changes.
+
+**Push urgency assignments (RECOMMENDED):**
+
+| Urgency | Event type |
+|---|---|
+| `high` | Region destruction when the user has objects in the region. |
+| `normal` | Avatar enter/leave; region configuration changes for active participants. |
+| `low` | Object destruction by admin (informational to the owner). |
+| `very-low` | SceneAsset changes; position reconciliation updates. |
+
+Servers MUST NOT assign `high` urgency to routine position reconciliation.
+When a single `StateChange` covers multiple types with different urgencies,
+use the highest applicable urgency.
+
+**PushSubscription filtering.** Clients control which types generate push
+notifications via the `types` property on `PushSubscription`. A client
+monitoring only region occupancy can set `types: ["SceneRegion",
+"SceneAvatar"]` to exclude object and asset churn. When both Scene and Chat
+capabilities are present, a single subscription MAY include types from
+both.
+
+**Cross-capability deduplication with JMAP Chat.** When a SceneRegion is
+bound to a Chat via `chatId`, avatar enter/leave events have Chat analogs
+(user join/leave messages). The spec says servers SHOULD deduplicate: if
+the Chat push already covers the event, suppress the Scene push urgency.
+The `StateChange` for SceneAvatar MUST still be delivered (it is a state-
+tracking mechanism), but the server SHOULD NOT set `normal` or higher
+urgency when a Chat push for the same event is already being delivered.
+Clients SHOULD also deduplicate on their side (e.g., suppress a "user
+entered region" notification if a "user joined chat" notification for the
+same user arrived within 5 seconds).
+
+**Scene push does not carry inline content.** Unlike JMAP Chat Push (which
+defines `ChatMessagePush` with inline message content to avoid mobile
+round-trips), Scene push uses `StateChange` exclusively. Scene state
+changes are structural metadata, not time-sensitive communications; clients
+needing real-time spatial awareness are connected to the simulation layer.
+
+### Recommended starting point
+
+Support both EventSource and push subscriptions from launch. Set the
+coalescing window to 2 seconds for SceneAvatar and SceneObject state
+changes. Use the urgency table above. Implement cross-capability
+deduplication if JMAP Chat is co-deployed. Sign Web Push messages with
+VAPID when `urn:ietf:params:jmap:webpush-vapid` is advertised.
+
+---
+
 ## Appendix: Decision checklist
 
 Before deploying JMAP Scene to production, verify that your implementation has
@@ -1315,6 +1503,8 @@ made and documented each of the following decisions:
 - [ ] Avatar permission checks: users modify only their own
 - [ ] Admin privilege model defined
 - [ ] Ejection cooldown implemented
+- [ ] Blocked-contact spatial presence filtering implemented (if JMAP Chat
+  co-deployed)
 
 **Quota enforcement (section 9)**
 - [ ] Per-create quota checking in batch operations
@@ -1322,7 +1512,8 @@ made and documented each of the following decisions:
 - [ ] `null` quota fields backed by a deployment-level hard ceiling
 
 **Error conditions (section 10)**
-- [ ] All SetError types from the error table implemented
+- [ ] All SetError types from the error table implemented (including
+  `contentPolicy`, `rateLimit`, and `forbidden` for SceneAvatar destroy)
 - [ ] Error descriptions include specific field names and constraints
 - [ ] Compound errors reported per-id in `notCreated`/`notUpdated`/`notDestroyed`
 
@@ -1333,3 +1524,11 @@ made and documented each of the following decisions:
 - [ ] Failure mode (static scene fallback) implemented
 - [ ] Client auto-connect prevention verified
 - [ ] Server SSRF prevention verified (no probing of `simulationUri`)
+
+**Push notifications (section 12)**
+- [ ] EventSource support implemented (MUST)
+- [ ] Push subscription support implemented (SHOULD)
+- [ ] State-change coalescing window configured for SceneAvatar/SceneObject
+- [ ] Push urgency assignments implemented per urgency table
+- [ ] Cross-capability deduplication with Chat push (if co-deployed)
+- [ ] VAPID signing for Web Push messages (if webpush-vapid advertised)

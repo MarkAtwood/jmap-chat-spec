@@ -86,14 +86,16 @@ The server silently drops a `SceneObjectEvent` for a recipient when:
   visibility contract).
 - Server-side visibility filtering (radius-based, occlusion-based) determines the object
   is outside the recipient's visibility scope.
-- The event exceeds the rate limit (2 updates per object per second).
+- The event exceeds the server's rate limit (SHOULD be no more than 2 updates per object
+  per second per the spec's recommendation).
 
 ### SceneInteractionEvent suppression
 
 The server silently drops a `SceneInteractionEvent` for a recipient when:
 
 - The interacted object is not visible to the recipient per the visibility contract.
-- The event exceeds the rate limit (5 per user per region per second).
+- The event exceeds the server's rate limit (SHOULD be no more than 5 per user per region
+  per second per the spec's recommendation).
 
 ### Implication for clients
 
@@ -379,6 +381,35 @@ Distinguish them by the `@type` field:
 Clients MUST silently ignore messages with unrecognized `@type` values. Do not close the
 connection — future spec extensions will add new event types.
 
+### Defensive parsing of ephemeral event frames
+
+Ephemeral events are fire-and-forget — the server does not retry delivery and the client
+has no way to request re-delivery. Malformed frames will arrive in practice (server bugs,
+version skew, proxy corruption). Clients MUST handle them gracefully.
+
+**Parse failures:** If a WebSocket text frame is not valid JSON, discard it silently. Do
+not close the connection — the next frame may be perfectly valid.
+
+**Missing `@type`:** If the parsed JSON object has no `@type` field (or `@type` is not a
+string), discard the frame. This is the primary discriminator; without it the client
+cannot route the message.
+
+**Missing or unexpected fields:** If a recognized `@type` (e.g., `"SceneAvatarEvent"`) is
+present but expected fields are missing or have unexpected types (e.g., `regionId` is a
+number instead of a string, `position` is a two-element array instead of three), the
+client SHOULD discard the event rather than crashing or partially processing it.
+Defensive defaults (treating a missing `displayName` as `null`) are acceptable when the
+field is non-critical for the UI update; required fields like `regionId`, `avatarId`, or
+`objectId` should cause the event to be dropped if absent.
+
+**Extra fields:** Clients MUST tolerate unknown fields in event objects. Future spec
+revisions or deployment extensions may add fields. Parse only the fields you recognize;
+ignore the rest.
+
+**Logging:** Log malformed frames at a debug or trace level for diagnostics. Do not log
+at warning/error level in production — a misbehaving server or transient corruption
+should not fill client logs.
+
 ---
 
 ## Interop with Chat WSS and VTC WSS
@@ -512,13 +543,25 @@ reactively.
 
 ### Visibility filtering
 
-The visibility contract from the spec applies to ephemeral events using the same logic as
-`SceneObject/get` responses. The spec uses SHOULD for server-side filtering — simple
-deployments that return all objects in `SceneObject/get` MAY deliver all ephemeral events
-without filtering. The filtering logic should be reused when present:
+The spec defines two normative levels for visibility filtering of ephemeral events:
 
-- A simple deployment that returns all objects in `SceneObject/get` delivers all
-  `SceneObjectEvent` frames.
+**Base visibility contract (MUST):** The server MUST apply the same visibility contract
+as `SceneObject/get` to ephemeral events. If a user would not receive an object in a
+`SceneObject/get` response, the server MUST NOT deliver a `SceneObjectEvent` for that
+object. This is not optional — it is a hard requirement regardless of deployment
+complexity.
+
+**Deployment-specific spatial filtering (SHOULD):** A deployment that performs additional
+server-side spatial filtering (radius-based, occlusion-based) SHOULD apply the same
+filter to ephemeral events. This is a SHOULD-level recommendation — simple deployments
+that do not perform spatial filtering beyond the base visibility contract are not required
+to add it.
+
+In practice:
+
+- A simple deployment whose `SceneObject/get` returns all objects in the region (no
+  spatial filtering) delivers all `SceneObjectEvent` frames — because all objects pass
+  the base visibility contract.
 - A deployment with radius-based filtering suppresses `SceneObjectEvent` for objects
   outside the recipient avatar's visibility radius.
 - A deployment with occlusion culling suppresses events for objects not in the avatar's
@@ -532,21 +575,25 @@ reconciliation is sufficient for this purpose.
 
 ### Rate limiting
 
-The spec defines two rate limits. Both are per outbound connection — each connected
-client has its own independent budget.
+The spec recommends (SHOULD-level) two rate limits for outbound ephemeral events. These
+are not hard requirements — a server MAY choose different thresholds — but the
+recommended values are sensible defaults. Both are per outbound connection; each
+connected client has its own independent budget.
 
-**SceneObjectEvent** with `event: "updated"`: no more than 2 events per object per
-second. Track the last delivery timestamp in a structure keyed by `(connectionId,
-regionId, objectId)`. When an event would exceed the limit, drop it silently. When the
+**SceneObjectEvent** with `event: "updated"`: the spec recommends no more than 2 events
+per object per second. Events above this rate MAY be silently dropped. Track the last
+delivery timestamp in a structure keyed by `(connectionId, regionId, objectId)`. When the
 rate window reopens, deliver the most recent state — clients should see the latest
 position, not an intermediate one. Object updates at higher frequency belong on the
 simulation layer, not the JMAP WebSocket.
 
-**SceneInteractionEvent**: no more than 5 events per user per region per second. Track
-with a structure keyed by `(connectionId, regionId, userId)`. Drop silently when
-exceeded.
+**SceneInteractionEvent**: the spec recommends no more than 5 events per user per region
+per second. Events above this rate MAY be silently dropped. Track with a structure keyed
+by `(connectionId, regionId, userId)`.
 
 These structures are per-connection and in-memory. When a connection closes, discard them.
+The spec also notes that servers MAY apply additional rate limits to other event types
+beyond these two.
 
 Servers SHOULD also apply an inbound rate limit on `SceneStreamEnable` — a client that
 sends it in a tight loop causes unnecessary churn on the pub/sub layer. A limit of a few
@@ -696,24 +743,30 @@ Client creates an avatar in the target region:
 }, "0"]]
 ```
 
-Server responds with the created avatar:
+Server responds with the created avatar. Per RFC 8887, WebSocket responses are wrapped
+in a `Response` envelope:
 
 ```json
-[["SceneAvatar/set", {
-  "accountId": "account-xyz",
-  "created": {
-    "av0": {
-      "id": "user:alice@example.com",
-      "regionId": "01J5ABC0000000000000000001",
-      "userId": "user:alice@example.com",
-      "displayName": "Alice Chen",
-      "position": [0, 0, 10],
-      "orientation": [0, 0, 0, 1],
-      "joinedAt": "2026-06-05T14:35:00Z",
-      "leftAt": null
-    }
-  }
-}, "0"]]
+{
+  "@type": "Response",
+  "methodResponses": [
+    ["SceneAvatar/set", {
+      "accountId": "account-xyz",
+      "created": {
+        "av0": {
+          "id": "user:alice@example.com",
+          "regionId": "01J5ABC0000000000000000001",
+          "userId": "user:alice@example.com",
+          "displayName": "Alice Chen",
+          "position": [0, 0, 10],
+          "orientation": [0, 0, 0, 1],
+          "joinedAt": "2026-06-05T14:35:00Z",
+          "leftAt": null
+        }
+      }
+    }, "0"]
+  ]
+}
 ```
 
 ### 4. Enable Scene event stream

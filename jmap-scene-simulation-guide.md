@@ -361,22 +361,29 @@ simulation layer must pick up this change. Options:
 A message bus is the recommended approach: it decouples the servers while
 providing near-immediate propagation.
 
-**Conflict resolution.** Two conflict scenarios:
+**Conflict resolution.** The spec does not prescribe a conflict resolution
+strategy between the simulation layer and JMAP state. The State
+Reconciliation section says the server SHOULD reconcile the two, but the
+mechanism and conflict policy are deployment-defined. The following is
+**recommended policy**, not a spec requirement:
 
 1. A client moves an object via `SceneObject/set` while the simulation layer
-   is also moving it (physics, scripted animation). Resolution: the JMAP
-   write takes priority. The simulation layer receives the new position via
-   the message bus and snaps the object there. This matches user expectations:
-   an explicit "move this object" action should override automated movement.
+   is also moving it (physics, scripted animation). Recommended resolution:
+   the JMAP write takes priority. The simulation layer receives the new
+   position via the message bus and snaps the object there. This matches user
+   expectations: an explicit "move this object" action should override
+   automated movement.
 
 2. The simulation layer writes a position snapshot to JMAP, but the object has
-   been deleted via `SceneObject/set destroy` since the last snapshot. Resolution:
-   the snapshot write fails (object not found); the simulation layer removes
-   the object from its local state.
+   been deleted via `SceneObject/set destroy` since the last snapshot.
+   Recommended resolution: the snapshot write fails (object not found); the
+   simulation layer removes the object from its local state.
 
 For both cases, last-write-wins with JMAP as the authority for existence and
 the simulation layer as the authority for real-time position is the simplest
-correct model.
+correct model. Deployments may choose a different policy (for example, a game
+server that is fully authoritative may reverse the priority, with the
+simulation layer overriding JMAP writes for physics-controlled objects).
 
 **Throttling snapshot writes.** If a region has no avatars and no dynamic
 objects, there is nothing to reconcile. Skip snapshot writes for empty or
@@ -480,25 +487,35 @@ primary concern is smooth movement, not anti-cheat.
 **Hybrid.** Clients are authoritative for their own avatar position (within
 validated bounds), but the server is authoritative for physics objects, NPC
 movement, and interactions that affect shared state. This splits authority by
-object type:
+object type.
 
-| Object type | Authority |
+The spec defines `physicsMode` values but states that "enforcement is
+simulation-layer-defined" (SceneObject, `physicsMode`). The table below is
+**recommended practice**, not a spec requirement -- deployments may assign
+authority differently based on their needs:
+
+| Object type | Recommended authority |
 |---|---|
 | Own avatar position | Client (validated by server) |
 | Other avatars | Relayed from owning client |
 | Static objects (`physicsMode: "static"`) | JMAP state (immutable position) |
 | Dynamic objects (`physicsMode: "dynamic"`) | Server (physics simulation) |
 | Kinematic objects (`physicsMode: "kinematic"`) | Server (scripted movement) |
+| No-collision objects (`physicsMode: "none"`) | JMAP state (moved via `SceneObject/set`; no simulation involvement) |
 | Interaction events | Client-initiated, server-validated |
 
 Pros: good balance of responsiveness and consistency; server CPU is spent only
 on physics objects, not avatar movement. Cons: more complex than either pure
 model; authority boundaries must be clearly defined.
 
-Best for: most deployments. The hybrid model is the natural fit for JMAP Scene
+Best for: most deployments. The hybrid model is a natural fit for JMAP Scene
 because the spec already distinguishes between avatar positions (client-
-reported, per spec) and object physics modes (which imply different authority
-sources).
+reported, per spec) and object physics modes (which signal intent to the
+simulation layer). The spec leaves enforcement to the simulation layer, so
+the authority assignments above are a recommended starting point rather than
+normative requirements. See the [JMAP Scene Games Implementer
+Guide](jmap-scene-board-games-guide.md) for concrete examples of how
+different game genres assign simulation authority.
 
 **Server-side validation for client-authoritative positions.** Even in a
 client-authoritative model, the server SHOULD validate:
@@ -651,20 +668,29 @@ delay. Implement simple linear dead reckoning for missed updates with a
 for position updates (not JSON). Increase tick rate only after profiling
 demonstrates that bandwidth and server CPU are not bottlenecks.
 
+For game-specific tick rate guidance (35 Hz for classic FPS, 60 Hz for arcade,
+77 Hz for Quake-style), see the [JMAP Scene Games Implementer
+Guide](jmap-scene-board-games-guide.md), which covers tick rate selection
+per genre in detail.
+
 ---
 
 ## 6. Visibility and interest management
 
 ### What the spec leaves open
 
-The spec defines a SHOULD-level visibility contract (Visibility Contract,
-Section 10): "The server SHOULD apply visibility filtering to limit the
-objects returned based on the authenticated user's avatar position within the
-region." It describes three levels of implementation -- return all objects, a
-radius filter, or server-side occlusion culling -- and leaves the algorithm
-to the deployment. The spec also lists interest management as a simulation
-layer responsibility (Real-Time Simulation Layer, Simulation Layer
-Responsibilities).
+The spec defines a two-tier visibility contract (Real-Time Simulation
+Layer, Visibility Contract): first, a MUST-level access-control rule ("The
+server MUST NOT include a SceneObject in a `SceneObject/get` response or
+`SceneObject/query` result if the authenticated user does not have access to
+the object's containing SceneRegion"), and second, a SHOULD-level filtering
+rule ("The server SHOULD apply visibility filtering to limit the objects
+returned based on the authenticated user's avatar position within the
+region"). It describes three levels of implementation for the filtering rule
+-- return all objects, a radius filter, or server-side occlusion culling --
+and leaves the algorithm to the deployment. The spec also lists interest
+management as a simulation layer responsibility (Real-Time Simulation Layer,
+Simulation Layer Responsibilities).
 
 ### What you must decide
 
@@ -1004,8 +1030,19 @@ choice.
 |---|---|---|---|---|
 | WebSocket | Yes | No | N/A (TCP) | Low |
 | WebRTC data channel | Yes | Yes | Built-in (ICE) | Medium |
-| WebTransport (QUIC) | Partial | Yes | N/A | Medium |
+| QUIC (native) | No | Yes (RFC 9221 datagrams) | N/A | Medium-High |
+| WebTransport | Partial (Chrome, Edge; not yet Safari/Firefox) | Yes (datagrams + unidirectional streams) | N/A | Medium |
 | Raw UDP | No | Yes | Manual (STUN/TURN) | High |
+
+**WebTransport note.** WebTransport is a browser API layered on HTTP/3 (QUIC).
+It provides both reliable streams and unreliable datagrams from browser
+JavaScript -- something WebSocket and WebRTC data channels cannot both offer
+cleanly. Browser support is partial: Chromium-based browsers (Chrome, Edge)
+ship WebTransport; Safari and Firefox have it behind flags or in development
+as of mid-2026. For deployments that can require Chromium or that serve both
+browser and native clients, WebTransport is a strong middle ground between
+WebSocket (reliable-only, browser-universal) and raw QUIC (full control,
+native-only).
 
 ### Recommended starting point
 

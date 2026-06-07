@@ -121,8 +121,17 @@ Set `SceneRegion.activeCallId` to the VTCCall's id. This triggers a SceneRegion
 **When that VTCCall transitions to `"ended"` state:**
 Clear `SceneRegion.activeCallId` to `null`. This triggers a SceneRegion `StateChange`.
 
-The server must do this atomically with the VTCCall state transition. A VTCCall that has
+The server should do this atomically with the VTCCall state transition. A VTCCall that has
 ended but whose SceneRegion still shows `activeCallId` set is a data integrity bug.
+
+Note: The Scene spec lists `activeCallId` as a client-patchable field on `SceneRegion/set
+update` — any authorized client can set or clear it. The atomicity guidance above is
+non-normative deployment advice for servers that manage the binding automatically. It is
+not a normative requirement from either spec. A deployment may choose server-managed
+atomicity (recommended), client-managed binding (the client sets `activeCallId` after
+creating a VTCCall), or a hybrid where the server enforces consistency checks on client
+patches. The key invariant is that `activeCallId` should not reference a VTCCall in
+`"ended"` state, regardless of which component maintains it.
 
 ### Persistent vs ephemeral region calls
 
@@ -268,10 +277,17 @@ production deployments.
 
 ### Correlating avatars with participants
 
-Both SceneAvatar and VTCParticipant use the userId as the id within a given context
-(the server SHOULD use the userId as the id). This means the same userId appears as both
-`SceneAvatar.userId` and `VTCParticipant.userId`, providing a natural join key. The
-client can correlate avatars with participants by matching on userId:
+Both the Scene spec and the VTC spec say the server SHOULD (not MUST) use the userId as
+the id within a given context. When the server follows this recommendation, the same
+userId appears as both `SceneAvatar.userId` and `VTCParticipant.userId`, providing a
+natural join key. The client can correlate avatars with participants by matching on userId.
+
+Because this is a SHOULD, not a MUST, servers are permitted to assign opaque ids that
+differ from userId — for example, when a single user has multiple avatars in the same
+region or multiple VTC participants in the same call (multi-device). When the id does not
+equal userId, the client must fall back to matching on the `userId` field directly rather
+than assuming `id == userId`. Clients should always use the `userId` field for correlation,
+not the `id` field, to be robust against servers that assign non-userId ids:
 
 ```json
 {
@@ -347,10 +363,26 @@ local frame).
 
 **Coordinate mapping:**
 
-Scene uses right-handed Y-up meters. Web Audio API uses right-handed Y-up. The
-coordinate systems match directly — no conversion is needed for browser clients.
+Scene uses right-handed Y-up meters. The Web Audio API (`PannerNode` and
+`AudioListener`) also uses a right-handed Y-up coordinate system, so axis
+orientation matches directly — no axis swapping or sign flipping is needed for
+browser clients.
+
+However, the Web Audio API's distance models (`linear`, `inverse`,
+`exponential`) use unitless coordinate values, not meters. The API computes
+distance from the numeric difference between `PannerNode.positionX/Y/Z` and
+`AudioListener.positionX/Y/Z` and feeds that distance into the attenuation
+formula with `refDistance`, `maxDistance`, and `rolloffFactor`. If you pass Scene
+coordinates (which are in meters) directly, the distance model parameters
+(`refDistance`, `maxDistance`) must also be expressed in meters for the
+attenuation to be physically correct. This works naturally as long as all values
+are in the same unit. Problems arise only if a client scales Scene coordinates
+before passing them to Web Audio without also scaling the distance parameters.
+
 For clients using other audio APIs (OpenAL, FMOD, Wwise), convert from Scene's
-Y-up right-handed convention to the audio API's convention.
+Y-up right-handed convention to the audio API's convention. OpenAL uses
+right-handed Y-up (same as Scene); FMOD and Wwise use left-handed Y-up
+(negate Z).
 
 ### Server-side spatial audio
 
@@ -708,6 +740,26 @@ This is the coarse-grained path. It delivers all Scene and VTC events for all re
 and calls in which the user is active. For a client displaying a single region, prefer
 the fine-grained `SceneStreamEnable` + `VTCStreamEnable` path to reduce server fan-out
 and network traffic.
+
+### Blocked-sender suppression asymmetry
+
+The Scene WSS spec and VTC WSS spec apply blocked-sender suppression at different
+scopes. The Scene WSS spec suppresses all event types — `SceneAvatarEvent`,
+`SceneObjectEvent`, and `SceneInteractionEvent` — when the originating user is blocked.
+The VTC WSS spec suppresses only `VTCRingEvent` and `VTCCallEndEvent` (per-user events)
+when the initiator is blocked. Per-call events — `VTCParticipantEvent`,
+`VTCMediaStateEvent`, `VTCActiveSpeakerEvent`, `VTCUnmuteRequestEvent`,
+`VTCRecordingStateEvent`, and `VTCGatewaySignal` — are not subject to blocked-sender
+filtering. They are delivered to any current participant of the call.
+
+This means a user who has blocked another user will not see that user's avatar appear
+(SceneAvatarEvent is suppressed) but will still receive VTCParticipantEvent when the
+blocked user joins the same call, and will still receive VTCMediaStateEvent and
+VTCActiveSpeakerEvent for the blocked user's media activity. The client must handle this
+gap: if the deployment wants full blocked-user hiding in a Scene+VTC context, the client
+should filter VTC per-call events client-side by checking the participant's userId against
+the local block list. The server does not do this filtering for per-call VTC events because
+the VTC WSS spec scopes block filtering to per-user ring events only.
 
 ### Correlating Scene and VTC events
 

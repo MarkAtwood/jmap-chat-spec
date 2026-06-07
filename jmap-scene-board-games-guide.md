@@ -12,13 +12,24 @@ spatial state layer.
 Games in this guide span all three `viewHint` values:
 
 - **`"2d-topdown"`** -- board games, card games, top-down arcade
-  (Asteroids, Battlezone)
+  (Asteroids)
 - **`"2d-side"`** -- platformers, side-scrollers (Pitfall)
-- **`"3d"`** -- first-person games (Doom)
+- **`"3d"`** -- first-person games (Battlezone, Doom, Quake, Descent,
+  Flight Combat)
 
 ---
 
 ## Common Patterns
+
+> **Fields omitted for brevity.** JSON examples throughout this guide
+> omit SceneObject and SceneRegion fields that are unchanged from their
+> defaults or are server-set. Omitted fields include: `orientation`
+> (defaults to `[0, 0, 0, 1]`), `scale` (defaults to `[1, 1, 1]`),
+> `parentId` (defaults to `null`), `assetUri`, `accountId`,
+> `createdAt`, `updatedAt`, `description`, `spawnOrientation`,
+> `activeAvatarCount`, and optional binding fields (`chatId`,
+> `spaceId`, `channelId`, `activeCallId` -- shown only when relevant
+> to the game). All fields are defined in `draft-atwood-jmap-scene-00`.
 
 ### Board Region
 
@@ -93,6 +104,12 @@ The simulation layer rejects `SceneObject/set` updates from a player
 when it is not their turn. Turn transitions update the game state
 object; all clients receive the `StateChange` and the UI updates
 accordingly.
+
+In the per-game sections that follow, `### Game State` subsections
+show only the `customProperties` portion of the game state
+SceneObject. The enclosing object always uses `visible: false`,
+`interactable: false`, `visualRef: null`, `visualType: null`, and
+`physicsMode: "none"` per the pattern above.
 
 ### Move Mechanics
 
@@ -1313,6 +1330,10 @@ not their types.
 
 ### Game State
 
+The game state object is returned with per-player redaction. The
+example below shows what Alice receives: her own full resource
+breakdown and only card totals for opponents.
+
 ```json
 {
   "customProperties": {
@@ -1323,8 +1344,8 @@ not their types.
     "lastRoll": [3, 4],
     "resources": {
       "user:alice@example.com": { "brick": 2, "lumber": 3, "wool": 1, "grain": 0, "ore": 2 },
-      "user:bob@example.com": { "brick": 1, "lumber": 0, "wool": 4, "grain": 2, "ore": 1 },
-      "user:carol@example.com": { "brick": 0, "lumber": 2, "wool": 1, "grain": 3, "ore": 0 }
+      "user:bob@example.com": { "_total": 8 },
+      "user:carol@example.com": { "_total": 6 }
     },
     "victoryPoints": {
       "user:alice@example.com": 5,
@@ -1344,10 +1365,9 @@ not their types.
 }
 ```
 
-**Resource counts** in the game state are per-player private data.
-The server redacts other players' resource counts from the response,
-showing only the total card count. Each player sees only their own
-detailed resource breakdown.
+The server maintains the full resource breakdown internally. Each
+player's response includes their own full breakdown and only a
+`_total` count for all other players.
 
 ### Hidden Information
 
@@ -1675,7 +1695,7 @@ foundation piles, one stock, one waste.
   "viewHint": "2d-topdown",
   "spawnPosition": [3.5, 0, -1],
   "simulationUri": "wss://sim.example.com/games/solitaire/001",
-  "accessPolicy": "private",
+  "accessPolicy": "invite",
   "environment": {
     "tableTheme": "green-felt",
     "drawMode": "draw-3"
@@ -1683,8 +1703,9 @@ foundation piles, one stock, one waste.
 }
 ```
 
-`accessPolicy: "private"` -- single player. Spectators may join if
-the region permits.
+`accessPolicy: "invite"` with no other users invited creates a
+single-player region. Spectators may join by being added to the
+invite list.
 
 ### Pieces
 
@@ -1811,7 +1832,7 @@ cards to foundations in sequence.
 {
   "customProperties": {
     "phase": "playing",
-    "won": false,
+    "winner": null,
     "moveCount": 42,
     "score": 315,
     "elapsedSeconds": 187,
@@ -1854,7 +1875,10 @@ simulation layer enforcing rules on each move. Video games require
 the simulation layer to run a continuous game loop -- processing
 input, updating physics, detecting collisions, and broadcasting
 state -- at frame rate. JMAP snapshots (`SceneAvatar/get`,
-`SceneObject/get`) serve as periodic checkpoints.
+`SceneObject/get`) serve as periodic checkpoints. For architecture
+patterns, authority models, tick rate selection, state reconciliation,
+and transport options for the simulation layer, see the [JMAP Scene
+Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 **Dimensionality:** All games using a first-person perspective use
 `viewHint: "3d"`, but they fall into distinct categories:
@@ -1890,7 +1914,7 @@ showing a viewport-sized window into the region.
   "viewHint": "2d-side",
   "spawnPosition": [2, 0, 4],
   "simulationUri": "wss://sim.example.com/games/pitfall/001",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "environment": {
     "gravity": -9.81,
     "theme": "jungle",
@@ -2016,7 +2040,9 @@ the Y axis from the side.
 
 ### Interaction Model
 
-The simulation layer runs a game loop:
+The simulation layer runs a game loop (see the
+[Simulation Layer Guide](jmap-scene-simulation-guide.md) for tick
+rate selection and authority models):
 
 1. **Input:** Client sends movement input via the simulation
    connection: left/right arrows for movement, up/space for jump.
@@ -2079,6 +2105,11 @@ All use `viewHint: "2d-side"`, horizontal scrolling, gravity, and
 platform collision. The differences are in the simulation layer's
 game logic, not in the Scene data model.
 
+### Hidden Information
+
+None -- all SceneObject positions and states are public. In
+multiplayer variants all players see the same world state.
+
 
 ---
 
@@ -2101,7 +2132,7 @@ opposite edge (toroidal topology).
   "viewHint": "2d-topdown",
   "spawnPosition": [20, 0, 15],
   "simulationUri": "wss://sim.example.com/games/asteroids/001",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "environment": {
     "wrapEdges": true,
     "background": "starfield",
@@ -2221,7 +2252,9 @@ collision detection.
 
 ### Interaction Model
 
-The simulation layer runs a continuous game loop at 60 Hz:
+The simulation layer runs a continuous game loop at 60 Hz. For tick
+rate selection, authority models, and state reconciliation for
+top-down arcade games, see the [Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 1. **Input:** Left/right arrow rotates the ship (updates
    `orientation`). Up arrow applies thrust in the facing direction
@@ -2259,6 +2292,11 @@ Multiple SceneAvatars (ships) in the same arena. Cooperative
 (all players vs asteroids) or competitive (friendly fire enabled).
 The simulation layer decides the mode.
 
+### Hidden Information
+
+None -- all object positions are visible to all players. The
+wrap-around arena has no fog-of-war.
+
 
 ---
 
@@ -2284,7 +2322,7 @@ A flat arena with distant geometric mountains on the horizon.
   "viewHint": "3d",
   "spawnPosition": [0, 0, 0],
   "simulationUri": "wss://sim.example.com/games/battlezone/001",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "environment": {
     "renderStyle": "vector-wireframe",
     "horizonColor": "#00ff00",
@@ -2392,6 +2430,10 @@ view, even though movement is constrained to a 2D plane.
 
 ### Interaction Model
 
+For authority models, conflict resolution, and state reconciliation
+for real-time vehicle games, see the [Simulation Layer
+Guide](jmap-scene-simulation-guide.md).
+
 1. **Movement:** Forward/back arrows move the tank. Left/right rotate.
    The simulation applies tank treads physics (tank turns in place,
    then moves forward/back in the facing direction).
@@ -2428,6 +2470,13 @@ Multiple player tanks (SceneAvatars) in the same arena, cooperative
 vs AI enemies or PvP deathmatch. Spatial audio via VTC integration
 (Section 10.4 of the client architecture) adds immersion -- you hear
 enemy engines getting louder as they approach.
+
+### Hidden Information
+
+None -- all object positions are public. Enemies behind obstacles
+are still present in the SceneObject set; line-of-sight culling is
+a client rendering decision, not a server visibility filter. The
+radar displays all objects within range regardless of occlusion.
 
 
 ---
@@ -2473,7 +2522,7 @@ collision.
   "spawnOrientation": [0, 0, 0, 1],
   "simulationUri": "wss://sim.example.com/games/doom/e1m1",
   "chatId": "chat-doom-frag-log",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "activeCallId": "call-doom-001",
   "environment": {
     "renderMode": "2.5d",
@@ -2636,7 +2685,9 @@ are all part of the level mesh.
 ### Interaction Model
 
 The simulation layer runs a full FPS game loop at 35+ Hz (classic
-Doom's tick rate):
+Doom's tick rate). See the [Simulation Layer Guide](jmap-scene-simulation-guide.md)
+for hitscan authority, state reconciliation, and transport protocol
+selection for FPS games.
 
 1. **Movement:** WASD for movement, mouse for look (pitch and yaw
    update the SceneAvatar's `orientation`). The simulation applies
@@ -2778,7 +2829,7 @@ A fully 3D level with true volumetric architecture.
   "spawnOrientation": [0, 0, 0, 1],
   "simulationUri": "wss://sim.example.com/games/quake/dm4",
   "chatId": "chat-quake-frag-log",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "activeCallId": "call-quake-001",
   "environment": {
     "renderMode": "3d",
@@ -2917,7 +2968,9 @@ jumping).
 ### Interaction Model
 
 The simulation layer runs a game loop at 77 Hz (Quake's server tick
-rate, equivalent to `sv_fps 77`):
+rate, equivalent to `sv_fps 77`). For client-side prediction,
+authority models, and state reconciliation at high tick rates, see
+the [Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 1. **Movement:** WASD + mouselook. The critical difference from Doom:
    **free vertical look** (pitch + yaw). The player aims with the
@@ -3023,6 +3076,15 @@ Everything that Doom could not do, Quake can:
   surrounding geometry (not possible with Doom's sector-based
   lighting).
 
+### Hidden Information
+
+Same as Doom: all SceneObject positions are public (no fog-of-war
+in standard Quake deathmatch). Player inventory and health are
+public via SceneAvatar `customProperties`. For competitive modes
+that require fog-of-war, the server would use spatial filtering on
+`SceneObject/query` to return only objects within the player's
+line of sight.
+
 
 ---
 
@@ -3049,7 +3111,7 @@ vertical shafts and inverted rooms.
   "spawnOrientation": [0, 0, 0, 1],
   "simulationUri": "wss://sim.example.com/games/descent/mine1",
   "chatId": "chat-descent-001",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "environment": {
     "renderMode": "3d",
     "lightingModel": "vertex-lit",
@@ -3177,7 +3239,11 @@ normal in zero-G mine tunnels.
 
 ### Interaction Model
 
-The simulation layer runs a game loop at 30+ Hz:
+The simulation layer runs a game loop at 30+ Hz. 6DOF physics
+introduces full quaternion angular velocity and orientation-relative
+movement; for authority models and conflict resolution in 6DOF
+environments, see the [Simulation Layer
+Guide](jmap-scene-simulation-guide.md).
 
 1. **6DOF movement:** The player has six independent controls:
    forward/back, strafe left/right, rise/drop (vertical strafe),
@@ -3241,6 +3307,15 @@ Descent uses the SceneAvatar's full quaternion orientation --
 including roll -- which most other `viewHint: "3d"` games constrain
 to yaw and pitch only.
 
+### Hidden Information
+
+None in single-player -- all robot and item positions are known to
+the server and visible to the player. In multiplayer deathmatch,
+all positions are public. Cloaked robots (`cloaked: true`) are
+visually hidden by the client but remain in the SceneObject set;
+the simulation layer may optionally withhold cloaked enemy positions
+from `SceneObject/get` responses for competitive fairness.
+
 
 ---
 
@@ -3265,7 +3340,7 @@ entity size.
   "spawnOrientation": [0, 0, 0, 1],
   "simulationUri": "wss://sim.example.com/games/flight/alpha",
   "chatId": "chat-flight-comms",
-  "accessPolicy": "open",
+  "accessPolicy": "public",
   "activeCallId": "call-flight-001",
   "environment": {
     "renderMode": "3d",
@@ -3436,6 +3511,15 @@ turning sharply or using countermeasures.
   }
 }
 ```
+
+### Hidden Information
+
+None in single-player -- all enemy positions are known. In
+multiplayer cooperative missions, all wingman and enemy positions
+are shared among players. For PvP modes, radar range limits
+could serve as a fog-of-war mechanism: the server withholds
+`SceneObject/get` results for enemies beyond radar range, returning
+them only when they enter detection distance.
 
 
 ---
@@ -3720,7 +3804,10 @@ Client-side prediction (the client simulates movement locally and
 reconciles with server corrections) is essential for responsive feel.
 The Scene spec's snapshot model (JMAP `SceneAvatar/get` at 1-5 Hz)
 is too slow for gameplay; the simulation connection at
-`simulationUri` carries the real-time stream.
+`simulationUri` carries the real-time stream. For detailed coverage of
+transport options (WebSocket, WebRTC, QUIC, WebTransport), authority
+models, interpolation, and state reconciliation, see the [JMAP Scene
+Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 ### Spatial Audio
 

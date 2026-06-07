@@ -866,6 +866,39 @@ that Scene does not prescribe.
 
 ---
 
+### Spatial (spatial.io)
+
+**What it is.** Spatial is a browser-based 3D social platform targeting
+enterprise and creator use cases. Users build branded virtual spaces, host
+events, and display art galleries. It runs in browsers and on VR headsets.
+It raised $55 million in funding during the 2021-2022 metaverse investment
+cycle and subsequently pivoted from pure enterprise toward creator
+monetization.
+
+**What it got right.** Browser-first with no install, no native SDK, and no
+hardware requirement. Importing standard 3D assets (glTF, FBX) without a
+development environment is the right model for creator adoption. Supporting
+both VR headset users and desktop/browser users in the same space is the
+correct approach to hardware diversity.
+
+**What is missing or wrong.** Spatial is proprietary. Spaces exist only on
+Spatial's servers and are not portable. The protocol is undocumented. There
+is no interoperability with other platforms. The mid-stream pivot from
+enterprise toward creator monetization illustrates the broader metaverse
+platform challenge: no durable open protocol means the business model must
+carry the entire weight of platform survival.
+
+**How Scene relates.** Spatial's primary use case — branded 3D spaces for
+events, galleries, and enterprise collaboration — maps directly to a
+SceneRegion with `viewHint: "3d"`, SceneObjects for content, and
+SceneAvatars for attendees. The asset import workflow Spatial provides
+(drag-and-drop glTF) is a client concern; `visualRef` +
+`visualType: "model/gltf-binary"` provides the state layer. Spatial
+demonstrates proven demand for this use case; Scene provides the protocol
+foundation that a durable open alternative would need.
+
+---
+
 ## 6. Games as Prior Art
 
 Games are the oldest and most mature form of shared spatial state management.
@@ -975,6 +1008,43 @@ deployments choose:
 All of these patterns trace back to the design space that Quake and Unreal
 explored. Scene does not prescribe which pattern to use; it provides the
 state layer that all of them need.
+
+---
+
+### Fortnite Creative / UEFN
+
+**What it is.** Fortnite Creative (2018) and its successor Unreal Editor for
+Fortnite (UEFN, 2023) give players tools to build custom game experiences
+inside Fortnite's infrastructure. UEFN uses a subset of Unreal Engine with a
+Verse scripting language. Fortnite reaches over 100 million monthly active
+users across PC, console, and mobile. Custom creator-built "islands" can
+attract millions of concurrent players.
+
+**What it got right.** Scale that no other creator platform has matched. The
+shift to UEFN brought professional game development tools — Unreal Engine's
+full environment — to creator experiences, eliminating the quality ceiling
+that simpler tools impose. Revenue sharing (40% of Fortnite economy allocated
+to creators) created real financial incentives. Cross-platform reach across
+every major gaming platform is unmatched.
+
+**What is missing or wrong.** UEFN is completely proprietary and Epic-
+controlled. Islands run only on Epic's infrastructure. The Verse scripting
+language and UEFN toolchain are specific to the Fortnite platform. There is
+no way to export an island and host it elsewhere. Epic controls pricing,
+distribution, content policy, and the revenue split — all of which can change
+unilaterally. The platform's focus on game mechanics rather than persistent
+social space means it is optimized for session-based play, not ongoing
+presence.
+
+**How Scene relates.** Fortnite Creative demonstrates that user-generated
+game content at scale is achievable, but only within a heavily centralized,
+well-funded platform. Scene's approach is orthogonal: a UEFN-like experience
+could target a Scene server for its spatial state layer, with the game logic
+and rendering handled by a UEFN-equivalent toolchain above the spec. Scene
+does not provide creation tools or a scripting language, but it provides the
+portable state layer that makes experiences deployable outside any single
+platform. Where Fortnite Creative answers "scale" with "Epic controls
+everything," Scene answers it with "open protocol, multiple implementations."
 
 ---
 
@@ -1212,6 +1282,7 @@ conditional support.
 | System | Open Protocol | Persistent State | Composable | Format-Agnostic | View-Mode Range | Simulation-Agnostic |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Open Standards** | | | | | | |
+| OASIS (fiction) | -- | -- | -- | -- | -- | -- |
 | OMI | Yes | -- | -- | ~glTF-focused | -- | -- |
 | VRChat OSC | ~limited | -- | -- | -- | -- | -- |
 | IEEE 2888 | Yes | -- | -- | -- | -- | -- |
@@ -1229,6 +1300,7 @@ conditional support.
 | Roblox | -- | Yes | -- | -- | ~mostly 3D | -- |
 | **Social VR** | | | | | | |
 | Mozilla Hubs | ~open source | ~session only | -- | ~glTF | 3D only | -- |
+| Mozilla Social | ~ActivityPub | -- | -- | -- | -- | -- |
 | VRChat | -- | ~session only | -- | -- | 3D only | -- |
 | Rec Room | -- | Yes | -- | -- | 3D only | -- |
 | AltspaceVR (defunct) | -- | ~session only | -- | -- | 3D only | -- |
@@ -1237,9 +1309,12 @@ conditional support.
 | Teamflow | -- | Yes | -- | -- | 2D only | -- |
 | SpatialChat | -- | ~session only | -- | -- | 2D only | -- |
 | Frame VR | -- | Yes | -- | ~some | 3D only | -- |
+| Spatial (spatial.io) | -- | Yes | -- | ~glTF/FBX | 3D only | -- |
 | **Games** | | | | | | |
 | Doom (1993) | ~source released | ~session only | -- | ~WAD format | 3D only | -- |
+| Gauntlet (1985) | -- | ~session only | -- | -- | 2D only | -- |
 | Quake / Unreal | ~source released | ~session only | -- | -- | 3D only | -- |
+| Fortnite Creative / UEFN | -- | Yes | -- | -- | 3D only | -- |
 | Board games (digital) | ~varies | Yes | -- | ~varies | 2D only | -- |
 | **JMAP Scene** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
 
@@ -1262,6 +1337,47 @@ conditional support.
 - **Simulation-Agnostic**: Does the system allow the deployment to choose its
   real-time transport (WebRTC, UDP, WebSocket, none), or does it prescribe
   a specific simulation/networking approach?
+
+---
+
+## Notable Omissions
+
+Several well-known systems were deliberately excluded from this landscape review.
+
+**NVIDIA Omniverse / OpenUSD.** Omniverse is a platform for collaborative 3D
+design built on Pixar's Universal Scene Description (USD) format. USD is a
+powerful scene-graph representation, but it is a file format and asset pipeline,
+not a session-state protocol. Omniverse solves the "how do multiple tools edit
+the same 3D scene" problem (via USD layers and composition arcs), not the "who
+is in this room right now and where are they standing" problem that Scene
+addresses. The two operate at different layers: USD describes what the world
+looks like; Scene describes who is in it and what they are doing.
+
+**W3C WebXR Device API.** WebXR is a browser API for accessing VR and AR
+hardware (headsets, controllers, hand tracking). It is a device abstraction
+layer, not a networking or state protocol. WebXR tells a client how to render
+stereoscopic frames and read controller input; it says nothing about multi-user
+presence, spatial state, or server-client communication. A Scene client running
+in a browser would likely use WebXR for rendering and input, but WebXR and
+Scene do not overlap in function.
+
+**Spatial.io.** Spatial pivoted from a 3D collaboration platform to a
+gaming-focused metaverse platform and then to an AI-avatar product. Its
+repeated pivots mean there is no stable architecture to analyze. The spatial
+collaboration phase was similar to Frame VR (covered in Section 5); the
+gaming phase was similar to Roblox (covered in Section 3). Spatial does not
+add a distinct architectural lesson beyond what those entries already cover.
+
+**High Fidelity.** High Fidelity (2013-2020), founded by Second Life creator
+Philip Rosedale, was an open-source social VR platform that attempted
+decentralized hosting and high-fidelity spatial audio. It pivoted to
+audio-only (becoming a spatial audio SDK) and eventually shut down its virtual
+world. The spatial audio work was technically strong but the platform suffered
+the same sustainability problem as Hubs and AltspaceVR, already covered in
+Section 4. Its open-source legacy was not widely adopted.
+
+These systems are interesting individually but do not introduce architectural
+patterns or failure modes beyond those already covered by the entries above.
 
 ---
 
