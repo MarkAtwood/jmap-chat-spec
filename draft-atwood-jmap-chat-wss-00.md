@@ -226,7 +226,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 : MUST be `"ChatTypingEvent"`.
 
 `chatId` (String):
-: The Chat id in which the typing event occurred.
+: The `id` of the Chat in which the typing event occurred.
 
 `senderId` (String):
 : The ChatContact.id of the typing user. MUST NOT be `"self"`.

@@ -162,7 +162,7 @@ The filenode draft and `draft-ietf-jmap-filenode` do not constrain
 which file types may be uploaded. Servers receive blobs with
 client-supplied MIME types; whether to accept, reject, or transform
 based on type is operator policy. The filenode draft's
-{#security}, "File Content" subsection notes only that scanning is at
+Security Considerations section (draft §Security Considerations), "File Content" subsection notes only that scanning is at
 operator discretion.
 
 ### What you must decide
@@ -258,7 +258,7 @@ documentation. Users should know what they can upload.
 
 ### What the spec leaves open
 
-The filenode draft {#security} "File Content" subsection states only
+The filenode draft (draft §Security Considerations) "File Content" subsection states only
 that operators MAY apply scanning at upload time. No specific scanner,
 timing, or action-on-detection is mandated. The wire protocol does not
 carry scan results; clients have no formal channel for "this file was
@@ -573,7 +573,7 @@ which appear as generic icons.
 
 ### What the spec leaves open
 
-The filenode draft {#deletion} establishes that the file tree SHOULD
+The filenode draft (draft §Space Deletion) establishes that the file tree SHOULD
 be destroyed when the Space is destroyed, allows an implementation-defined
 grace period during which former members retain access, requires
 `forbidden` responses on FileNode operations after grace expiry, and
@@ -613,7 +613,7 @@ deployment-defined.
   is the simplest approach. Access-control during grace requires
   snapshotting the membership-and-role state at the moment of
   destruction (so former members retain their access level per the
-  filenode draft's {#deletion} rule). Production deployments commonly
+  filenode draft's Space Deletion rule (draft §Space Deletion)). Production deployments commonly
   use a tombstone record in the metadata DB plus a TTL on the storage
   objects.
 - *Restoration*: if restoration is permitted during grace, the
@@ -661,7 +661,7 @@ deployment-defined.
   metadata with a destroyed-at timestamp; snapshot the
   membership-and-role state at the moment of destruction; preserve
   access control during the grace window via the snapshot per the
-  filenode draft's {#deletion} rule. Underlying bytes remain in
+  filenode draft's Space Deletion rule (draft §Space Deletion). Underlying bytes remain in
   storage during the grace period.
 - **Restoration**: permitted only by deployment administrators during
   the grace window. Log restoration to audit trail with the actor and
@@ -924,8 +924,8 @@ should be checklisted and rehearsed.
 | Underlying JMAP Chat protocol | `draft-atwood-jmap-chat-00.md` |
 | Underlying JMAP File Storage protocol | `draft-ietf-jmap-filenode` |
 | The JMAP Chat File Storage spec | `draft-atwood-jmap-chat-filenode-00.md` |
-| Permission mapping (Space role → FileNode access) | `draft-atwood-jmap-chat-filenode-00.md` {#permissions} |
-| Space-destruction grace-period normative contract | `draft-atwood-jmap-chat-filenode-00.md` {#deletion} |
+| Permission mapping (Space role → FileNode access) | `draft-atwood-jmap-chat-filenode-00.md` (draft §Permissions) |
+| Space-destruction grace-period normative contract | `draft-atwood-jmap-chat-filenode-00.md` (draft §Space Deletion) |
 | Controller principal "implicit all permissions" bypass | `jmap-chat-implementer-guide.md` §1 (Governance and roles) |
 | Authorization policy for chat content (not file storage) | `jmap-chat-implementer-guide.md` §2 |
 | Storage and retention for chat content (not file storage) | `jmap-chat-implementer-guide.md` §4 |

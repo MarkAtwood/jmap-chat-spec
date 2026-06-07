@@ -51,7 +51,7 @@ Each section follows the same shape as the broader `jmap-chat-implementer-guide.
 
 ### What the spec leaves open
 
-`Space.calendarId` (per `draft-atwood-jmap-chat-calendars-00.md`, {#calendar-binding})
+`Space.calendarId` (per `draft-atwood-jmap-chat-calendars-00.md`, the Calendar Binding section)
 is an optional field. The spec says deployments advertise `mayBindCalendar: true` if
 they support binding at all, and the binding can be set or cleared by members holding
 `"manage_space"`. The spec does not say *when* binding happens, *who* initiates it, or
@@ -294,7 +294,7 @@ single-state "Interested" is acceptable. Map to JMAP Calendars
 ### What the spec leaves open
 
 The spec says servers MAY parse `.ics` attachments and surface CalendarEvent
-representations (per `draft-atwood-jmap-chat-calendars-00.md` {#ics-parsing}).
+representations (per `draft-atwood-jmap-chat-calendars-00.md`, the ICS Parsing section).
 It does not say *when* to parse, *what* to do with the result, or *how
 aggressively* to rate-limit. It does prohibit auto-RSVP on the recipient's
 behalf and requires DoS-resistant parsing (size limits, recursion limits,
@@ -378,8 +378,8 @@ attachment.
 ### What the spec leaves open
 
 The spec says `Principal/getAvailability` may be exposed in chat context but
-the policy is deployment-defined (per `draft-atwood-jmap-chat-calendars-00.md`
-{#availability}). The wire contract is: servers MAY expose, MUST reject
+the policy is deployment-defined (per `draft-atwood-jmap-chat-calendars-00.md`,
+the Availability section). The wire contract is: servers MAY expose, MUST reject
 violations, MUST document the policy. The spec enumerates policy axes
 (same-Space membership, cross-account, federation, organizational unit,
 explicit consent, time windows, sensitivity tags, regulatory overlays) but

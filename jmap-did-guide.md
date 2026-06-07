@@ -64,7 +64,7 @@ properties to their data types.
 
 **What the spec defines.** The server declares `supportedMethods` in the
 session-level capability object. The spec does not mandate any specific DID
-method (draft Section 3.1).
+method (draft §Capability (Session-Level)).
 
 **What you must decide.** Which DID methods to support.
 
@@ -161,7 +161,7 @@ verification method:
 
 **What the spec defines.** The server is authoritative for the accountId-to-DID
 mapping. The spec lists four binding mechanisms but does not prescribe one
-(draft Section 4).
+(draft §Account-to-DID Binding).
 
 **What you must decide.** Which binding strategy to implement.
 
@@ -246,8 +246,8 @@ translating identity lifecycle events into DID lifecycle events.
 | IdP event | DID lifecycle | JMAP effect |
 |---|---|---|
 | User created | DID document published (ACTIVE) | Account binding established |
-| User suspended | DID document deactivated | Session creation blocked (draft Section 8.2) |
-| User deleted | DID document tombstoned | Sessions terminated (draft Section 8.3) |
+| User suspended | DID document deactivated | Session creation blocked (draft §Suspension) |
+| User deleted | DID document tombstoned | Sessions terminated (draft §Revocation) |
 | User reactivated | DID document re-activated | Account restored |
 
 **Tradeoff:** Additional infrastructure (the sidecar process). But it
@@ -262,12 +262,12 @@ operationally clean.
 account table. Index it for reverse lookups (DID → accountId). The column is:
 
 - NOT NULL when the DID capability is active.
-- UNIQUE — the spec requires exactly one DID per account (draft Section 4).
+- UNIQUE — the spec requires exactly one DID per account (draft §Account-to-DID Binding).
   The reverse (one account per DID) is not required by the spec but is
   RECOMMENDED to prevent confusion.
 - Updated on rotation (the old value is replaced, not appended).
 
-For `previousDid` (draft Section 8.1), store the old DID in a separate column
+For `previousDid` (draft §Rotation), store the old DID in a separate column
 or audit log with a timestamp. Clear it after the deployment-defined transition
 period.
 
@@ -296,7 +296,7 @@ capability can be enabled.
 ### 4.1 Populating DID-bearing properties
 
 **What the spec defines.** DID-bearing properties are server-set and derived
-from the account binding (draft Section 5.1). The server MUST reject client
+from the account binding (draft §DID-Bearing Properties). The server MUST reject client
 attempts to set them.
 
 **What you must decide.** Whether to store DID values on objects or compute
@@ -339,7 +339,7 @@ include DID-bearing properties with `invalidArguments`.
 
 ### 5.1 When to verify
 
-**What the spec defines.** Verification is OPTIONAL (draft Section 6). Clients
+**What the spec defines.** Verification is OPTIONAL (draft §Client Verification). Clients
 MAY resolve the DID document independently and check that the server's
 attestation is consistent.
 
@@ -394,7 +394,7 @@ For `did:web`:
 **What the spec defines.** When objects originate from a different server
 (federated messages, cross-server calendar invitations, shared files), the
 DID-bearing property enables verification without trusting the originating
-server (draft Section 6.1).
+server (draft §Cross-Server Verification).
 
 **What you must decide.** How to present cross-server identity to the user.
 
@@ -418,7 +418,7 @@ with unverified identities; the verification indicator is informational.
 
 **What the spec defines.** When a DID rotation occurs, the server MUST update
 the account capability object, ensure all DID-bearing properties reflect the
-new DID, and emit StateChange notifications (draft Section 8.1).
+new DID, and emit StateChange notifications (draft §Rotation).
 
 **What you must decide.**
 
@@ -448,7 +448,7 @@ new DID, and emit StateChange notifications (draft Section 8.1).
 
 **What the spec defines.** The server SHOULD reject new object creation, block
 new sessions, and terminate live presence for suspended accounts
-(draft Section 8.2).
+(draft §Suspension).
 
 **What you must decide.**
 
@@ -473,7 +473,7 @@ new sessions, and terminate live presence for suspended accounts
 
 **What the spec defines.** The server MUST terminate all sessions and prevent
 new authentication. Objects SHOULD retain the revoked DID for provenance
-(draft Section 8.3).
+(draft §Revocation).
 
 **What you must decide.**
 
@@ -627,7 +627,7 @@ both content integrity and creator attribution.
 ### 8.1 Same DID across servers
 
 **What the spec defines.** A user who presents the same DID to multiple servers
-enables cross-server activity correlation (draft Section 9.2).
+enables cross-server activity correlation (draft §DID Correlation Across Servers).
 
 **What you must decide.** Whether your deployment requires same-DID or permits
 per-server DIDs.
@@ -694,8 +694,8 @@ Before enabling `urn:ietf:params:jmap:did` in production:
 - [ ] Existing accounts migrated or bootstrapped (Section 3.3)
 - [ ] DID-bearing properties added to relevant data types (Section 4.1)
 - [ ] Client-supplied DID rejection tested (Section 4.2)
-- [ ] Session capability object populated with `supportedMethods` (draft Section 3.1)
-- [ ] Account capability object populated with `did` and `didDocumentUri` (draft Section 3.2)
+- [ ] Session capability object populated with `supportedMethods` (draft §Capability (Session-Level))
+- [ ] Account capability object populated with `did` and `didDocumentUri` (draft §Capability (Account-Level))
 - [ ] Rotation handling implemented: account update + StateChange emission (Section 6.1)
 - [ ] Suspension handling implemented: session rejection + presence termination (Section 6.2)
 - [ ] Revocation handling implemented: session termination + object retention (Section 6.3)

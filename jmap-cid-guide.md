@@ -408,7 +408,7 @@ creates interoperability fragmentation.
 |---|---|
 | Core JMAP Chat (governance, authorization, identity) | `jmap-chat-implementer-guide.md` |
 | Space file storage (backend, scanning, quotas) | `jmap-chat-filenode-guide.md` |
-| Federation wire protocol | `draft-atwood-jmap-chat-federation-00.md` |
+| Federation wire protocol | `jmap-chat-federation-guide.md` |
 | Blob Management Extensions (RFC 9404) | `draft-atwood-jmap-cid-00.md` Section 3.2 (Relationship to JMAP Blob Management Extensions) |
 
 This guide focuses on the CID capability and its integration points.
