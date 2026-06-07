@@ -23,16 +23,16 @@ normative:
   ULID:
     title: Universally Unique Lexicographically Sortable Identifier
     target: https://github.com/ulid/spec
-
-informative:
-  RFC6455:
-  RFC8887:
   GLTF:
     title: "glTF 2.0 Specification"
     target: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
     author:
       org: Khronos Group
     date: 2021
+
+informative:
+  RFC6455:
+  RFC8887:
   JMAP-CHAT:
     title: JMAP for Chat
     author:
@@ -59,7 +59,7 @@ informative:
 
 This document defines JMAP Scene, a JMAP capability ({{RFC8620}}) for managing three-dimensional spatial environments. It defines the `urn:ietf:params:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a coordinate system convention; and a visibility contract between server and client.
 
-The specification models spatial *state* — what objects exist, where they are, and who is present — without prescribing the rendering technology, simulation protocol, or asset format. Actual real-time position synchronization, physics, and rendering travel through a deployment-chosen simulation stack; the JMAP server is a spatial state database, not a rendering engine.
+The specification models spatial *state* — what objects exist, where they are, and who is present — without prescribing the rendering technology or simulation protocol. Actual real-time position synchronization, physics, and rendering travel through a deployment-chosen simulation stack; the JMAP server is a spatial state database, not a rendering engine.
 
 The capability is standalone (`urn:ietf:params:jmap:scene`). When JMAP Chat ({{JMAP-CHAT}}) is also present, SceneRegion objects MAY carry back-references to Chat and Space objects for in-world text communication. When JMAP VTC ({{JMAP-VTC}}) is also present, SceneRegion objects MAY bind to VTCCall objects for in-world voice and video.
 
@@ -74,7 +74,7 @@ This document defines a JMAP capability that models spatial state as JMAP data t
 ## Design Philosophy
 
 - **Spatial state, not spatial rendering.** The JMAP server is a spatial state database. It knows a region exists, what objects are in it, and where they are. It does not rasterize triangles, compute lighting, or run physics. Rendering and simulation are the simulation stack's job.
-- **Format-agnostic.** Visual representations are referenced by media type. The spec requires a mandatory-to-implement baseline format but does not prescribe triangles, voxels, gaussian splats, or any specific representation. As visual formats evolve, the spec does not need amendment.
+- **Preferred format with extensibility.** glTF 2.0 ({{GLTF}}) is the mandatory-to-implement baseline asset format, chosen for its royalty-free licensing, universal engine support, and matching coordinate conventions. Deployments MAY support additional visual formats (gaussian splats, neural radiance fields, voxels, USD) via the `supportedVisualTypes` capability. As visual formats evolve, the spec does not need amendment.
 - **Coordinate system is normative.** Position, orientation, and scale use a single convention: right-handed, Y-up, meters, quaternions. This is the one place the spec is unapologetically opinionated, because interoperability requires it.
 - **Standalone with optional bindings.** The capability stands alone. Chat, VTC, and file-system integrations are optional foreign keys, not dependencies.
 
@@ -222,6 +222,22 @@ SceneAsset provides queryable metadata for assets referenced by SceneObject and 
 
 `createdAt` (UTCDate, immutable, server-set):
 : Time the asset was created.
+
+### Preferred Asset Format {#preferred-asset-format}
+
+glTF 2.0 ({{GLTF}}) is the preferred and mandatory-to-implement visual asset format. The IANA media type `model/gltf-binary` (.glb) MUST be listed in `supportedVisualTypes`; servers SHOULD also support `model/gltf+json` (.gltf).
+
+glTF 2.0 is the baseline because:
+
+- It is a royalty-free, open standard maintained by the Khronos Group.
+- It uses the same coordinate system as this specification: right-handed, Y-up, meters, quaternion orientation.
+- A single .glb file carries meshes, PBR materials, textures, skeletal animations, morph targets, and scene hierarchy — everything needed to represent a SceneObject or SceneAvatar visual.
+- It is supported by all major 3D engines (Unity, Unreal, Godot, Three.js, Babylon.js) and content creation tools (Blender, Maya, 3ds Max), making it the closest equivalent to a universal 3D interchange format.
+- The binary container (.glb) is a single self-contained file suitable for JMAP blob storage and CDN distribution via `assetUri`.
+
+Clients SHOULD prefer glTF when creating assets intended for cross-deployment portability. Assets in deployment-specific formats (gaussian splats, neural radiance fields, voxels, USD) are valid within deployments that advertise those media types in `supportedVisualTypes`, but are not guaranteed to be portable.
+
+For security considerations related to glTF parsing, see {{asset-uri-untrusted}}.
 
 ## SceneRegion {#scene-region}
 
@@ -2567,7 +2583,7 @@ Specification document: This document.
 The following design choices were left to deployments rather than prescribed:
 
 - **Simulation protocol.** WebRTC data channels, UDP, QUIC, WebSocket, or any other transport for real-time position synchronization. The spec is simulation-agnostic by design.
-- **Visual asset format.** `model/gltf-binary` is mandatory-to-implement, but deployments may support gaussian splats, neural radiance fields, voxels, USD, or any future format via the `visualType` field.
+- **Additional visual asset formats.** glTF 2.0 is mandatory-to-implement (see {{preferred-asset-format}}), but deployments may support gaussian splats, neural radiance fields, voxels, USD, or any future format via the `visualType` field and `supportedVisualTypes` capability.
 - **Rendering engine.** Three.js, Babylon.js, Unity, Unreal, native Vulkan/Metal, or any other renderer. The spec has no rendering-layer surface.
 - **Interest management algorithm.** Radius-based, frustum-based, occlusion-based, portal-based, or none. Deployment-defined.
 - **Physics engine.** Bullet, PhysX, Rapier, Cannon.js, or none. The `physicsMode` field signals intent; the simulation layer implements it.
