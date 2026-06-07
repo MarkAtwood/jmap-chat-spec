@@ -2564,7 +2564,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Building and editing tools.** Client-side concerns. Objects are created and modified via standard `SceneObject/set`; the UI for doing so is client-defined.
 - **2D rendering style.** For regions with `viewHint` of `"2d-topdown"` or `"2d-side"`, the rendering style (pixel art, vector, isometric projection, sprite sheets) is client-defined. The spec provides spatial coordinates and advisory view orientation; visual style is a client concern.
 - **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
-- **Color and color space.** The spec has no opinion on color representation or color space. The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. The spec does not mandate sRGB, linear, or any other color space.
+- **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments SHOULD follow the color representation convention defined in {{JMAP-CHAT}} ({{color-convention}}): W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
 
 # Complete Lifecycle Examples {#lifecycle-examples}
 
