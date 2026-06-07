@@ -1252,7 +1252,7 @@ field is opaque to the JMAP server — a URI pointing to whatever real-time
 system the deployment uses:
 
 - `wss://sim.example.com/room/ULID` — WebSocket-based simulation.
-- `webrtc://sfu.example.com/room/ULID` — WebRTC data channels.
+- `https://sfu.example.com/signal/{regionId}` — WebRTC signaling endpoint.
 - `udp://game.example.com:27015` — raw UDP game server.
 - `quic://fast.example.com/room/ULID` — QUIC-based transport.
 - `null` — no simulation layer at all.
@@ -1264,6 +1264,8 @@ first-person shooter needs 60+ Hz updates with prediction and correction
 (UDP or WebRTC data channels). A VR social platform needs spatial audio mixing
 (WebRTC with spatialization). Scene provides the state layer for all of them;
 the simulation layer is the deployment's choice.
+
+For detailed simulation layer architecture, authority models, tick rates, and state reconciliation patterns, see the [JMAP Scene Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 This is in direct contrast to every platform in Sections 2-5, which bundles a
 specific simulation/networking approach: Hubs used WebRTC data channels.

@@ -529,6 +529,10 @@ more database writes. For most deployments, 15 seconds is a good balance.
 
 Steps 2-6 should be atomic.
 
+Note: The ordering of avatar creation (steps 1-7) relative to simulation
+layer connection (step 8) is deployment-defined. Some deployments connect
+to the simulation layer first and create the JMAP avatar record after.
+
 **Leaving a region — the full sequence:**
 
 1. Client calls `SceneAvatar/set update` with `leftAt` set to current time.
@@ -536,6 +540,11 @@ Steps 2-6 should be atomic.
 3. Server sets `leftAt`.
 4. Server decrements `activeAvatarCount` on the SceneRegion.
 5. Client disconnects from the simulation layer independently.
+
+Note: When VTC is co-deployed, leave the VTC call first (set `leftAt` on
+VTCParticipant, disconnect media), then leave the region. See the
+[JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md)
+for the full cross-capability departure sequence.
 
 ### Common patterns
 
@@ -549,7 +558,8 @@ Steps 2-6 should be atomic.
 ### Recommended starting point
 
 Detect silent disconnections via simulation layer callbacks. Set a 30-minute
-reconnect window. Reconcile avatar positions every 15 seconds. Retain
+reconnect window. Reconcile avatar positions every 10-15 seconds (the
+simulation guide recommends 10 seconds as a starting point). Retain
 departed avatar records for 24 hours. Serialize avatar creation per user
 to prevent race conditions. Source `displayName` from the user profile or
 ChatContact when JMAP Chat is co-deployed (spec section 6.4: "the server

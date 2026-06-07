@@ -40,6 +40,9 @@ state reconciliation can do), cross-references are explicit.
 This guide is non-normative. `draft-atwood-jmap-scene-00` is the source of
 truth. Where this guide and the draft disagree, the draft wins.
 
+For historical context on prior virtual world systems and how Scene's design
+relates to them, see the [JMAP Scene Landscape Guide](jmap-scene-landscape-guide.md).
+
 ---
 
 ## A note on RFC 2119 keywords
@@ -117,7 +120,13 @@ is everyone right now? what is moving? what just collided? This is where avatar
 positions update at 10-60 Hz, where physics runs, and where interaction events
 fire. The endpoint is `simulationUri` on SceneRegion. Latency is measured in
 milliseconds. Data on this path is best-effort: a dropped position update is
-acceptable because the next one arrives in 50ms.
+acceptable because the next one arrives in 50ms. Spatial audio spatialization
+(positioning each participant's voice in 3D space based on avatar position) is
+also a simulation-layer concern, operating at the intersection of the simulation
+layer and the VTC media layer. For the media/audio layer details -- how voice
+streams are obtained, how SFU-side and client-side spatial audio mixing work,
+and how Scene's `activeCallId` binding connects the two -- see the
+[JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md).
 
 **Asset CDN.** Bulk, cached, static. Handles the question: what does this
 object look like? Asset files (glTF, images, audio) are large and change
@@ -152,7 +161,7 @@ them separate lets you optimize each independently.
 
 | System | State layer | Simulation layer | Asset delivery |
 |---|---|---|---|
-| Mozilla Hubs | Reticulum (Phoenix) | Networked A-Frame via WebSocket/WebRTC | CDN (Cloudflare) |
+| Mozilla Hubs (2018-2024) | Reticulum (Phoenix) | Networked A-Frame via WebSocket/WebRTC | CDN (Cloudflare) |
 | Second Life | Region server (proprietary) | Region server (UDP) | CDN + local cache |
 | Spatial.io | REST API | WebSocket + WebRTC | CDN |
 | Game engines (Unity/Unreal) | Database or REST API | Dedicated game server (UDP) | Asset bundles / CDN |
@@ -257,7 +266,7 @@ hardcoding assumptions.
 
 | System | simulationUri equivalent | Auth |
 |---|---|---|
-| Mozilla Hubs | WebSocket URL to Reticulum | Phoenix token |
+| Mozilla Hubs (2018-2024) | WebSocket URL to Reticulum | Phoenix token |
 | Second Life | UDP endpoint (sim IP:port) | Capability token from login |
 | Spatial.io | WebSocket + WebRTC signaling | OAuth token |
 | Game servers (Unreal) | UDP endpoint | Login token / session key |
@@ -535,7 +544,7 @@ computes its own position -- but they bound the range of possible cheating.
 | System | Authority model |
 |---|---|
 | Second Life | Server-authoritative (region server runs physics) |
-| Mozilla Hubs | Client-authoritative (Networked A-Frame relays positions) |
+| Mozilla Hubs (2018-2024) | Client-authoritative (Networked A-Frame relays positions) |
 | Fortnite / competitive games | Server-authoritative with client-side prediction |
 | Spatial.io | Hybrid (client-authoritative avatars, server-authoritative objects) |
 | VRChat | Client-authoritative with anti-cheat validation |
@@ -655,7 +664,7 @@ avatars are smaller on screen and their movement is less perceptible.
 | System | Tick rate | Interpolation | Dead reckoning |
 |---|---|---|---|
 | Second Life | ~10 Hz (avatars) | Linear interpolation | Velocity-based |
-| Mozilla Hubs | ~15 Hz | Buffered interpolation (Networked A-Frame) | None (relies on interpolation buffer) |
+| Mozilla Hubs (2018-2024) | ~15 Hz | Buffered interpolation (Networked A-Frame) | None (relies on interpolation buffer) |
 | Fortnite | 30 Hz (server tick) | Client-side prediction + reconciliation | Full prediction with rollback |
 | VRChat | ~10-15 Hz | Interpolation + IK smoothing | Velocity extrapolation |
 
@@ -668,10 +677,19 @@ delay. Implement simple linear dead reckoning for missed updates with a
 for position updates (not JSON). Increase tick rate only after profiling
 demonstrates that bandwidth and server CPU are not bottlenecks.
 
-For game-specific tick rate guidance (35 Hz for classic FPS, 60 Hz for arcade,
-77 Hz for Quake-style), see the [JMAP Scene Games Implementer
-Guide](jmap-scene-board-games-guide.md), which covers tick rate selection
-per genre in detail.
+**Genre-specific tick rate reference.** The right tick rate depends on genre:
+
+| Genre | Typical tick rate | Notes |
+|---|---|---|
+| Board/card games | 0 Hz (event-driven) | No tick loop; state changes only on player actions via `SceneObject/set` |
+| Classic arcade (Asteroids, Pitfall) | 30-60 Hz | Fast enough for smooth projectiles and platformer physics |
+| Classic FPS (Doom-era 2.5D) | 35 Hz | Doom's original server tick rate; sufficient for hitscan and movement |
+| Modern FPS (Quake-style true 3D) | 60-77 Hz | Quake originally ran at 77 Hz (`sv_fps 77`); competitive play benefits from higher rates |
+| Social VR | 10-20 Hz | Avatar positions only; interpolation hides the low rate |
+
+For concrete examples of authority models per genre -- how different game
+types assign simulation authority between client, server, and JMAP state --
+see the [JMAP Scene Games Implementer Guide](jmap-scene-board-games-guide.md).
 
 ---
 
@@ -802,7 +820,7 @@ hidden content).
 | System | Interest management |
 |---|---|
 | Second Life | Region-grid based; 256m x 256m regions; objects beyond draw distance not sent |
-| Mozilla Hubs | No interest management (rooms are small, < 25 users) |
+| Mozilla Hubs (2018-2024) | No interest management (rooms are small, < 25 users) |
 | Fortnite | Relevancy-based: per-actor update frequency based on distance and importance |
 | World of Warcraft | Grid-based AOI; entities enter/leave update set as player moves between cells |
 
@@ -1352,7 +1370,7 @@ instances.
 | EVE Online | Solar systems = regions; each on one server; player-driven load spikes handled by "time dilation" |
 | Fortnite | One game server per match instance (100 players); no spatial sharding |
 | World of Warcraft | Continental regions sharded into zones; seamless handoff with overlap zones |
-| Mozilla Hubs | One room = one region; no handoff; rooms are independent |
+| Mozilla Hubs (2018-2024) | One room = one region; no handoff; rooms are independent |
 
 ### Recommended starting point
 

@@ -172,6 +172,13 @@ region:
    `callId` set to `activeCallId` and `joinMethod` set to `"webrtc"`.
 4. Open the VTCCall's `joinUri` in the media layer to connect audio/video.
 
+Deployments with a simulation layer should also connect to `simulationUri` from the
+SceneRegion response (typically after step 2, before or alongside step 4). The
+simulation layer connection provides real-time avatar positions needed for spatial
+audio and proximity voice. See the
+[JMAP Scene Simulation Layer Guide](jmap-scene-simulation-guide.md) for connection
+ordering, tick rate selection, and state reconciliation patterns.
+
 ```json
 [
   ["SceneAvatar/set", {
@@ -355,6 +362,10 @@ based on the relative position of each speaker's avatar to the listener's avatar
    relative to the listener's orientation, then apply stereo panning or HRTF.
 5. Update the spatialization parameters as positions change (from the simulation layer
    at 10-20 Hz).
+
+For simulation layer architecture, tick rate selection, and state reconciliation
+patterns that affect position update frequency, see the
+[JMAP Scene Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 The Web Audio API provides `PannerNode` with HRTF support, making this straightforward
 in browser-based clients. Route each WebRTC audio track through a `PannerNode` whose
