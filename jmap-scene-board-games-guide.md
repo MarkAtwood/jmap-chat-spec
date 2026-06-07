@@ -1410,6 +1410,278 @@ The simulation detects this after each build/play action and sets
 
 ---
 
+## 10. Pool (Billiards)
+
+Eight-ball pool on a standard table. A turn-based competitive game
+with real-time physics: each player takes a shot by specifying an
+angle and power; the simulation layer runs the physics and reports
+where all balls come to rest.
+
+Pool is the canonical example of a **turn-based + physics hybrid**:
+the game state is discrete (whose turn, which balls are pocketed),
+but each action triggers continuous physics that the simulation
+layer must resolve before the next turn can begin.
+
+### Region
+
+A standard pool table is roughly 2.54 m × 1.27 m (9-foot table).
+One unit = one meter.
+
+```json
+{
+  "id": "region-pool-001",
+  "name": "Pool Table: Alice vs Bob",
+  "bounds": { "min": [0, 0, 0], "max": [2.54, 0, 1.27] },
+  "viewHint": "2d-topdown",
+  "spawnPosition": [1.27, 0, -0.3],
+  "simulationUri": "wss://sim.example.com/games/pool/001",
+  "accessPolicy": "invite",
+  "environment": {
+    "tableClothColor": "green",
+    "gridVisible": false,
+    "feltFriction": 0.98,
+    "cushionRestitution": 0.75
+  }
+}
+```
+
+The `simulationUri` is required. Pool physics (cushion bounce,
+ball-ball collisions, pocket detection) is not expressible as JMAP
+method calls alone; the simulation layer handles all of it.
+
+### Objects
+
+**Cue ball:**
+
+```json
+{
+  "id": "pool-ball-cue",
+  "regionId": "region-pool-001",
+  "name": "Cue Ball",
+  "position": [0.635, 0, 0.953],
+  "visualRef": "blob-pool-ball-cue",
+  "visualType": "image/svg+xml",
+  "physicsMode": "dynamic",
+  "interactable": true,
+  "visible": true,
+  "customProperties": {
+    "ballNumber": 0,
+    "ballType": "cue",
+    "pocketed": false
+  }
+}
+```
+
+**Numbered ball (solid or stripe):**
+
+```json
+{
+  "id": "pool-ball-07",
+  "regionId": "region-pool-001",
+  "name": "7 Ball",
+  "position": [1.524, 0, 0.635],
+  "visualRef": "blob-pool-ball-07",
+  "visualType": "image/svg+xml",
+  "physicsMode": "dynamic",
+  "interactable": false,
+  "visible": true,
+  "customProperties": {
+    "ballNumber": 7,
+    "ballType": "stripe",
+    "pocketed": false
+  }
+}
+```
+
+**Eight ball:**
+
+```json
+{
+  "id": "pool-ball-08",
+  "regionId": "region-pool-001",
+  "name": "8 Ball",
+  "position": [1.651, 0, 0.635],
+  "visualRef": "blob-pool-ball-08",
+  "visualType": "image/svg+xml",
+  "physicsMode": "dynamic",
+  "interactable": false,
+  "visible": true,
+  "customProperties": {
+    "ballNumber": 8,
+    "ballType": "eight",
+    "pocketed": false
+  }
+}
+```
+
+**Table (rails, cushions, and bed — static collider):**
+
+```json
+{
+  "id": "pool-table-001",
+  "regionId": "region-pool-001",
+  "name": "Pool Table",
+  "position": [1.27, 0, 0.635],
+  "visualRef": "blob-pool-table",
+  "visualType": "model/gltf-binary",
+  "physicsMode": "static",
+  "interactable": false,
+  "visible": true,
+  "customProperties": {
+    "pockets": [
+      [0.0,  0, 0.0],  [1.27, 0, 0.0],  [2.54, 0, 0.0],
+      [0.0,  0, 1.27], [1.27, 0, 1.27], [2.54, 0, 1.27]
+    ],
+    "pocketRadius": 0.057
+  }
+}
+```
+
+The table object is a single static collider representing rails,
+cushions, and the playing surface boundary. The simulation layer
+uses the pocket positions and radius to detect when a ball center
+crosses a pocket threshold.
+
+All 15 numbered balls plus the cue ball use `physicsMode: "dynamic"`.
+The table uses `physicsMode: "static"`. The simulation applies
+cushion restitution and felt friction from `environment` when
+resolving collisions.
+
+### Interaction Model
+
+Pool uses a custom `"shoot"` action rather than grab/release.
+The player cannot drag the cue ball directly; instead, they aim
+and specify power via the `"shoot"` interaction on the cue ball.
+
+**Player shoots:**
+
+```json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "region-pool-001",
+  "objectId": "pool-ball-cue",
+  "userId": "user:alice@example.com",
+  "action": "shoot",
+  "data": {
+    "angleRad": 1.047,
+    "power": 0.65
+  }
+}
+```
+
+`angleRad` is the shot direction in radians, measured clockwise
+from the positive X axis in the 2D top-down plane. `power` is
+0.0–1.0 representing normalized cue force; the simulation maps
+this to a physical impulse.
+
+The simulation layer on receiving a `"shoot"` event:
+
+1. Validates that it is this player's turn and `gamePhase` is
+   `"break"` or `"play"` or `"8-ball"`.
+2. Applies the impulse to the cue ball.
+3. Runs the physics loop at 60+ Hz until all balls are at rest
+   (per-ball velocity below threshold).
+4. Evaluates the outcome: balls pocketed, cue ball pocketed (foul),
+   failure to contact own group first (foul), no rail contact
+   after hit (foul).
+5. Updates all ball positions via `SceneObject/set`.
+6. Updates the game state object: pocketed sets, fouls, whose turn.
+
+**Server response after a shot:**
+
+```json
+{
+  "methodResponses": [[
+    "SceneObject/set",
+    {
+      "accountId": "u1",
+      "updated": {
+        "pool-ball-cue": { "position": [0.82, 0, 0.71] },
+        "pool-ball-03":  { "position": [1.27, 0, 0.98] },
+        "pool-ball-07":  {
+          "position": [0.0, 0, 0.0],
+          "visible": false,
+          "customProperties/pocketed": true
+        }
+      }
+    },
+    "0"
+  ]]
+}
+```
+
+Pocketed balls are moved to a sentinel position and set
+`visible: false`. The simulation retains the objects so they can
+be restored on a cue-ball-pocketed foul.
+
+### Game State
+
+```json
+{
+  "customProperties": {
+    "gamePhase": "play",
+    "currentPlayer": "user:alice@example.com",
+    "playerAssignments": {
+      "user:alice@example.com": "solids",
+      "user:bob@example.com": "stripes"
+    },
+    "ballsPocketed": {
+      "user:alice@example.com": [1, 2, 4],
+      "user:bob@example.com": [9, 10]
+    },
+    "eightBallPocketed": false,
+    "fouls": {
+      "user:alice@example.com": 0,
+      "user:bob@example.com": 1
+    },
+    "winner": null
+  }
+}
+```
+
+`gamePhase` values:
+- `"break"` — opening shot; ball-type assignments not yet made
+- `"play"` — normal play; each player pockets their assigned group
+- `"8-ball"` — both players have cleared their group; next legal
+  8-ball pocket wins
+- `"finished"` — game over; `winner` is set
+
+Ball-type assignments are absent from `playerAssignments` until
+the first legal ball is pocketed after the break. The simulation
+sets `"solids"` or `"stripes"` at that point.
+
+### Tick Rate and Simulation Activity
+
+Pool physics runs at **60+ Hz during shot resolution** but is
+**idle between shots**. This is the opposite of a continuous
+real-time game: the simulation layer only needs to be active for
+the few seconds while balls are rolling after each shot.
+
+A deployment MAY implement this as an on-demand simulation: the
+layer wakes when a `"shoot"` interaction arrives, runs until all
+balls are at rest, publishes the final positions via
+`SceneObject/set`, and then suspends. This avoids holding a running
+physics loop open during the indefinite time between turns.
+
+For physics authority models, tick rate selection, and on-demand
+vs. continuous simulation patterns, see the [JMAP Scene Simulation
+Layer Guide](jmap-scene-simulation-guide.md).
+
+### Hidden Information
+
+Minimal. Pool is a fully observable game: all 16 ball positions are
+visible to both players at all times. Neither player has private
+information about the table state.
+
+The only "hidden" element is the **planned shot trajectory** — the
+aim line a client renders for the shooting player before they
+commit. This is local client-side UI; it is never sent to the
+server or the opponent. The server receives only the committed
+`"shoot"` event with angle and power.
+
+
+---
+
 ---
 
 ## Part II: Card Games
@@ -1423,7 +1695,7 @@ authorized to see.
 
 ---
 
-## 10. Old Maid
+## 11. Old Maid
 
 A simple draw-and-discard matching game for 2-5 players. The goal is
 to avoid being stuck with the unmatched Queen (the Old Maid).
@@ -1543,7 +1815,7 @@ of cards in each hand is public.
 
 ---
 
-## 11. Go Fish
+## 12. Go Fish
 
 A draw-and-ask matching game for 2-6 players. Players collect sets of
 four matching cards by asking opponents for specific ranks.
@@ -1701,7 +1973,7 @@ who asked for what).
 
 ---
 
-## 12. Solitaire (Klondike)
+## 13. Solitaire (Klondike)
 
 The classic single-player card game. Seven tableau columns, four
 foundation piles, one stock, one waste.
@@ -1916,7 +2188,7 @@ Simulation Layer Guide](jmap-scene-simulation-guide.md).
 
 ---
 
-## 13. Pitfall! (Side-Scroller / Platformer)
+## 14. Pitfall! (Side-Scroller / Platformer)
 
 A side-scrolling platformer in the style of Atari's Pitfall!. The
 player runs, jumps, swings on vines, and avoids hazards. This is the
@@ -2134,7 +2406,7 @@ multiplayer variants all players see the same world state.
 
 ---
 
-## 14. Asteroids (Top-Down Arcade)
+## 15. Asteroids (Top-Down Arcade)
 
 A top-down 2D arcade game with vector-style rendering. The player
 controls a ship that rotates and thrusts, shooting asteroids that
@@ -2321,7 +2593,7 @@ wrap-around arena has no fog-of-war.
 
 ---
 
-## 15. Battlezone (2.5D Vector Tank Game)
+## 16. Battlezone (2.5D Vector Tank Game)
 
 The classic 1980 Atari coin-op vector tank game. First-person view
 from inside a tank, rendered with vector-style wireframe graphics.
@@ -2502,7 +2774,7 @@ radar displays all objects within range regardless of occlusion.
 
 ---
 
-## 16. Doom (2.5D First-Person Shooter)
+## 17. Doom (2.5D First-Person Shooter)
 
 The canonical 2.5D FPS. Doom presents a first-person perspective but
 its world is fundamentally 2D: levels are defined as sectors on a 2D
@@ -2832,7 +3104,7 @@ sight, computed by the simulation layer.
 
 ---
 
-## 17. Quake (True 3D First-Person Shooter)
+## 18. Quake (True 3D First-Person Shooter)
 
 The first true-3D FPS. Where Doom's world is a 2D floor plan with
 height, Quake's world is full 3D polygon mesh: rooms over rooms,
@@ -3113,7 +3385,7 @@ line of sight.
 
 ---
 
-## 18. Descent (6DOF True 3D)
+## 19. Descent (6DOF True 3D)
 
 Descent is a six-degrees-of-freedom (6DOF) first-person shooter in
 zero gravity. The player pilots a ship through mine tunnels and can
@@ -3347,7 +3619,7 @@ from `SceneObject/get` responses for competitive fairness.
 
 ---
 
-## 19. Flight Combat (Wing Commander / Star Fox)
+## 20. Flight Combat (Wing Commander / Star Fox)
 
 A flight combat game representing the third-person variant of 3D
 gameplay. The player controls a vehicle (spacecraft, aircraft) from a
@@ -3561,7 +3833,7 @@ primitives and `viewHint` each genre uses.
 
 ---
 
-## 20. Genre: 2D Top-Down Games
+## 21. Genre: 2D Top-Down Games
 
 `viewHint: "2d-topdown"`. Orthographic camera looking down Y axis.
 
@@ -3604,7 +3876,7 @@ objects like bullets should use lightweight SceneObject lifecycle
 
 ---
 
-## 21. Genre: 2D Side-View Games
+## 22. Genre: 2D Side-View Games
 
 `viewHint: "2d-side"`. Orthographic camera looking along Z axis
 from the side. X is horizontal, Y is vertical.
@@ -3668,7 +3940,7 @@ zooms to keep both fighters in frame.
 
 ---
 
-## 22. Genre: 2.5D First-Person Games
+## 23. Genre: 2.5D First-Person Games
 
 `viewHint: "3d"` with `environment.renderMode: "2.5d"`. These games
 present a first-person perspective but their world is built on a 2D
@@ -3759,7 +4031,7 @@ The BUILD engine extended the 2.5D model with:
 
 ---
 
-## 23. Genre: True 3D Games
+## 24. Genre: True 3D Games
 
 `viewHint: "3d"` with `environment.renderMode: "3d"` (or omitted,
 since full 3D is the default). These games use the complete 3D
@@ -3932,9 +4204,744 @@ The Scene spec supports both through environment configuration.
 
 ---
 
+## Part V: Cooperative and Non-Game Activities
+
+Competitive games with turn alternation and winners are the most
+common use case, but Scene's primitives also model cooperative
+activities where all participants work toward a shared goal. The
+distinguishing features of this category:
+
+- **No opposing teams** -- `accessPolicy: "invite"` with all
+  participants sharing a single goal state.
+- **Object interaction chains** -- interacting with one object
+  changes the state of another (solving a puzzle unlocks a door).
+- **State machines on objects** -- each puzzle or door transitions
+  through a finite set of named states tracked in `customProperties`.
+- **Shared inventory** -- picked-up items belong to the group, not
+  an individual, stored on the game state object.
+- **No real-time physics simulation** -- `simulationUri: null` for
+  turn-based / event-driven cooperative games. State transitions
+  happen entirely through JMAP method calls.
+
+
+---
+
+## 25. Escape Room
+
+A real-world activity recreated digitally. 2-8 players are locked in
+a themed virtual room and must find hidden items, solve puzzles, and
+unlock doors to escape before a countdown timer expires. All players
+cooperate -- there is no opposing team and no individual winner.
+
+What makes it a useful spec exercise:
+
+- **Object interaction chains:** solving puzzle A changes the state
+  of door B with no player touching the door directly.
+- **State machines on objects:** puzzles transition
+  `locked → solved`; doors transition `locked → unlocked → open`.
+- **Shared inventory:** items are not owned by an individual player;
+  they live in `customProperties.inventory` on the game state object.
+- **Countdown timer:** a simple integer in game state, decremented
+  server-side, that all clients observe.
+- **`simulationUri: null`:** the room runs entirely on JMAP method
+  calls. There is no real-time physics engine; the server validates
+  interaction events and issues `SceneObject/set` patches directly.
+
+### SceneRegion
+
+A single room (or a short sequence of rooms). The example uses a
+single-room escape with a 2D top-down view. A multi-room variant
+can use `"3d"` with first-person navigation.
+
+```json
+{
+  "id": "region-escape-001",
+  "name": "Escape Room: The Laboratory",
+  "bounds": { "min": [0, 0, 0], "max": [10, 0, 10] },
+  "viewHint": "2d-topdown",
+  "spawnPosition": [5, 0, 1],
+  "simulationUri": null,
+  "accessPolicy": "invite",
+  "environment": {
+    "theme": "laboratory",
+    "gridVisible": false,
+    "timerSeconds": 3600,
+    "maxPlayers": 8
+  }
+}
+```
+
+> **`simulationUri: null`:** Because the room has no physics and all
+> state transitions are discrete, a separate simulation service is
+> unnecessary. The JMAP server handles all game logic directly through
+> `SceneObject/set` and `SceneInteractionEvent` processing.
+
+### Key Objects
+
+The room contains three categories of objects: **puzzles** (interactable,
+stateful), **doors** (interactable, state-gated), and **items**
+(interactable, grabbable, placed in shared inventory).
+
+**Puzzle: Combination lock (locked state)**
+
+```json
+{
+  "id": "escape-puzzle-lock",
+  "regionId": "region-escape-001",
+  "name": "Combination Lock",
+  "position": [2, 0, 4],
+  "visualRef": "blob-combo-lock-locked",
+  "visualType": "image/svg+xml",
+  "physicsMode": "none",
+  "interactable": true,
+  "visible": true,
+  "customProperties": {
+    "puzzleType": "combination-lock",
+    "state": "locked",
+    "requiredCode": null,
+    "hint": "The answer is on the whiteboard.",
+    "unlocksObjectId": "escape-door-lab"
+  }
+}
+```
+
+The server holds the solution (`requiredCode`) server-side and never
+sends it to clients. The `unlocksObjectId` field tells the server
+which object to update when the puzzle transitions to `"solved"`.
+
+**Puzzle: Combination lock (solved state)**
+
+After a correct `"activate"` interaction with the right code in the
+`data` payload, the server patches the puzzle:
+
+```json
+{
+  "id": "escape-puzzle-lock",
+  "visualRef": "blob-combo-lock-open",
+  "customProperties": {
+    "puzzleType": "combination-lock",
+    "state": "solved",
+    "requiredCode": null,
+    "hint": "The answer is on the whiteboard.",
+    "unlocksObjectId": "escape-door-lab"
+  }
+}
+```
+
+**Door: Laboratory door (transitions through three states)**
+
+```json
+{
+  "id": "escape-door-lab",
+  "regionId": "region-escape-001",
+  "name": "Laboratory Door",
+  "position": [5, 0, 9.5],
+  "visualRef": "blob-door-locked",
+  "visualType": "image/svg+xml",
+  "physicsMode": "static",
+  "interactable": true,
+  "visible": true,
+  "customProperties": {
+    "state": "locked",
+    "requiredPuzzleId": "escape-puzzle-lock",
+    "transitions": {
+      "locked": "Cannot open -- solve the combination lock first.",
+      "unlocked": "Press use to open.",
+      "open": "Door is open -- escape!"
+    }
+  }
+}
+```
+
+State machine:
+- `"locked"` → (puzzle solved by server) → `"unlocked"` (players did
+  not touch the door; the server updated it as a side-effect of the
+  puzzle being solved)
+- `"unlocked"` → (player sends `"activate"` interaction on door) →
+  `"open"`
+
+When the server applies the puzzle-solved patch it simultaneously
+patches the door's `customProperties.state` to `"unlocked"` and
+`visualRef` to `"blob-door-unlocked"` in the same `SceneObject/set`
+call. All clients receive the `StateChange` and update both objects.
+
+**Item: Red key (before pickup)**
+
+```json
+{
+  "id": "escape-item-key-red",
+  "regionId": "region-escape-001",
+  "name": "Red Key",
+  "position": [8, 0, 3],
+  "visualRef": "blob-key-red",
+  "visualType": "image/svg+xml",
+  "physicsMode": "none",
+  "interactable": true,
+  "visible": true,
+  "customProperties": {
+    "itemType": "key",
+    "itemId": "key-red",
+    "pickedUp": false
+  }
+}
+```
+
+**Item: Red key (after pickup)**
+
+A player sends a `"grab"` interaction. The server:
+
+1. Sets `pickedUp: true` and `interactable: false` on the item
+   SceneObject (it disappears from the floor).
+2. Appends `"key-red"` to `customProperties.inventory` on the game
+   state object.
+
+```json
+{
+  "id": "escape-item-key-red",
+  "interactable": false,
+  "visible": false,
+  "customProperties": {
+    "itemType": "key",
+    "itemId": "key-red",
+    "pickedUp": true
+  }
+}
+```
+
+The item is hidden rather than destroyed so the server can restore it
+if the session is reset. The canonical record of what the team carries
+lives on the game state object, not on the item object.
+
+**Whiteboard (non-interactable clue)**
+
+```json
+{
+  "id": "escape-clue-whiteboard",
+  "regionId": "region-escape-001",
+  "name": "Whiteboard",
+  "position": [1, 0, 6],
+  "visualRef": "blob-whiteboard-code",
+  "visualType": "image/svg+xml",
+  "physicsMode": "static",
+  "interactable": false,
+  "visible": true,
+  "customProperties": {
+    "clueType": "text",
+    "text": "Remember: the year the element was discovered."
+  }
+}
+```
+
+Static clue objects use `interactable: false` and `physicsMode:
+"static"`. They are purely visual and require no server-side logic.
+
+### Interaction Model
+
+**Puzzle solving:**
+
+1. Player clicks a puzzle object (`"click"` interaction). Client
+   displays a close-up UI panel (e.g., a keypad or dial).
+2. Player enters the solution and confirms. Client sends an
+   `"activate"` interaction with the attempted answer in `data`:
+
+   ```json
+   {
+     "@type": "SceneInteractionEvent",
+     "regionId": "region-escape-001",
+     "objectId": "escape-puzzle-lock",
+     "userId": "user:alice@example.com",
+     "action": "activate",
+     "data": { "code": "1898" }
+   }
+   ```
+
+3. Server checks the answer. On success it patches the puzzle state
+   to `"solved"` and, if `unlocksObjectId` is set, patches the linked
+   object as a side-effect in the same `SceneObject/set` call. On
+   failure the server returns an error action; the client displays
+   a shake animation.
+
+**Item pickup:**
+
+```json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "region-escape-001",
+  "objectId": "escape-item-key-red",
+  "userId": "user:bob@example.com",
+  "action": "grab",
+  "data": null
+}
+```
+
+Server responds by patching the item to `visible: false` and
+appending the item to the game state object's inventory array.
+
+**Door interaction:**
+
+When the door's state is `"unlocked"`, a player can open it:
+
+```json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "region-escape-001",
+  "objectId": "escape-door-lab",
+  "userId": "user:alice@example.com",
+  "action": "activate",
+  "data": null
+}
+```
+
+If the door is still `"locked"` the server rejects the interaction
+with an error and the client displays the transition hint text.
+
+**Using an inventory item on a locked object:**
+
+Some puzzles require a specific item from inventory rather than a
+code. The player selects the item from the shared inventory panel and
+clicks the target object. The client sends an `"activate"` interaction
+with the item identifier in `data`:
+
+```json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "region-escape-001",
+  "objectId": "escape-puzzle-keylock",
+  "userId": "user:carol@example.com",
+  "action": "activate",
+  "data": { "useItem": "key-red" }
+}
+```
+
+The server checks that `"key-red"` is in `customProperties.inventory`
+on the game state object, then transitions the puzzle to `"solved"`.
+
+### Game State
+
+The game state object tracks the timer, the shared inventory, and
+the overall escape progress.
+
+```json
+{
+  "id": "escape-state-001",
+  "regionId": "region-escape-001",
+  "name": "Game State",
+  "position": [0, 0, 0],
+  "visualRef": null,
+  "visualType": null,
+  "physicsMode": "none",
+  "interactable": false,
+  "visible": false,
+  "customProperties": {
+    "phase": "playing",
+    "timerSecondsRemaining": 2847,
+    "timerRunning": true,
+    "puzzlesSolved": 1,
+    "puzzlesTotal": 4,
+    "inventory": ["key-red"],
+    "escaped": false,
+    "failedAttempts": 2,
+    "playerCount": 3,
+    "players": [
+      "user:alice@example.com",
+      "user:bob@example.com",
+      "user:carol@example.com"
+    ]
+  }
+}
+```
+
+**Timer:** The server decrements `timerSecondsRemaining` at 1 Hz
+and patches the game state object. Clients receive `StateChange`
+notifications and update a countdown display. When the timer reaches
+zero the server sets `phase: "failed"` and `timerRunning: false`.
+
+**Inventory:** `inventory` is a flat array of item identifier strings.
+Because the room is cooperative, no `ownerId` is used for inventory
+items -- the array belongs to the team. Clients render a shared
+inventory panel visible to all players.
+
+**Win condition:** When all puzzles are solved and the final exit door
+is opened, the server sets `phase: "escaped"` and `escaped: true`.
+All players in the region at that moment are recorded as having
+escaped.
+
+### Hidden Information
+
+Escape rooms are mostly shared state -- all players see the same room,
+the same puzzle states, and the same inventory. The only server-side
+secrets are puzzle solutions.
+
+**What the server withholds:**
+
+- The `requiredCode` field on combination-lock puzzles is always
+  `null` in client responses. The server holds the correct value
+  in its internal storage and validates `"activate"` interactions
+  against it without ever sending it to clients.
+- Similarly, any puzzle that accepts an item (`requiredItem`) does not
+  expose the expected value. Clients only learn a puzzle's requirement
+  through in-room clue objects and narrative hints.
+
+**What is fully shared:**
+
+- All puzzle `state` values (`"locked"`, `"solved"`) are visible to
+  all players simultaneously. There is no per-player puzzle state.
+- The game state object (timer, inventory, solved count) is returned
+  identically to all players. No per-player redaction is needed.
+- Door states are visible to all players. When a door unlocks, every
+  client observes the same `StateChange`.
+
+### Variants
+
+**Multi-room:** Use multiple SceneRegions linked by `environment.exitTo`
+(a custom field pointing to the next region's id). When the team
+escapes one room the server updates SceneAvatar positions to move
+everyone to the next region.
+
+**3D first-person:** Replace `viewHint: "2d-topdown"` with
+`viewHint: "3d"` and `environment.renderMode: "3d"`. Objects get
+full 3D positions. Players navigate with avatar movement. All the
+interaction, inventory, and state-machine logic is identical.
+
+**Hint system:** Add an `"activate"` interaction on a hint-request
+SceneObject. Each use decrements a `hintsRemaining` counter in game
+state and posts a hint message to the bound chat channel
+(`SceneRegion.chatId`).
+
+
+---
+
+## 26. Virtual Classroom
+
+A virtual classroom demonstrates Scene as a general-purpose
+collaboration layer. There is no simulation, no game physics, and no
+win condition. The value is in tri-capability integration: Scene
+provides the spatial layout, VTC carries the lecture audio, and Chat
+provides text discussion. A teacher controls which slides are visible,
+students raise their hand or respond to a poll, and all three layers
+stay synchronized through two binding fields on the SceneRegion.
+
+### Region
+
+The classroom is a flat 2D space (`viewHint: "2d-topdown"`) with no
+simulation layer. `simulationUri` is `null` -- there is no real-time
+physics engine. `chatId` binds the in-room text discussion channel.
+`activeCallId` binds the live lecture call. Both fields together
+constitute the full tri-capability binding.
+
+```json
+{
+  "id": "region-classroom-001",
+  "name": "CS 101: Introduction to Networking",
+  "bounds": { "min": [0, 0, 0], "max": [20, 0, 15] },
+  "viewHint": "2d-topdown",
+  "spawnPosition": [10, 0, 12],
+  "simulationUri": null,
+  "accessPolicy": "invite",
+  "chatId": "chat-cs101-room-001",
+  "activeCallId": "call-lecture-cs101-001",
+  "environment": {
+    "roomTheme": "classroom",
+    "gridVisible": false
+  }
+}
+```
+
+`chatId` links to a Chat channel where students post questions and
+the teacher posts slide notes as system messages. `activeCallId`
+links to the active VTCCall carrying the teacher's audio and video.
+When the lecture ends and the VTCCall transitions to `"ended"`, the
+server automatically clears `activeCallId` to `null` and emits a
+`StateChange` for the SceneRegion -- no manual cleanup required.
+
+> **Tri-capability integration.** `chatId` and `activeCallId` on the
+> SceneRegion are the two binding fields that tie all three layers
+> together. Chat delivers text; VTC delivers audio/video; Scene
+> delivers spatial layout and interaction events. Each layer operates
+> independently -- students can text-chat before the call starts, and
+> the slide layout persists after the call ends.
+
+For spatial audio configuration (how VTC participant audio is
+positioned relative to SceneAvatars), see the
+[JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md).
+
+### Objects
+
+The classroom contains three categories of SceneObjects: display
+slides, interactive controls, and an invisible state tracker.
+
+**Slide object (display-only):**
+
+```json
+{
+  "id": "obj-slide-001",
+  "regionId": "region-classroom-001",
+  "name": "Slide 1: OSI Model",
+  "position": [10, 0, 2],
+  "visualRef": "blob-slide-osi-model",
+  "visualType": "image/png",
+  "physicsMode": "none",
+  "interactable": false,
+  "visible": true,
+  "ownerId": "user:teacher@example.com",
+  "customProperties": {
+    "objectKind": "slide",
+    "slideIndex": 1,
+    "title": "OSI Model"
+  }
+}
+```
+
+Slide objects are `interactable: false` -- students cannot move or
+manipulate them. The teacher advances slides by patching `visible`
+on the current and next slide objects (see Teacher Controls below).
+
+**Exhibit object (reference diagram, display-only):**
+
+```json
+{
+  "id": "obj-exhibit-001",
+  "regionId": "region-classroom-001",
+  "name": "TCP/IP Stack Diagram",
+  "position": [3, 0, 6],
+  "visualRef": "blob-diagram-tcpip",
+  "visualType": "image/png",
+  "physicsMode": "none",
+  "interactable": false,
+  "visible": true,
+  "ownerId": "user:teacher@example.com",
+  "customProperties": {
+    "objectKind": "exhibit",
+    "caption": "TCP/IP Stack vs OSI Model"
+  }
+}
+```
+
+**Raise-hand button (interactive, per-student):**
+
+Each student has an interactable button object. Clicking it sends a
+`SceneInteractionEvent` with `action: "activate"`. The server records
+the raise in the classroom state object (see Game State below).
+
+```json
+{
+  "id": "obj-hand-alice",
+  "regionId": "region-classroom-001",
+  "name": "Raise Hand",
+  "position": [4, 0, 13],
+  "visualRef": "blob-icon-hand",
+  "visualType": "image/svg+xml",
+  "physicsMode": "none",
+  "interactable": true,
+  "visible": true,
+  "ownerId": "user:alice@example.com",
+  "customProperties": {
+    "objectKind": "hand-raise-button",
+    "forStudent": "user:alice@example.com"
+  }
+}
+```
+
+**Poll object (interactive, visibility-filtered responses):**
+
+The poll object is visible to all participants, but each student's
+response is stored under their own key in `customProperties`. The
+server enforces that a student may only write to their own response
+key. Students see the poll question and their own answer; the teacher
+sees all responses.
+
+```json
+{
+  "id": "obj-poll-001",
+  "regionId": "region-classroom-001",
+  "name": "Quick Poll",
+  "position": [16, 0, 6],
+  "visualRef": "blob-ui-poll",
+  "visualType": "image/svg+xml",
+  "physicsMode": "none",
+  "interactable": true,
+  "visible": true,
+  "ownerId": "user:teacher@example.com",
+  "customProperties": {
+    "objectKind": "poll",
+    "question": "Which layer handles routing?",
+    "options": ["Layer 2 (Data Link)", "Layer 3 (Network)", "Layer 4 (Transport)"],
+    "responses": {
+      "user:alice@example.com": "Layer 3 (Network)",
+      "user:bob@example.com": "Layer 2 (Data Link)",
+      "user:carol@example.com": "Layer 3 (Network)"
+    }
+  }
+}
+```
+
+> **Visibility filtering.** The `responses` map contains per-student
+> answers. The server returns the full `responses` object only to the
+> teacher (owner). For each student it returns only their own key,
+> filtering out other students' answers. This uses the same
+> server-side `customProperties` filtering pattern as hidden card
+> hands in card games.
+
+### Interaction Model
+
+**Student raises hand:**
+
+The student clicks their raise-hand button. The client sends a
+`SceneInteractionEvent` over the WebSocket:
+
+```json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "region-classroom-001",
+  "objectId": "obj-hand-alice",
+  "userId": "user:alice@example.com",
+  "action": "activate",
+  "data": null
+}
+```
+
+The server appends `user:alice@example.com` to `raisedHands` in the
+classroom state object and fans the event out to the teacher's
+client so the teacher sees a raised-hand indicator in real time.
+
+**Student submits poll answer:**
+
+The student clicks an option on the poll object. The client sends an
+`activate` interaction with the selected answer in `data`:
+
+```json
+{
+  "@type": "SceneInteractionEvent",
+  "regionId": "region-classroom-001",
+  "objectId": "obj-poll-001",
+  "userId": "user:bob@example.com",
+  "action": "activate",
+  "data": { "response": "Layer 2 (Data Link)" }
+}
+```
+
+The server writes `responses["user:bob@example.com"]` into the poll
+object's `customProperties`. Bob's client receives a confirmation
+showing his own answer. The teacher's client receives the full
+updated `responses` map.
+
+### Teacher Controls
+
+The teacher advances the lecture with standard JMAP method calls --
+no simulation layer is needed.
+
+**Advance to next slide (hide slide 1, show slide 2):**
+
+```json
+[["SceneObject/set", {
+  "accountId": "teacher-account",
+  "update": {
+    "obj-slide-001": { "visible": false },
+    "obj-slide-002": { "visible": true }
+  }
+}, "0"]]
+```
+
+**Clear raised hands after calling on a student:**
+
+```json
+[["SceneObject/set", {
+  "accountId": "teacher-account",
+  "update": {
+    "state-classroom-001": {
+      "customProperties/raisedHands": []
+    }
+  }
+}, "0"]]
+```
+
+All connected clients receive a `StateChange` and fetch the updated
+object state, so the hand-raise indicators disappear from the UI
+in real time.
+
+### Game State
+
+An invisible, non-interactable SceneObject tracks shared classroom
+state: which slide is active, whether a poll is open, and who has
+raised their hand.
+
+```json
+{
+  "id": "state-classroom-001",
+  "regionId": "region-classroom-001",
+  "name": "Classroom State",
+  "position": [0, 0, 0],
+  "visualRef": null,
+  "physicsMode": "none",
+  "interactable": false,
+  "visible": false,
+  "ownerId": "user:teacher@example.com",
+  "customProperties": {
+    "objectKind": "classroom-state",
+    "currentSlideIndex": 2,
+    "totalSlides": 8,
+    "activePollId": "obj-poll-001",
+    "raisedHands": [
+      "user:alice@example.com",
+      "user:carol@example.com"
+    ],
+    "phase": "lecture"
+  }
+}
+```
+
+`visible: false` means students cannot see this object. Only the
+teacher (owner) and server-side logic can read it.
+
+### Role-Based Visibility Summary
+
+| Object kind        | Teacher sees        | Student sees              |
+|--------------------|---------------------|---------------------------|
+| Slide (active)     | Full object         | Full object               |
+| Slide (hidden)     | Full object         | Not returned by server    |
+| Exhibit            | Full object         | Full object               |
+| Poll               | All responses       | Own response only         |
+| Hand-raise button  | All buttons         | Own button only           |
+| Classroom state    | Full object         | Not returned by server    |
+
+The server enforces visibility by filtering `SceneObject/get` and
+`SceneObject/query` results based on `ownerId` and the `visible`
+flag. No client-side trust is required.
+
+### What Makes This Interesting for the Spec
+
+- **Non-game use case.** Scene is a general spatial-state layer, not
+  a game engine wrapper. No simulation, no physics, no win condition.
+
+- **Tri-capability integration.** A single SceneRegion binds all
+  three capabilities: `chatId` for text discussion, `activeCallId`
+  for lecture audio/video, and the Scene spatial layer for slides and
+  interaction. These three fields together are the complete
+  integration surface.
+
+- **Role-based visibility.** Teacher and students see different
+  subsets of the same SceneObject graph. The poll object holds all
+  responses but each student sees only their own. The classroom state
+  object is invisible to students entirely. This is the same
+  mechanism as hidden card hands in card games, applied to a
+  non-game context.
+
+- **Interactable objects for audience participation.** Raise-hand
+  buttons and poll objects are standard interactable SceneObjects.
+  No new primitives are needed -- `SceneInteractionEvent` with
+  `action: "activate"` covers both use cases.
+
+- **No simulation layer.** `simulationUri: null`. All state
+  transitions (slide advance, poll response, hand raise) are handled
+  by JMAP method calls directly. This is the simplest possible
+  deployment profile.
+
+
+---
+
 ## Implementation Complexity Summary
 
-### Board and Card Games
+### Board, Card, and Cooperative Activities
 
 | Game | Layout | Players | Objects | Hidden Info | Complexity |
 |---|---|---|---|---|---|
@@ -3950,6 +4957,9 @@ The Scene spec supports both through environment configuration.
 | Stratego | 10x10 | 2 | 80 | Piece ranks | High (visibility) |
 | Monopoly | Track | 2-8 | Tokens + props | Chance/CC deck | High (trading) |
 | Catan | Hex grid | 3-6 | ~100+ | Resources, cards | High (trading, hex) |
+| Pool (Billiards) | 2.54x1.27 m | 2 | 16 + table | None | Medium (physics, on-demand sim) |
+| Escape Room | Single room | 2-8 | 10-30 | Puzzle solutions | Medium (state chains) |
+| Virtual Classroom | 2D flat | 5-30 | 5-20 | Poll responses, state | Low (no sim, tri-capability) |
 
 ### Video Games
 
