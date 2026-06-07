@@ -132,7 +132,9 @@ advertise this capability.
 This capability is distinct from `urn:ietf:params:jmap:websocket`
 ({{RFC8887}}), which advertises the WebSocket transport itself, and
 from `urn:ietf:params:jmap:scene` ({{JMAP-SCENE}}), which
-advertises the Scene data model and methods.
+advertises the Scene data model and methods.  A server advertising
+`urn:ietf:params:jmap:scene:websocket` MUST also advertise both
+`urn:ietf:params:jmap:websocket` and `urn:ietf:params:jmap:scene`.
 
 ### Session Object Example
 
@@ -433,7 +435,7 @@ Client sends:
 
 The JMAP WebSocket protocol does not define an explicit acknowledgment
 frame for stream-enable messages.  Following the same pattern as
-`WebSocketPushEnable` (RFC 8887), the server processes the request
+`WebSocketPushEnable` ({{RFC8887}}), the server processes the request
 silently on success.  The client infers success from the absence of a
 `RequestError` frame.  If the server cannot honor the request -- for
 example, because `eventTypes` contains only unrecognized values -- it
@@ -815,7 +817,10 @@ subscription is immediately cancelled.  No events are buffered for
 later delivery.
 
 On reconnect, the client MUST send a new `SceneStreamEnable` to
-re-establish its subscription.
+re-establish its subscription.  The server MAY have destroyed the
+user's avatar during the disconnection; the client SHOULD verify
+avatar presence via `SceneAvatar/get` and re-enter via
+`SceneAvatar/set` if necessary before re-subscribing.
 
 # Interoperability with Other WebSocket Subscriptions {#interop}
 

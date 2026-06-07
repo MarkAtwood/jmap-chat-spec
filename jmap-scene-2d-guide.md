@@ -3,8 +3,8 @@
 For client and server implementers building 2D experiences on top of
 `draft-atwood-jmap-scene-00`. Covers top-down virtual offices, side-scrolling
 games, tile-grid mapping, sprite-based avatars, and integration with JMAP
-VTC for spatial video. For board game patterns, see the companion guide
-`jmap-scene-board-games-guide.md`.
+VTC for spatial video. For board game patterns, see the
+[JMAP Scene Board Games Guide](jmap-scene-board-games-guide.md).
 
 Read the draft first. This guide does not re-state normative requirements. It
 covers how to use the Scene spec's 3D data model to build compelling 2D
@@ -621,9 +621,10 @@ game logic: physics, AI, collision detection, scoring.
 
 **Game input:** The player interacts with the world through
 `SceneInteractionEvent` actions delivered via the JMAP WebSocket
-(SceneStreamEnable). The spec mentions click, grab, release, and activate
-as standard actions, plus extensible custom actions. A game client maps
-keyboard/gamepad input to these events:
+(SceneStreamEnable). The Scene WSS spec (draft-atwood-jmap-scene-wss-00)
+registers click, grab, release, and activate as standard actions, plus
+extensible custom actions. A game client maps keyboard/gamepad input to
+these events:
 
 - Arrow keys / WASD -> avatar position updates (via simulation layer)
 - Space bar -> `activate` on the nearest interactable object

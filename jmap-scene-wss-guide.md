@@ -77,6 +77,8 @@ The server silently drops a `SceneAvatarEvent` for a recipient when:
 - The recipient's subscription does not include the event's region (explicit `regionIds`
   that do not contain this region).
 - The recipient's subscription does not include `"SceneAvatarEvent"` in `eventTypes`.
+- The event's `userId` is on the recipient's blocked list (`ChatContact.blocked: true`)
+  when the Chat capability is present.
 
 ### SceneObjectEvent suppression
 
@@ -88,6 +90,9 @@ The server silently drops a `SceneObjectEvent` for a recipient when:
   is outside the recipient's visibility scope.
 - The event exceeds the server's rate limit (SHOULD be no more than 2 updates per object
   per second per the spec's recommendation).
+- The event's `updatedBy` is on the recipient's blocked list (`ChatContact.blocked: true`)
+  when the Chat capability is present. Events where `updatedBy` is `null` are not subject
+  to blocked-sender suppression.
 
 ### SceneInteractionEvent suppression
 
@@ -96,6 +101,8 @@ The server silently drops a `SceneInteractionEvent` for a recipient when:
 - The interacted object is not visible to the recipient per the visibility contract.
 - The event exceeds the server's rate limit (SHOULD be no more than 5 per user per region
   per second per the spec's recommendation).
+- The event's `userId` is on the recipient's blocked list (`ChatContact.blocked: true`)
+  when the Chat capability is present.
 
 ### Implication for clients
 
