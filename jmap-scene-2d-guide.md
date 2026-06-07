@@ -506,7 +506,8 @@ multi-room office:
   space.
 - **One region per room:** Each meeting room is a separate SceneRegion.
   Moving between rooms requires leaving one region and entering another
-  (a `SceneAvatar/set` destroy + create sequence). This provides stronger
+  (a `SceneAvatar/set` update (setting `leftAt`) followed by a
+  `SceneAvatar/set` create in the new region). This provides stronger
   isolation: avatars in different regions cannot see each other.
 
 For most virtual offices, one region per floor is simpler. Use separate
@@ -618,10 +619,10 @@ SceneObjects (enemies, items, terrain, triggers). The simulation layer runs
 game logic: physics, AI, collision detection, scoring.
 
 **Game input:** The player interacts with the world through
-`SceneInteractionEvent` actions delivered via the simulation layer. The spec
-mentions click, grab, release, and activate as standard actions, plus
-extensible custom actions. A game client maps keyboard/gamepad input to
-these events:
+`SceneInteractionEvent` actions delivered via the JMAP WebSocket
+(SceneStreamEnable). The spec mentions click, grab, release, and activate
+as standard actions, plus extensible custom actions. A game client maps
+keyboard/gamepad input to these events:
 
 - Arrow keys / WASD -> avatar position updates (via simulation layer)
 - Space bar -> `activate` on the nearest interactable object
@@ -751,6 +752,10 @@ turn enforcement, and game state tracking, see
 ---
 
 ## 8. Integration with VTC for spatial video
+
+For WebSocket connection management, SceneStreamEnable setup, reconnection,
+and event handling, see the
+[JMAP Scene WebSocket Guide](jmap-scene-wss-guide.md).
 
 ### What the spec provides
 

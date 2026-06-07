@@ -416,23 +416,25 @@ should not fill client logs.
 
 ### Convenience path: ChatStreamEnable with "scene"
 
-When the server advertises both `urn:ietf:params:jmap:chat:websocket` and
-`urn:ietf:params:jmap:scene:websocket`, clients can subscribe to Scene events through
-`ChatStreamEnable` by including `"scene"` in `dataTypes`:
+When the server advertises `urn:ietf:params:jmap:chat:websocket`,
+`urn:ietf:params:jmap:scene:websocket`, and `urn:ietf:params:jmap:vtc:websocket`,
+clients can subscribe to Scene and VTC events through `ChatStreamEnable` by including
+`"scene"` and `"vtc"` in `dataTypes`:
 
 ```json
 {
   "@type": "ChatStreamEnable",
-  "dataTypes": ["typing", "presence", "scene"],
+  "dataTypes": ["typing", "presence", "vtc", "scene"],
   "chatIds": null,
   "contactIds": null
 }
 ```
 
 This subscribes to all Scene event types for all regions where the user has an active
-avatar. It is the coarse-grained path — no region or event-type filtering. For clients
-that display a Chat UI with an embedded Scene view, this avoids sending a separate
-`SceneStreamEnable`.
+avatar, plus all VTC signalling events. It is the coarse-grained path — no region or
+event-type filtering. For clients that display a Chat UI with an embedded Scene view,
+this avoids sending a separate `SceneStreamEnable`. Deployments that have not enabled
+VTC may omit `"vtc"` from the array.
 
 ### Subscription union
 

@@ -52,6 +52,13 @@ board dimensions. One unit = one tile/square/cell.
 }
 ```
 
+> **Note:** Purely turn-based games with no real-time physics MAY use
+> `simulationUri: null`. In that case the server handles all game logic
+> via JMAP method calls alone (`SceneObject/set` for moves, custom
+> methods for turn validation). The `wss://` examples throughout this
+> guide show the general case; omitting `simulationUri` is a valid
+> choice for simple board games.
+
 ### Game Pieces
 
 Pieces are SceneObjects with `interactable: true` and
@@ -75,6 +82,12 @@ Pieces are SceneObjects with `interactable: true` and
   }
 }
 ```
+
+> **Note on `supportedVisualTypes`:** Deployments serving SVG game
+> assets should include `"image/svg+xml"` in the region's
+> `supportedVisualTypes` list alongside the spec-required
+> `"model/gltf-binary"`. Clients that do not support SVG will fall
+> back to the glTF asset when both are listed.
 
 ### Game State Object
 
@@ -143,6 +156,14 @@ each other in the same channel.
 SceneAvatars beyond the active players are spectators. They can see
 all public game state but cannot interact with pieces. The simulation
 layer ignores interaction events from non-player avatars.
+
+### Real-Time Event Notifications
+
+Clients wanting real-time push notifications for move updates
+(SceneObjectEvent for piece position changes, turn transitions, and
+game state changes) should see the
+[JMAP Scene WebSocket Guide](jmap-scene-wss-guide.md) for
+subscription setup.
 
 
 ---
@@ -1031,8 +1052,8 @@ opponent's tracking grid.
 
 ### Hidden Information
 
-**Critical.** This is Battleship's core mechanic. The server MUST NOT
-return ship positions to the opponent until the ship is sunk. The
+**Critical.** This is Battleship's core mechanic. The server should
+not return ship positions to the opponent until the ship is sunk. The
 visibility filtering pattern:
 
 - `SceneObject/get` for Alice returns: Alice's ships (all), Alice's
@@ -1910,13 +1931,13 @@ showing a viewport-sized window into the region.
 {
   "id": "region-pitfall-001",
   "name": "Jungle Run",
-  "bounds": { "min": [0, 0, 0], "max": [2048, 0, 16] },
+  "bounds": { "min": [0, 0, 0], "max": [2048, 16, 0] },
   "viewHint": "2d-side",
-  "spawnPosition": [2, 0, 4],
+  "spawnPosition": [2, 4, 0],
   "simulationUri": "wss://sim.example.com/games/pitfall/001",
   "accessPolicy": "public",
   "environment": {
-    "gravity": -9.81,
+    "gravity": 9.81,
     "theme": "jungle",
     "scrollDirection": "horizontal",
     "cameraTracking": "follow-player"
@@ -1924,10 +1945,10 @@ showing a viewport-sized window into the region.
 }
 ```
 
-With `viewHint: "2d-side"`, X is horizontal (left/right), Z is
-vertical (up/down, with ground at Z=0), and Y is unused (depth,
+With `viewHint: "2d-side"`, X is horizontal (left/right), Y is
+vertical (up/down, with ground at Y=0), and Z is unused (depth,
 always 0). The client renders an orthographic camera looking along
-the Y axis from the side.
+the Z axis from the side.
 
 ### Pieces
 
@@ -2468,8 +2489,8 @@ Guide](jmap-scene-simulation-guide.md).
 
 Multiple player tanks (SceneAvatars) in the same arena, cooperative
 vs AI enemies or PvP deathmatch. Spatial audio via VTC integration
-(Section 10.4 of the client architecture) adds immersion -- you hear
-enemy engines getting louder as they approach.
+(see [JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md))
+adds immersion -- you hear enemy engines getting louder as they approach.
 
 ### Hidden Information
 
@@ -2528,7 +2549,7 @@ collision.
     "renderMode": "2.5d",
     "lightingModel": "sector-based",
     "ambientLight": 0.3,
-    "gravity": -15.0,
+    "gravity": 15.0,
     "damageFlash": true,
     "automap": true,
     "verticalAim": "auto",
@@ -2794,6 +2815,10 @@ With `activeCallId` set, VTC audio is spatialized:
   effects positioned in 3D space.
 - The Web Audio API PannerNode graph handles attenuation and HRTF.
 
+For detailed spatial audio implementation (Web Audio PannerNode,
+distance models, coordinate mapping), see the
+[JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md).
+
 ### Hidden Information
 
 All SceneObject positions are public (no fog-of-war in classic Doom).
@@ -2835,7 +2860,7 @@ A fully 3D level with true volumetric architecture.
     "renderMode": "3d",
     "lightingModel": "lightmapped",
     "ambientLight": 0.15,
-    "gravity": -15.0,
+    "gravity": 15.0,
     "airControl": 0.3,
     "damageFlash": true,
     "automap": false,
@@ -3290,7 +3315,10 @@ Guide](jmap-scene-simulation-guide.md).
 **Multiplayer deathmatch:** 6DOF combat is uniquely disorienting --
 enemies can attack from literally any direction, including directly
 above, below, or behind while inverted. Spatial audio (via VTC
-integration) is critical for situational awareness.
+integration) is critical for situational awareness. For detailed
+spatial audio implementation (Web Audio PannerNode, distance models,
+coordinate mapping), see the
+[JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md).
 
 ### What Makes This Full 6DOF (vs Standard 3D)
 
@@ -3578,8 +3606,8 @@ objects like bullets should use lightweight SceneObject lifecycle
 
 ## 21. Genre: 2D Side-View Games
 
-`viewHint: "2d-side"`. Orthographic camera looking along Y axis
-from the side. X is horizontal, Z is vertical.
+`viewHint: "2d-side"`. Orthographic camera looking along Z axis
+from the side. X is horizontal, Y is vertical.
 
 ### Subgenres
 
@@ -3598,7 +3626,7 @@ from the side. X is horizontal, Z is vertical.
 {
   "viewHint": "2d-side",
   "environment": {
-    "gravity": -9.81,
+    "gravity": 9.81,
     "scrollDirection": "horizontal",
     "cameraTracking": "follow-player",
     "parallaxLayers": 3
@@ -3606,7 +3634,7 @@ from the side. X is horizontal, Z is vertical.
 }
 ```
 
-**Gravity:** All side-view games apply gravity (negative Z
+**Gravity:** All side-view games apply gravity (negative Y
 acceleration). The simulation handles collision with ground, platform
 edges, and ceilings. Jump mechanics define the subgenre feel -- jump
 height, air control, coyote time, wall-jumping.
@@ -3625,11 +3653,11 @@ zooms to keep both fighters in frame.
 {
   "id": "region-fighter-001",
   "name": "Arena: Alice vs Bob",
-  "bounds": { "min": [0, 0, 0], "max": [16, 0, 10] },
+  "bounds": { "min": [0, 0, 0], "max": [16, 10, 0] },
   "viewHint": "2d-side",
   "simulationUri": "wss://sim.example.com/games/fighter/001",
   "environment": {
-    "gravity": -20.0,
+    "gravity": 20.0,
     "roundsToWin": 2,
     "roundTime": 99,
     "cameraTracking": "frame-both-players"
@@ -3685,7 +3713,7 @@ The defining constraints:
     "verticalAim": "auto",
     "entityRendering": "billboard",
     "lightingModel": "sector-based",
-    "gravity": -15.0,
+    "gravity": 15.0,
     "automap": true
   }
 }
@@ -3761,7 +3789,7 @@ physics, free camera orientation, and 3D model entities.
   "viewHint": "3d",
   "environment": {
     "renderMode": "3d",
-    "gravity": -9.81,
+    "gravity": 9.81,
     "lightingModel": "pbr",
     "skybox": "blob-skybox-day",
     "fogDistance": 100,
@@ -3820,6 +3848,10 @@ Gunshot SceneObject.position --> PannerNode(posG)   /
 All audio sources (voice, weapons, ambient) are positioned in 3D
 space using the Web Audio API, creating directional sound that matches
 the visual scene.
+
+For detailed spatial audio implementation (Web Audio PannerNode,
+distance models, coordinate mapping), see the
+[JMAP Scene VTC Integration Guide](jmap-scene-vtc-integration-guide.md).
 
 ### Tactical FPS Pattern (Counter-Strike)
 
