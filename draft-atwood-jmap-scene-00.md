@@ -392,8 +392,8 @@ SceneObjects within any anchored region are positioned in meters relative to the
 `updatedAt` (UTCDate, server-set):
 : Time the region was last modified.
 
-`customProperties` (Object|null):
-: Deployment-defined extension properties for the region as a whole. Opaque to the JMAP Scene specification; the server stores and relays this object without interpretation. Clients MUST ignore unrecognized keys. Unlike `environment` (which describes rendering and physics parameters such as lighting, gravity, and skybox), `customProperties` carries application-level metadata that all participants share — for example, a game schema identifier and turn state on a board-game table, a lesson plan on a virtual classroom, or a simulation scenario label. {{JMAP-METADATA}} is unsuitable for this role because its `metadata` and `privateMetadata` properties are per-account annotations invisible to other participants; region-level application state must be visible to every user who can enter the region.
+`worldState` (Object|null):
+: Deployment-defined extension properties for the region as a whole. Opaque to the JMAP Scene specification; the server stores and relays this object without interpretation. Clients MUST ignore unrecognized keys. Unlike `environment` (which describes rendering and physics parameters such as lighting, gravity, and skybox), `worldState` carries application-level metadata that all participants share — for example, a game schema identifier and turn state on a board-game table, a lesson plan on a virtual classroom, or a simulation scenario label. {{JMAP-METADATA}} is unsuitable for this role because its `metadata` and `privateMetadata` properties are per-account annotations invisible to other participants; region-level application state must be visible to every user who can enter the region.
 
 ### Optional Binding Fields
 
@@ -438,7 +438,7 @@ When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat 
   "accessPolicy": "public",
   "createdAt": "2026-06-01T10:00:00Z",
   "updatedAt": "2026-06-05T14:30:00Z",
-  "customProperties": null,
+  "worldState": null,
   "chatId": "01J5ABC0000000000000000099",
   "spaceId": null,
   "channelId": null,
@@ -502,7 +502,7 @@ SceneObjects form a scene graph: each object has a position, orientation, and sc
 `updatedAt` (UTCDate, server-set):
 : Time the object was last modified.
 
-`customProperties` (Object|null):
+`worldState` (Object|null):
 : Deployment-defined extension properties. Opaque to the JMAP Scene specification; the server stores and relays this object without interpretation. Clients MUST ignore unrecognized keys.
 
 ### Example
@@ -525,7 +525,7 @@ SceneObjects form a scene graph: each object has a position, orientation, and sc
   "ownerId": "user:curator@example.com",
   "createdAt": "2026-06-01T12:00:00Z",
   "updatedAt": "2026-06-01T12:00:00Z",
-  "customProperties": {
+  "worldState": {
     "artist": "Elena Voss",
     "year": 2025,
     "medium": "Bronze"
@@ -571,7 +571,7 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 `leftAt` (UTCDate|null):
 : Time this avatar left the region. `null` if currently present.
 
-`customProperties` (Object|null):
+`worldState` (Object|null):
 : Deployment-defined avatar state (e.g., animation, equipped items, status). Opaque to the spec; the server stores and relays without interpretation.
 
 ### Example
@@ -588,7 +588,7 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
   "visualType": "model/gltf-binary",
   "joinedAt": "2026-06-05T14:35:00Z",
   "leftAt": null,
-  "customProperties": {
+  "worldState": {
     "animation": "idle",
     "nametag": true
   }
@@ -966,7 +966,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `customProperties` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `worldState` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `accountId`, `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
@@ -1056,7 +1056,7 @@ Response:
 
 #### Updating a Region
 
-`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, `customProperties`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
+`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, `worldState`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
 When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidArguments` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
 
@@ -1386,7 +1386,7 @@ Response:
           "ownerId": "user:curator@example.com",
           "createdAt": "2026-06-01T12:00:00Z",
           "updatedAt": "2026-06-01T12:00:00Z",
-          "customProperties": {
+          "worldState": {
             "artist": "Elena Voss",
             "year": 2025,
             "medium": "Bronze"
@@ -1409,7 +1409,7 @@ Response:
           "ownerId": "user:curator@example.com",
           "createdAt": "2026-06-01T12:30:00Z",
           "updatedAt": "2026-06-03T09:15:00Z",
-          "customProperties": null
+          "worldState": null
         }
       ],
       "notFound": []
@@ -1439,7 +1439,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `visualRef` (String), `visualType` (String):
 : Visual representation. Both MUST be present together or both absent.
 
-Optional: `parentId` (String), `name` (String), `orientation` (Number[4]), `scale` (Number[3]), `assetUri` (String), `physicsMode` (String), `interactable` (Boolean), `visible` (Boolean), `customProperties` (Object).
+Optional: `parentId` (String), `name` (String), `orientation` (Number[4]), `scale` (Number[3]), `assetUri` (String), `physicsMode` (String), `interactable` (Boolean), `visible` (Boolean), `worldState` (Object).
 
 The server sets `id`, `ownerId`, `createdAt`, and `updatedAt`.
 
@@ -1486,7 +1486,7 @@ Example create request with full JMAP envelope:
           "physicsMode": "static",
           "interactable": false,
           "visible": true,
-          "customProperties": {
+          "worldState": {
             "material": "marble",
             "label": "Pedestal for rotating exhibit"
           }
@@ -1526,7 +1526,7 @@ Response:
 
 #### Updating an Object
 
-`update` supports patching all mutable fields: `parentId`, `name`, `position`, `orientation`, `scale`, `visualRef`, `visualType`, `assetUri`, `physicsMode`, `interactable`, `visible`, `customProperties`. `regionId` is immutable and cannot be changed via update; to move an object between regions, destroy it and recreate it in the target region.
+`update` supports patching all mutable fields: `parentId`, `name`, `position`, `orientation`, `scale`, `visualRef`, `visualType`, `assetUri`, `physicsMode`, `interactable`, `visible`, `worldState`. `regionId` is immutable and cannot be changed via update; to move an object between regions, destroy it and recreate it in the target region.
 
 Example update (move an object):
 
@@ -1912,7 +1912,7 @@ A user enters a region by calling `SceneAvatar/set` with a `create`:
 `regionId` (String, required):
 : The SceneRegion to enter.
 
-Optional: `displayName` (String), `visualRef` (String), `visualType` (String), `customProperties` (Object).
+Optional: `displayName` (String), `visualRef` (String), `visualType` (String), `worldState` (Object).
 
 The server sets `id`, `userId`, `position` (to the region's `spawnPosition`), `orientation` (to the region's `spawnOrientation`), `joinedAt`, and `leftAt` (to `null`). If `displayName` is not supplied by the client, the server sets it from the user profile or ChatContact when {{JMAP-CHAT}} is present.
 
@@ -1993,7 +1993,7 @@ Response:
           "visualType": "model/gltf-binary",
           "joinedAt": "2026-06-06T10:30:00Z",
           "leftAt": null,
-          "customProperties": null
+          "worldState": null
         }
       },
       "updated": null,
@@ -2018,7 +2018,7 @@ A user calls `SceneAvatar/set` to update their own avatar:
     "user:alice@example.com": {
       "visualRef": "blob-avatar-alice-formal",
       "visualType": "model/gltf-binary",
-      "customProperties": {
+      "worldState": {
         "animation": "waving"
       }
     }
@@ -2433,7 +2433,7 @@ SceneObject visual assets (`visualRef`) and SceneAvatar visual assets (`visualRe
 
 Servers MAY defer the visibility of newly created SceneObject records until asset scanning completes. During the scanning interval, the object exists in the JMAP state (the creator can retrieve it via `SceneObject/get`), but the server SHOULD exclude it from `SceneObject/query` results and `SceneObject/queryChanges` notifications delivered to other users. Once scanning completes and the asset passes the content policy, the object becomes visible through normal query and change mechanisms. If the asset fails the content policy, the server SHOULD destroy the object and SHOULD notify the creator via a `SetError` of type `contentPolicy` on a subsequent state-change notification or, if the deployment supports it, via an out-of-band moderation channel.
 
-Text fields on SceneRegion and SceneObject — `name`, `customProperties`, and any string values within `customProperties` — are user-controlled and may contain spam, offensive language, or phishing content. Servers SHOULD apply the same content-policy validation to text fields as to visual assets. Servers MAY reject `SceneRegion/set` or `SceneObject/set` create or update requests that violate text content policies with a `SetError` of type `contentPolicy`.
+Text fields on SceneRegion and SceneObject — `name`, `worldState`, and any string values within `worldState` — are user-controlled and may contain spam, offensive language, or phishing content. Servers SHOULD apply the same content-policy validation to text fields as to visual assets. Servers MAY reject `SceneRegion/set` or `SceneObject/set` create or update requests that violate text content policies with a `SetError` of type `contentPolicy`.
 
 Rapid `SceneObject/set` create calls can be used as a spam or denial-of-service vector, flooding a region with objects faster than content scanning can process them. Servers SHOULD enforce per-user rate limits on `SceneObject/set` create operations, independent of the `maxObjectsPerRegion` cap. When a rate limit is exceeded, the server SHOULD return a `SetError` of type `rateLimit` and SHOULD include a `retryAfter` property indicating the number of seconds before the client may retry.
 
@@ -2445,7 +2445,7 @@ Servers SHOULD enforce at least one of the following mitigations to prevent disp
 
 - **Uniqueness constraints.** The server MAY enforce that no two active SceneAvatar records within the same SceneRegion share the same `displayName`. When a collision is detected, the server SHOULD reject the later `SceneAvatar/set` create with a `SetError` of type `invalidArguments` and a description indicating the name conflict. Alternatively, the server MAY append a disambiguating suffix (e.g., a numeric tag) to the duplicate name.
 
-- **Visual differentiation.** The server MAY provide system-assigned badges, name colors, or other visual metadata (via `customProperties` or a deployment-defined mechanism) that distinguish authenticated identity from user-chosen display names. Clients SHOULD render these differentiators prominently.
+- **Visual differentiation.** The server MAY provide system-assigned badges, name colors, or other visual metadata (via `worldState` or a deployment-defined mechanism) that distinguish authenticated identity from user-chosen display names. Clients SHOULD render these differentiators prominently.
 
 - **Reserved name lists.** The server SHOULD maintain a list of reserved display names that correspond to system roles or administrative functions and MUST reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
 
@@ -2702,7 +2702,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Avatar system.** Full-body tracking, head-and-hands, 2D sprites, abstract shapes. The `visualRef` points to whatever the deployment uses.
 - **Authentication for region entry.** OAuth, JMAP auth, tickets, or any other mechanism. The spec defines access policies; the auth mechanism is deployment infrastructure.
 - **Spatial audio.** How voice from {{JMAP-VTC}} is spatialized based on avatar positions. This is a simulation-layer concern at the intersection of VTC and Scene.
-- **Scripting and behaviors.** Object behaviors, triggers, animations, and interaction logic. Out of scope. May be modeled via `customProperties` or a future companion specification.
+- **Scripting and behaviors.** Object behaviors, triggers, animations, and interaction logic. Out of scope. May be modeled via `worldState` or a future companion specification.
 - **Economy and inventory.** Virtual currencies, item trading, user inventories. Out of scope.
 - **Terrain and heightmaps.** Terrain is a SceneObject with a visual representation. The spec does not define a terrain-specific data type.
 - **Building and editing tools.** Client-side concerns. Objects are created and modified via standard `SceneObject/set`; the UI for doing so is client-defined.
@@ -2869,7 +2869,7 @@ Alice's client sends `SceneAvatar/set` with a `create` to enter the Gallery East
       "regionId": "01JXKR5M0G3QVTA8N2BWFP7Y01",
       "visualRef": "blob-avatar-alice-001",
       "visualType": "model/gltf-binary",
-      "customProperties": {
+      "worldState": {
         "animation": "idle",
         "nametag": true
       }
@@ -2897,7 +2897,7 @@ Server responds with the created avatar. The server assigns the id from Alice's 
       "visualType": "model/gltf-binary",
       "joinedAt": "2026-06-06T09:15:00Z",
       "leftAt": null,
-      "customProperties": {
+      "worldState": {
         "animation": "idle",
         "nametag": true
       }
@@ -3118,7 +3118,7 @@ The admin places three objects in a single batch: a static back wall, an interac
       "physicsMode": "static",
       "interactable": false,
       "visible": true,
-      "customProperties": {
+      "worldState": {
         "material": "concrete",
         "tiling": [10, 2]
       }
@@ -3135,7 +3135,7 @@ The admin places three objects in a single batch: a static back wall, an interac
       "physicsMode": "kinematic",
       "interactable": true,
       "visible": true,
-      "customProperties": {
+      "worldState": {
         "animationOnActivate": "slide-open",
         "autoCloseSeconds": 5
       }
@@ -3152,7 +3152,7 @@ The admin places three objects in a single batch: a static back wall, an interac
       "physicsMode": "dynamic",
       "interactable": true,
       "visible": true,
-      "customProperties": {
+      "worldState": {
         "mass": 5.0,
         "restitution": 0.7
       }
@@ -3236,7 +3236,7 @@ From this point forward, users without an explicit invitation receive `forbidden
 
 ### Step 4: Admin ejects an avatar
 
-A disruptive user (`user:troll@example.com`) is in the region. The admin ejects them by setting `leftAt` on their SceneAvatar record, with a reason in `customProperties`:
+A disruptive user (`user:troll@example.com`) is in the region. The admin ejects them by setting `leftAt` on their SceneAvatar record, with a reason in `worldState`:
 
 ~~~json
 [["SceneAvatar/set", {
@@ -3244,7 +3244,7 @@ A disruptive user (`user:troll@example.com`) is in the region. The admin ejects 
   "update": {
     "user:troll@example.com": {
       "leftAt": "2026-06-06T10:22:15Z",
-      "customProperties": {
+      "worldState": {
         "ejectReason": "Disruptive behavior",
         "ejectedBy": "user:admin@example.com"
       }

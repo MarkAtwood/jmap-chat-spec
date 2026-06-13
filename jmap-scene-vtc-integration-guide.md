@@ -541,7 +541,7 @@ rooms with doors).
 **Approach B: Single SceneRegion with spatial zones**
 
 Keep all breakout areas in one SceneRegion. Define spatial zones using SceneObject
-records with `customProperties` that reference breakout VTCCall ids. The client detects
+records with `worldState` that reference breakout VTCCall ids. The client detects
 when the avatar enters a zone and switches the user's VTC call.
 
 ```json
@@ -557,7 +557,7 @@ when the avatar enters a zone and switches the user's VTC call.
   "physicsMode": "none",
   "interactable": false,
   "visible": false,
-  "customProperties": {
+  "worldState": {
     "com.example.zone": {
       "type": "breakout",
       "vtcCallId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
@@ -625,7 +625,7 @@ server creates a SceneObject representing the shared screen:
   "physicsMode": "static",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "com.example.screenshare": {
       "participantUserId": "user:alice@example.com",
       "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
@@ -636,7 +636,7 @@ server creates a SceneObject representing the shared screen:
 ```
 
 The SceneObject has no `visualRef` because its visual content comes from a live video
-stream, not a static asset. The `customProperties` tell clients which VTC participant's
+stream, not a static asset. The `worldState` tell clients which VTC participant's
 screen share to render on this surface.
 
 ### Client rendering
@@ -644,7 +644,7 @@ screen share to render on this surface.
 The client:
 
 1. Receives a `SceneObjectEvent` or `StateChange` for the new screen-share object.
-2. Reads `customProperties` and identifies the VTC participant userId and track kind.
+2. Reads `worldState` and identifies the VTC participant userId and track kind.
 3. Maps the VTC participant's screen-share video track to a texture.
 4. Renders the texture on the SceneObject's geometry (a flat quad at the specified
    position, orientation, and scale).
@@ -667,7 +667,7 @@ prevents orphaned screen-share objects when a client disconnects without cleanup
 
 Alternatively, a region can have predefined screen surfaces — permanent SceneObjects
 that serve as displays. When a participant starts screen sharing, the server or client
-assigns the share to an available surface by updating the surface's `customProperties`
+assigns the share to an available surface by updating the surface's `worldState`
 with the participant's userId and call id. This avoids dynamic object creation and lets
 the region designer control where screen shares appear.
 
@@ -994,7 +994,7 @@ a screen-share SceneObject:
 }
 ```
 
-Other clients fetch the object, read its `customProperties`, and render Alice's
+Other clients fetch the object, read its `worldState`, and render Alice's
 screen-share video track on the virtual monitor at position `[0, 2.5, -10]`.
 
 ### Alice leaves
