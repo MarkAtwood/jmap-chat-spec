@@ -49,7 +49,7 @@ board dimensions. One unit = one tile/square/cell.
     "boardTheme": "classic",
     "gridVisible": true
   },
-  "customProperties": {
+  "worldState": {
     "gameSchema": "urn:game:chess:standard",
     "gameSchemaVersion": "1.0",
     "turn": "white",
@@ -63,14 +63,14 @@ board dimensions. One unit = one tile/square/cell.
 }
 ```
 
-> **`environment` vs `customProperties`:** Use `environment` for
+> **`environment` vs `worldState`:** Use `environment` for
 > rendering and physics settings (board theme, grid visibility, lighting)
-> and `customProperties` for application-level game state (whose turn it
+> and `worldState` for application-level game state (whose turn it
 > is, which schema governs the rules, who is playing). Both are
 > deployment-defined and opaque to the server, but the semantic split
 > helps clients distinguish presentation from game logic. A client that
 > does not understand the game schema can still render the board using
-> `environment`; a game engine can read `customProperties` without
+> `environment`; a game engine can read `worldState` without
 > touching rendering parameters.
 
 > **Note:** Purely turn-based games with no real-time physics MAY use
@@ -84,7 +84,7 @@ board dimensions. One unit = one tile/square/cell.
 ### Game Pieces
 
 Pieces are SceneObjects with `interactable: true` and
-`physicsMode: "none"`. Piece identity lives in `customProperties`.
+`physicsMode: "none"`. Piece identity lives in `worldState`.
 
 ```json
 {
@@ -98,7 +98,7 @@ Pieces are SceneObjects with `interactable: true` and
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "pieceType": "pawn",
     "color": "white"
   }
@@ -127,7 +127,7 @@ An invisible, non-interactable SceneObject tracks shared game state:
   "physicsMode": "none",
   "interactable": false,
   "visible": false,
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 1,
     "phase": "main",
@@ -142,7 +142,7 @@ object; all clients receive the `StateChange` and the UI updates
 accordingly.
 
 In the per-game sections that follow, `### Game State` subsections
-show only the `customProperties` portion of the game state
+show only the `worldState` portion of the game state
 SceneObject. The enclosing object always uses `visible: false`,
 `interactable: false`, `visualRef: null`, `visualType: null`, and
 `physicsMode: "none"` per the pattern above.
@@ -164,7 +164,7 @@ For games where players cannot see each other's pieces (Battleship,
 Stratego), the server uses visibility filtering. When a piece has
 `ownerId` set to one player, the server returns a face-down or
 generic visual (`visualRef` pointing to a card-back blob) to the
-other player. The true `customProperties` are omitted or redacted in
+other player. The true `worldState` are omitted or redacted in
 the response sent to non-owners.
 
 ### Chat Integration
@@ -235,7 +235,7 @@ No initial pieces. Pieces are created on each turn via
   "interactable": false,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "mark": "X",
     "col": 1,
     "row": 1
@@ -262,7 +262,7 @@ the server returns a `SetError`.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 5,
     "phase": "playing",
@@ -330,7 +330,7 @@ pieces.
   "interactable": false,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "color": "black",
     "moveNumber": 42
   }
@@ -356,7 +356,7 @@ count in the game state object.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 42,
     "phase": "playing",
@@ -431,7 +431,7 @@ An 8x8 board game with diagonal movement and mandatory captures.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "color": "red",
     "kinged": false
   }
@@ -455,14 +455,14 @@ On capture, the jumped piece is destroyed via `SceneObject/set
 destroy`.
 
 **Kinging:** When a piece reaches the opposite back row, the
-simulation updates `customProperties.kinged: true` and changes
+simulation updates `worldState.kinged: true` and changes
 `visualRef` to the kinged visual (e.g., a stacked checker image).
 
 ### Game State
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 18,
     "phase": "playing",
@@ -528,7 +528,7 @@ double-move eligibility).
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "pieceType": "king",
     "color": "white",
     "hasMoved": false
@@ -550,7 +550,7 @@ double-move eligibility).
   "interactable": true,
   "visible": true,
   "ownerId": "user:bob@example.com",
-  "customProperties": {
+  "worldState": {
     "pieceType": "pawn",
     "color": "black",
     "hasMoved": false
@@ -591,7 +591,7 @@ layer validates all standard chess rules:
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 23,
     "phase": "playing",
@@ -610,7 +610,7 @@ layer validates all standard chess rules:
 
 **Game end conditions:** Checkmate (`winner` set, `phase: "finished"`),
 stalemate (`phase: "draw"`, `drawReason: "stalemate"` in
-`customProperties`), draw by agreement, threefold repetition,
+`worldState`), draw by agreement, threefold repetition,
 fifty-move rule, or insufficient material.
 
 ### Hidden Information
@@ -623,7 +623,7 @@ Chess clocks are tracked in the game state object:
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "timeControl": "5+3",
     "whiteTimeMs": 245000,
     "blackTimeMs": 298000,
@@ -683,7 +683,7 @@ coordinate system maps the track to a perimeter path.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "color": "red",
     "trackPosition": -1,
     "inStart": true,
@@ -709,7 +709,7 @@ and presents it as a SceneObject visible to all:
   "physicsMode": "none",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "cardValue": 7,
     "description": "Move one pawn forward 7 spaces, or split the move between two pawns"
   }
@@ -742,7 +742,7 @@ Start. The simulation handles this automatically on landing.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 15,
     "phase": "choose-pawn",
@@ -814,7 +814,7 @@ areas in the center.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "tokenType": "tophat",
     "boardPosition": 0,
     "inJail": false,
@@ -837,7 +837,7 @@ areas in the center.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "propertyName": "Boardwalk",
     "colorGroup": "dark-blue",
     "purchasePrice": 400,
@@ -863,7 +863,7 @@ areas in the center.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "die1": 3,
     "die2": 4,
     "doubles": false
@@ -903,7 +903,7 @@ full color group. Simulation validates and updates `houses` count and
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 34,
     "phase": "roll",
@@ -982,7 +982,7 @@ visibility filtering.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "shipType": "carrier",
     "length": 5,
     "orientation": "horizontal",
@@ -1009,7 +1009,7 @@ which point the server reveals it on Bob's tracking grid.
   "physicsMode": "none",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "result": "hit",
     "guessedBy": "user:bob@example.com",
     "col": 3,
@@ -1031,7 +1031,7 @@ which point the server reveals it on Bob's tracking grid.
   "physicsMode": "none",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "result": "miss",
     "guessedBy": "user:alice@example.com",
     "col": 3,
@@ -1058,7 +1058,7 @@ opponent's tracking grid.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 22,
     "phase": "playing",
@@ -1135,7 +1135,7 @@ owner and a generic back to the opponent.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "rank": 10,
     "rankName": "Marshal",
     "color": "red",
@@ -1147,7 +1147,7 @@ owner and a generic back to the opponent.
 **Opponent's view (Bob sees a generic red piece):**
 
 The server returns the same object to Bob but with `visualRef`
-replaced by `"blob-stratego-red-back"` and `customProperties`
+replaced by `"blob-stratego-red-back"` and `worldState`
 redacted to `{ "color": "red" }`. The rank is hidden.
 
 ### Interaction Model
@@ -1179,7 +1179,7 @@ retains its revealed visual).
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 31,
     "phase": "playing",
@@ -1196,7 +1196,7 @@ retains its revealed visual).
 **Critical.** Each player's piece ranks are hidden from the opponent
 until revealed through combat. The server uses per-player visibility
 filtering identical to the Battleship pattern: the response to
-`SceneObject/get` replaces `visualRef` and redacts `customProperties`
+`SceneObject/get` replaces `visualRef` and redacts `worldState`
 for opponent pieces that have not been revealed through combat.
 
 
@@ -1246,7 +1246,7 @@ coordinates mapped onto the X/Z plane.
   "physicsMode": "none",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "terrain": "hills",
     "resource": "brick",
     "numberToken": 5,
@@ -1269,7 +1269,7 @@ coordinates mapped onto the X/Z plane.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "buildingType": "settlement",
     "color": "red",
     "vertexId": "v-0-0-NE",
@@ -1292,7 +1292,7 @@ coordinates mapped onto the X/Z plane.
   "interactable": false,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "color": "red",
     "edgeId": "e-0-0-E"
   }
@@ -1318,7 +1318,7 @@ different `visualRef`.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "onHex": "catan-hex-00"
   }
 }
@@ -1361,7 +1361,7 @@ different `visualRef`.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "cardType": "knight",
     "playable": true,
     "turnAcquired": 12
@@ -1380,7 +1380,7 @@ breakdown and only card totals for opponents.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "turnNumber": 28,
     "phase": "main",
@@ -1487,7 +1487,7 @@ method calls alone; the simulation layer handles all of it.
   "physicsMode": "dynamic",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "ballNumber": 0,
     "ballType": "cue",
     "pocketed": false
@@ -1508,7 +1508,7 @@ method calls alone; the simulation layer handles all of it.
   "physicsMode": "dynamic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "ballNumber": 7,
     "ballType": "solid",
     "pocketed": false
@@ -1529,7 +1529,7 @@ method calls alone; the simulation layer handles all of it.
   "physicsMode": "dynamic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "ballNumber": 8,
     "ballType": "eight",
     "pocketed": false
@@ -1550,7 +1550,7 @@ method calls alone; the simulation layer handles all of it.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "pockets": [
       [0.0,  0, 0.0],  [1.27, 0, 0.0],  [2.54, 0, 0.0],
       [0.0,  0, 1.27], [1.27, 0, 1.27], [2.54, 0, 1.27]
@@ -1625,7 +1625,7 @@ The simulation layer on receiving a `"shoot"` event:
         "pool-ball-07":  {
           "position": [0.0, 0, 0.0],
           "visible": false,
-          "customProperties": { "pocketed": true }
+          "worldState": { "pocketed": true }
         }
       }
     },
@@ -1642,7 +1642,7 @@ be restored on a cue-ball-pocketed foul.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "gamePhase": "play",
     "currentTurn": "user:alice@example.com",
     "playerAssignments": {
@@ -1762,7 +1762,7 @@ during the deal, then take turns.
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "suit": "hearts",
     "rank": "7",
     "inHand": true,
@@ -1772,7 +1772,7 @@ during the deal, then take turns.
 ```
 
 Bob and Carol receive this object with `visualRef: "blob-card-back"`
-and `customProperties` redacted to `{ "inHand": true }`.
+and `worldState` redacted to `{ "inHand": true }`.
 
 **Matched pair in discard pile (visible to all):**
 
@@ -1787,7 +1787,7 @@ and `customProperties` redacted to `{ "inHand": true }`.
   "physicsMode": "none",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "rank": "7",
     "matchedBy": "user:alice@example.com"
   }
@@ -1813,7 +1813,7 @@ player holding the unmatched Queen loses.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:bob@example.com",
     "drawFrom": "user:carol@example.com",
     "phase": "playing",
@@ -1879,7 +1879,7 @@ player games). Remaining cards form the draw pile (fish pond).
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "suit": "spades",
     "rank": "Q",
     "inHand": true,
@@ -1901,7 +1901,7 @@ player games). Remaining cards form the draw pile (fish pond).
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "cardsRemaining": 28
   }
 }
@@ -1921,7 +1921,7 @@ player games). Remaining cards form the draw pile (fish pond).
   "interactable": false,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "rank": "Q",
     "completedBy": "user:alice@example.com"
   }
@@ -1958,7 +1958,7 @@ On a player's turn:
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "currentTurn": "user:alice@example.com",
     "phase": "ask",
     "winner": null,
@@ -2040,7 +2040,7 @@ each column (1 card in column 1, 2 in column 2, ... 7 in column 7).
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "suit": "hearts",
     "rank": "7",
     "color": "red",
@@ -2065,7 +2065,7 @@ each column (1 card in column 1, 2 in column 2, ... 7 in column 7).
   "physicsMode": "none",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "faceUp": false,
     "pile": "tableau",
     "column": 3,
@@ -2091,7 +2091,7 @@ the top face-down card in their column (clicking flips them face-up).
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "pile": "stock",
     "cardsRemaining": 24
   }
@@ -2111,7 +2111,7 @@ the top face-down card in their column (clicking flips them face-up).
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "pile": "foundation",
     "suit": "hearts",
     "topRank": null
@@ -2145,7 +2145,7 @@ cards to foundations in sequence.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "phase": "playing",
     "winner": null,
     "moveCount": 42,
@@ -2260,7 +2260,7 @@ the Z axis from the side.
   "interactable": false,
   "visible": true,
   "scale": [64, 1, 1],
-  "customProperties": {
+  "worldState": {
     "terrainType": "solid",
     "collisionBox": [64, 1, 1]
   }
@@ -2281,7 +2281,7 @@ the Z axis from the side.
   "interactable": false,
   "visible": true,
   "scale": [4, 1, 1],
-  "customProperties": {
+  "worldState": {
     "terrainType": "hazard",
     "damage": "instant-death"
   }
@@ -2301,7 +2301,7 @@ the Z axis from the side.
   "physicsMode": "static",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "objectType": "vine",
     "grabPoint": [47, 7, 0],
     "swingArc": 3.0
@@ -2322,7 +2322,7 @@ the Z axis from the side.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "objectType": "collectible",
     "points": 500,
     "collected": false
@@ -2343,7 +2343,7 @@ the Z axis from the side.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "objectType": "enemy",
     "patrolMin": 58,
     "patrolMax": 64,
@@ -2385,7 +2385,7 @@ rate selection and authority models):
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "phase": "playing",
     "score": 12500,
     "lives": 2,
@@ -2479,7 +2479,7 @@ velocity in the facing direction; the simulation handles inertia
   "orientation": [0, 0.707, 0, 0.707],
   "visualRef": "blob-ship-vector",
   "visualType": "image/svg+xml",
-  "customProperties": {
+  "worldState": {
     "velocity": [2.5, 0, -1.3],
     "shielded": false,
     "weaponCooldown": 0
@@ -2501,7 +2501,7 @@ velocity in the facing direction; the simulation handles inertia
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "size": "large",
     "velocity": [-1.2, 0, 0.8],
     "rotationSpeed": 0.5,
@@ -2530,7 +2530,7 @@ splits into two small. Small asteroids are destroyed outright.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "velocity": [8, 0, -4],
     "firedBy": "user:alice@example.com",
     "ttl": 2.0
@@ -2556,7 +2556,7 @@ collision detection.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "size": "large",
     "velocity": [3, 0, 0],
     "shootInterval": 1.5,
@@ -2590,7 +2590,7 @@ top-down arcade games, see the [Simulation Layer Guide](jmap-scene-simulation-gu
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "phase": "playing",
     "score": 4280,
     "lives": 3,
@@ -2670,7 +2670,7 @@ view, even though movement is constrained to a 2D plane.
   "orientation": [0, 0, 0, 1],
   "visualRef": "blob-tank-wireframe",
   "visualType": "model/gltf-binary",
-  "customProperties": {
+  "worldState": {
     "velocity": [0, 0, 0],
     "turretAngle": 0,
     "reloadTime": 0,
@@ -2693,7 +2693,7 @@ view, even though movement is constrained to a 2D plane.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "aiState": "hunting",
     "speed": 3.0,
     "fireRate": 2.0,
@@ -2715,7 +2715,7 @@ view, even though movement is constrained to a 2D plane.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "velocity": [0, 0, -20],
     "firedBy": "user:alice@example.com",
     "ttl": 3.0
@@ -2736,7 +2736,7 @@ view, even though movement is constrained to a 2D plane.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "obstacleType": "cube",
     "provideCover": true
   }
@@ -2768,7 +2768,7 @@ Guide](jmap-scene-simulation-guide.md).
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "phase": "playing",
     "score": 7000,
     "lives": 3,
@@ -2875,7 +2875,7 @@ are all part of the level mesh.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "levelFormat": "doom-bsp",
     "sectorCount": 85
   }
@@ -2895,7 +2895,7 @@ are all part of the level mesh.
   "physicsMode": "kinematic",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "doorState": "closed",
     "requiresKey": null,
     "openHeight": 4.0,
@@ -2917,7 +2917,7 @@ are all part of the level mesh.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "pickupType": "weapon",
     "weapon": "shotgun",
     "ammoIncluded": 8,
@@ -2939,7 +2939,7 @@ are all part of the level mesh.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "pickupType": "health",
     "healAmount": 25,
     "respawnDelay": 30
@@ -2961,7 +2961,7 @@ are all part of the level mesh.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "enemyType": "imp",
     "hp": 60,
     "state": "idle",
@@ -2987,7 +2987,7 @@ are all part of the level mesh.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "velocity": [-8, 0, -6],
     "damage": 10,
     "firedBy": "doom-imp-004",
@@ -3018,7 +3018,7 @@ selection for FPS games.
    hit event.
 3. **Weapon switching:** Number keys or scroll wheel. The simulation
    updates the player's `currentWeapon` in their SceneAvatar
-   `customProperties`. The client renders the weapon model in first
+   `worldState`. The client renders the weapon model in first
    person from a local asset (not a SceneObject).
 4. **Doors:** Player approaches and presses use key (E / `"activate"`
    interaction). Simulation checks key requirements, opens the door
@@ -3030,7 +3030,7 @@ selection for FPS games.
 6. **Enemy AI:** The simulation runs per-enemy state machines: idle,
    alert (heard gunfire or saw player), chase, attack (melee or
    ranged), pain (briefly stunned on taking damage), death.
-7. **Damage:** Health tracked in SceneAvatar `customProperties`. On
+7. **Damage:** Health tracked in SceneAvatar `worldState`. On
    death, the avatar enters a death state (camera falls to floor),
    then respawns at a spawn point after a delay.
 8. **Frag log:** Each kill posts a system message to the bound Chat:
@@ -3049,7 +3049,7 @@ selection for FPS games.
   "orientation": [0, 0, 0, 1],
   "visualRef": "blob-doomguy-model",
   "visualType": "model/gltf-binary",
-  "customProperties": {
+  "worldState": {
     "hp": 85,
     "armor": 50,
     "currentWeapon": "shotgun",
@@ -3075,7 +3075,7 @@ a first-person weapon view rendered client-side from the
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "gameMode": "deathmatch",
     "phase": "playing",
     "fragLimit": 20,
@@ -3116,7 +3116,7 @@ distance models, coordinate mapping), see the
 ### Hidden Information
 
 All SceneObject positions are public (no fog-of-war in classic Doom).
-Player inventory (`customProperties` on SceneAvatar) is public --
+Player inventory (`worldState` on SceneAvatar) is public --
 in classic Doom you can see other players' health on the HUD.
 
 For a fog-of-war variant, the server would use `SceneObject/query`
@@ -3193,7 +3193,7 @@ geometry, this is a true polygon soup with arbitrary geometry.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "levelFormat": "quake-bsp3",
     "brushCount": 2048,
     "hasWater": true,
@@ -3216,7 +3216,7 @@ geometry, this is a true polygon soup with arbitrary geometry.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "enemyType": "ogre",
     "hp": 200,
     "state": "patrol",
@@ -3244,7 +3244,7 @@ animation. It has the same appearance from all viewing angles.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "pickupType": "weapon",
     "weapon": "rocket_launcher",
     "ammoIncluded": 5,
@@ -3268,7 +3268,7 @@ animation. It has the same appearance from all viewing angles.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "velocity": [0, 2, -20],
     "damage": 100,
     "splashRadius": 5.0,
@@ -3327,7 +3327,7 @@ the [Simulation Layer Guide](jmap-scene-simulation-guide.md).
   "orientation": [0.1, 0.3, 0, 0.9487],
   "visualRef": "blob-quake-player-model",
   "visualType": "model/gltf-binary",
-  "customProperties": {
+  "worldState": {
     "hp": 75,
     "armor": 100,
     "armorType": "yellow",
@@ -3359,7 +3359,7 @@ player looks up and down freely, unlike Doom's horizontal-only view.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "gameMode": "deathmatch",
     "phase": "playing",
     "fragLimit": 25,
@@ -3399,7 +3399,7 @@ Everything that Doom could not do, Quake can:
 
 Same as Doom: all SceneObject positions are public (no fog-of-war
 in standard Quake deathmatch). Player inventory and health are
-public via SceneAvatar `customProperties`. For competitive modes
+public via SceneAvatar `worldState`. For competitive modes
 that require fog-of-war, the server would use spatial filtering on
 `SceneObject/query` to return only objects within the player's
 line of sight.
@@ -3462,7 +3462,7 @@ gameplay significance.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "levelFormat": "descent-pof",
     "segmentCount": 320
   }
@@ -3483,7 +3483,7 @@ gameplay significance.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "robotType": "medium_hulk",
     "hp": 150,
     "state": "patrol",
@@ -3512,7 +3512,7 @@ normal in zero-G mine tunnels.
   "orientation": [0, 0, 0, 1],
   "visualRef": "blob-pyro-gx",
   "visualType": "model/gltf-binary",
-  "customProperties": {
+  "worldState": {
     "velocity": [2.0, -1.5, 3.0],
     "angularVelocity": [0, 0.1, 0],
     "shields": 100,
@@ -3548,7 +3548,7 @@ normal in zero-G mine tunnels.
   "physicsMode": "static",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "hp": 500,
     "state": "active",
     "selfDestructCountdown": null
@@ -3591,7 +3591,7 @@ Guide](jmap-scene-simulation-guide.md).
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "gameMode": "single-player",
     "phase": "playing",
     "level": 1,
@@ -3697,7 +3697,7 @@ hint.
   "orientation": [0, 0, 0, 1],
   "visualRef": "blob-fighter-model",
   "visualType": "model/gltf-binary",
-  "customProperties": {
+  "worldState": {
     "velocity": [0, 0, -50],
     "throttle": 0.6,
     "maxSpeed": 300,
@@ -3729,7 +3729,7 @@ hint.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "enemyType": "dralthi",
     "velocity": [30, -10, 40],
     "hp": 120,
@@ -3756,7 +3756,7 @@ hint.
   "interactable": true,
   "visible": true,
   "scale": [1, 1, 1],
-  "customProperties": {
+  "worldState": {
     "shipType": "carrier",
     "hp": 5000,
     "dockable": true,
@@ -3779,7 +3779,7 @@ hint.
   "physicsMode": "kinematic",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "velocity": [0, 0, -120],
     "trackingTarget": "flight-enemy-dralthi-02",
     "turnRate": 2.0,
@@ -3817,7 +3817,7 @@ turning sharply or using countermeasures.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "gameMode": "patrol",
     "phase": "combat",
     "objectivesComplete": 1,
@@ -4107,7 +4107,7 @@ client handles rendering, input, and audio.
 
 The player's current weapon is rendered as a client-side overlay (not
 a SceneObject). The weapon model is loaded from a blob referenced in
-the SceneAvatar's `customProperties.currentWeapon`. This avoids the
+the SceneAvatar's `worldState.currentWeapon`. This avoids the
 latency of round-tripping weapon position through the server.
 
 ### Third-Person Camera
@@ -4154,7 +4154,7 @@ pattern:
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "gameMode": "bomb-defusal",
     "phase": "buy-phase",
     "round": 5,
@@ -4194,7 +4194,7 @@ deduction from inventory.
   "physicsMode": "static",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "blockType": "stone",
     "hardness": 1.5,
     "drops": ["cobblestone"],
@@ -4238,7 +4238,7 @@ distinguishing features of this category:
 - **Object interaction chains** -- interacting with one object
   changes the state of another (solving a puzzle unlocks a door).
 - **State machines on objects** -- each puzzle or door transitions
-  through a finite set of named states tracked in `customProperties`.
+  through a finite set of named states tracked in `worldState`.
 - **Shared inventory** -- picked-up items belong to the group, not
   an individual, stored on the game state object.
 - **No real-time physics simulation** -- `simulationUri: null` for
@@ -4262,7 +4262,7 @@ What makes it a useful spec exercise:
 - **State machines on objects:** puzzles transition
   `locked → solved`; doors transition `locked → unlocked → open`.
 - **Shared inventory:** items are not owned by an individual player;
-  they live in `customProperties.inventory` on the game state object.
+  they live in `worldState.inventory` on the game state object.
 - **Countdown timer:** a simple integer in game state, decremented
   server-side, that all clients observe.
 - **`simulationUri: null`:** the room runs entirely on JMAP method
@@ -4317,7 +4317,7 @@ stateful), **doors** (interactable, state-gated), and **items**
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "puzzleType": "combination-lock",
     "state": "locked",
     "requiredCode": null,
@@ -4340,7 +4340,7 @@ After a correct `"activate"` interaction with the right code in the
 {
   "id": "escape-puzzle-lock",
   "visualRef": "blob-combo-lock-open",
-  "customProperties": {
+  "worldState": {
     "puzzleType": "combination-lock",
     "state": "solved",
     "requiredCode": null,
@@ -4363,7 +4363,7 @@ After a correct `"activate"` interaction with the right code in the
   "physicsMode": "static",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "state": "locked",
     "requiredPuzzleId": "escape-puzzle-lock",
     "transitions": {
@@ -4383,7 +4383,7 @@ State machine:
   `"open"`
 
 When the server applies the puzzle-solved patch it simultaneously
-patches the door's `customProperties.state` to `"unlocked"` and
+patches the door's `worldState.state` to `"unlocked"` and
 `visualRef` to `"blob-door-unlocked"` in the same `SceneObject/set`
 call. All clients receive the `StateChange` and update both objects.
 
@@ -4400,7 +4400,7 @@ call. All clients receive the `StateChange` and update both objects.
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "itemType": "key",
     "itemId": "key-red",
     "pickedUp": false
@@ -4414,7 +4414,7 @@ A player sends a `"grab"` interaction. The server:
 
 1. Sets `pickedUp: true` and `interactable: false` on the item
    SceneObject (it disappears from the floor).
-2. Appends `"key-red"` to `customProperties.inventory` on the game
+2. Appends `"key-red"` to `worldState.inventory` on the game
    state object.
 
 ```json
@@ -4422,7 +4422,7 @@ A player sends a `"grab"` interaction. The server:
   "id": "escape-item-key-red",
   "interactable": false,
   "visible": false,
-  "customProperties": {
+  "worldState": {
     "itemType": "key",
     "itemId": "key-red",
     "pickedUp": true
@@ -4447,7 +4447,7 @@ lives on the game state object, not on the item object.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "clueType": "text",
     "text": "Remember: the year the element was discovered."
   }
@@ -4535,7 +4535,7 @@ with the item identifier in `data`:
 }
 ```
 
-The server checks that `"key-red"` is in `customProperties.inventory`
+The server checks that `"key-red"` is in `worldState.inventory`
 on the game state object, then transitions the puzzle to `"solved"`.
 
 ### Game State
@@ -4554,7 +4554,7 @@ the overall escape progress.
   "physicsMode": "none",
   "interactable": false,
   "visible": false,
-  "customProperties": {
+  "worldState": {
     "phase": "playing",
     "timerSecondsRemaining": 2847,
     "timerRunning": true,
@@ -4706,7 +4706,7 @@ slides, interactive controls, and an invisible state tracker.
   "interactable": false,
   "visible": true,
   "ownerId": "user:teacher@example.com",
-  "customProperties": {
+  "worldState": {
     "objectKind": "slide",
     "slideIndex": 1,
     "title": "OSI Model"
@@ -4732,7 +4732,7 @@ on the current and next slide objects (see Teacher Controls below).
   "interactable": false,
   "visible": true,
   "ownerId": "user:teacher@example.com",
-  "customProperties": {
+  "worldState": {
     "objectKind": "exhibit",
     "caption": "TCP/IP Stack vs OSI Model"
   }
@@ -4757,7 +4757,7 @@ the raise in the classroom state object (see Game State below).
   "interactable": true,
   "visible": true,
   "ownerId": "user:alice@example.com",
-  "customProperties": {
+  "worldState": {
     "objectKind": "hand-raise-button",
     "forStudent": "user:alice@example.com"
   }
@@ -4767,7 +4767,7 @@ the raise in the classroom state object (see Game State below).
 **Poll object (interactive, visibility-filtered responses):**
 
 The poll object is visible to all participants, but each student's
-response is stored under their own key in `customProperties`. The
+response is stored under their own key in `worldState`. The
 server enforces that a student may only write to their own response
 key. Students see the poll question and their own answer; the teacher
 sees all responses.
@@ -4784,7 +4784,7 @@ sees all responses.
   "interactable": true,
   "visible": true,
   "ownerId": "user:teacher@example.com",
-  "customProperties": {
+  "worldState": {
     "objectKind": "poll",
     "question": "Which layer handles routing?",
     "options": ["Layer 2 (Data Link)", "Layer 3 (Network)", "Layer 4 (Transport)"],
@@ -4801,7 +4801,7 @@ sees all responses.
 > answers. The server returns the full `responses` object only to the
 > teacher (owner). For each student it returns only their own key,
 > filtering out other students' answers. This uses the same
-> server-side `customProperties` filtering pattern as hidden card
+> server-side `worldState` filtering pattern as hidden card
 > hands in card games.
 
 ### Interaction Model
@@ -4843,7 +4843,7 @@ The student clicks an option on the poll object. The client sends an
 ```
 
 The server writes `responses["user:bob@example.com"]` into the poll
-object's `customProperties`. Bob's client receives a confirmation
+object's `worldState`. Bob's client receives a confirmation
 showing his own answer. The teacher's client receives the full
 updated `responses` map.
 
@@ -4871,7 +4871,7 @@ no simulation layer is needed.
   "accountId": "teacher-account",
   "update": {
     "state-classroom-001": {
-      "customProperties/raisedHands": []
+      "worldState/raisedHands": []
     }
   }
 }, "0"]]
@@ -4899,7 +4899,7 @@ raised their hand.
   "interactable": false,
   "visible": false,
   "ownerId": "user:teacher@example.com",
-  "customProperties": {
+  "worldState": {
     "objectKind": "classroom-state",
     "currentSlideIndex": 2,
     "totalSlides": 8,

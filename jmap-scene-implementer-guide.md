@@ -147,16 +147,16 @@ Example session response:
 
 The spec defines SceneRegion fields, creation, update, and destruction
 (section 5.3, section 6.2), including the `bounds`, `accessPolicy`,
-`viewHint`, `environment`, `simulationUri`, `customProperties`, and spawn
+`viewHint`, `environment`, `simulationUri`, `worldState`, and spawn
 point fields. It defines three access policies (`"public"`, `"invite"`,
 `"space"`) and advisory view hints (`"3d"`, `"2d-topdown"`, `"2d-side"`,
-`"ar"`). `customProperties` carries shared, deployment-defined
+`"ar"`). `worldState` carries shared, deployment-defined
 application-level metadata (game state, lesson plans, simulation
 scenarios); `environment` carries rendering and physics parameters
 (lighting, gravity, skybox). What the spec leaves open is how to enforce
 access policies beyond the JMAP layer, how to manage the `simulationUri`
 lifecycle, how `environment` is structured, and what schema (if any) to
-impose on `customProperties`.
+impose on `worldState`.
 
 ### What you must decide
 
@@ -182,7 +182,7 @@ impose on `customProperties`.
 may enter, but does not define the invitation mechanism. Common approaches:
 
 - An invite list stored as a server-side ACL (a set of userIds). The region
-  owner manages the list via a deployment-defined API or via `customProperties`
+  owner manages the list via a deployment-defined API or via `worldState`
   on the region.
 - An invitation token: the region owner generates a single-use or multi-use
   URL that grants access. The server records the grant when the token is
@@ -258,7 +258,7 @@ disconnect all clients before destroying the JMAP records.
 
 For `"invite"` access: store an invite list as a server-side ACL (a Set of
 userIds on the region). Expose add/remove operations as a deployment-defined
-extension or through the region's `customProperties`. For `"space"` access:
+extension or through the region's `worldState`. For `"space"` access:
 resolve Space membership via the Chat layer's permission resolver. For
 `simulationUri`: start with creator-supplied URIs; add on-demand provisioning
 when you have a simulation orchestration layer. For `environment`: define a
@@ -296,8 +296,8 @@ Example region creation:
 The spec defines SceneObject fields and the standard JMAP set operations
 (section 5.4, section 6.3). It specifies the permission model (owner, region
 owner, admin), the scene graph hierarchy via `parentId`, physics modes, and
-the `customProperties` extension point. What the spec leaves open is how to
-handle object creation at scale, how `customProperties` is validated, and how
+the `worldState` extension point. What the spec leaves open is how to
+handle object creation at scale, how `worldState` is validated, and how
 the simulation layer is notified of JMAP-side object changes.
 
 ### What you must decide
@@ -305,7 +305,7 @@ the simulation layer is notified of JMAP-side object changes.
 - **Object creation validation**: what checks beyond the spec-required ones
   to perform (position within bounds, asset existence, custom property size
   limits).
-- **`customProperties` policy**: maximum size, allowed key patterns, whether
+- **`worldState` policy**: maximum size, allowed key patterns, whether
   the server validates structure or stores opaquely.
 - **Scene graph depth limit**: maximum parent-child nesting depth.
 - **Simulation layer synchronization**: how and when the simulation layer
@@ -329,8 +329,8 @@ positions. Choose one strategy and apply it consistently:
 Clamping is friendlier for interactive building tools; rejection is safer for
 automated pipelines.
 
-**`customProperties` limits.** Without limits, a malicious user could store
-megabytes of arbitrary JSON in `customProperties`. Set a maximum serialized
+**`worldState` limits.** Without limits, a malicious user could store
+megabytes of arbitrary JSON in `worldState`. Set a maximum serialized
 size (RECOMMENDED: 64 KB) and enforce it in the `SceneObject/set` handler.
 The spec says the server stores and relays without interpretation; you are
 not required to validate the structure, but you are responsible for bounding
@@ -379,7 +379,7 @@ unrenderable; the reverse is meaningless.
 ### Recommended starting point
 
 Reject out-of-bounds positions with `invalidArguments`. Enforce a 64 KB limit
-on serialized `customProperties`. Set a scene graph depth limit of 16.
+on serialized `worldState`. Set a scene graph depth limit of 16.
 Synchronize the simulation layer via polling (`SceneObject/changes`) for the
 first version; add push notifications when latency becomes a problem. Use
 `ifInState` for all `SceneObject/set` calls; do not implement custom locking.
@@ -400,7 +400,7 @@ Example object creation:
       "visualType": "model/gltf-binary",
       "physicsMode": "static",
       "interactable": false,
-      "customProperties": {
+      "worldState": {
         "material": "walnut",
         "seats": 8
       }
@@ -496,7 +496,7 @@ approaches:
   signal.
 - *Heartbeat/timeout*: the JMAP server expects periodic
   `SceneAvatar/set update` calls (e.g., every 60 seconds with a
-  `customProperties` heartbeat). If no update arrives within the timeout
+  `worldState` heartbeat). If no update arrives within the timeout
   window, the server sets `leftAt`. Simpler but adds JMAP traffic.
 
 For regions with no simulation layer (`simulationUri: null`), the heartbeat
@@ -583,7 +583,7 @@ Example — entering a region:
       "regionId": "01J5ABC0000000000000000001",
       "visualRef": "blob-avatar-alice-001",
       "visualType": "model/gltf-binary",
-      "customProperties": {
+      "worldState": {
         "animation": "idle",
         "nametag": true
       }
@@ -1223,7 +1223,7 @@ spec (section 9.9) defines two SetError types beyond the standard JMAP
 set:
 
 - `contentPolicy`: returned when a visual asset (`visualRef`) or text field
-  (`name`, `customProperties`) violates a deployment-defined content
+  (`name`, `worldState`) violates a deployment-defined content
   moderation policy. Servers MAY defer visibility of newly created objects
   until asset scanning completes; if the asset fails the content policy, the
   server SHOULD destroy the object and notify the creator via `contentPolicy`.
@@ -1583,7 +1583,7 @@ made and documented each of the following decisions:
 
 **SceneObject CRUD (section 3)**
 - [ ] Position bounds validation strategy chosen (clamp vs. reject)
-- [ ] `customProperties` size limit enforced
+- [ ] `worldState` size limit enforced
 - [ ] Scene graph depth limit enforced
 - [ ] `visualRef`/`visualType` coupling validated on create and update
 - [ ] Simulation layer synchronization mechanism implemented

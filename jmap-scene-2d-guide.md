@@ -330,7 +330,7 @@ interpretation is the client's responsibility.
   "visualType": "image/png",
   "joinedAt": "2026-06-06T09:00:00Z",
   "leftAt": null,
-  "customProperties": {
+  "worldState": {
     "spriteSheet": "blob-spritesheet-bob-001",
     "animationState": "idle",
     "facingDirection": "east"
@@ -347,14 +347,14 @@ the standard JMAP blob download path (RFC 8620 Section 6.2):
 GET /jmap/download/{accountId}/{blobId}/{name}
 ```
 
-The same mechanism applies when `customProperties` references a secondary
+The same mechanism applies when `worldState` references a secondary
 sprite sheet blob (e.g., `"spriteSheet": "blob-spritesheet-bob-001"`): the
 client issues a separate blob download request for that blob ID. The server
 treats all blob references identically regardless of whether they come from
-`visualRef` or from inside `customProperties`.
+`visualRef` or from inside `worldState`.
 
 For sprite sheets (texture atlases), the downloaded image contains multiple
-animation frames packed into a single file. `customProperties` carries the
+animation frames packed into a single file. `worldState` carries the
 metadata needed to extract individual frames: the pixel dimensions of each
 frame, how many columns and rows are in the sheet, and which frame indices
 belong to each animation. See the recommended schema below.
@@ -362,7 +362,7 @@ belong to each animation. See the recommended schema below.
 Clients MAY cache blob downloads by blob ID. Blob IDs are content-addressed:
 the same ID always refers to the same bytes. When a deployment changes an
 avatar's sprite sheet, it uploads a new blob and updates the avatar's
-`customProperties` to reference the new blob ID.
+`worldState` to reference the new blob ID.
 
 ### Sprite sheets and animation
 
@@ -370,11 +370,11 @@ The spec's `visualRef` points to a single asset. For animated sprites
 (walk cycles, idle animations), two patterns are available:
 
 1. **Single sprite sheet in visualRef:** The `visualRef` points to a sprite
-   sheet image. The client uses `customProperties` to determine which frame
+   sheet image. The client uses `worldState` to determine which frame
    to display. The sprite sheet layout (frame size, frame count, animation
    names) is deployment-defined.
 2. **Multiple SceneAssets:** Upload individual frames or animation-specific
-   sprite sheets as separate SceneAssets. Use `customProperties` to
+   sprite sheets as separate SceneAssets. Use `worldState` to
    reference the active animation's asset ID.
 
 Pattern 1 is simpler and requires fewer asset uploads. Pattern 2 allows
@@ -383,7 +383,7 @@ costume options.
 
 ### Recommended sprite sheet metadata schema
 
-The spec's `customProperties` is opaque, so sprite sheet layout is
+The spec's `worldState` is opaque, so sprite sheet layout is
 deployment-defined. The following schema is a recommended convention
 for interoperability between clients. Deployments MAY use a different
 schema, but clients that encounter these keys SHOULD interpret them as
@@ -393,7 +393,7 @@ described here.
 
 ```json
 {
-  "customProperties": {
+  "worldState": {
     "spriteSheet": "blob-spritesheet-bob-001",
     "spriteSheetMeta": {
       "frameWidth": 32,
@@ -454,12 +454,12 @@ Quaternion Y rotation   ->   Sprite direction
 ```
 
 For 8-direction sprite sheets, use 45-degree increments. Clients MAY also
-use the `customProperties.facingDirection` string if the deployment prefers
+use the `worldState.facingDirection` string if the deployment prefers
 explicit direction labels over quaternion math.
 
 In a side-scrolling view, facing is simpler: the character faces left or
 right. Use `scale[0]` as a mirror flag: positive for right-facing, negative
-for left-facing. Alternatively, encode facing in `customProperties`.
+for left-facing. Alternatively, encode facing in `worldState`.
 
 ---
 
@@ -534,7 +534,7 @@ SceneObjects positioned on the tile grid.
   "physicsMode": "static",
   "interactable": false,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "assignedTo": "user:alice@example.com",
     "label": "Alice's Desk"
   }
@@ -599,7 +599,7 @@ Model these as invisible SceneObjects with `visible: false` and
   "physicsMode": "none",
   "interactable": false,
   "visible": false,
-  "customProperties": {
+  "worldState": {
     "zoneType": "social",
     "backgroundAudio": "blob-audio-cafe-ambience"
   }
@@ -706,7 +706,7 @@ side-scrolling).
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "customProperties": {
+  "worldState": {
     "itemType": "coin",
     "value": 10
   }
@@ -735,13 +735,13 @@ turn enforcement, and game state tracking, see
 
 - **Board region setup** -- bounds, environment, and access policy.
 - **Piece modeling** -- SceneObjects with `interactable: true` and
-  `physicsMode: "none"`, with piece identity in `customProperties`.
+  `physicsMode: "none"`, with piece identity in `worldState`.
 - **Move mechanics** -- click-to-select and drag-and-drop (grab/release)
   patterns with server-side validation.
 - **Game state tracking** -- invisible SceneObject (`visible: false`)
-  holding turn, phase, and score data in `customProperties`.
+  holding turn, phase, and score data in `worldState`.
 - **Hidden information** -- visibility filtering for card games
-  (server replaces `visualRef` and redacts `customProperties` for
+  (server replaces `visualRef` and redacts `worldState` for
   non-owners).
 - **Dice** -- `activate` interaction triggering server-side random
   result with `StateChange` broadcast.
@@ -856,7 +856,7 @@ all fields shown:
   "ownerId": null,
   "createdAt": "2026-06-01T08:00:00Z",
   "updatedAt": "2026-06-01T08:00:00Z",
-  "customProperties": {
+  "worldState": {
     "assignedTo": "user:bob@example.com",
     "tileWidth": 2,
     "tileHeight": 1,
@@ -880,7 +880,7 @@ A complete 2D SceneAvatar representing a user with a sprite:
   "visualType": "image/png",
   "joinedAt": "2026-06-06T09:15:00Z",
   "leftAt": null,
-  "customProperties": {
+  "worldState": {
     "spriteSheet": "blob-spritesheet-alice-001",
     "animationState": "walking",
     "facingDirection": "east",

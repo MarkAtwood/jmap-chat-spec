@@ -84,10 +84,10 @@ ask "what is near me"). There is no access control (any OSC client can write
 any parameter). There is no schema or type system beyond the four OSC types.
 It is a real-time control protocol, not a state management protocol.
 
-**How Scene relates.** Scene's `customProperties` on SceneAvatar serves a
+**How Scene relates.** Scene's `worldState` on SceneAvatar serves a
 similar role to VRChat's OSC parameters: extensible key-value state attached
 to an avatar that the spec does not interpret. The difference is structural:
-`customProperties` is persistent JMAP state with standard get/set/changes
+`worldState` is persistent JMAP state with standard get/set/changes
 semantics, access control, and queryability. Real-time avatar parameter
 synchronization (the 10+ Hz updates that OSC handles) is the simulation layer's
 job, not JMAP's. Scene provides the state database; the simulation layer
@@ -565,7 +565,7 @@ disappears.
 **How Scene relates.** Scene provides the spatial state layer; a Roblox-like
 creation platform could be built on top of Scene + a scripting layer. The
 SceneRegion is the experience. SceneObjects are the game entities. SceneAvatars
-are the players. `customProperties` carries game-specific state. The scripting
+are the players. `worldState` carries game-specific state. The scripting
 layer and creation tools are above the spec. Scene does not try to be Roblox;
 it tries to be the protocol layer that makes open alternatives to Roblox
 possible.
@@ -809,7 +809,7 @@ video conferencing.
 office use case that Scene's `viewHint: "2d-topdown"` supports. A
 persistent whiteboard is a SceneObject with a `visualRef` pointing to
 an image or canvas blob. A sticky note is a SceneObject with text in
-`customProperties`. Scene provides the state layer; the rendering and
+`worldState`. Scene provides the state layer; the rendering and
 interaction are client concerns.
 
 ---
@@ -1656,7 +1656,7 @@ CID means content-addressed assets survive server death. JMAP DID means identity
 survives server death. glTF means visual assets render on any engine. Open
 protocol means new servers can be stood up by anyone. The crisis in Chiang's
 story is exactly what happens when these things don't exist. The one gap the
-stack cannot close is behavior portability: `customProperties` on SceneObject
+stack cannot close is behavior portability: `worldState` on SceneObject
 can carry behavior data, but the spec cannot guarantee that behavior data means
 the same thing to a different simulation engine. This is acknowledged as an
 unsolved problem in the spec's "Explicit Non-Prescriptions" section under
@@ -1795,7 +1795,7 @@ The nine systems above reveal consistent patterns:
 | Asset portability prevents platform death | Data Earth | JMAP CID + glTF |
 | AR anchoring to the physical world | Darknet, Rainbows End | `geoAnchor` with `referenceFrame` |
 | Virtual objects with real value require provenance | T'Rain, Halting State | JMAP CID (content hash) + JMAP DID (owner identity) |
-| Behavior portability is unsolved | Data Earth | Acknowledged gap; `customProperties` carries data but semantics are not portable |
+| Behavior portability is unsolved | Data Earth | Acknowledged gap; `worldState` carries data but semantics are not portable |
 | Reputation-based access is continuous, not binary | Darknet | Not natively supported; achievable via overlapping regions or application-layer logic |
 | Multiple overlapping realities in the same space | Rainbows End | Multiple SceneRegions from different servers at the same `geoAnchor` |
 | Discovery of available realities at a location | Rainbows End | Not defined today; a reality resolver is an index over existing protocol data, not a new primitive |
