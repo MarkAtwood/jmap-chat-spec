@@ -392,6 +392,9 @@ SceneObjects within any anchored region are positioned in meters relative to the
 `updatedAt` (UTCDate, server-set):
 : Time the region was last modified.
 
+`customProperties` (Object|null):
+: Deployment-defined extension properties for the region as a whole. Opaque to the JMAP Scene specification; the server stores and relays this object without interpretation. Clients MUST ignore unrecognized keys. Unlike `environment` (which describes rendering and physics parameters such as lighting, gravity, and skybox), `customProperties` carries application-level metadata that all participants share — for example, a game schema identifier and turn state on a board-game table, a lesson plan on a virtual classroom, or a simulation scenario label. {{JMAP-METADATA}} is unsuitable for this role because its `metadata` and `privateMetadata` properties are per-account annotations invisible to other participants; region-level application state must be visible to every user who can enter the region.
+
 ### Optional Binding Fields
 
 The following fields are present only when the corresponding companion capability is advertised on the same account:
@@ -435,6 +438,7 @@ When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat 
   "accessPolicy": "public",
   "createdAt": "2026-06-01T10:00:00Z",
   "updatedAt": "2026-06-05T14:30:00Z",
+  "customProperties": null,
   "chatId": "01J5ABC0000000000000000099",
   "spaceId": null,
   "channelId": null,
@@ -962,7 +966,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `customProperties` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `accountId`, `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
@@ -1052,7 +1056,7 @@ Response:
 
 #### Updating a Region
 
-`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
+`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, `customProperties`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
 When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidArguments` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
 
@@ -2429,7 +2433,7 @@ SceneObject visual assets (`visualRef`) and SceneAvatar visual assets (`visualRe
 
 Servers MAY defer the visibility of newly created SceneObject records until asset scanning completes. During the scanning interval, the object exists in the JMAP state (the creator can retrieve it via `SceneObject/get`), but the server SHOULD exclude it from `SceneObject/query` results and `SceneObject/queryChanges` notifications delivered to other users. Once scanning completes and the asset passes the content policy, the object becomes visible through normal query and change mechanisms. If the asset fails the content policy, the server SHOULD destroy the object and SHOULD notify the creator via a `SetError` of type `contentPolicy` on a subsequent state-change notification or, if the deployment supports it, via an out-of-band moderation channel.
 
-Text fields on SceneObject — `name`, `customProperties`, and any string values within `customProperties` — are user-controlled and may contain spam, offensive language, or phishing content. Servers SHOULD apply the same content-policy validation to text fields as to visual assets. Servers MAY reject `SceneObject/set` create or update requests that violate text content policies with a `SetError` of type `contentPolicy`.
+Text fields on SceneRegion and SceneObject — `name`, `customProperties`, and any string values within `customProperties` — are user-controlled and may contain spam, offensive language, or phishing content. Servers SHOULD apply the same content-policy validation to text fields as to visual assets. Servers MAY reject `SceneRegion/set` or `SceneObject/set` create or update requests that violate text content policies with a `SetError` of type `contentPolicy`.
 
 Rapid `SceneObject/set` create calls can be used as a spam or denial-of-service vector, flooding a region with objects faster than content scanning can process them. Servers SHOULD enforce per-user rate limits on `SceneObject/set` create operations, independent of the `maxObjectsPerRegion` cap. When a rate limit is exceeded, the server SHOULD return a `SetError` of type `rateLimit` and SHOULD include a `retryAfter` property indicating the number of seconds before the client may retry.
 

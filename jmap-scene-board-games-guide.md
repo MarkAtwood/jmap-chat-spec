@@ -48,9 +48,30 @@ board dimensions. One unit = one tile/square/cell.
   "environment": {
     "boardTheme": "classic",
     "gridVisible": true
+  },
+  "customProperties": {
+    "gameSchema": "urn:game:chess:standard",
+    "gameSchemaVersion": "1.0",
+    "turn": "white",
+    "phase": "main",
+    "moveCount": 12,
+    "players": {
+      "white": "user:alice@example.com",
+      "black": "user:bob@example.com"
+    }
   }
 }
 ```
+
+> **`environment` vs `customProperties`:** Use `environment` for
+> rendering and physics settings (board theme, grid visibility, lighting)
+> and `customProperties` for application-level game state (whose turn it
+> is, which schema governs the rules, who is playing). Both are
+> deployment-defined and opaque to the server, but the semantic split
+> helps clients distinguish presentation from game logic. A client that
+> does not understand the game schema can still render the board using
+> `environment`; a game engine can read `customProperties` without
+> touching rendering parameters.
 
 > **Note:** Purely turn-based games with no real-time physics MAY use
 > `simulationUri: null`. In that case the server handles all game logic
