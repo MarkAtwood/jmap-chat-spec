@@ -147,11 +147,16 @@ Example session response:
 
 The spec defines SceneRegion fields, creation, update, and destruction
 (section 5.3, section 6.2), including the `bounds`, `accessPolicy`,
-`viewHint`, `environment`, `simulationUri`, and spawn point fields. It
-defines three access policies (`"public"`, `"invite"`, `"space"`) and
-advisory view hints (`"3d"`, `"2d-topdown"`, `"2d-side"`, `"ar"`). What the spec
-leaves open is how to enforce access policies beyond the JMAP layer, how
-to manage the `simulationUri` lifecycle, and how `environment` is structured.
+`viewHint`, `environment`, `simulationUri`, `customProperties`, and spawn
+point fields. It defines three access policies (`"public"`, `"invite"`,
+`"space"`) and advisory view hints (`"3d"`, `"2d-topdown"`, `"2d-side"`,
+`"ar"`). `customProperties` carries shared, deployment-defined
+application-level metadata (game state, lesson plans, simulation
+scenarios); `environment` carries rendering and physics parameters
+(lighting, gravity, skybox). What the spec leaves open is how to enforce
+access policies beyond the JMAP layer, how to manage the `simulationUri`
+lifecycle, how `environment` is structured, and what schema (if any) to
+impose on `customProperties`.
 
 ### What you must decide
 
