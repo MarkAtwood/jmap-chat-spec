@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.17",
+  "title": "deviceDeliveredAt: delivery path from OS push to mailbox unspecified",
+  "description": "Peer/receipt deviceDeliveredAt (federation draft): 'MAY be sent when the recipient platform provides a delivery callback (e.g., OS push delivery receipt).' The spec does not describe the path: OS push platforms (APNs, FCM) deliver callbacks asynchronously to a server-side webhook, not to the JMAP client. The mailbox must correlate the push notification ID to a senderMsgId and write back to Message.deliveryReceipts. None of this is specified. Without guidance, implementations will skip deviceDeliveredAt or implement it inconsistently. The spec should acknowledge the out-of-band server-side mechanism required and clarify that this value is not set by the JMAP client.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:53Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:45:31Z",
+  "closed_at": "2026-04-27T00:45:31Z",
+  "close_reason": "Fixed: deliveryReceipts description now cites APNs/FCM examples and MUST NOT approximate with deliveredAt (chat-00.md:519)",
+  "labels": [
+    "maintainer-burden",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.17",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:53Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

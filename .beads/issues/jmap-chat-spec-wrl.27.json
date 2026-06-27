@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.27",
+  "title": "deviceDeliveredAt asymmetry: no top-level Message field parallel to deliveredAt and readAt",
+  "description": "The Message object has a structural asymmetry introduced by cj6. 'deliveredAt' and 'readAt' each exist both as top-level Message fields (lines ~521-525) and as entries inside the per-recipient 'deliveryReceipts' map (line ~519). 'deviceDeliveredAt' was added only inside 'deliveryReceipts', with no corresponding top-level field. A reader scanning Message fields will find 'deliveredAt' (top-level, line 521) and 'readAt' (top-level, line 524) but must read the inline 'deliveryReceipts' description to discover 'deviceDeliveredAt'. This breaks the parallel structure that the other two timestamps establish. The asymmetry may be intentional (device delivery is always per-recipient; there is no aggregate owner-side equivalent the way 'readAt' serves as the owner's own read time) but this is not explained. Suggested improvement: either (a) add a note in the 'deliveryReceipts' description explaining why 'deviceDeliveredAt' has no top-level parallel, or (b) if an owner-side device delivery time is meaningful, add a top-level 'deviceDeliveredAt' field. Option (a) is likely the right answer and is a one-sentence addition. Location: draft-atwood-jmap-chat-00.md Message object fields ~lines 519-525.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:08:41Z",
+  "closed_at": "2026-04-27T01:08:41Z",
+  "close_reason": "Already fixed in R2: explanatory note added to deliveryReceipts description (chat-00.md:519)",
+  "labels": [
+    "elegance"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.27",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:27Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

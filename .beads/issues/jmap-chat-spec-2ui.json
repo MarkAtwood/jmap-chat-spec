@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-2ui",
+  "title": "WSS guide: mobile background disconnect advice is oversimplified",
+  "description": "The connection lifecycle section says to disconnect 'on app background'. On iOS, apps have ~30 seconds of background execution before suspension; on Android, a foreground service can keep the connection alive indefinitely. Blanket advice to disconnect on background will interrupt mid-session message delivery for mobile users. The guidance should be narrowed to 'when the OS is about to suspend the app' and acknowledge that mobile platforms differ in how much background time is available.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:37Z",
+  "closed_at": "2026-04-26T22:36:37Z",
+  "close_reason": "Closed"
+}

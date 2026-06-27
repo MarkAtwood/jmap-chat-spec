@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ok7",
+  "title": "Add ABNF production for sha256 field format",
+  "description": "The sha256 field format is specified only in prose as 'lowercase hexadecimal string of exactly 64 characters'. IETF drafts are strengthened by formal ABNF syntax. AD reviewers sometimes request it. Add an ABNF production (e.g. sha256-value = 64HEXDIG) and cite it from the field definitions in §2 and §3.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:19:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:27:39Z",
+  "closed_at": "2026-04-27T01:27:39Z",
+  "close_reason": "Closed"
+}

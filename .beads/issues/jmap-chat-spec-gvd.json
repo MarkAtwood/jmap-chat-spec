@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-gvd",
+  "title": "Fix client-verification broken by server content transformation",
+  "description": "§2 (line 131-134) says server MUST compute sha256 from stored bytes if it transforms content. §2.1 (line 148-152) says clients SHOULD compare server-returned sha256 against digest of *sent* bytes. If server transforms content, these will never match — client always sees a mismatch and SHOULD NOT use the blobId. This is a legal server behavior breaking a correct client. Options: (1) add a signal for server transformation so clients know to skip verification, (2) return both received-bytes and stored-bytes digests, or (3) forbid server content transformation when capability is active.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:19:29Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:23:12Z",
+  "closed_at": "2026-04-27T01:23:12Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-4wy",
+  "title": "APNs: background push vs alert push contradiction",
+  "description": "The request format shows content-available:1 with no alert key (background push), but the urgency table maps high/normal urgency to apns-push-type:alert with apns-priority:10. Apple requires apns-push-type:alert to have an alert body in aps. Also, apns-collapse-id only works with alert pushes, so the collapse rationale breaks if using background pushes. The guide must commit to one model: either background-only (all use apns-push-type:background, apns-priority:5) or alert pushes (which require an alert body and change the design).",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:05:43Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:23:25Z",
+  "closed_at": "2026-04-26T21:23:25Z",
+  "close_reason": "Over-specified: guide should present both push modes as valid options with tradeoffs, not mandate background-only. Implementer decides based on app architecture."
+}

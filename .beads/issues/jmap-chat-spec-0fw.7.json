@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.7",
+  "title": "receiveTypingIndicators check creates uncached DB hot path in typing fan-out",
+  "description": "Every inbound Chat/typing call must fan out to all subscribed connections. The spec requires checking Chat.receiveTypingIndicators at delivery time (wss spec security section, guide server section), but provides no guidance on caching or cache invalidation for this field.\n\nA solo implementer has two bad options:\n- Uncached: DB read on every typing fan-out per recipient — correct but becomes a latency bottleneck under load (many typing users * many recipients * 1 read each).\n- Cached: requires invalidating cache on Chat/set update — adds non-obvious coupling between the Chat/set write path and the ephemeral event delivery path.\n\nThe spec should either (a) note this access pattern and recommend caching with invalidation-on-write, or (b) explicitly permit checking only at subscription time (ChatStreamEnable) with a best-effort re-check model, documenting the trade-off.\n\nRelevant locations: draft-atwood-jmap-chat-00.md Chat/typing Server Behavior section; draft-atwood-jmap-chat-wss-00.md Section 6 Security ephemeral event authorization; jmap-chat-wss-guide.md server fan-out section.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:45Z",
+  "closed_at": "2026-04-27T00:24:45Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "maintainer-burden",
+    "review",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.7",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:35Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

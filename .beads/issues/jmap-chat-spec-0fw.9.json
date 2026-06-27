@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-0fw.9",
+  "title": "receiveTypingIndicators: per-chat scope, not per-account or per-server",
+  "description": "The flag lives on the Chat object, giving users per-conversation granularity. A user can suppress typing indicators in a high-traffic channel while keeping them in a direct chat with a close contact. An account-level or server-level setting would be too coarse and would force an all-or-nothing choice. The Chat-scoped placement also fits the rest of the notification preference model (muted, muteUntil are also per-chat), making the mental model consistent.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:48Z",
+  "closed_at": "2026-04-27T00:24:48Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.9",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:37Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

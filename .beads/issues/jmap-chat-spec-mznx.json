@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-mznx",
+  "title": "P0: Federation spec — channel enforcement gap",
+  "description": "1. Peer/receipt missing identity validation for readerUserId. 2. No SpaceBan check for channel chats in Peer/deliver. 3. No send permission check for channel chats. 4. Rich-body mention/broadcast spans not handled. 5. slowModeSeconds enforcement missing.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:38:30Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:43:08Z",
+  "closed_at": "2026-06-07T18:43:08Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-mznx",
+      "depends_on_id": "jmap-chat-spec-wz74",
+      "type": "blocks",
+      "created_at": "2026-06-07T11:38:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

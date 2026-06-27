@@ -1,0 +1,18 @@
+{
+  "id": "jmap-chat-spec-we5b",
+  "title": "Extend impl-defined Space governance pattern to remaining sites",
+  "description": "Follow-up to commit c93e545 (\"refactor: implementation-defined Space governance\"), which removed the normative single-owner concept from Space governance in draft-atwood-jmap-chat-00.md.\n\nTwo related sites in the corpus still encode the old single-distinguished-principal pattern and are now inconsistent with the main draft:\n\n1. The filenode draft's permissions table still names a \"Space owner\" row.\n2. The main draft's group-chat creation flow still mandates that the creator becomes admin and refers to initial non-creator members as \"non-owner members\".\n\nBoth are direct analogs of the Space pattern that was just generalized. The wire contract is satisfied by the role/permission enum and what each role may do; *who starts privileged* is deployment policy.\n\nSee §Space Governance: Deployment Variation (anchor: {#space-deployment}) in draft-atwood-jmap-chat-00.md for the canonical wording pattern.\n\nScope: this epic is the corpus-consistency follow-up. Estimated size: one commit, similar in shape to c93e545.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:46:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T18:20:22Z",
+  "close_reason": "all steps complete",
+  "labels": [
+    "governance",
+    "spec-consistency"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "1778615308000000000",
+  "issue_id": "jmap-chat-spec-q15f",
+  "author": "Mark Atwood",
+  "text": "Follow-up: jmap-chat-spec-8sgn (P4 epic) now tracks the optional companion-draft work that q15f's Option B explicitly left open. The companion is independent of and compatible with q15f's prose accommodation (commit 48b6a31); both can coexist.",
+  "created_at": "2026-05-12T19:48:28Z"
+}

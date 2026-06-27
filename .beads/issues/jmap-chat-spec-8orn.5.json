@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8orn.5",
+  "title": "VTC: add call-level media policies",
+  "description": "Zoom and Jitsi have per-call moderator-controlled policies: mute on entry, participants can unmute self, participants can share screen, participants can start video. The draft has zero call-level policy fields. Add a VTCCallPolicy embedded object on VTCCall with fields like muteOnEntry (Boolean), participantsCanUnmute (Boolean), participantsCanShareScreen (Boolean), participantsCanStartVideo (Boolean). Moderator-only mutable. Chat-level policies (disable chat, disable reactions) are JMAP Chat's concern when chat binding is present.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:33Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:17Z",
+  "closed_at": "2026-06-05T22:53:17Z",
+  "close_reason": "Added VTCCallPolicy embedded type with muteOnEntry, videoOffOnEntry, participantsCanUnmute, participantsCanShareScreen, participantsCanStartVideo. Moderator-only mutable.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.5",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:33Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

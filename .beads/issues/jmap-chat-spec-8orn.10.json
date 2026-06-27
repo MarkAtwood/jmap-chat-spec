@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-8orn.10",
+  "title": "VTC: specify reconnection semantics",
+  "description": "When a participant's connection drops and they rejoin, the draft is silent on whether they get a new VTCParticipant entry or update the existing one. Both Jitsi and Zoom handle this transparently (same participant, updated join time). Specify that a participant who re-joins updates their existing entry: clears leftAt, updates joinedAt, preserves role and speakerTimeMs.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:39:57Z",
+  "closed_at": "2026-06-05T22:39:57Z",
+  "close_reason": "Added Reconnecting section to VTCParticipant/set specifying that re-joining updates the existing record rather than creating a new one.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.10",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:35Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-8orn.10",
+      "depends_on_id": "jmap-chat-spec-8orn.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T15:34:46Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

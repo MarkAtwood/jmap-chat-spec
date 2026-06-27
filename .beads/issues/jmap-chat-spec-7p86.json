@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-7p86",
+  "title": "Flesh out VTC drafts: examples, errors, filters, lifecycle",
+  "description": "The VTC main draft and WSS draft are structurally complete but thin compared to the Chat spec. Need to add: (1) JSON request/response examples throughout, (2) SetError types and detailed error conditions, (3) Proper FilterCondition type definitions for queries, (4) Flesh out VTCRecording/VTCLivestream method prose, (5) Complete lifecycle example in appendix.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-06T01:59:39Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-06T02:08:54Z",
+  "closed_at": "2026-06-06T02:08:54Z",
+  "close_reason": "Added JSON examples, error conditions, fleshed out Recording/Livestream methods, added lifecycle appendix, fixed WSS screenShare→screen, added missing cross-ref anchor"
+}

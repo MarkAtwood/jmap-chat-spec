@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-a1tu",
+  "title": "Scene landscape and prior art guide",
+  "description": "Review and improve jmap-scene-landscape-guide.md (1,294 lines). Covers prior art comparison: OASIS, OMI, Meta, Microsoft, Apple, Second Life, VWRAP, OpenSim, Hubs, VRChat, Gather, Doom, Gauntlet, board games. Ensure VWRAP section and comparison tables are accurate.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T01:41:54Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-07T02:29:51Z",
+  "close_reason": "all steps complete"
+}

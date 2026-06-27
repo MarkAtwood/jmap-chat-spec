@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-ju8j",
+  "title": "Scene 2D implementer guide",
+  "description": "Review and improve jmap-scene-2d-guide.md (983 lines). Covers top-down virtual offices, side-scrolling games, board games, tile-grid mapping, sprite-based avatars, and viewHint 2d-topdown/2d-side integration.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T01:41:53Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-07T02:28:51Z",
+  "close_reason": "all steps complete"
+}

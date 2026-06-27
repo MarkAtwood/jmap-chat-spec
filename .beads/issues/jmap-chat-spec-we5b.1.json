@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-we5b.1",
+  "title": "Remove normative \"Space owner\" row from FileNode permissions table",
+  "description": "File: draft-atwood-jmap-chat-filenode-00.md\nLocation: line 153 (inside the permissions table at lines 147-153)\n\nCurrent text:\n| Member with `\"manage_space\"` | Read + Create + Delete + Administer: manage ACLs, rename the tree root |\n| Space owner                      | Full access (equivalent to Administer) |\n\nThe \"Space owner\" row contradicts c93e545's impl-defined governance posture in the main draft. It is also redundant: any controller principal designated under §Space Governance: Deployment Variation will reach Administer-level FileNode access via `manage_space` (or via the implicit-all-permissions bypass described at the new line 1415 of the main draft), so the row adds no behavior.\n\nNote: the surrounding text at filenode 141-144 already correctly defers to the main draft's role/permission model. Only the row in the table is the bug.\n\nReference: §Space Governance: Deployment Variation in draft-atwood-jmap-chat-00.md.",
+  "acceptance_criteria": "- \"Space owner\" row removed from the permissions table at filenode line 153\n- No replacement row needed (the existing `manage_space` row plus the controller-principal bypass in the main draft already cover the case)\n- grep for 'Space owner' in the filenode draft returns zero matches\n- Acceptance grep across the whole corpus: 'Space owner' should appear nowhere except possibly inside §Space Governance: Deployment Variation prose in the main draft (which uses 'controller' as the term of art)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:47:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:17:27Z",
+  "closed_at": "2026-05-12T18:17:27Z",
+  "close_reason": "Closed",
+  "labels": [
+    "governance",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-we5b.1",
+      "depends_on_id": "jmap-chat-spec-we5b",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:47:37Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

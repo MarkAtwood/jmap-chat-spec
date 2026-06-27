@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-nwl",
+  "title": "FCM android.priority casing: guide shows lowercase, API may require uppercase",
+  "description": "The FCM urgency table shows android.priority values as lowercase high and normal. The FCM HTTP v1 API defines AndroidMessagePriority as enum values HIGH and NORMAL (uppercase). A casing mismatch will produce a 400 error or silently default to NORMAL. The correct casing needs to be verified against current FCM REST API documentation and the guide corrected accordingly.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:06:02Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:24Z",
+  "closed_at": "2026-04-26T21:10:24Z",
+  "close_reason": "Closed"
+}

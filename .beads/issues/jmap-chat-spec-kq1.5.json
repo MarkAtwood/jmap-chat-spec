@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-kq1.5",
+  "title": "Decay timer MUST reference is undefined: no normative value specified",
+  "description": "File: draft-atwood-jmap-chat-00.md line 912.\n\nThe text says: 'Clients MUST rely on the standard decay timer to recover from any stale typing state.' This is a normative MUST requirement on clients, but the 'standard decay timer' is never defined anywhere in the normative text of any of the four spec files. No timeout value, no range, no minimum, no maximum.\n\nThe only concrete value appears in the non-normative implementer's guide (jmap-chat-wss-guide.md line 206): 'if you receive no further event for a (chatId, senderId) pair within 8 seconds, hide the indicator automatically.' That value is implementation guidance, not a protocol requirement.\n\nInteroperability impact: Two conforming implementations could choose decay timers of 3 seconds and 60 seconds respectively, and both would satisfy the MUST. A receiver using a 3-second timer clears indicators too aggressively (poor UX, false negatives when the sender's keep-alive fires at 3-second intervals). A receiver using 60 seconds leaves stale indicators visible far too long. The MUST is vacuous without a defined value or range.\n\nFix: Either (a) define a normative minimum decay timer value (e.g., 'Clients MUST use a decay timer of at least 8 seconds') consistent with the guide's recommendation and the 3-second inbound rate limit, or (b) change MUST to SHOULD with an explicit recommended value, making the guide value authoritative.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:29:44Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:38Z",
+  "closed_at": "2026-04-27T00:24:38Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "correctness",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-kq1.5",
+      "depends_on_id": "jmap-chat-spec-kq1",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:29:43Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

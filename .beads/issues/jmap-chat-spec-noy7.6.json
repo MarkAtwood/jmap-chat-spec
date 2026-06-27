@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-noy7.6",
+  "title": "Write jmap-cid-guide.md",
+  "description": "CID implementer guide: content-addressed blob references, how sha256 complements JMAP blob IDs, integration with FileNode, deduplication patterns.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-06T19:17:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-06T19:24:57Z",
+  "closed_at": "2026-06-06T19:24:57Z",
+  "close_reason": "All 7 guides written by subagents",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-noy7.6",
+      "depends_on_id": "jmap-chat-spec-noy7",
+      "type": "parent-child",
+      "created_at": "2026-06-06T12:17:17Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

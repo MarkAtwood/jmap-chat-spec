@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-x37b.5",
+  "title": "Gateway guide: VTCGatewaySignal patterns",
+  "description": "Section on implementing the signal pass-through. Signal type registry conventions (use SIP method names for SIP signals, H.245 message names for H.323). DTMF relay (digit, duration). SIP REFER for call transfer (referTo, referredBy, NOTIFY for transfer progress). Hold/resume (sendonly/recvonly). Codec renegotiation signals. Outbound signal sending via pendingSignal key. JSON examples for each signal type.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:03:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:42Z",
+  "closed_at": "2026-06-05T23:27:42Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-x37b.5",
+      "depends_on_id": "jmap-chat-spec-x37b",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:03:30Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-x37b.5",
+      "depends_on_id": "jmap-chat-spec-x37b.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:14Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

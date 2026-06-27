@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ufy",
+  "title": "Fix: BLOBEXT encoding is base64url not base64 (line 177)",
+  "description": "RFC 9404 Section 4.1 specifies base64url encoding, not base64. Line 177 says 'it uses lowercase hex encoding rather than base64' and line 176 describes 'base64-encoded digest'. Both should say 'base64url-encoded'. These differ for digests containing + or / bits, making this a factual error in the comparison.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:50:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:52:46Z",
+  "closed_at": "2026-04-27T01:52:46Z",
+  "close_reason": "Review was incorrect. RFC 9404 uses standard base64 (RFC 4648), not base64url. Example at RFC 9404 line 658 shows '/' character confirming standard base64. The draft's use of 'base64-encoded' is correct."
+}

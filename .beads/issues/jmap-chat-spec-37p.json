@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-37p",
+  "title": "APNs background mode: high urgency silently degrades, implementers need warning",
+  "description": "The APNs urgency table shows all four urgency levels mapping to priority 5 / background in background push mode. An implementer using background mode for a high-urgency use case (e.g. incoming call) will get opportunistic delivery without any indication that they're not getting what they want. The doc should explain that background push mode cannot provide timely delivery for high-urgency notifications and that implementers who need high-urgency delivery must use alert mode.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:38:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:49Z",
+  "closed_at": "2026-04-26T21:43:49Z",
+  "close_reason": "Closed"
+}

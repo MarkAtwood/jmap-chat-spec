@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-sx7x",
+  "title": "P1: FileNode spec — 4 gaps",
+  "description": "1. sha256 not mentioned in filenode-to-attachment population. 2. No error code for filenodeId referencing non-existent/wrong-Space FileNode. 3. autoCreateFileTree default vs required-in-capability unclear. 4. FileNode/changes not scoped to accessible file trees.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:44:57Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:53:37Z",
+  "closed_at": "2026-06-07T18:53:37Z",
+  "close_reason": "Closed"
+}

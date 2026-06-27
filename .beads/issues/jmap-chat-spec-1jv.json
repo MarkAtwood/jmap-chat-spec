@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-1jv",
+  "title": "Blob/convert thumbnail note is orphaned — expand or delete",
+  "description": "The last paragraph of Section 5 mentions JMAP-BLOBEXT and Blob/convert for thumbnail generation. It introduces an informative reference for one vague sentence and reads like scaffolding for a feature that is not defined. Either expand it into a real sub-section defining the thumbnail/preview pattern, or delete it and the JMAP-BLOBEXT informative reference.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:50:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:01:03Z",
+  "closed_at": "2026-04-26T20:01:03Z",
+  "close_reason": "Closed"
+}

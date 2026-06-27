@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-lq37.3",
+  "title": "VTC→Chat guide: in-call text chat",
+  "description": "Section on using the bound Chat for in-call messaging. Client rendering: side-panel chat during call. Message/set create with chatId from VTCCall.chatId. Message display in call UI vs chat UI (same messages, different rendering). Chat history persists after call ends. JSON example of sending and receiving an in-call message.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:06:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:46Z",
+  "closed_at": "2026-06-05T23:27:46Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-lq37.3",
+      "depends_on_id": "jmap-chat-spec-lq37",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:06:19Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-lq37.3",
+      "depends_on_id": "jmap-chat-spec-lq37.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:06:47Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

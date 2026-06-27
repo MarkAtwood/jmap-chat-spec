@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-s9z",
+  "title": "Urgency selection undefined for batched payloads with mixed hasMention values",
+  "description": "When messages[] contains multiple entries with different hasMention values — some true, some false — the server must emit a single HTTP push request with one urgency level. The spec says 'use mentionUrgency for that delivery' when hasMention is true, but does not define what happens in a mixed batch. The spec should state that the server uses the highest applicable urgency across all entries in the batch (i.e., mentionUrgency if any entry has hasMention: true).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:27:13Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:29:50Z",
+  "closed_at": "2026-04-26T20:29:50Z",
+  "close_reason": "hasMentionAll added as separate boolean; mentionUrgency fires when any entry in batch has hasMention or hasMentionAll true"
+}

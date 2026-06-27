@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.5",
+  "title": "Fix jmap-vtc-ring-push-guide.md: answered_elsewhere wrong for multi-party + joinedAt",
+  "description": "MUST-FIX: (1) 'answered_elsewhere' used for multi-party scenario — wrong. When one target answers a multi-target ring, OTHER TARGETS get endReason 'answered' (different user answered). 'answered_elsewhere' is only for same-user multi-device (different device of same user answered). The spec is explicit about this distinction at line 1502. (2) joinedAt described as if client-set — it is server-set. The spec (line 771) says 'the server sets joinedAt to the current time' as a side effect of the client setting joinMethod.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:11:18Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:52Z",
+  "closed_at": "2026-06-07T18:23:52Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.5",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:11:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

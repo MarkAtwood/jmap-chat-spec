@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-wu11",
+  "title": "P0: Implementer guide — blocking behavior contradiction",
+  "description": "Guide claims blocked users visible in shared channels. Spec explicitly says messages from blocked contacts are silently dropped regardless of whether they arrive in direct or group chat context. Guide must be corrected.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:38:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:43:09Z",
+  "closed_at": "2026-06-07T18:43:09Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wu11",
+      "depends_on_id": "jmap-chat-spec-wz74",
+      "type": "blocks",
+      "created_at": "2026-06-07T11:39:02Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

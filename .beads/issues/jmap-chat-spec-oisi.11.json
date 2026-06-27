@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.11",
+  "title": "Fix jmap-scene-vtc-integration-guide.md: 8 issues including invalid create-time field",
+  "description": "MUST-FIX: (1) Lines 800-841, section 10: activeCallId used on SceneRegion/set create — not a valid create-time field per spec (only allowed on update). Example must be split into create + update. (2) Session example (lines 43-50) missing urn:ietf:params:jmap:websocket capability — WSS capabilities depend on base WebSocket transport. SHOULD-FIX: (3) Lines 115-134: server responsibility 'set activeCallId on active' stated as MUST — it's deployment policy, spec only defines the reverse (clear on ended). (4) Lines 759-773: blocked-sender suppression for SceneObjectEvent overstated — server-initiated updates on blocked-user objects still deliver. (5) Lines 149-153: 'set activeCallId immediately on create' needs two-step operation. (6) Line 408: '5-30 seconds' SFU position interval is invented number with wrong JMAP terminology. (7) Lines 587-593: avatar lobby→main-space transition implied as spec-defined but isn't. (8) No security/privacy discussion of spatial proximity as information leak, and E2EE avatar-event suppression rule from Scene spec not mentioned. EDITORIAL: (9) Line 396: Wwise coordinate system claim likely inaccurate (it defaults right-handed). (10) Lines 743-748: ChatStreamEnable example omits scope fields without explaining defaults.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:12:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:53Z",
+  "closed_at": "2026-06-07T18:23:53Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.11",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:12:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

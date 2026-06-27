@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-9a2",
+  "title": "wss: supportsEphemeralPush:false case needs motivation",
+  "description": "The urn:ietf:params:jmap:chat:websocket capability object has a single field: supportsEphemeralPush (Boolean). A server advertising this capability with supportsEphemeralPush:false is permitted but its purpose is unexplained. If a server does not support ephemeral push, why advertise the capability at all? Decision: either document the intended use case for the false value (e.g., capability negotiation signaling planned support, or distinguishing WebSocket-capable-but-not-ephemeral servers), or remove the false case and make capability presence imply support.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:01:08Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:28:20Z",
+  "closed_at": "2026-04-26T15:28:20Z",
+  "close_reason": "Removed supportsEphemeralPush field entirely. Capability is now an empty object {}; presence implies support. Servers not supporting ephemeral push must not advertise the capability. Follows the JMAP idiom used by the main urn:ietf:params:jmap:chat session-level capability."
+}

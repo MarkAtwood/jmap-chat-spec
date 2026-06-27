@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-rix",
+  "title": "Review round 3: burnOnRead focus + R2 fix verification",
+  "description": "Targeted round 3 review focusing on the burnOnRead/receiptSharing interaction (corrected twice). Also verify R2 fixes for Receiver Behavior redundancy, deviceDeliveredAt explanation, and federation Peer/deliver burnOnRead note.",
+  "notes": "R3 Calibration (SEC7): Reviewed 8 open findings under jmap-chat-spec-wrl. Count: P0=0, P1=0, P2=0. All 8 findings are priority 3-4 (elegance/readability/opinion). No protocol-correctness bugs found. wrl.27 (deviceDeliveredAt no top-level parallel) is already fixed in the spec (explanation present at deliveryReceipts line 519). The burnOnRead/receiptSharing causal ordering is correctly specified: receiver sets readAt locally and hard-deletes even when receiptSharing=false; sender gets no Peer/receipt confirmation and must not rely on it. The bidirectional suppression rule (Sender Behavior: suppress outbound; Receiver Behavior: suppress inbound delivery to clients) is coherent and complete. Remaining open issues are editorial quality-of-life improvements only. Confidence: 90%. DONE: yes",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:54:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-27T00:57:19Z",
+  "close_reason": "R3 complete. P0=P1=P2=0. 90% confidence. DONE."
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.26",
+  "title": "DECISION: bidirectional opt-out (no receipts sent = no receipts seen)",
+  "description": "When receiptSharing=false, inbound Peer/receipt events carrying readAt are also suppressed from the owner's clients. This removes the asymmetric-information problem: if Alice opts out of broadcasting but still sees Bob's read times, she gains information without reciprocity, which creates an incentive to exploit the opt-out. By tying the two together, the protocol enforces a consistent social contract. The alternative of asymmetric opt-out (suppress outbound only) would make the preference semantically inconsistent and harder to explain to users. Bidirectionality also simplifies implementation: one boolean controls both directions for a given account.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:21Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:41:09Z",
+  "closed_at": "2026-04-27T00:41:09Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.26",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:21Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

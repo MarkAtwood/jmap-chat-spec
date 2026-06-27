@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-2u2.7",
+  "title": "R2-SEC3: no new elegance issues found",
+  "description": "R2 elegance pass complete. No new structural elegance issues found beyond the three R1 items. wrl.21 remains opinion-level P3: the naming direction asymmetry is real but both fields have clear unambiguous prose. wrl.24 remains debated P3: the timestamp coarsening paragraph still sits in Security Considerations and admits it is a presentation concern only, but the counter-DECISION from R1 holds. wrl.27 escalated to P2 in jmap-chat-spec-2u2.4: the deliveryReceipts description at line 519 explains platform-availability caveats but never explains the missing top-level parallel, which will cause implementor confusion.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:48:20Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:54:11Z",
+  "closed_at": "2026-04-27T00:54:11Z",
+  "close_reason": "No new elegance issues in R2",
+  "labels": [
+    "elegance"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.7",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:48:19Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-vnot",
+  "title": "P0: Tasks spec — jmap: URI scheme",
+  "description": "Same jmap: URI scheme issue as calendars — unregistered, no formal definition.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:38:42Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:43:08Z",
+  "closed_at": "2026-06-07T18:43:08Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-vnot",
+      "depends_on_id": "jmap-chat-spec-wz74",
+      "type": "blocks",
+      "created_at": "2026-06-07T11:38:59Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

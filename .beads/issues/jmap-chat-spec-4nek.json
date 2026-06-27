@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-4nek",
+  "title": "README.md guide table and repo layout are out of date",
+  "description": "The README.md \"Implementer Guides\" table (lines 93-97) lists only push-platform-guide, chat-push-platform-guide, and wss-guide. It is missing: jmap-chat-implementer-guide, jmap-chat-calendars-guide, jmap-chat-tasks-guide, jmap-chat-federation-guide, jmap-chat-filenode-guide. Same problem in the Repository Layout block (lines 119-130): missing draft-atwood-jmap-chat-calendars-00, draft-atwood-jmap-chat-tasks-00, and all five non-listed guides. This is a preexisting omission noticed while writing the federation and filenode guides (jmap-chat-spec-7aw6, jmap-chat-spec-9wfr). Out of scope for those beads; filed separately to avoid a \"while I'm here\" scope expansion.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-13T00:33:19Z",
+  "created_by": "bd-spin/bd-spin-20260513T000635Z-2256273",
+  "updated_at": "2026-05-13T02:47:25Z",
+  "closed_at": "2026-05-13T02:47:25Z",
+  "close_reason": "README updated. Specifications \u003e Extensions table now lists calendars-00 and tasks-00. Implementer Guides table now lists all 8 guides (added implementer-guide, federation-guide, filenode-guide, calendars-guide, tasks-guide). Repository Layout block updated to match. Scope expanded beyond original bead to also cover the Specifications tables (lines 27-39), per user direction. 1:1 match between README listings and files on disk verified."
+}

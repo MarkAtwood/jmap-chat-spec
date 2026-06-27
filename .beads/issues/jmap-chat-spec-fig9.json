@@ -1,0 +1,18 @@
+{
+  "id": "jmap-chat-spec-fig9",
+  "title": "Broadcast-scope @-mentions (@everyone, @here, @admins)",
+  "description": "Formalize broadcast-scope @-mentions in JMAP Chat. The current Mention type and rich-body `\"mention\"` span are per-user only (carry a ChatContact.id); there is no wire format for broadcast-scope mentions. The `mention_all` permission exists but only as a send-side gate without a corresponding mention type.\n\nThis epic adds three broadcast scopes:\n- `@everyone` — all current Space/Chat members\n- `@here` — currently-active members (server-defined \"active\" semantic)\n- `@admins` — members with administrative permissions (server-defined \"admin\" semantic)\n\nTrimmed from the initial proposal:\n- `@all` — synonym for `@everyone`; drop\n- `@user` — already exists as the per-user mention\n- `@user@host` and `@{did}` — split into separate epics\n\nThis is real feature work that touches four documents (main draft, push draft, federation draft, push platform guide). The work decomposes into one design-decisions bead and four implementation beads. Design decisions land first; implementation beads are parallel after that.\n\nReferences:\n- Mention type: draft-atwood-jmap-chat-00.md line 263\n- Rich-body \"mention\" span: draft-atwood-jmap-chat-00.md line 1285\n- Existing `mention_all` permission: draft-atwood-jmap-chat-00.md line 582\n- Push hasMention/hasMentionAll: draft-atwood-jmap-chat-push-00.md lines 177-180",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:33:10Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-13T00:22:40Z",
+  "close_reason": "all steps complete",
+  "labels": [
+    "feature",
+    "mentions"
+  ]
+}

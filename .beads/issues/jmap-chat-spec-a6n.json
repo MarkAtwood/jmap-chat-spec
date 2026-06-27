@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-a6n",
+  "title": "Fix example blobId to look like proper opaque identifier",
+  "description": "The example blobId (line 139) 'G5be7a7-13f0-4b7c-bead-3c17de6812a2' has 7 hex chars in the first UUID segment instead of 8 (looks like a truncated UUID). Since blobId is opaque any string is valid, but the example looks like a copy-paste error to readers familiar with UUIDs. Either use a proper UUID example or a clearly non-UUID opaque string.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:20:07Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:27:40Z",
+  "closed_at": "2026-04-27T01:27:40Z",
+  "close_reason": "Closed"
+}

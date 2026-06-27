@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.24",
+  "title": "Timestamp coarsening SHOULD belongs in ReadPosition/PresenceStatus, not Security Considerations",
+  "description": "The timestamp coarsening recommendation (draft-atwood-jmap-chat-00.md ~lines 1442-1443) reads: 'Clients SHOULD NOT expose sub-minute precision for readAt, lastReadAt, or deviceDeliveredAt timestamps in the user interface. Displaying relative representations (such as \"today\", \"yesterday\", or hour-granularity) reduces the risk of exposing behavioral patterns through precise read timing. The underlying UTCDate values retain full precision for protocol purposes; coarsening is a presentation concern only.' This is placed in the Security Considerations section, but its own text says it is a presentation concern only. Security Considerations in IETF RFCs are intended for protocol-level security requirements; UX guidance about display precision belongs in the section that defines the data types it concerns. Suggested improvement: move this paragraph to the ReadPosition section (as a note after the field definitions) or to a new note in the PresenceStatus section, and remove it from Security Considerations. If a security rationale must appear there, replace it with a one-sentence cross-reference: 'Clients should coarsen timestamp display to reduce behavioral pattern leakage; see {{read-position}}.' Location: draft-atwood-jmap-chat-00.md ~lines 1442-1443 (Security Considerations, Read Receipt Privacy subsection).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:08:57Z",
+  "closed_at": "2026-04-27T01:08:57Z",
+  "close_reason": "Opinion: SEC7 confirmed placement in Security Considerations is correct (counter-DECISION filed)",
+  "labels": [
+    "elegance"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.24",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:17Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

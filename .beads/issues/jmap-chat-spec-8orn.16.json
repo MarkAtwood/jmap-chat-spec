@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-8orn.16",
+  "title": "Chat: add activeCallId back-reference on Chat",
+  "description": "VTCCall points to Chat via chatId but Chat has no field pointing back. Chat clients cannot show 'a call is active in this channel' without querying VTCCall/query with chatId filter. Add activeCallId (String|null, server-set) on Chat. Server sets it when a VTCCall with this chatId enters active state, clears it when the call ends. Enables O(1) 'join call' banner in chat UI like Slack Huddles.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:43:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:44:58Z",
+  "closed_at": "2026-06-05T22:44:58Z",
+  "close_reason": "Added activeCallId (String|null, server-set) field to Chat, set when a bound VTCCall enters active state.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.16",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:43:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

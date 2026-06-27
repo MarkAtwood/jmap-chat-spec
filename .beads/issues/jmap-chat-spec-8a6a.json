@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-8a6a",
+  "title": "chatId/spaceId/channelId referential integrity not enforced",
+  "description": "Scene's optional binding fields (chatId, spaceId, channelId on SceneRegion) are foreign keys to Chat/Space objects, but no validation is specified. If a client sets chatId to a non-existent Chat or one the user can't access, no SetError is defined. Chat carries no back-reference to SceneRegion, so linkage is one-directional and unvalidated. Need to specify invalidArguments or notFound errors for dangling binding references.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:34:14Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:01:53Z",
+  "closed_at": "2026-06-07T06:01:53Z",
+  "close_reason": "Closed"
+}

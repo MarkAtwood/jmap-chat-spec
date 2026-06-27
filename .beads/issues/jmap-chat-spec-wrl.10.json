@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.10",
+  "title": "Two-level receipt preference override rule stated twice",
+  "description": "The rule that Chat.receiptSharing overrides PresenceStatus.receiptSharing at the per-chat level is expressed as normative text in two separate locations: (1) the Chat.receiptSharing field definition (draft-atwood-jmap-chat-00.md ~lines 441-442): 'When present, this value takes precedence over the account-level setting for this Chat only. When absent, the account-level preference applies.' (2) the Peer/receipt Sender Behavior section (draft-atwood-jmap-chat-federation-00.md ~lines 305-306): 'if Chat.receiptSharing is present for the relevant Chat, that value is used; otherwise the account-level PresenceStatus.receiptSharing applies.' Both are normative and say the same thing with different wording, creating a maintenance risk if the precedence rule ever changes. Suggested improvement: make one location normative and the other a cross-reference. The field definition is the natural home for the rule; the Sender Behavior section should reference it rather than re-state it, e.g. 'the server MUST determine the effective receipt-sharing preference per the two-level override rule defined in {{JMAP-CHAT}} (Chat.receiptSharing overrides PresenceStatus.receiptSharing when present).'",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:26Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:45:19Z",
+  "closed_at": "2026-04-27T00:45:19Z",
+  "close_reason": "Resolved: Chat.receiptSharing field is canonical; Sender Behavior cross-references same logic without identical language",
+  "labels": [
+    "efficiency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.10",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:25Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-a1tu.1",
+  "title": "Verify VWRAP section facts",
+  "description": "Check VWRAP dates (IETF 74 March 2009, charter Sept 2009, concluded May 2011), people (Hamrick, Lentczner, Levine, Lopes), layoff claim (30% June 2010), and draft count against IETF Datatracker and mailing list archives.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:17:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:28:33Z",
+  "closed_at": "2026-06-07T02:28:33Z",
+  "close_reason": "All VWRAP facts verified correct: IETF 74 March 2009, chartered Sept 29 2009, concluded May 18 2011, zero RFCs, Meadhbh Hamrick/Mark Lentczner (Linden Lab) + David Levine (IBM), MMOX expansion correct, Crista Lopes identity correct. No edits needed.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-a1tu.1",
+      "depends_on_id": "jmap-chat-spec-a1tu",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:11Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-c0b8",
+  "title": "Region destruction with active VTCCall — call state not addressed",
+  "description": "SceneRegion/set destroy (scene-00.md line 980) removes the region and ejects all avatars, but if activeCallId was set, the VTCCall continues unaffected. Participants remain in the call with no spatial context and no notification that the region was destroyed. Spec needs policy: reject destroy if activeCallId is non-null, auto-end the call, or allow orphaned calls. Currently none of these is specified.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:41:12Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:48Z",
+  "closed_at": "2026-06-07T05:57:48Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-2ia",
+  "title": "Upgrade Blob Storage section to reference blobext-01",
+  "description": "In draft-atwood-jmap-chat-00 Blob Storage section: upgrade reference from RFC 9404 to also cover draft-ietf-jmap-blobext-01 (IETF track, capability URI urn:ietf:params:jmap:blob2, obsoletes RFC 9404). Add a note that servers SHOULD support Blob/lookup with 'Message' registered as a participating data type (so clients can find all messages referencing a given blobId/attachment). Add a note that servers MAY support Blob/convert for image media types (thumbnails). Note that the sha256 field in the jmap-chat upload response extension already aligns with blobext conventions.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T16:43:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T17:19:28Z",
+  "closed_at": "2026-04-26T17:19:28Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-1yz",
+  "title": "Write draft-atwood-jmap-cid-00.md",
+  "description": "Write the JMAP Blob Content Identifiers companion spec. Covers: capability urn:ietf:params:jmap:cid, sha256 field on blob upload response (RFC 8620 extension), sha256 property on FileNode objects (JMAP-FILENODE extension), IANA registration, security considerations.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:14:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:16:49Z",
+  "closed_at": "2026-04-27T01:16:49Z",
+  "close_reason": "Draft written: draft-atwood-jmap-cid-00.md. Design decisions recorded in beads memory. SHA-256 only, standalone capability urn:ietf:params:jmap:cid.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-1yz",
+      "depends_on_id": "jmap-chat-spec-b0l",
+      "type": "blocks",
+      "created_at": "2026-04-26T18:14:43Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

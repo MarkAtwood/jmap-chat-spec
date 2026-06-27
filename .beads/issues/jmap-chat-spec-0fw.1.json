@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.1",
+  "title": "receiveTypingIndicators polarity inverted vs muted",
+  "description": "Chat.muted uses affirmative-suppression polarity (true = suppress), while Chat.receiveTypingIndicators uses affirmative-enablement polarity (false = suppress). A client setting both preferences must remember that false means suppress for one field and true means suppress for the other. The consistent pattern used by muted/blocked throughout the spec is 'affirmative flag that activates the non-default behavior'; receiveTypingIndicators breaks this by defaulting to true and requiring false to activate suppression. Consider renaming to muteTypingIndicators (Boolean, default false) to match the muted/blocked pattern.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:22Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:51Z",
+  "closed_at": "2026-04-27T00:24:51Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "elegance",
+    "opinion",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.1",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:21Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

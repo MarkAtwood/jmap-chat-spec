@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.29",
+  "title": "DECISION: sender checks effective preference before calling Peer/receipt",
+  "description": "The Peer/receipt Sender Behavior requires the sending server to determine the effective receiptSharing preference (chat-level override if present, else account-level) and suppress the outbound Peer/receipt call entirely if it is false. This is better than relying solely on the receiver to suppress the readAt. Defense-in-depth: the sender never transmits data the user opted out of sharing; the receiver also applies its own check. This matters because the receiver's suppression logic runs on the recipient's infrastructure, which the sender does not control. Sender-side enforcement ensures the opt-out is honored even if a receiver is buggy or non-conforming. It also avoids the unnecessary network round-trip and reduces the amount of timing metadata leaked by the protocol.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:41:16Z",
+  "closed_at": "2026-04-27T00:41:16Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.29",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:35Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

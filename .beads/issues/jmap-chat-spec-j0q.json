@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-j0q",
+  "title": "wss: new @type messages conflict with RFC 8887 §4.3 MUST NOT",
+  "description": "RFC 8887 §4.3 says 'Other message types MUST NOT be transmitted over this connection' and enumerates exactly three client-to-server and three server-to-client types. draft-atwood-jmap-chat-wss-00 introduces four new types (ChatStreamEnable, ChatStreamDisable, ChatTypingEvent, ChatPresenceEvent) over the same connection without addressing this MUST NOT. §4.3.1 also allows clients to close the connection on unknown messages; the WSS draft overrides this with MUST NOT close in §7, another tightening not flagged as intentional. Decision: explicitly supersede the RFC 8887 MUST NOT for implementations negotiating this capability, or require a distinct WebSocket subprotocol identifier.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:00:26Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:11:31Z",
+  "closed_at": "2026-04-26T15:11:31Z",
+  "close_reason": "Added explicit paragraph to 'Relationship to RFC 8887' section stating that advertising the urn:ietf:params:jmap:chat:websocket Session capability is the negotiation event that permits the additional @type values, and that RFC 8887 §4.3's restriction applies only within the scope of the base protocol."
+}

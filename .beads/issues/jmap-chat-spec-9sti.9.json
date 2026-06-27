@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-9sti.9",
+  "title": "Implementer guide: call retention and cleanup",
+  "description": "Section on lifecycle management. How long ended VTCCall and VTCParticipant records persist. Recording blob retention. Deployment-defined cleanup policies. Room call inactivity timeout. Scheduled call expiry. Call history query patterns for clients.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:03:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:41Z",
+  "closed_at": "2026-06-05T23:27:41Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9sti.9",
+      "depends_on_id": "jmap-chat-spec-9sti",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:03:00Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-9sti.9",
+      "depends_on_id": "jmap-chat-spec-9sti.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:13Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

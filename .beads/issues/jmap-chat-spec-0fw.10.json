@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.10",
+  "title": "Sender continues issuing Chat/typing calls when recipient has opted out",
+  "description": "The spec (draft-atwood-jmap-chat-00.md lines 438-439, 1416-1417) deliberately withholds opt-out status from the sender: Chat/typing always succeeds and the sender is not informed that receiveTypingIndicators is false on the recipient Chat record. Privacy rationale is sound. However the consequence is that a sending client in a direct chat with an opted-out recipient will continue calling Chat/typing at full rate (up to once per 3 seconds while typing) indefinitely. The server does a full membership check + preference lookup + silent discard on every call, with zero user-visible effect. No relief path exists: the server cannot hint 'don't bother' without revealing the preference, and the client has no other signal. In a long-lived session this is a steady stream of wasted client-to-server round-trips and per-call server work. The spec should consider whether server-side optimization (e.g. skipping rate-limit accounting for discarded events) is sufficient, or whether a privacy-preserving suppression hint is worth specifying. The implementer's guide should note this case so server authors can handle the discard path cheaply.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:39Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:47Z",
+  "closed_at": "2026-04-27T00:24:47Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "efficiency",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.10",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:39Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

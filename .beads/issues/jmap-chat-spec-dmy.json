@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-dmy",
+  "title": "WSS guide: fallback guidance skips EventSource/SSE as primary non-WebSocket path",
+  "description": "The capabilities section says to fall back to 'HTTP polling and PushSubscription-based push' when WebSocket is unavailable. EventSource (SSE) is the primary non-WebSocket real-time path already defined in the JMAP Chat spec. HTTP polling is a last resort. Skipping SSE steers implementers toward a worse path. The fallback guidance should list SSE first, then PushSubscription for background/mobile, then polling only as a last resort.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:30Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:35Z",
+  "closed_at": "2026-04-26T22:36:35Z",
+  "close_reason": "Closed"
+}

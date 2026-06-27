@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.21",
+  "title": "receiptSharing vs receiveTypingIndicators naming direction asymmetry",
+  "description": "The Chat object has two opt-out preference fields that name opposite directions for similar controls. 'receiveTypingIndicators' uses receive-side framing (the owner controls what they receive). 'receiptSharing' uses send-side framing (the owner controls what they share). A reader scanning Chat fields must context-switch between two conceptual frames for structurally parallel opt-out preferences. Concretely: 'receiveTypingIndicators: false' means 'do not receive typing events from others'; 'receiptSharing: false' means 'do not send read receipts to others'. Suggested improvement: pick one framing and apply it consistently. The receive-side pattern ('receiveReadReceipts' or 'receiveReceipts') matches the existing 'receiveTypingIndicators'. Alternatively, adopt send-side framing for both ('shareTypingIndicators', 'shareReceipts'). The current mix is not itself wrong but reduces readability for implementors scanning the Chat field list. Location: draft-atwood-jmap-chat-00.md Chat object fields ~lines 438-442 (receiveTypingIndicators and receiptSharing) and PresenceStatus ~line 784 (receiptSharing).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:05Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:08:58Z",
+  "closed_at": "2026-04-27T01:08:58Z",
+  "close_reason": "Opinion: both names are unambiguous, naming asymmetry is stylistic only",
+  "labels": [
+    "elegance",
+    "opinion"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.21",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:05Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

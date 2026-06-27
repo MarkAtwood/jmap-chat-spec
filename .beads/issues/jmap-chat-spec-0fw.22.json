@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.22",
+  "title": "wss-00 Security: 'owner's Chat record' ambiguous for group chats",
+  "description": "In draft-atwood-jmap-chat-wss-00.md, the Ephemeral Event Authorization security section says: 'ChatTypingEvent MUST NOT be delivered if the owner`s Chat record has receiveTypingIndicators: false at delivery time.' The term 'owner' in JMAP Chat means the user whose mailbox a server serves — i.e., the recipient of the WebSocket event. But 'owner' is also used in the main spec in other senses (chat creator, space owner). In the context of a group chat with multiple recipients, 'owner' here means each individual recipient, not a single person. The phrasing should be 'the recipient's Chat record' or 'the account's own Chat record' to eliminate ambiguity.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:14Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:52Z",
+  "closed_at": "2026-04-27T00:24:52Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.22",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:14Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-kq1.6",
+  "title": "Chat/set allows writing receiveTypingIndicators on channel Chats but server response is unspecified",
+  "description": "File: draft-atwood-jmap-chat-00.md lines 438-439 and 854-856.\n\nConflict: The Chat object field definition (line 439) says 'Applies to direct and group chats only; for channel chats, this field has no effect and servers MUST ignore it.' However, the Chat/set Updating a Chat section (line 854) lists receiveTypingIndicators as a valid update patch key 'for all chat kinds.'\n\nThe phrase 'servers MUST ignore it' in the field definition is ambiguous: it is not clear whether this means (a) the server silently accepts the write and stores the value but ignores it during delivery, (b) the server silently accepts the write and discards the value (does not store it), or (c) the server rejects the write with an error.\n\nInteroperability impact: A client implementation that writes receiveTypingIndicators on a channel Chat and then reads it back via Chat/get may observe the stored value (behavior a), null/absent (behavior b), or receive an error (behavior c), depending on server interpretation. These are three distinct observable behaviors. A client cannot reliably know whether a channel Chat has the field stored or suppressed. A client that stores a local model expecting the server to reject the write will be surprised by a 200 OK with the value silently ignored.\n\nFix: Clarify Chat/set Updating a Chat to state explicitly what happens when receiveTypingIndicators is patched on a channel Chat. The most interoperable fix is: either restrict the list so receiveTypingIndicators is not allowed on channel Chats (server MUST return a SetError of type invalidArguments for such an update), or permit the write but define the stored value as ignored during delivery and readable back as written.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:29:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:37Z",
+  "closed_at": "2026-04-27T00:24:37Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "correctness",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-kq1.6",
+      "depends_on_id": "jmap-chat-spec-kq1",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:29:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

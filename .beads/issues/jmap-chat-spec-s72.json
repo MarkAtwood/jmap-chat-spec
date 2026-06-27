@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-s72",
+  "title": "Web Push payload size: overhead description is imprecise",
+  "description": "The Web Push section says 'RFC 8291 aes128gcm adds 86 bytes of overhead plus padding' and gives a limit of 3993 bytes. The 3993 figure is correct but the explanation is misleading. The actual breakdown is: 86-byte content-coding header (salt 16 + record size 4 + keyid length 1 + sender public key 65) + 16-byte AES-GCM auth tag + 1-byte padding delimiter = 103 bytes total. An implementer who reads '86 bytes plus padding' and estimates their own limit will calculate 4096 - 86 = 4010 and overshoot by 17 bytes. The description should show the full 103-byte breakdown so implementers can size correctly.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:38:45Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:49Z",
+  "closed_at": "2026-04-26T21:43:49Z",
+  "close_reason": "Closed"
+}

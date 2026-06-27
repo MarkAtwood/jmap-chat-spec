@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-2u2.4",
+  "title": "R2-SEC3: wrl.27 escalate to P2 — deliveryReceipts still missing explanatory note for no top-level deviceDeliveredAt",
+  "description": "wrl.27 assessed in R2. The deliveryReceipts description (line 519) explains platform-availability caveats for deviceDeliveredAt (APNs/FCM) but does NOT explain why the field has no top-level Message parallel to deliveredAt (line 521) and readAt (line 524). A reader scanning the top-level Message fields finds deliveredAt and readAt but no deviceDeliveredAt, with zero explanation for the structural gap. The wrl.27 suggestion was: add one sentence to the deliveryReceipts description explaining that device delivery is always per-recipient and there is no aggregate owner-side equivalent the way readAt serves as the owner's own read time. Without that sentence the asymmetry is silent and implementors must infer the design intent. Escalating from P3 to P2 because this crosses from elegance opinion into clarity/efficiency: the missing note will cause real implementor confusion, not just stylistic unease. Suggested fix: append to deliveryReceipts description: 'Unlike deliveredAt and readAt, which also appear as top-level Message fields representing the first-delivery aggregate and the owner's own read time respectively, deviceDeliveredAt has no top-level parallel because device-layer delivery is always per-recipient and has no meaningful aggregate or owner-side equivalent.' Location: draft-atwood-jmap-chat-00.md line 519, deliveryReceipts field definition.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:48:06Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:54:02Z",
+  "closed_at": "2026-04-27T00:54:02Z",
+  "close_reason": "Fixed: added explanation for deviceDeliveredAt top-level field asymmetry (chat-00.md:519)",
+  "labels": [
+    "elegance"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.4",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:48:05Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

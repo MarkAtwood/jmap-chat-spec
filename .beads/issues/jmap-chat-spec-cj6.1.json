@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-cj6.1",
+  "title": "Add ReadPosition cross-reference note to RFC 8621 $seen",
+  "description": "The ReadPosition section should include a brief note explaining that it serves the same local read-tracking purpose as the $seen keyword in RFC 8621 (JMAP Mail), but uses a cursor model (lastReadMessageId) rather than per-message boolean flags. Rationale: chat is an ordered stream where the client reads up to a point; per-message flags would be O(n) per chat open and semantically wrong. Useful for implementors coming from JMAP Mail. One sentence in the ReadPosition section of draft-atwood-jmap-chat-00.md.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:04:12Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:34:07Z",
+  "closed_at": "2026-04-27T00:34:07Z",
+  "close_reason": "Added RFC 8621 $seen cross-reference sentence to ReadPosition intro paragraph (chat-00.md:749)",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-cj6.1",
+      "depends_on_id": "jmap-chat-spec-cj6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:04:12Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-2u2.13",
+  "title": "R2-SEC4: wrl.19 resolved",
+  "description": "wrl.19: deviceDeliveredAt distinction from deliveredAt. In the main spec (draft-atwood-jmap-chat-00.md:519), the deliveryReceipts field now includes: 'deviceDeliveredAt is optional and MAY be absent if the recipient's platform does not support device-delivery confirmation (e.g., APNs content-available callbacks or FCM data delivery receipts); implementations that cannot obtain this signal MUST omit the field rather than approximate it with deliveredAt.' In the federation spec (draft-atwood-jmap-chat-federation-00.md:296), deviceDeliveredAt is defined as 'Time the message notification was received by the recipient's device or application process, as distinct from mailbox storage (deliveredAt) and human reading (readAt).' The APNs/FCM note and the 'as distinct from' language together resolve the ambiguity. No further action needed.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:49:09Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:54:24Z",
+  "closed_at": "2026-04-27T00:54:24Z",
+  "close_reason": "wrl.19 resolved by APNs/FCM note",
+  "labels": [
+    "opinion",
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.13",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:49:08Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

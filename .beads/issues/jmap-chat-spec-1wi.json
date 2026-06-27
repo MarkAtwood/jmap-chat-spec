@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-1wi",
+  "title": "Quota interaction incomplete: no error defined for exceeding maxSpaceStorageBytes",
+  "description": "maxSpaceStorageBytes is defined in the account-level capability object but there is no normative text about what happens when the limit is exceeded. What error code does FileNode/set return? Is this covered by JMAP-FILENODE's error model, or does this spec need to define it? Also clarify the interaction with JMAP-QUOTAS.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:49:51Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:58:41Z",
+  "closed_at": "2026-04-26T19:58:41Z",
+  "close_reason": "overQuota SetError already defined in RFC 8620 §5.3; spec now references it explicitly"
+}

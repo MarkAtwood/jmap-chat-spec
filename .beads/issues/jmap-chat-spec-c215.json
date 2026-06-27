@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-c215",
+  "title": "activeCallId has no authorization check on referenced VTCCall",
+  "description": "SceneRegion/set update (scene-00.md line 930) allows a region owner to set activeCallId to any VTCCall id string. No validation is specified: the referenced call may not exist, may belong to a different account, may be ended, or may be a call the region owner is not a participant of. A region owner who is not a VTC moderator can bind any call they know the id of. Need: server MUST validate that the referenced VTCCall exists, is not ended, and the caller has access to it.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:41:12Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:45Z",
+  "closed_at": "2026-06-07T05:57:45Z",
+  "close_reason": "Closed"
+}

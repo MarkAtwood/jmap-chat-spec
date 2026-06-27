@@ -1,0 +1,38 @@
+{
+  "id": "jmap-chat-spec-6gzj.4",
+  "title": "Decide on @everyone vs alternative naming before fig9.1 locks in",
+  "description": "The spec currently uses '@everyone' in seven prose-only sites in the main draft (lines 560, 598, 655, 1082, 1139, 1141, 1409). This is the Discord convention; Slack uses '@channel' for similar semantics; some systems use '@all'.\n\nCurrently @everyone is prose-only — it doesn't appear as a wire-level string. The fig9 epic (broadcast-scope mentions) will formalize @everyone as a mention scope, at which point the string becomes wire-observable in some form (Mention type discriminator value, push payload field, client-side display string).\n\nDecision to make BEFORE fig9.1 closes (otherwise the choice is locked in by the wire format):\n- Keep '@everyone' (Discord convention; current spec usage; familiar to most users)\n- Switch to '@all' (shorter; some systems use this)\n- Switch to '@channel' (Slack convention; doesn't really fit since Spaces have multiple channels)\n- Some other choice\n- Leave it as the spec's recommended client-display string but make the wire-level discriminator be a neutral identifier like 'everyone' (no @)\n\nThe display string and the wire-level discriminator can be different. The wire-level discriminator is a programmer thing (will be in code as a constant); the display string is a user-facing thing (appears in UI rendered text and possibly in compose-time autocomplete).\n\nRecommendation: keep '@everyone' for both. It's already the spec's convention and matches the most-deployed reference system (Discord). Switching introduces unnecessary novelty.\n\nThis bead is blocked on fig9.1 because the decision is most useful at the moment fig9.1 makes its other choices. Filing it now so it's not forgotten.",
+  "acceptance_criteria": "- A choice is recorded for the user-facing string (@everyone vs alternatives)\n- A choice is recorded for the wire-level discriminator (same as display or separate)\n- If different from current spec usage, jmap-chat-spec-fig9.1 description is updated to reference this decision\n- Recommendation defaults: @everyone for both unless explicit override",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:12:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T19:38:40Z",
+  "closed_at": "2026-05-12T19:38:40Z",
+  "close_reason": "Resolved by fig9.1 M2 \\u2014 '@everyone' is the canonical textual form.",
+  "labels": [
+    "decision",
+    "naming",
+    "session-leftover"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-6gzj.4",
+      "depends_on_id": "jmap-chat-spec-6gzj",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:12:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-6gzj.4",
+      "depends_on_id": "jmap-chat-spec-fig9.1",
+      "type": "blocks",
+      "created_at": "2026-05-12T11:12:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

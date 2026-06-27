@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-54y",
+  "title": "hasMention semantics undefined for Space-wide @everyone mentions",
+  "description": "hasMention is defined as true only when the owner's ChatContact.id appears in message.mentions[]. The parent spec defines a 'mention_all' permission for Space-wide @mentions, which may not produce individual entries in the mentions array. A user could receive hasMention: false on a message that @mentions the entire Space. The spec needs to define whether hasMention covers mention_all usage, and if not, whether a separate hasMentionAll field is needed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:27:12Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:29:50Z",
+  "closed_at": "2026-04-26T20:29:50Z",
+  "close_reason": "hasMentionAll added as separate boolean; mentionUrgency fires when any entry in batch has hasMention or hasMentionAll true"
+}

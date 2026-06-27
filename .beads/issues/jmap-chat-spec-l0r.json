@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-l0r",
+  "title": "No guidance on OAuth token refresh failure (FCM, ADM, HPK, WNS)",
+  "description": "All four OAuth-based platforms (FCM, ADM, HPK, WNS) say to refresh the bearer token proactively before expiry but give no guidance on what to do if the refresh itself fails. Implementers need to know whether to queue and retry delivery, drop the notification, or surface an error. Without guidance, implementations will diverge — some will block delivery threads waiting for a token, others will silently drop notifications. The guide should recommend a pattern: attempt refresh, on failure retry with backoff up to token TTL, and treat unrecoverable refresh failure as a configuration error rather than a subscription error.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:39:07Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:48Z",
+  "closed_at": "2026-04-26T21:43:48Z",
+  "close_reason": "Closed"
+}

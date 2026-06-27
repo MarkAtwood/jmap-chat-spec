@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-afj",
+  "title": "Fix: 'SHOULD be reported as such' is not operationalizable (line 165)",
+  "description": "Line 165: 'a persistent mismatch indicates a server implementation defect and SHOULD be reported as such' — reported to whom? How? Normative language with no mechanism. Either remove it or replace with concrete guidance: 'clients SHOULD log the discrepancy and SHOULD NOT silently retry indefinitely.'",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:51:08Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:55:38Z",
+  "closed_at": "2026-04-27T01:55:38Z",
+  "close_reason": "Replaced 'SHOULD be reported as such' with 'Clients SHOULD log the discrepancy and SHOULD NOT silently retry indefinitely.'"
+}

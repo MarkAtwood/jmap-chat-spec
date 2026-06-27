@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-2u2.11",
+  "title": "R2-SEC4: wrl.14 opinion",
+  "description": "wrl.14: Sender Behavior paragraph in Peer/receipt (draft-atwood-jmap-chat-federation-00.md:304-306). The paragraph is dense because 'the sending server' for Peer/receipt is the original message recipient's mailbox — a role inversion that is inherently confusing. The existing parenthetical '(the recipient of the original message, whose read event is being reported — not the original message sender)' does explain the role correctly. SEC7 labeled this opinion in R1. On re-read, the paragraph is technically correct; the parenthetical is the fix. No implementor-impacting ambiguity remains. Opinion-level.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:48:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:54:18Z",
+  "closed_at": "2026-04-27T00:54:18Z",
+  "close_reason": "Opinion: wrl.14 density acceptable",
+  "labels": [
+    "opinion",
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.11",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:48:55Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-avy",
+  "title": "APNs urgency table: high and normal map identically, no way to distinguish",
+  "description": "The urgency mapping table for APNs in jmap-push-platform-guide.md maps both 'high' and 'normal' to the same APNs parameters (priority 10 / alert in alert mode, priority 5 / background in background mode). Implementers who want different delivery behavior for high vs normal urgency notifications have no guidance on how to achieve it. The doc should explain that APNs priority 10 is for time-sensitive delivery and priority 5 is for power-efficient delivery, so implementers who want to distinguish high from normal in alert mode can map high→priority 10 and normal→priority 5.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:38:34Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:49Z",
+  "closed_at": "2026-04-26T21:43:49Z",
+  "close_reason": "Closed"
+}

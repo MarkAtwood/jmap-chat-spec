@@ -1,0 +1,31 @@
+{
+  "id": "jmap-chat-spec-4lbr.4",
+  "title": "WSS draft end-to-end overdetermination sweep",
+  "description": "Read draft-atwood-jmap-chat-wss-00.md with the overdetermination lens. Earlier targeted spot-checks found no findings in WSS (ping/pong cadence is correctly inherited from RFC 8887/6455; suppression rules at line 214 are appropriate). But a full end-to-end pass has not been done.\n\nThings worth specifically looking at:\n- Reconnect timing / backoff\n- Message ordering on disconnect (does the spec take a position?)\n- WebSocket frame-level constraints\n- ChatStreamEnable / ChatStreamDisable semantics\n- ChatTypingEvent / ChatPresenceEvent delivery rules (lines 198, 214, 220, 374, 384)\n- Owner-vs-other delivery isolation (line 384)\n\nMethod matches the federation-MUSTs sweep: file findings, close with summary, 'no findings' is acceptable.",
+  "acceptance_criteria": "- WSS draft read end-to-end\n- Findings filed as new beads (or 'no findings' stated explicitly)\n- Close-reason summarizes outcome",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:11:41Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:31:09Z",
+  "closed_at": "2026-05-12T18:31:09Z",
+  "close_reason": "Closed",
+  "labels": [
+    "spec-consistency",
+    "survey",
+    "wss-draft"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-4lbr.4",
+      "depends_on_id": "jmap-chat-spec-4lbr",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:11:41Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

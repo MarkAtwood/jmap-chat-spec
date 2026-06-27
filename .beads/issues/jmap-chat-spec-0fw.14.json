@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.14",
+  "title": "Peer/typing federation calls generated for remote users who have opted out",
+  "description": "draft-atwood-jmap-chat-00.md line 904 specifies that for federated chats, the server SHOULD invoke Peer/typing on each remote participant's home server. A remote participant's receiveTypingIndicators preference lives on their own mailbox, which the originating server cannot read. The originating server therefore always makes the Peer/typing federation call, and the remote server checks the preference and silently drops it. In a direct chat where the remote user has receiveTypingIndicators: false, every typing event (up to 1 per 3 seconds) generates a cross-server federation call that accomplishes nothing. There is no mechanism for a remote server to advertise opt-out preference to the originating server, and no provision for the originating server to suppress outbound Peer/typing calls based on known-cached preference. The federation spec (JMAP-CHAT-FED) should consider whether a remote preference advertisement mechanism is warranted, or at minimum document that this waste is accepted as a privacy tradeoff.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:46Z",
+  "closed_at": "2026-04-27T00:24:46Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "efficiency",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.14",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:46Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

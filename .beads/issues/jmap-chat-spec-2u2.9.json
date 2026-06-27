@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-2u2.9",
+  "title": "DECISION: APNs/FCM cited as examples for deviceDeliveredAt; MUST NOT approximate with deliveredAt",
+  "description": "Choice: The deliveryReceipts field description cites APNs content-available callbacks and FCM data delivery receipts as the concrete mechanism for deviceDeliveredAt, and mandates that implementations which cannot obtain this signal MUST omit the field rather than approximate it with deliveredAt.\n\nWhy good: Grounding deviceDeliveredAt in real push-notification acknowledgement signals makes the semantics unambiguous — it means the device OS processed the push, not that the message transited a server. The MUST NOT approximate rule prevents a common implementation shortcut (using server-delivery time as a proxy) that would silently destroy the field's meaning. Named examples (APNs, FCM) give implementors a concrete target without over-specifying the mechanism.\n\nAlternatives avoided: Leaving deviceDeliveredAt semantics vague (implementors would vary); allowing deliveredAt as a fallback (would conflate two distinct events and break any client logic that distinguishes them); requiring APNs/FCM specifically (too narrow — other platforms have equivalent signals).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:48:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:52:29Z",
+  "closed_at": "2026-04-27T00:52:29Z",
+  "close_reason": "Decision record",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.9",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:48:35Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

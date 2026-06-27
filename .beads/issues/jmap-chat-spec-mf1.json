@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-mf1",
+  "title": "wss-guide: backoff and decay timer values should be concrete",
+  "description": "Three places give ranges instead of recommendations: reconnect backoff 'starting at 1-2 seconds, capped at 60-120 seconds'; typing decay timer '8-10 seconds'. Ranges read as uncertainty. A guide should commit to a number. (The 10-15 minute pushState history window is acceptable as a policy range.)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:43:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:48:05Z",
+  "closed_at": "2026-04-26T22:48:05Z",
+  "close_reason": "fixed in jmap-chat-wss-guide.md"
+}

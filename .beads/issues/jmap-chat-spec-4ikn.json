@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-4ikn",
+  "title": "Space/channel deletion orphans VTCCall binding fields",
+  "description": "When a Space is destroyed (Chat spec line 1209-1211, cascades to channel Chats), VTCCall.spaceId and channelId pointing at that Space are not nulled. Access control (VTC line 1502) checks members of bound Space/channel, but Space no longer exists. No orphan handling or error path defined.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:48:28Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:02:33Z",
+  "closed_at": "2026-06-07T06:02:33Z",
+  "close_reason": "Closed"
+}

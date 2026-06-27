@@ -1,0 +1,18 @@
+{
+  "id": "jmap-chat-spec-0fw",
+  "title": "Review round 1: typing epic fd6 receiveTypingIndicators",
+  "notes": "Confidence: 90% chance of missed bug. Reasoning: All findings were verified against spec text. P0 (0fw.26) is real: mailbox-per-user topology has no spec text on channel Chat record replication, so receiveTypingIndicators enforcement is genuinely undefined for that path. P1 findings are all real: 0fw.7 (uncached DB hot path, no guidance given), 0fw.13 (false-\u003etrue transition undefined, spec silent), 0fw.16 (two parallel suppression mechanisms, no reconciliation text anywhere in either doc), 0fw.19 (SSE Typing Events subsection lines 1306-1313 has no cross-reference to suppression rule — confirmed), 0fw.21 (Chat/set update section and WSS security section both silent on propagation latency). P2 findings are real: 0fw.2, 0fw.10, 0fw.14 are all genuine efficiency/undefined-behavior issues with spec text evidence. P3: 0fw.1 labeled opinion (naming preference, no engineering failure mode — polarity is clear from field name and default), 0fw.3 labeled opinion (Chat/query omitting receiveTypingIndicators is asymmetric but there is no documented use case that requires the filter; muted filter has a documented UX rationale), 0fw.11 labeled opinion (subsection placement is editorial). P4: all confirmed real readability issues (0fw.5 term used before definition at line 439 vs push section at line 1306; 0fw.8 ambiguous owner phrasing at line 904; 0fw.15 patch key list has no cross-ref; 0fw.18 security section has no anchor; 0fw.20 wss cites {{JMAP-CHAT}} with no section; 0fw.22 owner ambiguity in wss security section; 0fw.24 target owner jargon in guide; 0fw.25 guide typing section omits server-side enforcement note). The 10% residual uncertainty covers: (1) possible bugs in the federation Peer/typing receiver behavior (fed spec line 333 forwards events to owner's clients with no receiveTypingIndicators check — not filed as a separate issue), (2) possible interaction bugs with the push spec (draft-atwood-jmap-chat-push-00.md) which has no mention of receiveTypingIndicators at all. Running out of real complaints: no — the P0 and P1 findings are all genuine spec defects requiring fixes.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:13:28Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-26T23:26:18Z",
+  "close_reason": "All P0/P1/P2 findings fixed. P3 labeled opinion. Decisions recorded.",
+  "labels": [
+    "review"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-7wl",
+  "title": "Batched urgency inflation: one mention upgrades whole payload",
+  "description": "§7 says 'When any entry in messages has hasMention or hasMentionAll set to true ... the server MUST use mentionUrgency for the entire payload delivery.' A batch of 20 routine messages is delivered at high urgency because one message mentions the user. This may be intentional, but the spec should explicitly acknowledge the trade-off and state whether it is the desired behavior.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:35:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:21Z",
+  "closed_at": "2026-04-26T20:41:21Z",
+  "close_reason": "Added rationale sentence: entire batch promotes to mentionUrgency to avoid silent demotion of mention"
+}

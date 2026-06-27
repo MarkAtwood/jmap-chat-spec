@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-9sti.3",
+  "title": "Implementer guide: VTCParticipant lifecycle",
+  "description": "Section covering participant state machine patterns. Create on ring vs create on join. Reconnection (clearing leftAt, preserving role/speakerTimeMs). Concurrent join races. Server-side validation of callResponse transitions. kickedBy audit trail. JSON examples for join, leave, reconnect, kick flows.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:02:57Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:40Z",
+  "closed_at": "2026-06-05T23:27:40Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9sti.3",
+      "depends_on_id": "jmap-chat-spec-9sti.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:10Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-9sti.3",
+      "depends_on_id": "jmap-chat-spec-9sti",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:02:57Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

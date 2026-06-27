@@ -1,0 +1,18 @@
+{
+  "id": "jmap-chat-spec-cxr",
+  "title": "Review round 3: typing epic fd6 receiveTypingIndicators",
+  "notes": "R3 Confidence: 92%. Running out of real complaints: yes. Reasoning: All four documents were read in full. The receiveTypingIndicators feature is now substantively complete end-to-end: the main spec defines the field, Chat/typing server behavior enforces it per-recipient, the SSE push section references it, the WSS spec enforces it at ChatTypingEvent delivery, the guide explains client-side handling, and the federation spec now includes membership verification, blocked-contact check, and a TTL-bounded cache recommendation for Peer/typing. The open issues from rounds 1 and 2 (kq1.3, kq1.4, kq1.5, kq1.6, 0fw.26, kq1.1, kq1.2) appear to have been partially addressed in spec text edits but not closed. One new correctness issue was found: the normative decay timer value added in round 2 (10 seconds, draft-atwood-jmap-chat-00.md line 912) is inconsistent with the guide's pre-existing value (8 seconds, jmap-chat-wss-guide.md line 206), filed as cxr.1. No additional P1 maintainer-burden issues were found that are not already tracked. The remaining open issues (especially kq1.5, kq1.6, kq1.1) may warrant closure verification since the spec text edits appear to have addressed some of them.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:33:06Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-26T23:35:35Z",
+  "close_reason": "Single P0 fixed: guide decay timer updated from 8s to 10s to match normative spec. R3 calibration: 92% confidence, running out of real complaints.",
+  "labels": [
+    "review"
+  ]
+}

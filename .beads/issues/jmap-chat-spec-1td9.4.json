@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-1td9.4",
+  "title": "VTC→FileNode guide: shared content references",
+  "description": "Section on referencing shared content during calls. Whiteboard exports (Excalidraw JSON or PNG) as FileNode. Shared document links as FileNode references. Screen capture snapshots. Post-call content bundle: all shared files organized under a call-specific FileNode directory. JSON examples.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:06:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:48Z",
+  "closed_at": "2026-06-05T23:27:48Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-1td9.4",
+      "depends_on_id": "jmap-chat-spec-1td9",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:06:36Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-1td9.4",
+      "depends_on_id": "jmap-chat-spec-1td9.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:06:49Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

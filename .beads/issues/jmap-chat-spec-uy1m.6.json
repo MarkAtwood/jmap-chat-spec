@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-uy1m.6",
+  "title": "Federation Peer/groupUpdate sender-side 'MUST be an admin' overdetermined",
+  "description": "File: draft-atwood-jmap-chat-federation-00.md, line 451\n\nCurrent text:\n\n  `senderUserId` (String):\n  : The ChatContact.id of the user making the change. MUST match the authenticated identity and MUST be an admin of the identified group on the sending server.\n\nThe second MUST ('MUST be an admin of the identified group on the sending server') is sender-side authorization, not wire contract. The receiving server enforces admin role from ITS OWN local view at line 485-486:\n\n  The receiving server MUST verify that `senderUserId` is authenticated. For all actions other than `\"create\"`, it MUST also verify that `senderUserId` holds an admin role in the named group on the receiving server's local Chat record before applying any changes.\n\nSo the wire contract is: receiver verifies admin role on its local Chat record; rejects with forbidden if check fails. The sender-side MUST is a courtesy that:\n1. Prevents the sender from spamming calls that will be rejected\n2. Documents the expected use case\n\nThis parallels the c93e545/2fd3cf7/38055ec pattern in the main draft: deployments may have impl-defined authorization (e.g., a controller principal acting as admin without being a chat member). Such a deployment cannot honor the sender-side MUST as written.\n\nThe 38055ec latitude paragraph in the main draft (:1422-1424) scopes specifically to 'Requires `X`' clauses tied to the closed Space permission vocabulary. Federation :451 is not a 'Requires X' clause and uses ChatMember.role (admin|member), not a Space permission — so 38055ec does not literally cover it. But the underlying principle is the same.\n\nSuggested fix shapes (pick one):\n\n(a) Tier 3 / SHOULD+rationale:\nSoften the sender-side check to SHOULD with rationale. Example:\n\n  senderUserId (String):\n  : The ChatContact.id of the user making the change. MUST match the authenticated identity. The sending server SHOULD also verify locally that senderUserId is authorized to perform the action under its own group-chat admin model before invoking Peer/groupUpdate; this is a courtesy check that prevents the sender from spamming calls that will be rejected by the receiver. The wire contract is the receiver's admin verification at {{security}} -- a malicious or misconfigured sender that skips this courtesy cannot bypass the receiver's check.\n\n(b) Tier 2 / drop the sender-side MUST entirely:\nJust say senderUserId 'MUST match the authenticated identity', and let the receiver do the only authorization that matters.\n\n(c) Architectural note in a new paragraph: state explicitly that group-chat admin authorization (like Space permissions per 38055ec) is impl-defined sender-side; only the receiver-side admin verification is wire contract.\n\nCompanion finding (not in scope here, but worth tracking): main draft :369 (\"Admins may add and remove members and update group chat metadata.\") and :882 (\"Member list changes use the following patch keys (all require admin role)\") are the corresponding 'Requires admin' sites in the main draft. The 38055ec latitude could be broadened to cover ChatMember.role authorization too — or this finding can stay narrow to the federation site and let the main draft be addressed separately.",
+  "acceptance_criteria": "- Federation :451 sender-side admin check is either softened to SHOULD with rationale, dropped entirely, or backed by an architectural impl-defined-authorization note\n- Receiver-side admin check (federation :485-486) remains unchanged: that's the wire contract\n- After the fix, a deployment with impl-defined group-chat admin authorization (e.g., controller principal not in the chat) can invoke Peer/groupUpdate without violating spec normative requirements, provided the receiver's check succeeds\n- Pure scoping: this bead covers only the federation site. The main draft :369, :882 sites are noted but not blocked on this fix",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:38:51Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:40:04Z",
+  "closed_at": "2026-05-12T18:40:04Z",
+  "close_reason": "Closed",
+  "labels": [
+    "federation-draft",
+    "overdetermination",
+    "spec-consistency",
+    "survey-finding"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-uy1m.6",
+      "depends_on_id": "jmap-chat-spec-uy1m",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:38:51Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-fmd",
+  "title": "Summary error table: FCM 200 OK listed as Delivered is misleading",
+  "description": "The delivery failures table lists '200 OK' as 'Delivered (FCM, ADM, HPK, APNs, WNS)' with action 'None'. But the FCM section explicitly warns that FCM v1 returns 200 even when the delivery failed — the error is in the response body. An implementer who reads the summary table first (or only) will not check the FCM response body on 200 and will miss delivery failures. The table entry for FCM 200 should carry a note referring to the FCM error responses section, or be split into platform-specific rows.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:38:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:50Z",
+  "closed_at": "2026-04-26T21:43:50Z",
+  "close_reason": "Closed"
+}

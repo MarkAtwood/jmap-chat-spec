@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-yuw",
+  "title": "Web Push TTL hardcoded at 86400 regardless of urgency",
+  "description": "The Web Push request format hardcodes TTL: 86400 (24 hours) for all urgency levels. A very-low urgency notification queued on a push service for 24 hours is useless noise when eventually delivered. TTL should track urgency level. The guide should note that TTL should be tuned per urgency and provide suggested values (e.g. high=3600, normal=86400, low=604800, very-low=0 or short).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:06:05Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:25Z",
+  "closed_at": "2026-04-26T21:10:25Z",
+  "close_reason": "Closed"
+}

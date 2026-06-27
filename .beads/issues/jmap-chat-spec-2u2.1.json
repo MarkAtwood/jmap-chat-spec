@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-2u2.1",
+  "title": "R2-SEC1: burnOnRead+receiptSharing interaction missing from federation spec",
+  "description": "The burnOnRead field definition in draft-atwood-jmap-chat-00.md (Message object) includes a critical caveat: when the recipient's effective receiptSharing preference is false, no readAt signal reaches the sender, so burnOnRead is not guaranteed to trigger, and senders MUST NOT rely on it for confidentiality. This warning exists only in the base spec. The federation spec (draft-atwood-jmap-chat-federation-00.md, Peer/deliver message.burnOnRead, line 210-211) states only the basic behavioral requirement ('the receiver MUST permanently hard-delete the message immediately after setting readAt') with no cross-reference to or repetition of the receiptSharing interaction caveat. An implementor reading only the federation spec to build a Peer/deliver sender would have incomplete information about a security-critical failure mode. The federation spec should add a cross-reference to the base spec's burnOnRead note or inline the caveat at Peer/deliver message.burnOnRead.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:47:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:53:56Z",
+  "closed_at": "2026-04-27T00:53:56Z",
+  "close_reason": "Fixed: burnOnRead cross-reference added to Peer/deliver (federation-00.md:210)",
+  "labels": [
+    "maintainer-burden",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.1",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:47:48Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

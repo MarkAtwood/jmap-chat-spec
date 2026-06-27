@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-x0q",
+  "title": "wss: credential-expiry MUST conflicts with RFC 8887 MAY",
+  "description": "RFC 8887 §4.2: server 'can either' treat as unauthenticated or close; 'MAY send a Close frame with status code 1008'. draft-atwood-jmap-chat-wss-00 §2: server 'MUST either treat subsequent requests as unauthenticated or close the WebSocket connection with a Close frame status code of 1008'. This upgrades MAY-send-1008 to MUST-use-1008-if-closing, a normative tightening of the parent RFC. Decision: either align with RFC 8887's MAY, or explicitly state this is an intentional strengthening and explain why.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:00:43Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:21:11Z",
+  "closed_at": "2026-04-26T15:21:11Z",
+  "close_reason": "Added explicit sentence acknowledging the intentional normative tightening from RFC 8887 MAY to MUST, with rationale (reliable client recovery on long-lived connections)."
+}

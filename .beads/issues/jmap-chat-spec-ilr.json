@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ilr",
+  "title": "E2EE detection conflated with unknown bodyType",
+  "description": "§6 says 'when a message's bodyType is any other value [than the three plaintext types], the server MUST treat the body as opaque.' This means an unknown plaintext type (e.g. text/html) suppresses the snippet even though the content is unencrypted. The spec never explains how the server detects that a Chat is E2EE vs. just having an unusual body type. These two concepts must be separated.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:50Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:45:50Z",
+  "closed_at": "2026-04-26T20:45:50Z",
+  "close_reason": "Added encrypted Boolean field to ChatMessageEntry. bodySnippet omission now keyed on encrypted:true, not bodyType allowlist. Server sets encrypted based on bodyType, but the omission rule is stable across future plaintext type additions."
+}

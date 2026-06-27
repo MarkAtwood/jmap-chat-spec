@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-v8qt",
+  "title": "VTCCallEndEvent not delivered to backgrounded iOS — CallKit UI lingers",
+  "description": "VTC spec line 1290: server delivers VTCRingEvent via WebSocket AND VTCCallPush via APNs. If callee answers on desktop (WebSocket), iOS device also received VoIP push showing CallKit UI. VTCCallEndEvent with answered_elsewhere dismisses it — but only over WebSocket. Backgrounded iOS with no WebSocket never gets it. CallKit UI lingers until push TTL expires (30-60s).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:48:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:02:35Z",
+  "closed_at": "2026-06-07T06:02:35Z",
+  "close_reason": "Closed"
+}

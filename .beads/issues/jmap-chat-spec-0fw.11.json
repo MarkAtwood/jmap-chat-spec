@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.11",
+  "title": "typing indicator security note under wrong heading",
+  "description": "Security Considerations section places receiveTypingIndicators suppression behavior under Blocked Contacts heading. These are independent features documented in different fields. Move to its own subsection or rename the heading.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:41Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:50Z",
+  "closed_at": "2026-04-27T00:24:50Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "elegance",
+    "opinion",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.11",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:40Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-3pz",
+  "title": "Rate-limit fallback to StateChange: client requirement missing",
+  "description": "§7 says servers MAY fall back to delivering a plain StateChange when rate limits are exceeded. Clients must not break when they receive a StateChange instead of a ChatMessagePush, but the spec has no corresponding client requirement stating this. The client behavior should be normatively specified in the delivery or client-behavior section.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:35:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:23Z",
+  "closed_at": "2026-04-26T20:41:23Z",
+  "close_reason": "Added client MUST sentence: handle StateChange fallback identically to an unaugmented StateChange"
+}

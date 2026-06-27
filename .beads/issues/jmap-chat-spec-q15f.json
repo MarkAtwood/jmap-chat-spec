@@ -1,0 +1,20 @@
+{
+  "id": "jmap-chat-spec-q15f",
+  "title": "Decide: should JMAP Chat engage with DIDs?",
+  "description": "Pure design decision bead, no implementation pending.\n\nQuestion: should JMAP Chat formally engage with Decentralized Identifiers (DIDs, RFC W3C DID-Core) as a principal type alongside ChatContact.id?\n\nPotential touchpoints if yes:\n- ChatContact identity may carry a DID alongside the opaque server-assigned id\n- Mentions may have a DID-scoped form (`@{did}` or similar)\n- Federation peer authentication may bind to DID rather than (or alongside) the current `ownerUserId` mailbox-owner string\n- Push payloads may carry DID identifiers\n- New capability URN `urn:ietf:params:jmap:chat:did` possible\n\nReasons to engage:\n- Aligns JMAP Chat with the broader decentralized-identity ecosystem (AT Protocol / Bluesky, fediverse-adjacent projects, W3C VC stack)\n- Provides a stable identifier that survives mailbox-server changes\n- Future-proofs against post-mailbox identity systems\n\nReasons to not engage:\n- DIDs add operational complexity (method resolution, key rotation, revocation)\n- JMAP Chat's federation model is mailbox-server-bound; DIDs assume server-neutral identity\n- Increases the surface a JMAP Chat server must understand (DID method registries, etc.)\n- The benefit may be deliverable via a separate companion document rather than baking DIDs into the core spec\n\nDecision required: yes, no, or \"yes but as a separate companion draft\". This bead exists to be answered, not to track implementation. Implementation work, if any, would be filed as separate epics blocked on this decision.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:33:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T19:43:10Z",
+  "closed_at": "2026-05-12T19:43:10Z",
+  "close_reason": "Option B \\u2014 minimal engagement via one prose sentence acknowledging DID URIs as valid ChatContact.id form. No companion draft, no new capability.",
+  "labels": [
+    "design-decision",
+    "feature",
+    "identity",
+    "mentions"
+  ]
+}

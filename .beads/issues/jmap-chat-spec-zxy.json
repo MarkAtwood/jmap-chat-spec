@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-zxy",
+  "title": "sentAt purpose undocumented despite ordering prohibition",
+  "description": "§5.2 says sentAt 'MUST NOT be used for ordering' but does not explain what it is for. If it is for display, the spec should say so. If it is present only for completeness or debugging, that should be stated. A prohibition without a stated purpose leaves implementers without guidance on when, if ever, to show this value.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:35:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:16Z",
+  "closed_at": "2026-04-26T20:41:16Z",
+  "close_reason": "Added 'Included for display purposes' to sentAt description"
+}

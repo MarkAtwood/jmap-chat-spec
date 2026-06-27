@@ -1,0 +1,39 @@
+{
+  "id": "jmap-chat-spec-f13f.3",
+  "title": "Federation draft updates: cross-server contact resolution for federated mentions",
+  "description": "Update draft-atwood-jmap-chat-federation-00.md to define cross-server contact resolution for federated user mentions, if Decision 4 from jmap-chat-spec-f13f.1 went that way.\n\nBlocked on jmap-chat-spec-f13f.2.\n\nIf f13f.1 Decision 4 chose \"resolution is purely client-side\": this bead may be a no-op (close as not-needed).\n\nIf f13f.1 Decision 4 chose \"introduce a Peer/resolveContact method\": likely scope:\n- Define a new Peer/* method that, given a textual handle like `alice@example.com`, returns the ChatContact attributes the calling peer needs to construct a local ChatContact\n- Define validation, authentication, and rate-limit rules\n- Define error responses for unknown handles, federation policy refusals, and disabled discovery\n\nIf f13f.1 Decision 4 chose \"use existing /.well-known/jmap discovery\": likely scope:\n- Document the resolution flow (probe /.well-known/jmap at the host, fetch the Session, extract the ownerUserId, map to a local ChatContact)\n- Define caching and TTL behavior\n- Define error handling for unreachable hosts\n\nIn all cases:\n- Confirm that broadcast mentions (fig9 epic) and federated mentions (this epic) compose: a federated user CAN be the target of a per-user mention but is NOT in any broadcast scope's recipient set on the receiver's server unless that receiver is itself federated and a member\n- Update Peer/deliver payload examples to include a federated mention",
+  "acceptance_criteria": "- The resolution mechanism chosen in f13f.1 is documented in the federation draft (or this bead is closed as not-needed if Decision 4 went client-side-only)\n- Composition with broadcast mentions is explicit\n- Examples updated\n- Error handling specified",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:35:57Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T19:54:21Z",
+  "closed_at": "2026-05-12T19:54:21Z",
+  "close_reason": "Not needed per f13f.1 Decision 4. Resolution mechanism is deployment-defined; spec does not introduce a Peer/resolveContact method or mandate /.well-known/jmap-based discovery for textual-form resolution.",
+  "labels": [
+    "feature",
+    "federation",
+    "federation-draft",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-f13f.3",
+      "depends_on_id": "jmap-chat-spec-f13f.2",
+      "type": "blocks",
+      "created_at": "2026-05-12T10:35:56Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-f13f.3",
+      "depends_on_id": "jmap-chat-spec-f13f",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:35:56Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "jmap-chat-spec-fig9.6",
+  "title": "Implementer guide updates: mention_broadcast rename + broadcast scopes",
+  "description": "Update jmap-chat-implementer-guide.md to track the main-draft permission rename in fig9.2 and the broader broadcast-mention feature.\n\nConcrete changes needed:\n- Line 314 references the old name 'mention_all'; rename to 'mention_broadcast' (main draft renamed in fig9.2)\n- Wherever the guide describes the mention authorization model, update the description to cover broadcast scopes (`@everyone`, `@here`, `@admins`) not just per-user @mentions\n- Add implementer guidance on the deployment-defined predicates for `@here` (which presence states qualify as 'active') and `@admins` (which permissions/roles qualify as administrative)\n- Add implementer guidance on the Chat.muted bypass behavior for targeted broadcast mentions (deliberate UX, deployment-defined override mechanism)\n\nThis bead is non-normative (implementer guide). Out of scope for fig9.2 because fig9.2's description excludes guide updates; out of scope for fig9.5 because fig9.5 is the push-platform-guide, not the implementer-guide.\n\nBlocked on fig9.2 (main draft must define the renamed permission and the BroadcastMention type first) — already implemented at the time this bead is created.",
+  "acceptance_criteria": "- 'mention_all' no longer appears in jmap-chat-implementer-guide.md\n- Broadcast scopes covered in the mention-authorization narrative\n- Predicate-definition guidance ('here'/'admins' deployment-defined)\n- Chat.muted bypass implementer guidance present\n- Non-normative tone preserved (no MUST/SHOULD/MAY upgrades)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "bd-spin/bd-spin-20260513T000635Z-2256273",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-13T00:11:54Z",
+  "created_by": "bd-spin/bd-spin-20260513T000635Z-2256273",
+  "updated_at": "2026-05-13T00:15:38Z",
+  "closed_at": "2026-05-13T00:15:38Z",
+  "close_reason": "Renamed mention_all → mention_broadcast in §2 listing. Dropped 'fig9.2 pending' markers in §2.3 and §6.1, replaced with paragraphs reflecting the now-landed main-draft additions. Existing broadcast-mention coverage in §2.3 and §6.1 already satisfied all other acceptance criteria.",
+  "labels": [
+    "feature",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fig9.6",
+      "depends_on_id": "jmap-chat-spec-fig9.2",
+      "type": "blocks",
+      "created_at": "2026-05-12T17:11:57Z",
+      "created_by": "bd-spin/bd-spin-20260513T000635Z-2256273",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-fig9.6",
+      "depends_on_id": "jmap-chat-spec-fig9",
+      "type": "parent-child",
+      "created_at": "2026-05-12T17:11:54Z",
+      "created_by": "bd-spin/bd-spin-20260513T000635Z-2256273",
+      "metadata": "{}"
+    }
+  ]
+}

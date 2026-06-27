@@ -1,0 +1,18 @@
+{
+  "id": "jmap-chat-spec-uy1m",
+  "title": "Tier 2 overdetermination cleanups",
+  "description": "Five independent overdetermination findings from the post-c93e545 survey. None contradict the main draft; each one is a place where the spec is more prescriptive than wire interop requires.\n\nFindings:\n- Children 2C: ULID mandate for IDs that don't need time-ordering (main draft, 7 sites)\n- Child 2D: persistent-outbox mechanism prescription (federation draft)\n- Child 2E: receiveTypingIndicators cache TTL hardcoded at 60s (federation draft)\n- Child 2F: outbound presence rate limit hardcoded at 30s (federation draft)\n- Child 2G: edit-revision push contradicts retention permission (main draft)\n\nThese can be done piecemeal; no ordering constraint between them. Each is small (1-7 line edit). Suggested approach: pick them off as time allows rather than batching.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:46:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T18:51:33Z",
+  "close_reason": "all steps complete",
+  "labels": [
+    "overdetermination",
+    "spec-consistency"
+  ]
+}

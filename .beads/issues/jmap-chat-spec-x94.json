@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-x94",
+  "title": "wss-guide: typing sender cross-reference too vague to be actionable",
+  "description": "The guide says 'The mechanism by which a sender signals typing state to the server is defined outside this spec — see the main JMAP Chat spec or the federation spec for the relevant method.' A client developer implementing the send side cannot find the method from this. Name the method explicitly.",
+  "notes": "Blocked by jmap-chat-spec-53o — the spec itself is missing the owner-facing typing method. Cannot fix the guide cross-reference until the spec defines the method.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:43:43Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:53:53Z",
+  "closed_at": "2026-04-26T22:53:53Z",
+  "close_reason": "Closed"
+}

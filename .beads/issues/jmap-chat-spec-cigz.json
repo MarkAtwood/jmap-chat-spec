@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-cigz",
+  "title": "Two StateChange events for single call-end — no dedup guidance",
+  "description": "When call ends: VTCCall StateChange fires (VTC subscribers) and Chat StateChange fires (Chat subscribers, activeCallId clears). Client subscribed to both gets two round-trips for one logical event. Not a bug per se but no dedup guidance for clients.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:48:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:01:38Z",
+  "closed_at": "2026-06-07T06:01:38Z",
+  "close_reason": "Closed"
+}

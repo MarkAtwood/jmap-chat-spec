@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.6",
+  "title": "Fix jmap-vtc-recording-guide.md: cross-account blob download violates RFC 8620",
+  "description": "MUST-FIX: The recording guide walkthrough shows one account downloading a blob owned by another account. RFC 8620 Section 6.2 restricts blob download to the owning account — the downloadUrl template includes accountId and the server MUST verify the authenticated user has access to that account's blobs. The guide needs to either: (a) show the recording being shared via a mechanism that grants cross-account access (e.g., JMAP Sharing), or (b) show the recording owner providing a pre-signed URL or copying the blob to the recipient's account, or (c) note that the server implementation must grant blob access to all call participants regardless of account boundaries (and that this is a spec extension beyond RFC 8620).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:11:28Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:53Z",
+  "closed_at": "2026-06-07T18:23:53Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.6",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:11:27Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

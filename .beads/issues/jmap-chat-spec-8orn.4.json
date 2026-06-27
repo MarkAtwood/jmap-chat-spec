@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-8orn.4",
+  "title": "VTC: add active/dominant speaker signaling",
+  "description": "Jitsi and Zoom surface active-speaker detection (who is currently talking) for speaker-view, spotlight, and Last-N tile optimization. The draft has speakerTimeMs (cumulative) but no active-speaker indicator. Add either an activeSpeakerId field on VTCCall (server-set, updated by media layer) or a VTCActiveSpeakerEvent ephemeral event. The event approach is better — active speaker changes frequently.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:33Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:21Z",
+  "closed_at": "2026-06-05T22:53:21Z",
+  "close_reason": "VTCActiveSpeakerEvent defined as part of the in-call ephemeral events block in issue .2.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.4",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:32Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-8orn.4",
+      "depends_on_id": "jmap-chat-spec-8orn.2",
+      "type": "blocks",
+      "created_at": "2026-06-05T15:34:46Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

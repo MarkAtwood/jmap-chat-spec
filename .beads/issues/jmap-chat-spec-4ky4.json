@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-4ky4",
+  "title": "VTCParticipant.displayName drifts from ChatContact mid-call",
+  "description": "VTC spec line 290: displayName derived from ChatContact/user profile. But ChatContact.displayName and SpaceMember.nick (Chat line 680) can change mid-call. No resync rule defined. VTCParticipantEvent snapshots displayName at event time. Clients see different names in call UI vs chat UI for same user.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:48:28Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:02:33Z",
+  "closed_at": "2026-06-07T06:02:33Z",
+  "close_reason": "Closed"
+}

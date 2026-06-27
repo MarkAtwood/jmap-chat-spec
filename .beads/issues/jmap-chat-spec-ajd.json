@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-ajd",
+  "title": "APNs: missing error responses section",
+  "description": "APNs is the most complex push platform in the guide but has no 'Error responses' section. APNs returns a JSON reason string in the response body (e.g. BadDeviceToken, Unregistered, ExpiredToken, TooManyRequests) that is the authoritative signal for what action to take — HTTP status alone is not sufficient, the same pattern the FCM section warns about. Without this guidance, implementers may destroy valid subscriptions on temporary errors or retry indefinitely on permanent ones. This is especially important given APNs' strict rate limits and the cost of unnecessary retries.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:38:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:48Z",
+  "closed_at": "2026-04-26T21:43:48Z",
+  "close_reason": "Closed"
+}

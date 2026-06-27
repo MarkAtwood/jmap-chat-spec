@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-kq1.4",
+  "title": "Peer/typing receiver behavior missing blocked-contact check",
+  "description": "File: draft-atwood-jmap-chat-federation-00.md, Peer/typing Receiver Behavior section (line 333) and Security Considerations / Blocked Contacts section (line 593-595).\n\nThe Blocked Contacts security section says 'Messages from a contact whose blocked field is true MUST be silently dropped.' The word 'Messages' applies specifically to Peer/deliver payloads. The Peer/typing receiver behavior does not mention blocked contacts and does not require dropping the event when the sender is blocked.\n\nImpact: A peer whose ChatContact.blocked is true on the receiving server can still cause typing indicator UI updates to appear on the owner's connected clients by calling Peer/typing. This is inconsistent with the intent of the blocked-contact feature, which is to prevent all interaction signals from a blocked user from reaching the owner.\n\nCompare: the main spec Chat/typing server behavior (draft-atwood-jmap-chat-00.md line 906) checks receiveTypingIndicators but does not apply to inbound Peer/typing; Peer/deliver step 4 (federation line 248) explicitly checks blocked status for messages; there is no equivalent for Peer/typing.\n\nFix: Add to Peer/typing Receiver Behavior: the receiving server MUST check whether the sender's ChatContact record has blocked: true. If so, the server MUST silently drop the event and return success without delivering any typing push event to the owner's clients. Also extend the Blocked Contacts security section to explicitly cover Peer/typing alongside Peer/deliver.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:29:32Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:39Z",
+  "closed_at": "2026-04-27T00:24:39Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "correctness",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-kq1.4",
+      "depends_on_id": "jmap-chat-spec-kq1",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:29:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

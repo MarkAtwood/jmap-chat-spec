@@ -1,0 +1,31 @@
+{
+  "id": "jmap-chat-spec-4lbr.1",
+  "title": "Federation draft MUSTs full overdetermination sweep",
+  "description": "The federation draft has 83 MUSTs. The post-c93e545 survey caught three findings (uy1m.2 outbox durability, uy1m.3 60s receiveTypingIndicators TTL, uy1m.4 30s outbound presence rate). These were the obvious ones. A full sweep might surface more, especially:\n\n- Peer discovery and /.well-known/jmap interaction rules\n- Outbox retry semantics (already-impl-defined at lines 599, 601 but worth confirming nothing else slipped)\n- Receipt-sharing inbound suppression edge cases\n- Peer/groupUpdate behavior when membership changes mid-flight\n- Peer authentication identity-binding rules at lines 130, 145, 151\n- Federation MUSTs related to identity verification at lines 246-271\n\nMethod: read draft-atwood-jmap-chat-federation-00.md end-to-end with the same lens as the main-draft survey (Pattern A through E from the earlier work). File any findings as new children under uy1m (Tier 2) or ic5s (Tier 3) as appropriate, or as standalone beads. Close this bead with a summary of what was found (or 'no findings').",
+  "acceptance_criteria": "- Federation draft read end-to-end with overdetermination lens\n- Each finding has a child bead with file:line citation and recommended fix shape (matching the established Tier 2 / Tier 3 conventions)\n- This bead's close-reason summarizes what was found\n- 'No findings' is an acceptable outcome and should be stated as such if true (anti-bikeshedding)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:11:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:39:12Z",
+  "closed_at": "2026-05-12T18:39:12Z",
+  "close_reason": "Closed",
+  "labels": [
+    "federation-draft",
+    "spec-consistency",
+    "survey"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-4lbr.1",
+      "depends_on_id": "jmap-chat-spec-4lbr",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:11:39Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

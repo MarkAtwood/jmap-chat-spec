@@ -1,0 +1,7 @@
+{
+  "id": "1778615609000000000",
+  "issue_id": "jmap-chat-spec-f13f.1",
+  "author": "Mark Atwood",
+  "text": "Resolved in collaborative session 2026-05-12:\n\nD1 (Textual form): Mastodon-style `@user@host` AND DID URI forms (`@did:web:host`, etc.) are both recognized composer-side. Multiple forms coexist; the wire format is the same.\n\nD2 (Wire representation): `type: \"user\"` with the federated id in the existing `id` field. No new mention type value, no separate `federatedHandle` field. Matches the existing rich-body example at line 1307 (`userId: \"user:alice@example.com\"`).\n\nD3 (Client-side textual parsing): Structured-mention pattern is sufficient. Spec does not standardize pattern-matching of @user@host strings inside the body; the sender's client recognizes the textual form, creates a structured Mention entry, and ships that. Parsing is deployment-defined.\n\nD4 (Resolution mechanism): Deployment-defined. Client-side OR server-side resolution are both acceptable. Spec does NOT introduce a Peer/resolveContact method or mandate /.well-known/jmap discovery for textual-form resolution. This makes f13f.3 a no-op (closed separately as not-needed).",
+  "created_at": "2026-05-12T19:53:29Z"
+}

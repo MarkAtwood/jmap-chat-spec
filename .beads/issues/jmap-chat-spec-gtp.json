@@ -1,0 +1,33 @@
+{
+  "id": "jmap-chat-spec-gtp",
+  "title": "Add per-chat receipt granularity override",
+  "description": "The spec only has muted/muteUntil on Chat (notification suppression), not receipt sending. Users need per-Chat override of the account-level receiptSharing preference (enable for partner, disable for boss). Affects draft-atwood-jmap-chat-00.md (Chat object fields). Should be done after or alongside the account-level receipt opt-in issue.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:58:07Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:32:43Z",
+  "closed_at": "2026-04-27T00:32:43Z",
+  "close_reason": "Added Chat.receiptSharing optional per-chat override field (chat-00.md:441); updated federation Sender Behavior to use effective preference (Chat.receiptSharing || PresenceStatus.receiptSharing)",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-gtp",
+      "depends_on_id": "jmap-chat-spec-scp",
+      "type": "blocks",
+      "created_at": "2026-04-26T15:58:27Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-gtp",
+      "depends_on_id": "jmap-chat-spec-cj6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:01:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

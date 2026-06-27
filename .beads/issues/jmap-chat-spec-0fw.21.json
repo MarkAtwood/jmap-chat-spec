@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.21",
+  "title": "No spec text on when receiveTypingIndicators=false takes effect on open connections",
+  "description": "Chat.receiveTypingIndicators can be changed via Chat/set while a WebSocket connection is open and a ChatStreamEnable subscription is active. The spec requires checking at delivery time (correct for correctness), but does not address the latency window between the Chat/set call completing and the server's delivery path observing the new value.\n\nIn a distributed deployment (multiple WebSocket nodes behind a load balancer), a Chat/set write may propagate to the delivery path with a delay. The spec is silent on:\n- Whether the new value must take effect immediately (within the same request/response cycle) or at best-effort\n- Whether any in-flight typing events already queued before the field change should be suppressed or allowed through\n\nThis creates a spec maintenance headache: implementers will make different choices, and the spec provides no normative baseline to test conformance against. The spec should add a sentence: 'The updated value of receiveTypingIndicators MUST be used for events delivered after the Chat/set response is returned to the client. Events already queued for delivery before the Chat/set call completes MAY be delivered under the prior setting.'\n\nRelevant locations: draft-atwood-jmap-chat-00.md Chat/set Updating a Chat section; draft-atwood-jmap-chat-wss-00.md Section 6 Security ephemeral event authorization.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:12Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:43Z",
+  "closed_at": "2026-04-27T00:24:43Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "maintainer-burden",
+    "review",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.21",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:12Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

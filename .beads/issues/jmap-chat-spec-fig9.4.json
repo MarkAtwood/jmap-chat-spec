@@ -1,0 +1,40 @@
+{
+  "id": "jmap-chat-spec-fig9.4",
+  "title": "Push draft updates: typed mention scope in payload",
+  "description": "Update draft-atwood-jmap-chat-push-00.md to carry broadcast-scope mention information in the push payload.\n\nBlocked on jmap-chat-spec-fig9.2 (main draft must define wire format first).\n\nCurrent state (push draft lines 177-180):\n- `hasMention` (Boolean): true if account owner's ChatContact.id appears in mentions\n- `hasMentionAll` (Boolean): true if message was sent with Space-wide mention scope\n\nPer Decision 6 in jmap-chat-spec-fig9.1, this likely changes to either per-scope flags or a typed scopes array.\n\nLikely scope:\n- Replace or augment `hasMention`/`hasMentionAll` per Decision 6\n- Update server-side computation of these fields (especially `@here` recipient resolution at delivery time)\n- Update push urgency mapping if per-scope urgency is part of the design\n- Update IANA-style examples in the push draft\n\nCross-document consistency: the field names in the push draft MUST match the field names introduced in the main draft (jmap-chat-spec-fig9.2).",
+  "acceptance_criteria": "- Push payload fields updated per Decision 6\n- Field names match main draft (jmap-chat-spec-fig9.2)\n- Urgency mapping (if applicable) documented\n- Examples updated to show broadcast mention payloads",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "bd-spin/bd-spin-20260513T000635Z-2256273",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:34:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-13T00:20:44Z",
+  "close_reason": "Replaced hasMentionAll with per-recipient mentionScopes String[] in ChatMessageEntry. Dual-path computation (Message.broadcastMentions OR rich-body 'broadcast' spans), filtered to scopes for which the owner is in the receiving server's local recipient set. mentionUrgency trigger updated; default and required-support property sets updated; example updated and a second variant added showing mentionScopes:['here']. Chat push platform guide will follow under fig9.5.",
+  "labels": [
+    "feature",
+    "guides",
+    "mentions",
+    "push-draft"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fig9.4",
+      "depends_on_id": "jmap-chat-spec-fig9.2",
+      "type": "blocks",
+      "created_at": "2026-05-12T10:34:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-fig9.4",
+      "depends_on_id": "jmap-chat-spec-fig9",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:34:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-zie",
+  "title": "FCM iOS note: missing prerequisite that APNs auth key must be configured in Firebase",
+  "description": "The FCM section notes that iOS clients using FCM should use an 'apns' block instead of 'android' in the request. This is correct but incomplete: FCM can only deliver to iOS if the Firebase project has an APNs auth key (.p8) or APNs certificate configured in the Firebase console. Without that setup, FCM accepts the request (200 OK) but never delivers to iOS. Implementers following the guide who skip that Firebase setup step will get silent delivery failures. The note should mention this prerequisite.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:39:03Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:43:47Z",
+  "closed_at": "2026-04-26T21:43:47Z",
+  "close_reason": "Closed"
+}

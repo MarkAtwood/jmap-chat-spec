@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.16",
+  "title": "receiveTypingIndicators and WSS chatIds filter are parallel suppression mechanisms with no reconciliation",
+  "description": "There are two independent ways to suppress typing indicators for a given chat:\n1. Chat.receiveTypingIndicators = false (persistent, per-Chat, cross-device, stored server-side)\n2. Omitting a chatId from the chatIds list in ChatStreamEnable (per-connection, session-scoped, not persisted)\n\nThe spec never explains the relationship between these two mechanisms or when to use which. A client author reading both documents will encounter:\n- receiveTypingIndicators: described as an owner-side preference, not shared with peers\n- ChatStreamEnable chatIds: described as scoping delivery to a specific view\n\nThese serve different purposes semantically (persistent user preference vs. transient view scope), but neither document states this distinction. A server implementer might incorrectly implement one as a fallback for the other. A client implementer might not realize both need to be considered.\n\nThe spec should add a note clarifying the intended relationship: receiveTypingIndicators is a persistent, cross-device user preference; chatIds scoping is a session-level UI optimization. Servers enforce both independently. Clients that want to persistently opt out use receiveTypingIndicators; clients that want to scope delivery to an open window use chatIds.\n\nRelevant locations: draft-atwood-jmap-chat-00.md Chat.receiveTypingIndicators field; draft-atwood-jmap-chat-wss-00.md ChatStreamEnable section.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:53Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:44Z",
+  "closed_at": "2026-04-27T00:24:44Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "maintainer-burden",
+    "review",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.16",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:53Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

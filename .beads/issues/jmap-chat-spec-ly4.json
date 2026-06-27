@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ly4",
+  "title": "APNs: apns-expiration header not mentioned",
+  "description": "APNs has an apns-expiration header (Unix timestamp) that is the APNs analog of Web Push TTL. It sets when APNs should stop trying to deliver the notification. Without it, APNs queues the notification indefinitely. For time-sensitive messages or very-low urgency pushes, not setting it causes stale notification delivery. The guide should mention apns-expiration alongside apns-priority.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:06:08Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:25Z",
+  "closed_at": "2026-04-26T21:10:25Z",
+  "close_reason": "Closed"
+}

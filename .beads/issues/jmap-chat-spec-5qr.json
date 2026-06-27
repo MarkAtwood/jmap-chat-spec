@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-5qr",
+  "title": "main: slow mode MUST on client conflicts with server-side enforcement",
+  "description": "Chat.slowModeSeconds says 'each member MUST wait at least this many seconds between messages in this channel' but then says 'Enforced server-side; clients SHOULD display a countdown.' The MUST is on the member (client), but enforcement is server-side — a contradiction. Decision: rephrase as 'the server MUST reject messages sent within this interval; clients SHOULD display a countdown.'",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:33:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:53:20Z",
+  "closed_at": "2026-04-26T15:53:20Z",
+  "close_reason": "Replaced client-side 'each member MUST wait' with server-side 'server MUST reject with rateLimited'. Added the error code. Client countdown display remains SHOULD. No more contradiction between MUST on member and 'enforced server-side'."
+}

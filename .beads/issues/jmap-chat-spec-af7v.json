@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-af7v",
+  "title": "Flesh out Scene and Scene WSS specs to match Chat/VTC density",
+  "description": "The Scene specs are structurally complete but thin compared to Chat and VTC. Add lifecycle examples, inline JSON for every method, SetError conditions, query filter tables, security sections, push notification handling, and blocked-sender suppression.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-06T19:41:15Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-06T19:55:46Z",
+  "close_reason": "all steps complete"
+}

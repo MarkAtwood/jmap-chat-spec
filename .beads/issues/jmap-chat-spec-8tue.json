@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-8tue",
+  "title": "P1: Calendars spec — 4 gaps",
+  "description": "1. Principal/getAvailability method name may change across draft revisions. 2. RSVP participants key not guaranteed to be principalId. 3. Guide two new optional fields wrong (only one). 4. Guide cross-ref to push guide unsubstantiated.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:45:05Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:53:37Z",
+  "closed_at": "2026-06-07T18:53:37Z",
+  "close_reason": "Closed"
+}

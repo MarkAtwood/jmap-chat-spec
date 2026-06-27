@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-2vo",
+  "title": "Discovery filter on spaceId is SHOULD but must work for clients",
+  "description": "Section 3 says 'Servers SHOULD support spaceId as a filter criterion in FileNode/query'. The only defined discovery mechanism depends on this filter. If a server does not support it (which SHOULD permits), clients have no efficient discovery path and must scan all FileNodes. Upgrade to MUST or define a fallback discovery mechanism.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:49:32Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:52:28Z",
+  "closed_at": "2026-04-26T19:52:28Z",
+  "close_reason": "Closed"
+}

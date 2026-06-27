@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-uy1m.5",
+  "title": "Edit-revision MUST push contradicts retention permission",
+  "description": "File: draft-atwood-jmap-chat-00.md\nLines: 973 (vs context at 546)\n\nCurrent state — line 546 already permits servers to limit retained revisions:\n  \"Servers MAY limit the number of retained revisions; if so, older revisions MAY be elided.\"\n\nBut the edit procedure at line 973 still mandates a per-edit push:\n  \"Push a MessageRevision onto editHistory with the current body, bodyType, and current server time as editedAt.\"\n\nA privacy-focused deployment may legitimately want to retain zero edit history (the `editedAt` flag alone tells clients an edit occurred; the prior text is gone). As written, the spec straddles: line 546 permits retention limits but line 973 mandates each individual revision push.\n\nTwo viable fixes (pick one):\n\nOption A — soften line 973 step 1:\n  \"If the server retains edit history, push a MessageRevision onto editHistory with the current body, bodyType, and current server time as editedAt.\"\n\nOption B — amend line 546 to be explicit about zero retention:\n  \"Servers MAY limit the number of retained revisions, including to zero; if so, older revisions MAY be elided.\"\n\nOption A is cleaner because it removes the MUST contradiction at the point of action; Option B leaves the procedural MUST intact and reinterprets it via the retention paragraph. Recommend Option A.",
+  "acceptance_criteria": "- Line 973 step 1 does not contradict line 546\n- A zero-retention deployment is unambiguously permitted by the spec text\n- The editedAt-flag-set behavior on edits is retained unchanged\n- No change to clients' observability of `editedAt` (which is set regardless of retention)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:47:41Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:47:03Z",
+  "closed_at": "2026-05-12T18:47:03Z",
+  "close_reason": "Closed",
+  "labels": [
+    "overdetermination",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-uy1m.5",
+      "depends_on_id": "jmap-chat-spec-uy1m",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:47:40Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

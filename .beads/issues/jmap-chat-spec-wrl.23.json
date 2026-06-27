@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.23",
+  "title": "DECISION: receiptSharing default true for backward compatibility",
+  "description": "PresenceStatus.receiptSharing defaults to true (receipts enabled). This is correct for backward compatibility: federation peers and existing implementations that predate this field expect read receipts to flow by default. A default of false would silently break existing read receipt flows for any deployment that upgrades to support this field without explicitly setting it. Opt-out (default true, user turns off) is also the conventional pattern for social protocols where read receipts have historically been the norm — iMessage, WhatsApp, Signal all default receipts on. The privacy-preserving direction (false) is available, but the user must affirmatively choose it, consistent with the principle of not silently changing existing behavior.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:41:05Z",
+  "closed_at": "2026-04-27T00:41:05Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.23",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:10Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

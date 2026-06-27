@@ -1,0 +1,7 @@
+{
+  "id": "1778611958000000000",
+  "issue_id": "jmap-chat-spec-6gzj.1",
+  "author": "Mark Atwood",
+  "text": "Marking human-needed. As of this session (2026-05-12), main is many commits ahead of origin/main — the count is now larger than the 7 noted in the original bead because this session committed ~13 additional spec-fix commits (we5b governance, 4lbr surveys, ex4u/0yka push fixes, dim0/87qs blocked-sender corpus-wide, uy1m.1-6 and ic5s.1-4 Tier 2/3 polish). Recommend: push the batch when convenient. Per loop instructions, agent does not push autonomously.",
+  "created_at": "2026-05-12T18:52:38Z"
+}

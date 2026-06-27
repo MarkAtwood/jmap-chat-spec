@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-gud",
+  "title": "Self-send suppression breaks multi-device state sync",
+  "description": "§7 says 'The server MUST NOT deliver a ChatMessagePush for a message where the sender is the account owner.' On a multi-device account, device B needs to know the user sent from device A in order to sync state (e.g. unread counts, notification badges). This blanket rule breaks that use case. The spec should clarify whether the intent is to suppress notifications on the sending device only, or on all devices for that account.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:42:53Z",
+  "closed_at": "2026-04-26T20:42:53Z",
+  "close_reason": "Decision: Option A — blanket self-send suppression on all devices is intentional. Multi-device state sync happens via the state token carried in pushes for inbound messages, not via dedicated self-send delivery."
+}

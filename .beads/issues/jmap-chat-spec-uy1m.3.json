@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-uy1m.3",
+  "title": "60s receiveTypingIndicators cache TTL hardcoded",
+  "description": "File: draft-atwood-jmap-chat-federation-00.md\nLines: 398-400\n\nCurrent text:\n  \"Servers that cache a remote participant's `receiveTypingIndicators` value SHOULD use a TTL of no more than 60 seconds, as there is no federation notification mechanism when a remote user updates this preference.\"\n\nThe cache exists only inside the sending server's memory. Nothing about its TTL is observable on the wire. The only externally observable behavior is \"how stale a remote preference may be when we suppress vs. forward typing\". Different deployments have legitimately different tolerance:\n- A high-trust bilateral federation between corporate peers may tolerate hours\n- An open federation between strangers may want seconds\n\n60 seconds is a deployment-internal parameter masquerading as a normative requirement.\n\nSuggested rewording:\n  \"Servers that cache a remote participant's `receiveTypingIndicators` value SHOULD use a short TTL; the specific value is implementation-defined. As there is no federation notification mechanism when a remote user updates this preference, the TTL chosen affects how long a stale value may persist after a remote user opts out of typing-indicator forwarding.\"",
+  "acceptance_criteria": "- The 60-second number is removed\n- The guidance about lack-of-federation-notification consequence is retained\n- No companion change required in the main draft (the field itself is appropriately spec'd at line 451)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:47:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:47:34Z",
+  "closed_at": "2026-05-12T18:47:34Z",
+  "close_reason": "Closed",
+  "labels": [
+    "overdetermination",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-uy1m.3",
+      "depends_on_id": "jmap-chat-spec-uy1m",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:47:39Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

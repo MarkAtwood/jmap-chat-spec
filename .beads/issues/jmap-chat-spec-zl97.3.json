@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-zl97.3",
+  "title": "Cover contentPolicy/rateLimit errors",
+  "description": "Spec sections 8.6-8.7 define contentPolicy and rateLimit SetError types for content moderation and spam prevention. The guide error table in section 10 omits both.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:16:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:26:34Z",
+  "closed_at": "2026-06-07T02:26:34Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-zl97.3",
+      "depends_on_id": "jmap-chat-spec-zl97",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:16:36Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.2",
+  "title": "receiveTypingIndicators check is O(N) DB reads per fan-out in group chats",
+  "description": "In Chat/typing server behavior (draft-atwood-jmap-chat-00.md line 904) and ChatTypingEvent delivery (draft-atwood-jmap-chat-wss-00.md line 214), the spec requires checking each recipient's Chat.receiveTypingIndicators at delivery time. For a group chat or Space channel with N members, one incoming Chat/typing signal triggers N independent per-recipient Chat record lookups to check that preference before deciding whether to deliver. Typing events arrive continuously (rate-limited to 1/3s per sender, but multiple senders can fire simultaneously). The spec has no provision for caching or batching these lookups at the pub/sub layer. The common case (nearly all users have receiveTypingIndicators: true) pays the same cost as the rare opt-out case. A more efficient design would maintain an in-memory set of (chatId, ownerId) pairs where the preference is false, updated only on Chat/set mutations, so the fan-out path can skip the DB read entirely for the dominant case. The spec should at minimum acknowledge the per-recipient lookup cost and recommend against naïve per-event DB reads.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:26Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:49Z",
+  "closed_at": "2026-04-27T00:24:49Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "efficiency",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.2",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:25Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

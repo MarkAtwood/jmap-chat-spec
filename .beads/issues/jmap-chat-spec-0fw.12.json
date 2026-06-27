@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-0fw.12",
+  "title": "receiveTypingIndicators: default true preserves existing behavior",
+  "description": "The field defaults to true, meaning typing indicators are delivered unless a user explicitly opts out. Defaulting to false would suppress typing indicators for all users who do not explicitly set the field, breaking the common case silently and breaking interoperability with existing clients that do not set the field at all. True-as-default is the conservative, safe choice: opt-out requires an explicit act, and the feature works correctly out of the box for all deployments that do not touch the field.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:43Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:47Z",
+  "closed_at": "2026-04-27T00:24:47Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.12",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:42Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

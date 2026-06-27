@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.25",
+  "title": "wss-guide: client typing section omits receiveTypingIndicators client-side behavior",
+  "description": "In jmap-chat-wss-guide.md, the 'Handling typing indicators' client implementation section makes no mention of receiveTypingIndicators. A first-time client implementor reading this section will wonder: should the client suppress Chat/typing calls when the local Chat record has receiveTypingIndicators: false? Should the client read this field before calling Chat/typing? The spec says suppression is server-enforced and Chat/typing always succeeds from the sender's perspective regardless of the recipient's preference — but the guide never explains this. A short note clarifying that receiveTypingIndicators is a server-side delivery preference (not a client-side send gate) would prevent implementors from incorrectly checking it before calling Chat/typing.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:51Z",
+  "closed_at": "2026-04-27T00:24:51Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.25",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:26Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

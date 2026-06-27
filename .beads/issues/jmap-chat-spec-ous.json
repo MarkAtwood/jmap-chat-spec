@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ous",
+  "title": "Add capability fallback guidance to jmap-chat-push-platform-guide.md",
+  "description": "jmap-chat-wss-guide.md has a thorough Checking capabilities section with an explicit fallback ladder: if urn:ietf:params:jmap:chat:websocket is absent, fall back to EventSource; if that too is absent, fall back to HTTP polling. jmap-chat-push-platform-guide.md checks for urn:ietf:params:jmap:chat:push capability but says nothing about what clients should do if the capability is absent. Add guidance: if the capability is absent, fall back to standard StateChange subscriptions (RFC 8620 PushSubscription without chatPush); this means clients will receive plain StateChange events and must call Message/changes to find new messages — the same flow as the rate-limit fallback already documented in this guide.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T02:31:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T02:53:19Z",
+  "closed_at": "2026-04-27T02:53:19Z",
+  "close_reason": "Added capability fallback guidance to Overview section"
+}

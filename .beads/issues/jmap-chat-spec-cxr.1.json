@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-cxr.1",
+  "title": "Decay timer value inconsistency: spec says 10s, guide says 8s",
+  "description": "After round-2 edits, draft-atwood-jmap-chat-00.md line 912 now contains a normative value: 'if no typing event is received for a given (chatId, senderId) pair within 10 seconds, the client MUST hide the typing indicator for that pair.'\n\nHowever, jmap-chat-wss-guide.md line 205-206 still says: 'if you receive no further event for a (chatId, senderId) pair within 8 seconds, hide the indicator automatically.'\n\nThese two values are inconsistent. A client implementer reading only the guide will apply an 8-second decay timer, which is shorter than the 10-second MUST in the normative spec. This creates a subtle conformance gap: an implementation following the guide would be non-conformant with the normative text.\n\nThe spec's 10-second value was presumably chosen to give a safe margin above the 3-second server rate limit (3x the rate limit gives headroom for jitter and delayed delivery). The guide's 8-second value predates the normative fix and was written as an approximation. The guide should be updated to match the normative value (10 seconds) so that an implementer following the guide produces a conformant implementation.\n\nFix: Update jmap-chat-wss-guide.md line 206 to say 10 seconds (matching the normative MUST in draft-atwood-jmap-chat-00.md line 912).",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:34:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:36Z",
+  "closed_at": "2026-04-27T00:24:36Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "correctness",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-cxr.1",
+      "depends_on_id": "jmap-chat-spec-cxr",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:34:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-cj6",
+  "title": "Read receipt privacy and opt-in controls",
+  "description": "The spec ships read receipts (deliveryReceipts, readAt, Peer/receipt) with no opt-out, no symmetry rule, and no per-chat granularity. This epic covers the full set of privacy-preserving controls: account-level opt-in, symmetry enforcement, per-chat override, delivered-to-device state distinction, and timestamp coarsening guidance.",
+  "notes": "Review converged after 3 rounds. Final review: jmap-chat-spec-rix. R1: 5P0+3P1+3P2 fixed. R2: 1P0+1P1+2P2 fixed (burnOnRead causal error corrected). R3: 0 findings. 90% confidence.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:01:23Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-27T00:34:28Z",
+  "close_reason": "all steps complete"
+}

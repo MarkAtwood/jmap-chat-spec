@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-2u2.12",
+  "title": "R2-SEC4: wrl.16 resolved",
+  "description": "wrl.16: 'ambiguous MUST return subject' — the phrase 'MUST return subject' does not appear anywhere in the current spec (searched draft-atwood-jmap-chat-00.md and companion drafts). The field or phrasing this R1 item referred to has been removed or rewritten. No 'subject' field exists in the current type definitions. Resolved by prior rewrite.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:49:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:54:21Z",
+  "closed_at": "2026-04-27T00:54:21Z",
+  "close_reason": "wrl.16 no longer present in text",
+  "labels": [
+    "opinion",
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.12",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:49:00Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

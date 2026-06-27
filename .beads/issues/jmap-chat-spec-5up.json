@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-5up",
+  "title": "Add JMAP Metadata notes to Message, Chat, and Space sections",
+  "description": "In draft-atwood-jmap-chat-00, add informative notes (similar to existing Space/RFC9670 and Space/FileNode notes) in the Message, Chat, and Space sections: implementations MAY support the JMAP Metadata extension (draft-ietf-jmap-metadata-01) for private client-side annotations on these objects, using objectType values 'Message', 'Chat', and 'Space'. Use cases: per-message bookmarks, per-chat color tags, per-Space custom labels. No new spec required.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T16:43:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T17:20:39Z",
+  "closed_at": "2026-04-26T17:20:39Z",
+  "close_reason": "Closed"
+}

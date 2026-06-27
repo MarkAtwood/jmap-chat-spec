@@ -1,0 +1,18 @@
+{
+  "id": "jmap-chat-spec-6gzj",
+  "title": "Session-end loose decisions",
+  "description": "Decisions raised during the 2026-05-12 session that don't fit naturally inside any other epic. Each child is a discrete choice that needs an answer; none of them block normative spec work, but leaving them un-decided creates drift.\n\nChildren:\n- Push timing for accumulated session commits\n- Re-evaluation of ic5s.3 and ic5s.4 (Tier 3 override re-confirmation)\n- Pre-existing unstaged WIP (AGENTS.md, CLAUDE.md, .beads/* files)\n- @everyone vs alternative names before fig9.1 locks the choice in\n\nNote: a fifth decision raised in the same session — the suppression model for broadcast mentions — is NOT a child of this epic because it's already tracked as Decision #5 inside jmap-chat-spec-fig9.1. That bead's resolution is the suppression decision; don't file a duplicate.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:11:09Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T20:14:38Z",
+  "close_reason": "all steps complete",
+  "labels": [
+    "decision",
+    "session-leftover"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-4uf",
+  "title": "main: client MUST supply ULID for senderReactionId",
+  "description": "Message/set says 'the client MUST supply a ULID as the senderReactionId'. Any opaque unique string satisfies the protocol requirements (deduplication, idempotency). ULID is a best practice for lexicographic ordering but is not required for correctness. Decision: change to SHOULD, or keep MUST and justify why ULID specifically is required (e.g., if the server relies on ULID ordering for reaction display).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:33:15Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:47:16Z",
+  "closed_at": "2026-04-26T15:47:16Z",
+  "close_reason": "Downgraded MUST to SHOULD — any opaque client-assigned unique string satisfies the protocol requirements; ULID is best practice for consistency with other IDs but not a correctness requirement."
+}

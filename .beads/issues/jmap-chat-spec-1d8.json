@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-1d8",
+  "title": "WSS guide: startup sequence JSON example shows pushState as literal placeholder field",
+  "description": "The WebSocketPushEnable JSON example includes pushState as a field with a placeholder value, but the accompanying text says to omit it entirely when not available. An implementer copying the example will send a literal placeholder string instead of omitting the field. Should show two variants (with and without pushState) or omit it from the example and note its use separately.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:32Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:35Z",
+  "closed_at": "2026-04-26T22:36:35Z",
+  "close_reason": "Closed"
+}

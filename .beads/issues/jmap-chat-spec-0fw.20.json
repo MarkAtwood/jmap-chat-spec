@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.20",
+  "title": "wss-00: receiveTypingIndicators check cites {{JMAP-CHAT}} without section anchor",
+  "description": "In draft-atwood-jmap-chat-wss-00.md, the ChatTypingEvent section says the server MUST check receiveTypingIndicators '(defined in {{JMAP-CHAT}})' but gives no section anchor. The main JMAP Chat spec is a long document; a first-time implementor reading the WSS draft needs to know where to find the definition. The reference should cite a specific section or anchor (e.g., the Chat object definition section) so the reader can navigate directly to the normative text.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:07Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:53Z",
+  "closed_at": "2026-04-27T00:24:53Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.20",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:07Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

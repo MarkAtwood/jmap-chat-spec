@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-sqm",
+  "title": "wss: Acknowledgements omits RFC 8441",
+  "description": "draft-atwood-jmap-chat-wss-00 lists RFC 8441 (WebSocket over HTTP/2) as an informative reference but the Acknowledgements section only credits Murchison (RFC 8887) and the JMAP working group (RFC 8620). RFC 8441 has separate authors (McManus). Decision: either add an acknowledgement for RFC 8441, or remove RFC 8441 from informative references if it is not substantively used.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:01:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:26:50Z",
+  "closed_at": "2026-04-26T15:26:50Z",
+  "close_reason": "Removed RFC 8441 from informative references rather than adding an acknowledgement — the WSS draft doesn't use RFC 8441 directly; HTTP/2 WebSocket support is covered by RFC 8887 which already references it."
+}

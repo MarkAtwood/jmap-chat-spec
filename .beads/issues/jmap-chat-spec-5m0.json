@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-5m0",
+  "title": "spaceId declared server-set but clients must supply it at creation",
+  "description": "Section 3 (FileNode Extension Property) says spaceId is 'server-set' and 'immutable', but Section 3 (Discovery) says clients MAY create the root via FileNode/set. If the client creates the root, the server cannot know which Space to associate without the client providing spaceId. Decide: either the client supplies spaceId at creation (server validates), or a separate mechanism triggers tree creation. Current text is contradictory.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:49:22Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:53:51Z",
+  "closed_at": "2026-04-26T19:53:51Z",
+  "close_reason": "Closed"
+}

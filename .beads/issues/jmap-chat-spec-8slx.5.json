@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8slx.5",
+  "title": "VTC WSS: Chat WSS interop",
+  "description": "Interop when both urn:ietf:params:jmap:chat:websocket and urn:ietf:params:jmap:vtc:websocket are present. Either ChatStreamEnable dataTypes vtc OR VTCStreamEnable works. VTCStreamEnable provides finer-grained call-scoped control. Union delivery, no duplicates.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:09:50Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:17:59Z",
+  "closed_at": "2026-06-05T23:17:59Z",
+  "close_reason": "ChatStreamEnable vtc interop, union delivery, no duplicates, independence rules",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8slx.5",
+      "depends_on_id": "jmap-chat-spec-8slx",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:09:50Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

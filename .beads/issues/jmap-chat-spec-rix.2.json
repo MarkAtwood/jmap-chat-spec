@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-rix.2",
+  "title": "R3-SEC0: burnOnRead and receiptSharing interaction verified correct",
+  "description": "Both locations verified by reading exact spec text. All six questions answered satisfactorily. No new correctness bugs.\n\nQ1 (chat-00.md burnOnRead causal correctness): CORRECT. Line 513 correctly states readAt is set locally, hard-delete fires immediately after, and when receiptSharing=false no Peer/receipt reaches the sender. The MUST NOT rely clause is present.\n\nQ2 (federation-00.md Peer/deliver burnOnRead split): CORRECT. Line 210 correctly states hard-delete still occurs on the receiving mailbox even when receiptSharing=false, and Peer/receipt is suppressed. Cross-reference to JMAP-CHAT present.\n\nQ3 (inconsistency between two locations): NONE. Both locations agree on the same causal model: local hard-delete fires on local readAt regardless of receiptSharing; Peer/receipt suppressed when receiptSharing=false; sender cannot confirm deletion.\n\nQ4 (group message burnOnRead with mixed receiptSharing): The spec is silent on the mixed case. Behavior is deterministic by composition: each recipient's mailbox fires the hard-delete on its own local readAt; the sender receives Peer/receipt only from recipients whose receiptSharing=true. No contradictory MUST exists. This is a documentation gap, not a P0 correctness bug — the composed behavior is unambiguous.\n\nQ5 (race between burnOnRead delete and Peer/receipt): NO RACE CONCERN. Causal chain is: local readAt set → burnOnRead trigger fires → (Peer/receipt suppressed or sent). Delete is local. Peer/receipt suppression decision precedes any outbound call. Whether the hard-delete completes before a Peer/receipt is sent (when receiptSharing=true) is an implementation detail with no protocol-level inconsistency, since Peer/receipt reports a read event, not a delete event.\n\nQ6 (Receiver Behavior MUST NOT update deliveryReceipts vs. local burnOnRead): NO CONFLICT. The federation-00.md line 315 Receiver Behavior governs an inbound Peer/receipt arriving at the original SENDER's server — it prevents that server from recording readAt in deliveryReceipts when its owner's receiptSharing=false. The local readAt set via Message/set (chat-00.md line 997) is an operation by the RECIPIENT's client on the RECIPIENT's own mailbox, triggering burnOnRead locally. These are entirely separate code paths on different servers. The spec correctly implies independence; no conflict exists.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:56:25Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:57:13Z",
+  "closed_at": "2026-04-27T00:57:13Z",
+  "close_reason": "burnOnRead correctness verified, no new bugs",
+  "labels": [
+    "correctness"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-rix.2",
+      "depends_on_id": "jmap-chat-spec-rix",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:56:25Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

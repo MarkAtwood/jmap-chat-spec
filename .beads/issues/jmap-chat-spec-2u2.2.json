@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-2u2.2",
+  "title": "DECISION: Receiver Behavior resolves effective preference by reference to Sender Behavior rule",
+  "description": "Choice: The Receiver Behavior section says 'using the same rule as the Sender Behavior' rather than restating the Chat.receiptSharing / PresenceStatus.receiptSharing lookup logic verbatim.\n\nWhy good: Avoids duplication of the preference-resolution rule in two places. A single authoritative statement in Sender Behavior is cross-referenced; if the rule ever changes it changes in one place. Restating it would risk the two copies drifting.\n\nAlternatives avoided: Copying the full resolution logic into Receiver Behavior (duplication/drift risk); factoring it into a named sub-section (correct but heavier than needed for a two-branch rule).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:48:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:52:20Z",
+  "closed_at": "2026-04-27T00:52:20Z",
+  "close_reason": "Decision record",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.2",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:48:00Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

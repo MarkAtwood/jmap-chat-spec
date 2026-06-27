@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-3szx",
+  "title": "P1: DID spec — 4 gaps",
+  "description": "1. previousDid not in capability object definition. 2. StateChange emission on rotation overly broad. 3. supportedMethods vs supportedDidMethods naming inconsistency. 4. didDocumentUri stale/unreachable — no fallback defined.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:45:06Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:53:37Z",
+  "closed_at": "2026-06-07T18:53:37Z",
+  "close_reason": "Closed"
+}

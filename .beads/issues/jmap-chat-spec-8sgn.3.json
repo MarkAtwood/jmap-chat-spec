@@ -1,0 +1,42 @@
+{
+  "id": "jmap-chat-spec-8sgn.3",
+  "title": "Write jmap-chat-did-guide.md",
+  "description": "Write the companion implementer guide for the DID draft. Holds all opinionated, computational, and operational content that the draft (8sgn.2) deliberately leaves to deployments. Blocked-on 8sgn.2 — do not start until the draft is committed.\n\n## Deliverable\n\n`jmap-chat-did-guide.md` at the top level of the repo. Non-normative companion guide, same shape as `jmap-chat-federation-guide.md` and `jmap-chat-filenode-guide.md`.\n\n## Required structural elements\n\n- Standard \"A note on RFC 2119 keywords\" wrapper at the top (per the convention established in commit 21a4bb6)\n- Cross-reference table at the bottom\n- Each topic section follows the established 5-subsection shape: what spec leaves open + what to decide + considerations + common patterns + recommended starting point\n\n## Proposed sections\n\n1. **Federation auth mechanism — concrete realization**\n   - RFC 9421 HTTP Message Signatures: required and recommended components\n   - Clock skew tolerance: starting point 300 seconds (Agora §3.5.3 reference)\n   - Nonce cache TTL: starting point 600 seconds\n   - Replay window and rejection codes\n   - Key selection from DID document authentication relationship\n   - Cross-reference: Agora protocol spec §3.5.3\n\n2. **DID resolution and caching strategy**\n   - did:web: HTTPS GET, honor cache headers, deployment floor/ceiling (5 min / 24 h starting points)\n   - did:key: no caching, deterministic local derivation\n   - did:plc: PLC directory resolution, log-head tracking, refresh on log advancement\n   - Hard refresh on signature-verification failure (normative in the draft; expanded here)\n   - Persistent resolution failure: reject auth, do not silently downgrade\n\n3. **DID document conventions for interop**\n   - Agora's two-role split (`authentication` Ed25519 + `keyAgreement` X25519) as a recommended deployment convention\n   - Multi-device handling: multiple verificationMethod entries, `#device-{fingerprint}` suffix pattern\n   - Why this is in the guide and not the draft\n\n4. **Provisioning workflows**\n   - `did:web` with enterprise IdP (Agora's sidecar pattern as a worked example)\n   - `did:key` self-provisioning\n   - `did:plc` via PLC directory and AT Protocol tooling\n   - Cross-reference: Agora universal-idp-did-spec\n\n5. **Recovery mechanisms**\n   - Brief survey: recovery key, social recovery (SSS), encrypted backup (Argon2id)\n   - All three are Agora's design; cite Agora §2.4 as the reference deployment\n   - JMAP Chat DID itself takes no position; deployments choose\n\n6. **Mention textual form rendering**\n   - Client UX patterns for `@{did:method:value}` mentions\n   - Truncation of long DIDs in UI\n   - Resolution-to-display-name caching\n\n7. **Cross-method consistency**\n   - A user with multiple DIDs (e.g., did:web institutional + did:key personal): how to link them\n   - When ChatContact.id and ChatContact.did refer to the same principal via different methods\n\n8. **Security and privacy considerations expansion**\n   - did:web key rotation operational practice\n   - did:plc operation log monitoring\n   - did:key non-rotatability and key-loss implications\n   - DNS / TLS dependency for did:web in adversarial environments\n\n## Cross-file consistency checks before close\n\n- AGENTS.md cross-file consistency table extended to include DID-guide topics\n- jmap-chat-implementer-guide.md cross-reference table extended to point at jmap-chat-did-guide.md\n- README.md updated to list jmap-chat-did-guide.md in the Implementer Guides table and Repository Layout (consistent with the corpus state after 4nek)\n\n## Acceptance criteria\n\n- File exists at the top level of the repo\n- RFC 2119 wrapper present at top\n- All sections in the established 5-subsection shape\n- No content duplicated from the draft (8sgn.2); cross-referenced instead\n- Cross-reference table at the bottom links to draft, core implementer guide, federation guide, and Agora informative references\n- AGENTS.md and implementer-guide cross-ref tables extended\n- README.md updated to include the new guide\n",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-13T03:29:16Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-13T03:40:19Z",
+  "closed_at": "2026-05-13T03:40:19Z",
+  "close_reason": "jmap-chat-did-guide.md written. 1056 lines, 8 sections following the established 5-subsection pattern (what spec leaves open / what you must decide / considerations / common patterns / recommended starting point): federation auth concrete realization (RFC 9421 components and replay parameters), DID resolution caching strategy (per-method defaults), DID document conventions for interop (auth + keyAgreement role split, multi-device fingerprint pattern), provisioning workflows (individual/self-hosted/enterprise/AT-Protocol archetypes), recovery mechanisms (recovery key / social recovery / encrypted backup), mention textual form rendering (display-name resolution UX), cross-method consistency (per-DID ChatContacts with client-side linking), security and privacy expansion (TLS pinning, PLC operator trust, rotation cadence, audit logging, hardware key storage). RFC 2119 wrapper at top. Cross-references table at bottom links to draft anchors (capability, methods, contact-extensions, federation-auth, resolution, mentions, security), other JMAP Chat documents, informative external refs (W3C DID Core, did:web/did:key/did:plc method specs, RFC 9421), and Agora as a reference deployment (8 cross-references). Per user direction the guide treats Agora as one example among possibilities, not as canonical — operational patterns are framed as JMAP Chat DID's own guidance with Agora cited where applicable. jmap-chat-implementer-guide.md cross-ref table extended with DID-guide row. README.md updated: Implementer Guides table and Repository Layout block both include the new guide. AGENTS.md cross-file consistency table was already updated in 8sgn.2.",
+  "labels": [
+    "companion-draft",
+    "did",
+    "feature",
+    "guides",
+    "human",
+    "identity",
+    "implementer-guidance"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8sgn.3",
+      "depends_on_id": "jmap-chat-spec-8sgn.2",
+      "type": "blocked-by",
+      "created_at": "2026-05-12T20:29:16Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-8sgn.3",
+      "depends_on_id": "jmap-chat-spec-8sgn",
+      "type": "parent-child",
+      "created_at": "2026-05-12T20:29:16Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

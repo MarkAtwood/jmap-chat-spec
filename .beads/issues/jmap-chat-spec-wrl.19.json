@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.19",
+  "title": "deviceDeliveredAt distinction from deliveredAt unclear in main spec",
+  "description": "Location: draft-atwood-jmap-chat-00.md, Message.deliveryReceipts field description, line 519. Issue: The deliveryReceipts map description defines deliveredAt as the time of first outbound delivery acknowledgement and deviceDeliveredAt as 'optional and MAY be absent if the recipient platform does not support device-delivery confirmation.' It does not explain what device-delivery confirmation means or how it differs from mailbox delivery. The fuller definition (OS push delivery receipt, distinct from mailbox storage and human reading) appears only in the federation doc (Peer/receipt lines 295-296). An implementor reading only the main spec cannot tell what deviceDeliveredAt measures. Suggested fix: add a parenthetical in the main spec deliveryReceipts description, e.g., 'deviceDeliveredAt records when the message notification was received by the recipient device or application process (as distinct from mailbox storage), when the platform provides a delivery callback such as an OS push receipt.'",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:08:59Z",
+  "closed_at": "2026-04-27T01:08:59Z",
+  "close_reason": "Resolved: APNs/FCM note added to deliveryReceipts and federation spec clarifies distinction",
+  "labels": [
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.19",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:59Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

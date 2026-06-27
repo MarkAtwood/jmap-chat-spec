@@ -1,0 +1,21 @@
+{
+  "id": "jmap-chat-spec-ex4u",
+  "title": "Push hasMention computation broken for application/jmap-chat-rich messages",
+  "description": "File: draft-atwood-jmap-chat-push-00.md, line 177\n\nThe push draft defines:\n\n  `hasMention` (Boolean):\n  : `true` if the account owner's ChatContact.id appears in the message's `mentions` array (a direct @user mention); `false` otherwise.\n\nBut the main draft (draft-atwood-jmap-chat-00.md line 1257) states:\n\n  When `bodyType` is `\"application/jmap-chat-rich\"`, `body` MUST contain a JSON-encoded string whose top-level parsed value is an object conforming to this section. The `mentions` array on the Message MUST be empty; mention information is carried inline within the spans.\n\nRich-body messages carry mention information in `spans[].userId` (where `spans[].type == \"mention\"`), not in `Message.mentions` (which is mandated empty). So a literal reading of the push draft's hasMention rule produces `false` for every rich-body message regardless of how many @user mentions appear inline. The notification routing logic and mentionUrgency escalation both depend on hasMention being correct.\n\nFix options:\n1. Broaden the push-draft computation rule: \"server MUST set hasMention to true if the account owner's ChatContact.id appears in Message.mentions OR (when bodyType is application/jmap-chat-rich) in any span of type \\\"mention\\\".\"\n2. Define hasMention in terms of an abstract \"mentions resolved from the message\" rather than the on-wire `Message.mentions` array, with a non-normative note pointing out the two storage locations.\n\nOption 1 is more concrete and easier to validate; option 2 is more forward-compatible if a third mention-storage shape is added.\n\nRelationship to fig9.4 (broadcast-scope mention payload updates): fig9.4 is about adding scope-typed broadcast mentions (@everyone, @here, @admins) to the payload. It is a different dimension (scope) from this finding (location: array vs inline spans). fig9.4 will likely revisit hasMention semantics, so this finding MAY be subsumed by fig9.4 work; if so, close as duplicate when fig9.4 lands. Pre-filing keeps the issue tracked in case fig9.4's scope stays narrow.",
+  "acceptance_criteria": "- Push draft hasMention rule covers BOTH the Message.mentions array path AND the application/jmap-chat-rich inline-spans path\n- After the fix, a rich-body message containing a {type: mention, userId: \u003cowner\u003e} span produces hasMention=true on a push payload\n- Add or extend an example payload (or the rich-body section) to demonstrate the rich-body mention case\n- If fig9.4 lands first and naturally covers this case, close as duplicate of fig9.4 with a comment pointing at the resolution",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:24:05Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:26:59Z",
+  "closed_at": "2026-05-12T18:26:59Z",
+  "close_reason": "Closed",
+  "labels": [
+    "push-draft",
+    "spec-consistency",
+    "survey-finding"
+  ]
+}

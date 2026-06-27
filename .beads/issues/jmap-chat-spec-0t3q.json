@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-0t3q",
+  "title": "accessPolicy 'space' without Chat capability has no error",
+  "description": "Scene SceneRegion/set create accepts accessPolicy: 'space' as a valid value, but 'space' semantics require urn:ietf:params:jmap:chat. If a client writes accessPolicy: 'space' to a server without Chat capability, no error is specified — the region becomes effectively open with a confusing field value. The SetError table needs an entry for this case (e.g., invalidArguments when accessPolicy is 'space' but Chat capability is absent).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:34:14Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:01:52Z",
+  "closed_at": "2026-06-07T06:01:52Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.4",
+  "title": "Fix jmap-vtc-gateway-guide.md: CANCEL mapping wrong + cross-refs off by one",
+  "description": "MUST-FIX: (1) SIP CANCEL→'declined' mapping is wrong. SIP CANCEL should map to endReason 'cancelled', not 'declined'. CANCEL means the initiator withdrew the request, not that the callee rejected it. (2) All section cross-references (§N citations) point to the wrong section — every one is off by one. This affects the entire document and will send implementers to the wrong spec sections. SHOULD-FIX: Remaining issues from gateway guide review to be cataloged during fix pass.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:11:10Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:52Z",
+  "closed_at": "2026-06-07T18:23:52Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.4",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:11:09Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

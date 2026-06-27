@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8orn.11",
+  "title": "VTC: add access control for standalone mode",
+  "description": "Who can see a VTCCall via VTCCall/get or /query? When Chat is present, Space/channel permissions cover this. In standalone mode (no Chat binding), the draft says nothing. Add visibility rules: participants can see calls they are/were in, the initiator can see calls they created, and deployment-defined admin roles may see all calls. Non-participants MUST receive notFound for calls they cannot access.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:20Z",
+  "closed_at": "2026-06-05T22:53:20Z",
+  "close_reason": "Added Access Control section with Chat-bound rules (inherit Space permissions, start_call gate) and standalone rules (participants-only visibility, notFound for non-participants).",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.11",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:36Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

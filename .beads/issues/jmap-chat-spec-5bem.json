@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-5bem",
+  "title": "State-change coalescing: Scene SceneAvatar mutations may overwhelm Chat-only clients",
+  "description": "Scene recommends 1-5 second coalescing windows for SceneAvatar StateChange events due to periodic position reconciliation. Chat has no corresponding coalescing recommendation and implies immediate StateChange delivery. Co-deployed servers sharing a single StateChange payload will generate much higher event rates than Chat-only clients expect. Need coalescing guidance in the co-deployment section.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:34:15Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:01:53Z",
+  "closed_at": "2026-06-07T06:01:53Z",
+  "close_reason": "Closed"
+}

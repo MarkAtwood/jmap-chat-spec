@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-1fn",
+  "title": "Specify outbound replyTo/threadRootId translation in Peer/deliver",
+  "description": "The federation spec documents that a *receiving* server translates incoming replyTo/threadRootId from senderMsgId to local id (fed spec line 207). The inverse is never specified: when the owner's server sends Peer/deliver for a message that has replyTo pointing at a *received* message (one whose id was assigned by the local mailbox, not by the sender), the sending server must translate the locally-stored receiver-assigned id back to the original senderMsgId before putting it in the outbound Peer/deliver payload. Without this translation, the receiving peer would get a replyTo value that is a foreign ULID it has never seen, making thread linking impossible. The fix is a paragraph in the Peer/deliver section of the federation spec describing the sending server's obligation to do this reverse lookup via the senderMsgId index, and to omit replyTo if the referenced message has no known senderMsgId (e.g. it was received before the index was implemented). Same issue applies to threadRootId.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T16:10:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T16:13:27Z",
+  "closed_at": "2026-04-26T16:13:27Z",
+  "close_reason": "Added Outbound Message Preparation section to Peer/deliver in federation spec; updated replyTo and threadRootId field descriptions to cross-reference it"
+}

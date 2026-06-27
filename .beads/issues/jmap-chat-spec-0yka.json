@@ -1,0 +1,22 @@
+{
+  "id": "jmap-chat-spec-0yka",
+  "title": "Push senderDisplayName fallback chain ignores SpaceMember.nick in channel chats",
+  "description": "File: draft-atwood-jmap-chat-push-00.md, line 170-171\n\nThe push draft defines:\n\n  `senderDisplayName` (String, optional):\n  : The sender's display name at push-generation time. Derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`.\n\nFor channel chats, the main draft establishes a richer display-name precedence:\n\n- SpaceMember has a `nick` field (draft-atwood-jmap-chat-00.md line 599):\n    `nick` (String, optional):\n    : Space-specific display name override. MAY be absent; clients SHOULD fall back to ChatContact `displayName`, then `login`.\n\nThe intended UX semantics: in a Space, a user's display name is their per-Space nick if set; otherwise the global ChatContact.displayName; otherwise login. The push draft's fallback chain omits the nick rung entirely, so a push notification for a channel chat will not match what the user sees inside the Space's chat UI when the sender has a Space-specific nick. Example: in an ACME Space, a user known globally as \"Robert Smith\" might have `nick: \"Bob (CEO)\"` in that Space; the in-app message header would read \"Bob (CEO)\" but the push notification would read \"Robert Smith\".\n\nThis is editorial drift, not a wire-protocol break: clients can override display anyway. But for fidelity with the SpaceMember.nick model and consistency with what end users see, the push draft fallback chain for channel chats SHOULD be: SpaceMember.nick (when sender is a SpaceMember of the containing Space) -\u003e ChatContact.displayName -\u003e ChatContact.login -\u003e senderId.\n\nFor direct and group chats, SpaceMember is not in play; the existing fallback is correct as-is.\n\nSuggested wording (line 171):\n\n  `senderDisplayName` (String, optional):\n  : The sender's display name at push-generation time. For `chatKind: \"channel\"`, derived from the sender's `SpaceMember.nick` in the containing Space if present, otherwise `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. For other chat kinds, derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. The `senderId` fallback occurs when the ChatContact record has not yet been fully resolved -- for example, when a message arrives from a previously unknown peer in a federated deployment. This value is a snapshot and may become stale; clients MUST NOT treat it as an authoritative identity signal.",
+  "acceptance_criteria": "- Push draft senderDisplayName definition includes SpaceMember.nick as the first rung of the fallback chain for channel chats\n- Direct and group chats keep the existing fallback (SpaceMember does not apply there)\n- Wording is consistent with main draft line 599-600 client-side fallback guidance\n- No new fields introduced; this is purely a clarification of the derivation rule on the server side",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:24:20Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:27:42Z",
+  "closed_at": "2026-05-12T18:27:42Z",
+  "close_reason": "Closed",
+  "labels": [
+    "editorial",
+    "push-draft",
+    "spec-consistency",
+    "survey-finding"
+  ]
+}

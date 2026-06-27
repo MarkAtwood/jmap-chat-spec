@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-bm4",
+  "title": "Fix: FileNode client usage silent on null sha256 case",
+  "description": "The FileNode section allows sha256: null for legacy file FileNodes (lines 198-201), but the Client Usage section (lines 207-213) unconditionally says clients SHOULD compare digests. No guidance is given for when sha256 is null. Need to add: 'If sha256 is null, no integrity check is possible via this mechanism; clients SHOULD note this as an unverified download.'",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:50:54Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:53:08Z",
+  "closed_at": "2026-04-27T01:53:08Z",
+  "close_reason": "Added null-case guidance to FileNode Client Usage: directs clients to treat null sha256 as unverified, and restricts the mismatch check to non-null values."
+}

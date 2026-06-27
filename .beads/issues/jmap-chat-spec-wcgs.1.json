@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-wcgs.1",
+  "title": "Ring push guide: scaffold and intro",
+  "description": "Create jmap-vtc-ring-push-guide.md with title, lede, RFC 2119 disclaimer. Frame around the 2-second latency target: a ring that arrives 5 seconds late is a missed call.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:03:57Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-05T23:27:44Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wcgs.1",
+      "depends_on_id": "jmap-chat-spec-wcgs",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:03:57Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

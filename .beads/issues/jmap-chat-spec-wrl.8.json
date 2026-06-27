@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.8",
+  "title": "Chat/set missing receiptSharing in update keys",
+  "description": "draft-atwood-jmap-chat-00.md line 862: Chat/set update-supports list for all chat kinds reads 'muted, muteUntil, receiveTypingIndicators, pinnedMessageIds, messageExpirySeconds'. The newly added Chat.receiptSharing field (line 441) is not included. Like the PresenceStatus/set omission, this makes the per-chat override field unreachable through the API. Fix: add receiptSharing to the Chat/set update-supports list for all chat kinds.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:40:43Z",
+  "closed_at": "2026-04-27T00:40:43Z",
+  "close_reason": "Duplicate of wrl.2 (P0)",
+  "labels": [
+    "maintainer-burden",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.8",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

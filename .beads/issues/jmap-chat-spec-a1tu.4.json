@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-a1tu.4",
+  "title": "Assess missing landscape systems",
+  "description": "Evaluate whether NVIDIA Omniverse/OpenUSD, W3C WebXR, Metaverse Standards Forum, Spatial.io, High Fidelity, or Khronos OpenXR warrant new entries. Write entries or add a 'notable omissions' note for each.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:17:13Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:30:39Z",
+  "closed_at": "2026-06-07T02:30:39Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-a1tu.4",
+      "depends_on_id": "jmap-chat-spec-a1tu",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:12Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-b0l",
+  "title": "Record design decisions for jmap-cid spec",
+  "description": "Document the two resolved design decisions for draft-atwood-jmap-cid: (1) SHA-256 only (no multihash/IPFS CID), aligned with existing jmap-chat sha256 field and complementary to JMAP-BLOBEXT digest:sha-256; (2) standalone capability urn:ietf:params:jmap:cid, structured modularly for potential upstream patches to RFC 8620 and JMAP-FILENODE.",
+  "notes": "Decision 1: SHA-256 only. No multihash/IPFS CID. Lowercase hex encoding. Field named sha256 (complements JMAP-BLOBEXT digest:sha-256 which is base64 on Blob/get). Decision 2: Standalone capability urn:ietf:params:jmap:cid. Modular sections structured to double as upstream patches to RFC 8620 and JMAP-FILENODE.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:14:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-27T01:16:49Z",
+  "close_reason": "Draft written: draft-atwood-jmap-cid-00.md. Design decisions recorded in beads memory. SHA-256 only, standalone capability urn:ietf:params:jmap:cid."
+}

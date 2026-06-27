@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-dt3",
+  "title": "wss: ChatPresenceEvent statusText/statusEmoji have no storage in data model",
+  "description": "ChatPresenceEvent carries statusText and statusEmoji fields but ChatContact has no such fields. The federation draft's Peer/presence receiver behavior only says to update presence and lastActiveAt on ChatContact — statusText and statusEmoji are silently unaddressed. It is unclear whether these are ephemeral in-memory-only display state (never cached), imply a ChatContact schema extension, or are simply dropped. Decision: document the intended lifetime and storage of these two fields across all three drafts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:00:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:20:17Z",
+  "closed_at": "2026-04-26T15:20:17Z",
+  "close_reason": "Added statusText and statusEmoji as optional server-set fields to ChatContact in main draft, with explicit callout that they mirror PresenceStatus fields. Updated Peer/presence receiver behavior in federation draft to update all four fields, with callout that null clears the field."
+}

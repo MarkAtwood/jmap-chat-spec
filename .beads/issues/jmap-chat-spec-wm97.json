@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-wm97",
+  "title": "No error for invalid chatId on VTCCall/set create",
+  "description": "VTC spec lines 574/619/651: chatId is client-supplied at call creation. No validation specified for nonexistent/inaccessible Chat ids. Access control section (line 1502) says access is inherited from Chat permissions when chatId is present, but no error is defined for invalid chatId. Also no rule for what happens if chatId is supplied when urn:ietf:params:jmap:chat capability is absent.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:47:56Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:29Z",
+  "closed_at": "2026-06-07T05:57:29Z",
+  "close_reason": "Closed"
+}

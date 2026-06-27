@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-33c",
+  "title": "wss: example WebSocket handshake omits Origin header",
+  "description": "The WebSocket handshake example in draft-atwood-jmap-chat-wss-00 §8 omits the Origin header. RFC 8887's example includes 'Origin: https://www.example.com'. The Origin header is relevant for browser-context security (cross-origin WebSocket connection validation). The omission makes the example less complete than the parent RFC. Decision: add Origin header to the example, or add a note that it is omitted for brevity.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:01:03Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:29:04Z",
+  "closed_at": "2026-04-26T15:29:04Z",
+  "close_reason": "Added Origin header to WebSocket handshake example, consistent with RFC 8887's example and RFC 6455 §4.1/§10.2."
+}

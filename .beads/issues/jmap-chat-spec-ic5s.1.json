@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-ic5s.1",
+  "title": "Soften client typing decay MUST to SHOULD + calibration rationale",
+  "description": "File: draft-atwood-jmap-chat-00.md\nLine: 935\n\nCurrent text:\n  \"When `receiveTypingIndicators` transitions from `false` to `true`, the server does not synthesize `typing: false` events for previously suppressed senders. Clients MUST use a decay timer to recover from any stale typing state; if no typing event is received for a given (chatId, senderId) pair within 10 seconds, the client MUST hide the typing indicator for that pair.\"\n\nThe two MUSTs are too strong: nothing in the wire protocol enforces or observes the client's decay timer. But the 10-second value is *not* arbitrary — it is calibrated against the server-side rate limit at line 931 (one Chat/typing call accepted per 3 seconds per account per chat). With one event per 3s, 10s = at least 3 missed events = sender almost certainly stopped. A client that diverges materially from 10s either clears too aggressively (UI flicker while sender still typing) or too slowly (\"...\" lingers after sender stopped). Users running multiple clients in parallel notice divergence.\n\nSuggested rewording:\n\n  \"When `receiveTypingIndicators` transitions from `false` to `true`, the server does not synthesize `typing: false` events for previously suppressed senders. Clients SHOULD use a decay timer to recover from any stale typing state; if no typing event is received for a given (chatId, senderId) pair within approximately 10 seconds, the client SHOULD hide the typing indicator for that pair.\n\n  The recommended 10-second value is calibrated against the server-side rate limit specified in {{chat-typing}}: with one Chat/typing call accepted per 3 seconds while a sender is actively typing, 10 seconds represents three missed events and is a reliable signal that the sender has stopped. Clients that diverge significantly from this value will appear inconsistent to users running multiple clients in parallel (for example, a mobile client showing the typing indicator long after a desktop client has cleared it). Implementations targeting environments with high inbound latency MAY choose a slightly longer window; implementations targeting low-latency contexts MAY choose shorter.\"\n\nThis bead is paired with T3-2 (jmap-chat-spec-ic5s.2). Recommend doing both in one commit so the calibration is internally consistent.",
+  "acceptance_criteria": "- The two MUSTs in the original wording are softened to SHOULDs\n- The 10-second number is retained as a recommended default\n- A calibration sentence pointing at the 3s rate limit appears in the text\n- A sentence explaining the multi-client UX consequence of divergence appears\n- A sentence acknowledging legitimate latitude (high/low latency contexts) appears\n- The cross-reference uses the same anchor style as the rest of the draft (`{{chat-typing}}`)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:52:26Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:46:26Z",
+  "closed_at": "2026-05-12T18:46:26Z",
+  "close_reason": "Closed",
+  "labels": [
+    "implementer-guidance",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-ic5s.1",
+      "depends_on_id": "jmap-chat-spec-ic5s",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:52:25Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.16",
+  "title": "Receiver Behavior ambiguous subject for MUST return",
+  "description": "Location: draft-atwood-jmap-chat-federation-00.md, Peer/receipt Receiver Behavior section, line 315. Text: 'The calling server is not informed of this suppression; Peer/receipt MUST return a normal success response.' Issue: The subject of 'MUST return a normal success response' is ambiguous. Because the sentence opens with 'The calling server is not informed', a reader may parse 'Peer/receipt MUST return' as still referring to the calling server. The intended subject is the receiving server. Suggested rephrasing: 'The receiving server MUST return a normal success response; the calling server is not informed of the suppression.'",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:09:00Z",
+  "closed_at": "2026-04-27T01:09:00Z",
+  "close_reason": "Resolved: phrase no longer present in current text",
+  "labels": [
+    "opinion",
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.16",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:52Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

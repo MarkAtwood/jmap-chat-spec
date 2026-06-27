@@ -1,0 +1,31 @@
+{
+  "id": "jmap-chat-spec-4lbr.2",
+  "title": "Implementer guides consistency pass post-recent-edits",
+  "description": "The three implementer guides have not been re-read since the recent normative changes:\n- jmap-chat-push-platform-guide.md\n- jmap-chat-wss-guide.md\n- jmap-push-platform-guide.md\n\nRecent changes that might have invalidated guide content:\n- c93e545: removed normative single-owner concept for Spaces\n- 9344aec: removed 'manage_emoji' permission and server-admin emoji authorization\n- 38055ec: added per-method auth latitude paragraph\n- 970bad6: clarified server-side authorization model\n\nQuick check: grep -rn --include='*.md' 'Space owner\\|manage_emoji\\|server admin authorization' . — anything in a guide file is stale.\n\nDeeper check: read each guide end-to-end looking for descriptions of behavior that contradict or duplicate normative text. Implementer guides should describe deployment practice without restating normative rules; descriptions of who-may-do-what are particularly likely to be stale after the recent governance edits.\n\nThe federation draft's findings should also be cross-checked against the guides (e.g., if a guide describes typing-rate-limit behavior with the old 3-second number explicitly, that's consistent with the current draft but should be reviewed if ic5s.2 lands).\n\nFile specific findings as separate beads. Close this bead with a summary.",
+  "acceptance_criteria": "- All three guides read end-to-end\n- Any stale 'Space owner', 'manage_emoji', or 'server admin authorization' references found via grep are filed for correction\n- Deeper inconsistencies (paraphrased normative rules, outdated behavior descriptions) are filed\n- Close-reason summarizes findings; 'no findings' is acceptable",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:11:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:41:57Z",
+  "closed_at": "2026-05-12T18:41:57Z",
+  "close_reason": "Closed",
+  "labels": [
+    "guides",
+    "spec-consistency",
+    "survey"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-4lbr.2",
+      "depends_on_id": "jmap-chat-spec-4lbr",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:11:40Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-9sti.4",
+  "title": "Implementer guide: VTCCallPolicy enforcement",
+  "description": "Section on implementing call-level media policies. Server-side enforcement of muteOnEntry, participantsCanUnmute, participantsCanShareScreen, participantsCanStartVideo. Media layer coordination (JMAP server sets the state, media layer must honor it). Ask-to-unmute UX flow. JSON examples of policy-gated VTCParticipant/set rejections.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:02:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:41Z",
+  "closed_at": "2026-06-05T23:27:41Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9sti.4",
+      "depends_on_id": "jmap-chat-spec-9sti.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:11Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-9sti.4",
+      "depends_on_id": "jmap-chat-spec-9sti",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:02:57Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-qjfx.2",
+  "title": "Fix SHOULD vs MUST in avatar-participant correlation",
+  "description": "Guide states userId is the join key for correlating SceneAvatar and VTCParticipant as fact, but both specs say server SHOULD (not MUST) use userId as id. Guide should note the SHOULD and describe a fallback when ids differ.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:17:08Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:26:16Z",
+  "closed_at": "2026-06-07T02:26:16Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-qjfx.2",
+      "depends_on_id": "jmap-chat-spec-qjfx",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:08Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}
