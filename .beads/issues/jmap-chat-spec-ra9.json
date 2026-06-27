@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ra9",
+  "title": "Rewrite jmap-chat-wss-guide.md",
+  "description": "Rewrite jmap-chat-wss-guide.md from the bottom up for clarity, correctness, and consistency. The current file may have been written incrementally and needs a fresh pass to ensure it reads coherently, is technically accurate, and is consistent in terminology and style with the other guide files.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T02:23:03Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T02:25:42Z",
+  "closed_at": "2026-04-27T02:25:42Z",
+  "close_reason": "Rewrote for clarity, correctness, and consistency"
+}

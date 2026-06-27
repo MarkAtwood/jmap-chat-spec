@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.19",
+  "title": "receiveTypingIndicators suppression rule missing from SSE push section",
+  "description": "The Chat/typing Server Behavior section in draft-atwood-jmap-chat-00.md states the suppression rule. The WSS spec Section 6 (Security) restates it for the WebSocket path.\n\nBut the Push Notifications section (Section 9, Typing Events subsection) in draft-atwood-jmap-chat-00.md defines the SSE typing event format without any cross-reference to the suppression rule. An implementer building only the SSE path who reads the Push section in isolation will not encounter the suppression requirement.\n\nThe SSE Typing Events subsection should add a normative cross-reference: 'Before delivering a typing event to a client via EventSource, the server MUST apply the receiveTypingIndicators check defined in Chat/typing Server Behavior (Section X).'\n\nWithout this, the SSE and WebSocket implementations will diverge across solo implementations: the WebSocket path has the check explicitly in its security section; the SSE path is silent.\n\nRelevant locations: draft-atwood-jmap-chat-00.md Push Notifications section Typing Events subsection (lines 1306-1313); draft-atwood-jmap-chat-00.md Chat/typing Server Behavior section.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:02Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:43Z",
+  "closed_at": "2026-04-27T00:24:43Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "maintainer-burden",
+    "review",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.19",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:02Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

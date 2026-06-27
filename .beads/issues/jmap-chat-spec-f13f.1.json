@@ -1,0 +1,31 @@
+{
+  "id": "jmap-chat-spec-f13f.1",
+  "title": "Design decisions: federated user mention textual form",
+  "description": "Make the design decisions for the textual `@user@host` form for federated user mentions, BEFORE any spec edits in Epic f13f.\n\nBlocked on jmap-chat-spec-fig9.2 (main draft must have the Mention type discriminator infrastructure in place).\n\n---\n\nDECISION 1 — Textual form\n\n`@alice@example.com` (ActivityPub / Mastodon convention) is the obvious default. Alternatives: `@alice%example.com`, `@alice/example.com`, etc. ActivityPub-style is the strong default.\n\n---\n\nDECISION 2 — Wire representation\n\nThe Mention type (post-Epic-A) carries `type` and conditional `id`. For federated user mentions, options:\n- `type: \"user\"`, `id: \"alice@example.com\"` — the federated form goes into the existing `id` field\n- `type: \"user\"`, `id: \"\u003clocal-contact-id\u003e\"`, `federatedHandle: \"alice@example.com\"` — separate field for the textual form\n- New scope value: `type: \"federated-user\"`, with a distinct field\n\nThe current rich-body example at draft-atwood-jmap-chat-00.md:1296 already shows `userId: \"user:alice@example.com\"`. That suggests Option 1 is the existing implicit convention.\n\n---\n\nDECISION 3 — Client-side textual parsing\n\nShould clients pattern-match `@user@host` strings in the body and resolve them, or rely on structured Mention entries from the sender's client?\n\nThe spec already uses structured mentions (offset/length annotations) for the textual form. Clients composing a message attach Mention entries; clients reading a message render from the Mention entries. This works for federated mentions too — the sender's client resolves the textual form and attaches the Mention.\n\nQuestion: does the spec need to say anything about parsing textual `@user@host` strings, or is the structured-mention pattern sufficient?\n\nRecommendation: stay with structured. Don't standardize pattern-matching.\n\n---\n\nDECISION 4 — Resolution mechanism\n\nWhen the sender types `@alice@example.com` in their client, how does the client resolve `example.com` to a ChatContact / federation peer?\n\n- Look up an existing ChatContact whose federation peer is `example.com`?\n- Perform `/.well-known/jmap` discovery to find a federation peer?\n- Maintain a local cache of known peers and their users?\n\nThis is the federation contact-resolution gap mentioned in the parent epic description. May require federation draft changes (a Peer/resolveContact method?) or may be left to client implementations.\n\n---\n\nOpen questions to resolve here:\n- Confirm or override each recommendation\n- Whether resolution requires a new federation method or stays client-side\n- Whether validation of the federated form happens at send time or accept time",
+  "acceptance_criteria": "- Each of the four decisions has a documented chosen answer\n- The wire representation is unambiguous enough that jmap-chat-spec-f13f.2 (main draft implementation) can begin\n- The resolution mechanism is either deferred to clients or specified well enough to file as a federation-draft bead",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:34:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T19:54:20Z",
+  "close_reason": "All four design decisions made in collaborative session: textual forms = @user@host + DID URI; wire form = type='user' with id; parsing and resolution both deployment-defined.",
+  "labels": [
+    "design-decision",
+    "feature",
+    "federation",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-f13f.1",
+      "depends_on_id": "jmap-chat-spec-f13f",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:34:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "id": "jmap-chat-spec-fig9.5",
+  "title": "Push platform guide: urgency mapping for broadcast mentions",
+  "description": "Update jmap-push-platform-guide.md (and possibly jmap-chat-push-platform-guide.md) with platform-specific urgency mapping for the new broadcast-scope mention types.\n\nBlocked on jmap-chat-spec-fig9.2 (main draft) and jmap-chat-spec-fig9.4 (push draft) for the field shape.\n\nScope:\n- For each push platform (APNs, FCM, WebPush, etc.) covered by the platform guide, document what urgency level / interruption-level / priority value to use for each broadcast scope\n- Document any platform-specific badging / sound / banner recommendations\n- Document how clients should locally interpret per-scope flags for their own UI (this is non-normative implementer guidance, not spec text)\n\nThe guide files are non-normative; they describe deployment practice. RFC 2119 keywords are not used here.\n\nNote: this bead was originally created in the same parallel batch as fig9.3 and fig9.4 but lost an ID race; it is the third Epic A implementation child after the federation and push draft beads. The fig9.3/fig9.4 swap (fig9.3=federation, fig9.4=push, opposite of what the description text in those beads says about being created \"third\" or \"second\") is cosmetic — the dependency graph is correct in both.",
+  "acceptance_criteria": "- Per-platform urgency mapping documented for `@everyone`, `@here`, `@admins`\n- Clients are given guidance on banner/sound/badge handling per scope\n- Non-normative tone preserved (no MUST/SHOULD/MAY)\n- Cross-references to the push draft fields are correct",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "bd-spin/bd-spin-20260513T000635Z-2256273",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:35:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-13T00:22:40Z",
+  "closed_at": "2026-05-13T00:22:40Z",
+  "close_reason": "Updated §Urgency trigger to mentionScopes; added §Per-scope urgency recommendations table covering @everyone/@here/@admins/@user; added §Client UI interpretation per-scope rendering guidance with forward-compat rule for unknown scopes; updated truncation no-drop list. Per-platform urgency translation continues to flow through the general jmap-push-platform-guide.md (no per-platform per-scope tables added because the chat-specific recommendation is platform-agnostic 'high'; platform translation of 'high' is already documented).",
+  "labels": [
+    "feature",
+    "guides",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fig9.5",
+      "depends_on_id": "jmap-chat-spec-fig9",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:35:35Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-fig9.5",
+      "depends_on_id": "jmap-chat-spec-fig9.2",
+      "type": "blocks",
+      "created_at": "2026-05-12T10:35:35Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-fig9.5",
+      "depends_on_id": "jmap-chat-spec-fig9.4",
+      "type": "blocks",
+      "created_at": "2026-05-12T17:13:40Z",
+      "created_by": "bd-spin/bd-spin-20260513T000635Z-2256273",
+      "metadata": "{}"
+    }
+  ]
+}

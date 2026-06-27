@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.14",
+  "title": "Peer/receipt Sender Behavior paragraph hard to parse",
+  "description": "Location: draft-atwood-jmap-chat-federation-00.md, Peer/receipt Sender Behavior section, lines 304-306. Issue: The paragraph is a single dense run-on sentence with nested conditional logic: 'if Chat.receiptSharing is present for the relevant Chat, that value is used; otherwise the account-level PresenceStatus.receiptSharing applies ... If the effective preference is false, the server MUST NOT invoke Peer/receipt.' The term 'effective preference' is introduced mid-sentence without prior definition, making it easy to misread. An implementor scanning for the MUST rule has to parse through two conditional branches before reaching the normative requirement. Suggested fix: introduce 'effective preference' as a defined term at the start ('The effective receipt-sharing preference is Chat.receiptSharing if present for the relevant Chat, otherwise PresenceStatus.receiptSharing.'), then state the MUST rule in a separate sentence referencing that term.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:09:00Z",
+  "closed_at": "2026-04-27T01:09:00Z",
+  "close_reason": "Opinion: SEC7 labeled this; logic is correct and implementable",
+  "labels": [
+    "opinion",
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.14",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:46Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

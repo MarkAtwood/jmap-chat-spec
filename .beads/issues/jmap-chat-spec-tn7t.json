@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-tn7t",
+  "title": "P0: Main Chat spec — 7 normative bugs",
+  "description": "1. Broken refs: {{peer-deliver}}, {{peer-groupupdate}}, {{JMAP-VTC-WSS}} undefined. 2. Chat/set create returning existing in updated violates RFC 8620. 3. readAt/deletedAt/deletedForAll marked server-set but client-writable. 4. Contradictory MUST: servers reject unknown spans BUT clients must ignore. 5. Space/join never checks SpaceBan. 6. mention_broadcast unenforceable for non-Space group chats. 7. Custom error types rateLimited/notPermitted not IANA-registered.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:38:29Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:43:08Z",
+  "closed_at": "2026-06-07T18:43:08Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-tn7t",
+      "depends_on_id": "jmap-chat-spec-wz74",
+      "type": "blocks",
+      "created_at": "2026-06-07T11:38:57Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-agm",
+  "title": "WNS OAuth endpoint login.live.com may be outdated",
+  "description": "The WNS server credentials section uses https://login.live.com/accesstoken.srf as the token endpoint. This is the legacy Windows Live endpoint. Microsoft's current WNS documentation references Azure AD endpoints (login.microsoftonline.com). The legacy endpoint may still work for consumer app registrations but should be verified. If it is outdated, implementers following the guide will get authentication failures. The doc should either confirm the legacy endpoint still works for this use case or update to the current endpoint.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:38:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:49:43Z",
+  "closed_at": "2026-04-26T21:49:43Z",
+  "close_reason": "Closed"
+}

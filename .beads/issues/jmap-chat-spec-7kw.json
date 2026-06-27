@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-7kw",
+  "title": "WSS guide: wrong JMAP data type named — PresenceStatus should be ChatContact (two places)",
+  "description": "Two sections name the wrong data type when describing what changes when another contact's presence updates. The two-event-tracks section says a confused implementer would call PresenceStatus/changes; the presence section says pushState catch-up delivers PresenceStatus state-change events for contacts. PresenceStatus is the owner's own record. Other contacts' presence is a field on ChatContact, so the relevant state-change type is ChatContact and the wrong call a confused implementer would make is ChatContact/changes. Both instances need correction.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:28Z",
+  "closed_at": "2026-04-26T22:36:28Z",
+  "close_reason": "Closed"
+}

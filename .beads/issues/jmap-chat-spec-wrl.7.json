@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.7",
+  "title": "ReadPosition bidirectional note re-states federation Receiver Behavior",
+  "description": "The bidirectional opt-out note at the end of the ReadPosition section (draft-atwood-jmap-chat-00.md ~line 763) states a normative MUST NOT: 'when PresenceStatus.receiptSharing is false, the server MUST NOT deliver inbound Peer/receipt events (carrying readAt) to the owner's clients.' The same normative requirement is stated more precisely in the Peer/receipt Receiver Behavior section of draft-atwood-jmap-chat-federation-00.md (~lines 313-315), which also adds that deliveredAt MAY still be recorded. The ReadPosition note is a forward-reference summary that introduces a second normative location for the same rule, creating a maintenance burden and potential for divergence. Suggested improvement: replace the MUST NOT in the ReadPosition note with a purely informative cross-reference, e.g. 'The receipt-sharing opt-out is bidirectional: an account that does not broadcast its own read times will also not receive others' read times; see Peer/receipt Receiver Behavior in {{JMAP-CHAT-FED}} for normative requirements.'",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:18Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:45:10Z",
+  "closed_at": "2026-04-27T00:45:10Z",
+  "close_reason": "Resolved by wrl.9 fix: ReadPosition note now references JMAP-CHAT-FED rather than restating the rule",
+  "labels": [
+    "efficiency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.7",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:17Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

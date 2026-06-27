@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-uid",
+  "title": "Invalid urgency on PushSubscription/set has no error specified",
+  "description": "If a client submits urgency: 'very-low' and the server only supports 'normal' and 'high', what error does PushSubscription/set return? The spec says the value MUST be one of the values in supportedUrgencyValues but does not specify the resulting SetError type. Should be invalidArguments.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:21:21Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:25:25Z",
+  "closed_at": "2026-04-26T20:25:25Z",
+  "close_reason": "Closed"
+}

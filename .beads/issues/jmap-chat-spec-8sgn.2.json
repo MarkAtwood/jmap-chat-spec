@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-8sgn.2",
+  "title": "Write draft-atwood-jmap-chat-did-00.md",
+  "description": "Write the normative DID companion draft. Sized to match draft-atwood-jmap-chat-tasks-00 (~5 pages of normative text). All design decisions are locked in 8sgn.1; do not re-litigate them.\n\n## Deliverable\n\n`draft-atwood-jmap-chat-did-00.md` at the top level of the repo. IETF Internet-Draft format (kramdown-rfc2629 frontmatter + Markdown body), same shape as the seven existing drafts.\n\n## Required sections\n\n1. Front matter (title, abbrev, docname, author, normative refs to RFC 2119/8174/8620, DID-CORE; informative refs to JMAP-CHAT and JMAP-CHAT-FED)\n2. Abstract\n3. Introduction (and design philosophy: minimal wire contract, deployment-defined posture, alignment with q15f Option B in core)\n4. Conventions and definitions\n5. Capability\n   - Session-level: `urn:ietf:params:jmap:chat:did`, empty object\n   - Account-level: object with `supportedDidMethods` array (REQUIRED) and any other fields the draft locks\n6. Mandatory DID methods (did:web, did:key, did:plc — MUST resolve and verify)\n7. ChatContact extensions\n   - `id` MAY be a DID URI (cross-reference q15f / commit 48b6a31 in core)\n   - Optional `did` field for pseudonymous case\n   - Consistency rule when both present\n8. Federation authentication\n   - Signature-against-DID-bound-key requirement (normative)\n   - RFC 9421 HTTP Message Signatures + Ed25519 recommended (non-normative)\n   - Components, clock skew, replay window: deployment-defined\n9. DID resolution\n   - Caching: impl-defined except for hard-refresh-on-verify-failure normative sentence\n   - Resolution failure handling: reject auth (do not silently downgrade)\n10. Mention textual form: `@{did:method:value}`\n11. Security considerations\n    - Key compromise and rotation\n    - did:plc operation log integrity\n    - did:web DNS / TLS dependency\n    - did:key non-rotatability\n    - Cross-method consistency\n12. Federation considerations (cross-reference to the federation draft for the Peer/* method set; the DID draft only adds the auth-mechanism layer)\n13. IANA considerations\n    - Capability URN: `urn:ietf:params:jmap:chat:did`\n14. Design influences and non-normative notes (mirror the pattern in calendars / tasks drafts)\n\n## Non-goals (do not include in this draft)\n\n- DID document conventions (auth/keyAgreement role split is Agora's, not the spec's)\n- Provisioning workflows\n- Recovery mechanisms\n- Multi-device handling\n- Trust levels\n- Specific cache TTLs\n- Specific replay-prevention parameters\n- mTLS or OAuth+DID-claim alternative auth mechanisms\n\n## Cross-file consistency checks before close\n\nPer AGENTS.md cross-file consistency table:\n- Capability URN string: grep all files for any prior mention\n- Verify the q15f Option B prose in the core draft still permits DIDs as ChatContact.id\n- Confirm no foreclosure of other DID methods anywhere in the corpus\n\n## Acceptance criteria\n\n- File exists with correct kramdown-rfc2629 frontmatter\n- All required sections present and non-empty\n- Normative size ~5 pages (comparable to tasks-00)\n- No content from the explicit non-goals list\n- Capability URN `urn:ietf:params:jmap:chat:did` registered in IANA section\n- Cross-references to core draft and federation draft are correct\n- README.md updated to list draft-atwood-jmap-chat-did-00 in both the Extensions table and the Repository Layout block (in scope for this bead; precedent set by 4nek/the README hygiene work)\n- AGENTS.md cross-file consistency table extended for DID topics\n",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-13T03:28:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-13T03:34:55Z",
+  "close_reason": "draft-atwood-jmap-chat-did-00.md written. 299 lines, sized between filenode-00 (259) and tasks-00 (325). All sections present per 8sgn.1 design decisions: capability with supportedDidMethods array, three mandatory methods (did:web/did:key/did:plc) with open extensibility, ChatContact extensions (id-as-DID and optional did field with consistency rule), federation auth requirement with RFC 9421 as recommended realization, DID resolution caching impl-defined except for refresh-on-failure, mention textual form aligned with core draft's @did:method:value (no braces — correction recorded on 8sgn.1). Security considerations cover key compromise, did:plc log integrity, did:web DNS/TLS, did:key non-rotatability, cross-method consistency. IANA section requests capability URN registration. Explicit non-prescriptions in back-matter list all deployment-defined items (DID document conventions, multi-device, provisioning, recovery, caching parameters, signature parameters, delegation, trust levels, hardware attestation). README.md updated: Extensions table + Repository Layout. AGENTS.md updated: 'Nine drafts' sentence + cross-file consistency table extended with DID guide row. No URN conflicts across corpus. Textual mention form @did:method:value verified consistent with core draft line 293 and implementer guide lines 665/715. Not committed; awaiting user approval per project AGENTS.md restriction.",
+  "labels": [
+    "companion-draft",
+    "did",
+    "feature",
+    "human",
+    "identity"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8sgn.2",
+      "depends_on_id": "jmap-chat-spec-8sgn",
+      "type": "parent-child",
+      "created_at": "2026-05-12T20:28:51Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

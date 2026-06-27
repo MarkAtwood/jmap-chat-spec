@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.11",
+  "title": "Receiver Behavior checks only account-level receiptSharing, not per-chat override",
+  "description": "draft-atwood-jmap-chat-federation-00.md Receiver Behavior (Peer/receipt) checks only PresenceStatus.receiptSharing. The Sender Behavior correctly resolves both levels (Chat.receiptSharing takes precedence over account-level), but Receiver Behavior ignores Chat.receiptSharing. A recipient who opted out at the per-chat level will still receive inbound read-receipt state-change events for that chat. Asymmetry between Sender and Receiver Behavior will cause incorrect implementations. Fix: Receiver Behavior must apply the same two-level resolution.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:30Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:40:46Z",
+  "closed_at": "2026-04-27T00:40:46Z",
+  "close_reason": "Duplicate of wrl.3 (P0)",
+  "labels": [
+    "maintainer-burden",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.11",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:29Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

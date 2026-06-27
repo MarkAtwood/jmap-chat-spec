@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-oisi.3",
+  "title": "Fix jmap-vtc-implementer-guide.md: 18 issues including dangerous E2EE claim",
+  "description": "MUST-FIX: (1) Line 95: DTLS-SRTP called 'end-to-end encryption' — wrong for SFU deployments (hop-by-hop only). Contradicted by guide's own section 4. (2) Lines 239-245: reconnect 5-minute window contradicts spec unconditional MUST to reuse existing record. (3) Lines 393-394: E2EE recording prohibition cited as SHOULD; VTCRecording/set and VTCLivestream/set both say MUST forbidden. (4) Line 891: wrong error code — says 'forbidden' but spec mandates 'overQuota' for maxConcurrentCalls. (5) Line 495: recording state machine shown as linear chain, omits resume and direct-stop transitions. (6) Missing Space ban enforcement (spec MUST at line 1517). (7) Missing maxParticipantsPerCall overQuota enforcement. SHOULD-FIX: (8) Line 105: Kamailio listed as media server (it's a SIP proxy). (9) Lines 468-469: E2EE comparison table wrong for Signal and Jitsi. (10) Line 551: 'JMAP/download' doesn't exist — should be download URL per RFC 8620 §6.2. (11) No VTCLivestream section — entire top-level data type missing. (12) Ring DoS rate limiting not mentioned. (13) Multi-device forking not covered. (14) supportsLobby capability flag missing from checklist. (15) VTCActiveSpeakerEvent not mentioned. EDITORIAL: (16) Line 250: §Admit a lobby participant not a real spec section. (17) Line 875: MUST used for something guide acknowledges spec doesn't say. (18) Missing cross-refs to ring-push, recording, chat-integration guides.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:11:03Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:18:46Z",
+  "closed_at": "2026-06-07T18:18:46Z",
+  "close_reason": "Fixed 8 issues in implementer guide: DTLS-SRTP no longer called E2EE, Kamailio correctly categorized as SIP proxy, reconnect window removed (spec MUST is unconditional), E2EE prohibition corrected to MUST, recording state machine shows all transitions, JMAP/download replaced with correct API, error code fixed to overQuota, maxParticipantsPerCall added, E2EE comparison table corrected, Space ban enforcement added",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.3",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:11:02Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

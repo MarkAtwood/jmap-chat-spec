@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-9sti.8",
+  "title": "Implementer guide: Chat integration patterns",
+  "description": "Section on JMAP Chat delegation in practice. Server auto-creating a Chat for each VTCCall. In-call chat message flow (JSON example). Live captions as ephemeral events with senderId attribution (JSON example). In-call reactions via Chat Reaction objects. activeCallId lifecycle (set on active, clear on ended). Lobby chat for waiting participants. JSON examples for each flow.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:03:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:41Z",
+  "closed_at": "2026-06-05T23:27:41Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9sti.8",
+      "depends_on_id": "jmap-chat-spec-9sti.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:12Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-9sti.8",
+      "depends_on_id": "jmap-chat-spec-9sti",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:02:59Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

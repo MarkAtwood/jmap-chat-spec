@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-wrl",
+  "title": "Review round 1: Read receipt privacy and opt-in controls",
+  "description": "Review all changes made in epic jmap-chat-spec-cj6. New additions: Chat.receiptSharing field, PresenceStatus.receiptSharing field, Read Receipt Privacy security section, ReadPosition bidirectional note, ReadPosition RFC 8621 cross-reference, Message.deliveryReceipts deviceDeliveredAt, Peer/receipt Sender Behavior, Peer/receipt Receiver Behavior, Peer/receipt deviceDeliveredAt argument, timestamp coarsening SHOULD. Review for correctness, completeness, elegance, and readability.",
+  "notes": "Confidence: 15% chance of missed bug. Calibration performed after reading all 21 filed issues (20 open + 1 in-progress).\n\nDUPLICATE FINDINGS: Three core bugs were each filed twice by independent agents: (a) PresenceStatus/set missing receiptSharing [wrl.1 + wrl.5], (b) Chat/set missing receiptSharing [wrl.2 + wrl.8], (c) Receiver Behavior ignores Chat.receiptSharing override [wrl.3 + wrl.11]. Duplication by independent agents strongly indicates the real issues were found.\n\nDISTINCT REAL BUGS (4-5 unique): (1) Set-method omissions making receiptSharing fields unreachable via API [wrl.1/wrl.5 and wrl.2/wrl.8]. (2) Receiver Behavior asymmetry with Sender Behavior re: per-chat override [wrl.3/wrl.11/wrl.9]. (3) deviceDeliveredAt suppression treatment unspecified in Receiver Behavior [wrl.6]. (4) Bidirectionality sentence may be misread as a wire-level guarantee [wrl.13 -- has real security model impact, not purely style].\n\nOPINION-LABELED (3 issues): wrl.21 (naming direction asymmetry -- purely stylistic with no implementor blocking impact), wrl.14 (paragraph parse difficulty -- the logic is correct and implementable), wrl.16 (ambiguous subject -- extremely unlikely to cause an implementation error; a server reading the context would not misattribute the MUST).\n\nNOT LABELED OPINION despite low priority: wrl.13 (overstated guarantee) has a genuine security model risk; wrl.19 (deviceDeliveredAt unclear in main spec) has real implementor impact for those not reading the federation doc.\n\nEFFICIENCY FINDINGS WITH ENGINEERING BASIS: wrl.4, wrl.7, wrl.10 all identify dual normative statement locations -- these are genuine maintenance hazard (specs that drift between two normative locations produce interoperability failures) and are correctly labeled efficiency, not opinion.\n\nCONVERGENCE: We are running out of real complaints. The set has converged. Multiple agents independently converged on the same 4-5 core bugs. The remaining open issues are duplicates, editorial improvements, or decision rationale records. No new substantive correctness class was found after the first pass. The review has done its job.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:34:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-27T00:46:22Z",
+  "close_reason": "R1 complete. All P0/P1/P2 fixed. Remaining P3/P4 carry to R2."
+}

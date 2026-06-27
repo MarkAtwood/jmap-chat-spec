@@ -1,0 +1,38 @@
+{
+  "id": "jmap-chat-spec-fig9.3",
+  "title": "Federation draft updates: broadcast mentions in Peer/deliver",
+  "description": "Update draft-atwood-jmap-chat-federation-00.md so Peer/deliver and related payloads carry broadcast-scope mentions.\n\nBlocked on jmap-chat-spec-fig9.2 (main draft must define wire format first).\n\nCurrent state: the federation draft's Peer/deliver carries `mentions` as Mention[] (lines 205, 214, 219, 228 in earlier survey). Per-user mentions work; broadcast mentions have no current representation.\n\nLikely scope:\n- Update Mention[] payload structure in Peer/deliver, edit, retract, etc. to carry the type discriminator from jmap-chat-spec-fig9.2\n- Define receiver-side resolution semantics: the receiving server computes its own local recipient set for `@here` and `@admins` (the sender's server may have computed a different set; it is not authoritative)\n- Update validation at lines 269-271 (edit and reactionUpdate payload validation) to handle new mention types\n- Ensure suppression rules apply consistently for received broadcast mentions\n\nCross-document consistency: field names match main draft and push draft.",
+  "acceptance_criteria": "- Peer/deliver payload structure updated for typed mentions\n- Receiver-side recipient resolution semantics explicit (delivery-time on receiving server is authoritative for badging/push)\n- Validation rules updated\n- Edit and reactionUpdate payloads consistent\n- Cross-document field name consistency",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:34:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-13T00:18:06Z",
+  "closed_at": "2026-05-13T00:18:06Z",
+  "close_reason": "Added broadcastMentions to Peer/deliver message and edit payloads; new §Broadcast Mention Resolution subsection codifies receiver-authoritative rule and the no-send-time-set-trust rule; validation extended (step 10); edit-validation extended to invoke steps 9 and 10; Security Considerations subsection added on resolution trust and federation-side opt-out non-disclosure.",
+  "labels": [
+    "feature",
+    "federation-draft",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fig9.3",
+      "depends_on_id": "jmap-chat-spec-fig9",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:34:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-fig9.3",
+      "depends_on_id": "jmap-chat-spec-fig9.2",
+      "type": "blocks",
+      "created_at": "2026-05-12T10:34:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-6b1",
+  "title": "maxMessagesPerPush capability field missing",
+  "description": "The capability object defines maxSnippetBytes to cap snippet size but has no cap on the messages array length. A server that batches aggressively can produce arbitrarily large payloads. Clients cannot bound their push handler memory or timeout budget without knowing the maximum number of entries per push. Add maxMessagesPerPush (UnsignedInt) to the account-level capability object.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:27:13Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:32:10Z",
+  "closed_at": "2026-04-26T20:32:10Z",
+  "close_reason": "Closed"
+}

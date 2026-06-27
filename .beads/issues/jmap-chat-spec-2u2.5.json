@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-2u2.5",
+  "title": "DECISION: deviceDeliveredAt suppressed on receipt-sharing opt-out, same as readAt",
+  "description": "Choice: When the effective receiptSharing preference is false, the server MUST NOT record deviceDeliveredAt — it is explicitly classified alongside readAt as a privacy-sensitive user-activity timestamp, not alongside deliveredAt (which is permitted even when sharing is off).\n\nWhy good: deviceDeliveredAt reveals that the user's device was active and processed the notification — information that is behaviorally equivalent in sensitivity to readAt. Treating it like deliveredAt (a server-to-server relay event) would leak user-activity data despite the opt-out.\n\nAlternatives avoided: Allowing deviceDeliveredAt when receiptSharing is false (privacy leak); suppressing deliveredAt as well (overreach — server delivery confirmation is not user-activity data).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:48:15Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:52:23Z",
+  "closed_at": "2026-04-27T00:52:23Z",
+  "close_reason": "Decision record",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.5",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:48:14Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

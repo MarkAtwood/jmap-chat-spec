@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-0fw.13",
+  "title": "No defined behavior when receiveTypingIndicators toggled false-then-true mid-session",
+  "description": "If receiveTypingIndicators is set to false while a sender is actively typing, typing events are suppressed. If it is then set back to true, the receiver's client has no basis for knowing whether the sender is still typing: no event will arrive (the sender stopped sending new Chat/typing calls while suppressed, or they stopped typing). The 8-second decay timer in the guide applies only when events arrive; with suppression in between, no event resets it.\n\nResult: after re-enabling, the receiver may display a stale 'still typing' indicator indefinitely (if the guide's timer was never started) or may miss a currently-active typing state (if the sender stopped typing while suppressed and no false event arrives).\n\nThe spec should define what the server MUST or SHOULD do when receiveTypingIndicators transitions from false to true: either (a) synthesize a typing:false event for all senders who had an active typing state in that Chat, or (b) explicitly disclaim this edge case and note that clients must treat re-enable as a clean slate.\n\nRelevant locations: draft-atwood-jmap-chat-00.md Chat object receiveTypingIndicators field; jmap-chat-wss-guide.md typing indicators section.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:44Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:45Z",
+  "closed_at": "2026-04-27T00:24:45Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "maintainer-burden",
+    "review",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.13",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:43Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

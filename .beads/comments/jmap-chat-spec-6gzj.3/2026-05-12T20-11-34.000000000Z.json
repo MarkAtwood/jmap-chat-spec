@@ -1,0 +1,7 @@
+{
+  "id": "1778616694000000000",
+  "issue_id": "jmap-chat-spec-6gzj.3",
+  "author": "Mark Atwood",
+  "text": "OLD/ portion resolved 2026-05-12: discarded by user instruction ('discard OLD'). The untracked directory containing two archive snapshots (draft-atwood-jmap-chat-00.md pre-c93e545, draft-atwood-jmap-chat-federation-00.md pre-c93e545) has been removed. No data loss: the same content is preserved in git history under c93e545^ and earlier commits; can be retrieved with 'git show c93e545^:\u003cfile\u003e' if ever needed.\n\nStill pending: AGENTS.md and CLAUDE.md modifications. Bead stays open.",
+  "created_at": "2026-05-12T20:11:34Z"
+}

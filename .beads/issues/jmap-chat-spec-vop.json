@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-vop",
+  "title": "wss-guide: 'patches' terminology for ChatPresenceEvent not from spec",
+  "description": "The guide calls ChatPresenceEvent 'patches'. The spec defines the optional-field semantics (absent=unchanged, null=cleared) but does not use the word 'patch'. Using 'patch' implies RFC 7396 or JSON Patch semantics, which are not referenced. Use 'partial update' or 'delta' instead.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:43:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:48:06Z",
+  "closed_at": "2026-04-26T22:48:06Z",
+  "close_reason": "fixed in jmap-chat-wss-guide.md"
+}

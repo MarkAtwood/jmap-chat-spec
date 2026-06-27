@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-e07",
+  "title": "Batched push payload has no defined shape",
+  "description": "Line 171 says servers MAY deliver 'a single push payload containing an array of ChatMessagePush objects' but the example shows a bare object. The batched form is undefined — is it [{...},{...}] or a wrapper object? The @type pattern breaks if the payload is an array. Must define a wrapper type (e.g. ChatMessagePushBatch) or specify the array envelope.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:21:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:25:24Z",
+  "closed_at": "2026-04-26T20:25:24Z",
+  "close_reason": "Closed"
+}

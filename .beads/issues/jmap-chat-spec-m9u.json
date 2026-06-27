@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-m9u",
+  "title": "Verify: JMAP-BLOBEXT author list in references",
+  "description": "Line 45 lists 'fullname: Bron Gondwana' as sole author of JMAP-BLOBEXT (RFC 9404). RFC 9404 may have additional co-authors. Check the RFC 9404 author list and update the informative reference to be accurate.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:50:56Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:55:31Z",
+  "closed_at": "2026-04-27T01:55:31Z",
+  "close_reason": "RFC 9404 has a single author: Bron Gondwana (editor). The draft reference is correct."
+}

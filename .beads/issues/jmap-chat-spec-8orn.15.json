@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-8orn.15",
+  "title": "Chat: align VTC Endpoint metadata example with VTCCall fields",
+  "description": "Endpoint metadata example (line 254) uses {protocol, roomName, password}. Now that VTCCall defines joinUri, joinPassword, callId, the example should add callId and rename password to joinPassword for consistency. Editorial fix.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:43:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:44:58Z",
+  "closed_at": "2026-06-05T22:44:58Z",
+  "close_reason": "Updated VTC Endpoint metadata example from {protocol, roomName, password} to {protocol, callId, joinPassword} to align with VTCCall fields.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.15",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:43:30Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

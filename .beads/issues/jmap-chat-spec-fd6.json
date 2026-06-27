@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-fd6",
+  "title": "Add server-side suppression of incoming typing indicators",
+  "description": "Add receiveTypingIndicators (Boolean, default true) to the Chat object. When false, the server silently drops typing push events for that chat before delivery to the owner. Sender-unaware. Design: Option A (per-chat Chat field), not Option B (subscription filter — WebSocket-only gap) or Option C (account-level — too coarse, wrong semantic home on PresenceStatus).\n\nMUST invariants to enforce:\nMUST-1: Server MUST NOT deliver typing push event (SSE or WS) to a participant whose Chat.receiveTypingIndicators is false.\nMUST-2: Server MUST return standard success response to Chat/typing regardless of suppression — sender MUST NOT be able to detect suppression.\nMUST-3: In federation, suppression is applied by the home server at fan-out time; calling server invokes Peer/typing as normal.\nMUST-4: receiveTypingIndicators settable only by Chat owner; server MUST return forbidden for non-owner.\nMUST-5: Default value MUST be true; servers treat absent field as true for backward compatibility.\n\nFiles to change (7 locations across 3 files):\n1. draft-atwood-jmap-chat-00.md: Chat object fields (add field), Chat/set update list (add to patch keys), Chat/typing Server Behavior (add suppression check), Security Considerations (add note near Blocked Contacts)\n2. draft-atwood-jmap-chat-wss-00.md: ChatTypingEvent section (add suppression check paragraph), Ephemeral Event Authorization (add bullet)\n3. jmap-chat-wss-guide.md: Fan-out architecture section (add suppression check paragraph)",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:58:18Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-26T23:35:40Z",
+  "close_reason": "receiveTypingIndicators implemented across main spec, WSS spec, federation spec, and guide. All review findings addressed.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fd6",
+      "depends_on_id": "jmap-chat-spec-53o",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:01:39Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8slx.3",
+  "title": "VTC WSS: VTCStreamEnable/Disable",
+  "description": "Define VTCStreamEnable and VTCStreamDisable client-to-server messages. VTCStreamEnable fields: @type, callIds (String[]|null — specific calls or null for all), eventTypes (String[]|null — specific event types or null for all). Subsequent VTCStreamEnable replaces prior subscription. VTCStreamDisable cancels all. Error handling. JSON examples.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:09:49Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:17:58Z",
+  "closed_at": "2026-06-05T23:17:58Z",
+  "close_reason": "VTCStreamEnable/VTCStreamDisable with callIds, eventTypes, semantics, examples",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8slx.3",
+      "depends_on_id": "jmap-chat-spec-8slx",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:09:49Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

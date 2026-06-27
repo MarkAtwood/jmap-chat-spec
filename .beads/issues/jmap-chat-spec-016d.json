@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-016d",
+  "title": "Update metadata references from draft-01 to draft-02",
+  "description": "draft-ietf-jmap-metadata-02 eliminated the standalone Metadata object type. Metadata is now per-type properties (metadata, privateMetadata) on opted-in data types declared in the session capability's dataTypes map.\n\nThe chat spec (draft-atwood-jmap-chat-00) has three MAY notes (lines 508, 608, 733) that use draft-01 terminology (objectType, relatedType, relatedId) which no longer exists:\n\n1. Chat objects (line 508): 'Implementations MAY support JMAP Metadata for private client-side annotations on Chat objects (using objectType: \"Chat\")'\n2. Message objects (line 608): same pattern for Message\n3. Space objects (line 733): same pattern for Space\n\nReword all three to reflect draft-02 architecture: server declares the type in urn:ietf:params:jmap:metadata capability's dataTypes map, objects gain metadata/privateMetadata properties readable/writable via standard Foo/get and Foo/set methods. No new sections, methods, or fields needed — just rewording the existing informative notes.\n\nAlso update the JMAP-METADATA reference from -01 to -02.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T04:31:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T04:33:41Z",
+  "closed_at": "2026-06-05T04:33:41Z",
+  "close_reason": "Rewrote three JMAP-METADATA notes (Chat :508, Message :608, Space :733) to use draft-02 dataTypes/metadata/privateMetadata architecture; removed stale objectType terminology. Reference URL already tracks latest draft."
+}

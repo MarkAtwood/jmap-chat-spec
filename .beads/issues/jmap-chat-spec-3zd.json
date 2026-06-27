@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-3zd",
+  "title": "Remove re-documentation of RFC 8620 upload fields",
+  "description": "Section 3 (lines 127-135) re-documents blobId, type, and size from RFC 8620, creating a secondary normative source for fields this document doesn't own and a maintenance drift risk. Replace with: 'The upload response defined in {{RFC8620}} Section 6.1 is extended with one additional field:' and only define sha256. This removes the entire maintenance surface.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:50:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:55:03Z",
+  "closed_at": "2026-04-27T01:55:03Z",
+  "close_reason": "Removed blobId/type/size re-documentation. Section 3 now says 'the upload response defined in RFC 8620 Section 6.1 is extended with one additional field' and only defines sha256."
+}

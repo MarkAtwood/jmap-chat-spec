@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-48m",
+  "title": "Remove redundant RFC5234 normative declaration (front matter + inline !)",
+  "description": "RFC5234 appears in the normative: front matter block AND is referenced inline as {{!RFC5234}} at line 96. The ! inline marker is redundant when the reference is already declared normative in the front matter. Remove the ! from the inline reference to match the style of other normative references in this document.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:51:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:55:38Z",
+  "closed_at": "2026-04-27T01:55:38Z",
+  "close_reason": "Changed {{\\!RFC5234}} to {{RFC5234}} — RFC5234 is already in the normative: front matter block so the \\! inline marker was redundant."
+}

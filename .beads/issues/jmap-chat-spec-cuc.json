@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-cuc",
+  "title": "Add security section to jmap-push-platform-guide.md",
+  "description": "The jmap-chat-push-platform-guide.md has a dedicated Security notes section covering push channel encryption and identity trust. jmap-push-platform-guide.md has no equivalent — it mentions E2E encryption in the overview table and scattered prose but lacks a dedicated security section. Add one covering: (1) vendor-visible payloads for non-Web-Push platforms and guidance to omit sensitive content on those channels, (2) credential security (static keys vs OAuth token hygiene), (3) the independence of push-channel encryption from message E2E encryption.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T02:31:24Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T02:53:08Z",
+  "closed_at": "2026-04-27T02:53:08Z",
+  "close_reason": "Added security section covering vendor-visible payloads, credential security, and E2E independence"
+}

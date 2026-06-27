@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-t8gc",
+  "title": "Draft jmap-vtc-e2ee-guide.md",
+  "description": "Create implementer guide for E2EE in VTC: mechanism landscape (SFrame/MLS/DTLS-SRTP/ZRTP), gateway reality (PSTN/SIP/H.323 limitations), feature degradation matrix, fingerprint format guidance, group key management, SFU vs MCU implications, mixed-mode calls. Pattern matches existing 6 VTC guides.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:58:50Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-06T00:06:18Z",
+  "closed_at": "2026-06-06T00:06:18Z",
+  "close_reason": "Guide written, fingerprint guidance updated to word-list, committed and pushed as cf06147"
+}

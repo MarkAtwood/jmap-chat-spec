@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.26",
+  "title": "receiveTypingIndicators unenforced for channel Chats in mailbox-per-user topology",
+  "description": "In the mailbox-per-user topology (spec Section 1.1), each participant runs their own JMAP server storing only their own data. Channel Chats exist within a Space, which lives on the Space-owning server. The spec does not specify whether channel Chat records are replicated to each member's home server in this topology — federation replication rules are deferred to JMAP-CHAT-FED.\n\nreceiveTypingIndicators is an owner-side preference checked by the server before delivering a typing event. In the mailbox-per-user topology, the server that would deliver a typing event to a member is that member's home server. If no channel Chat record exists on the member's home server (because the channel lives on the Space-owning server), then the home server has no Chat record to check, and the preference cannot be enforced.\n\nIn the relay topology this is not an issue: all members connect to the shared relay, which holds one Chat record per member per channel.\n\nThe spec must either:\n(a) Require that channel Chat records be replicated to each member's home server (with the receiveTypingIndicators field), or\n(b) Clarify that in the mailbox-per-user topology, typing event delivery and receiveTypingIndicators enforcement for channel Chats is the responsibility of the Space-owning server (which does hold the Chat record), or\n(c) Explicitly exempt channel Chats from the receiveTypingIndicators requirement in the mailbox-per-user topology and document the gap.\n\nWithout one of these, a conforming mailbox-per-user implementation cannot enforce receiveTypingIndicators for channel Chats, creating a silent interoperability failure.\n\nRelevant locations: draft-atwood-jmap-chat-00.md Chat object receiveTypingIndicators field (line 438); Chat/typing Server Behavior (line 904); Deployment Topologies section (lines 86-94).",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:16:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:40Z",
+  "closed_at": "2026-04-27T00:24:40Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "correctness",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.26",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:16:26Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

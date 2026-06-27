@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-0zxh.1",
+  "title": "Fix wrong Visibility Contract cite",
+  "description": "Line 660 cites 'Visibility Contract, Section 10' but spec uses named sections and VC is under Real-Time Simulation Layer, not section 10. Fix the parenthetical citation.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:17:51Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:27:51Z",
+  "closed_at": "2026-06-07T02:27:51Z",
+  "close_reason": "Fixed: changed '(Visibility Contract, Section 10)' to '(Real-Time Simulation Layer, Visibility Contract)' matching the spec's named section header",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0zxh.1",
+      "depends_on_id": "jmap-chat-spec-0zxh",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:50Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

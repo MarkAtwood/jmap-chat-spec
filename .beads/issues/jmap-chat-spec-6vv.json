@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-6vv",
+  "title": "Truncation strategy: no guidance for multi-entry batches",
+  "description": "The truncation order only handles field-level dropping within a single ChatMessageEntry. The spec permits batching (multiple entries in messages). If dropping all droppable fields still leaves the payload over the size limit because the batch contains many entries, there is no guidance on what to do: reduce number of entries, split into multiple pushes, cap at 1 entry as a last resort. The truncation strategy section needs to describe entry-level fallback.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:05:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:24Z",
+  "closed_at": "2026-04-26T21:10:24Z",
+  "close_reason": "Closed"
+}

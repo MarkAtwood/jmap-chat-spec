@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-8zm",
+  "title": "WSS guide: 'send both before API requests' rationale is buried two sections later",
+  "description": "The startup sequence section tells clients to send WebSocketPushEnable and ChatStreamEnable before issuing any JMAP API requests, but gives no reason. The rationale — that StateChange frames arriving during startup should be queued, not processed mid-catch-up — appears two sections later in 'Handling state-change events'. An implementer who doesn't read ahead will not understand why the ordering matters and may skip it. The rationale should appear at the point of the instruction, or at minimum forward-reference the queueing advice.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:36Z",
+  "closed_at": "2026-04-26T22:36:36Z",
+  "close_reason": "Closed"
+}

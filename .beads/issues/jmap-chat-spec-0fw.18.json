@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.18",
+  "title": "Security Considerations: receiveTypingIndicators reference lacks section anchor",
+  "description": "In draft-atwood-jmap-chat-00.md, the Security Considerations / Blocked Contacts subsection mentions receiveTypingIndicators without a cross-reference to its normative definition. A security reviewer who reads that section directly cannot easily locate the Chat object field definition or Chat/typing behavior. Adding a section cross-reference would help navigability.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:01Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:53Z",
+  "closed_at": "2026-04-27T00:24:53Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.18",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:01Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

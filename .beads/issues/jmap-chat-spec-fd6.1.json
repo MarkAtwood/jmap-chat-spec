@@ -1,0 +1,26 @@
+{
+  "id": "jmap-chat-spec-fd6.1",
+  "title": "fd6: receiveTypingIndicators in draft-atwood-jmap-chat-00.md",
+  "description": "Add receiveTypingIndicators to draft-atwood-jmap-chat-00.md in four locations.\n\nWhat: Add the field and wire the suppression check into the main spec.\n\nAlgorithm:\n1. In Chat object fields section (after messageExpirySeconds field): add\n   'receiveTypingIndicators (Boolean): When false, the server silently drops typing push events for this chat before delivery to the owner. The sender is not informed. Default: true. Owner-side preference; not shared with peers.'\n2. In Chat/set Updating a Chat section: add receiveTypingIndicators to the patch keys list alongside muted, muteUntil, pinnedMessageIds, messageExpirySeconds.\n3. In Chat/typing Server Behavior paragraph: after 'The server MUST NOT persist this event.' add a new sentence: 'Before delivering a typing push event to the owner of a Chat, the server MUST check the Chat receiveTypingIndicators field; if it is false, the server MUST silently drop the event and MUST NOT deliver it to any of that owner connected clients.'\n4. In Security Considerations near Blocked Contacts: add a brief paragraph explaining that receiveTypingIndicators suppression is server-side and sender-unaware (Chat/typing returns success regardless).\n\nDefensive rules: No new methods, no new types. All changes are additions or small modifications to existing prose. Normative strength: MUST for the suppression check (MUST-1), MUST for sender non-exposure (MUST-2), default true (MUST-5). The field description uses same wording pattern as muted field.",
+  "acceptance_criteria": "All four locations in draft-atwood-jmap-chat-00.md updated. receiveTypingIndicators field present in Chat object fields. Patch key present in Chat/set. Suppression MUST present in Chat/typing. Security note present.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:10:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T23:13:19Z",
+  "closed_at": "2026-04-26T23:13:19Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fd6.1",
+      "depends_on_id": "jmap-chat-spec-fd6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:10:48Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

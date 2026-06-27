@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-bcoc",
+  "title": "ChatStreamEnable silently ignores vtc dataType if VTC absent",
+  "description": "Chat WSS spec line 189: unrecognized dataTypes alongside recognized values MUST be silently ignored. If client sends dataTypes: ['typing', 'vtc'] but VTC capability is absent, 'vtc' is silently dropped. Client fails to receive VTC events with no error feedback or discovery mechanism.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:48:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:01:37Z",
+  "closed_at": "2026-06-07T06:01:37Z",
+  "close_reason": "Closed"
+}

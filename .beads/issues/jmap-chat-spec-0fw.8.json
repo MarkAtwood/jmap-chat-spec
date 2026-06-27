@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.8",
+  "title": "Chat/typing server behavior: per-recipient check ambiguous for group chats",
+  "description": "In draft-atwood-jmap-chat-00.md, the Chat/typing Server Behavior section says 'Before delivering a typing push event to the owner of a Chat, the server MUST check the Chat`s receiveTypingIndicators field'. In a group or channel chat, every participant has their own Chat record with their own receiveTypingIndicators preference. The phrase 'the owner of a Chat' does not make clear that this check must be applied individually for each potential recipient against that recipient's own Chat record. An implementor could incorrectly read this as a single check against the chat creator's record, or against the sender's record, rather than a per-recipient check. The text should say something like 'for each participant to whom the event would be delivered, the server MUST check that participant's Chat record'.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:54Z",
+  "closed_at": "2026-04-27T00:24:54Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.8",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:36Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

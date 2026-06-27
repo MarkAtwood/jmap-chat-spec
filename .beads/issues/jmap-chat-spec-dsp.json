@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-dsp",
+  "title": "Write draft-atwood-jmap-cid companion spec",
+  "description": "Write a JMAP Content Identifiers specification that adds cryptographic content hashes (SHA-256 and optionally multihash/CID) to JMAP blob and object metadata. The spec should be usable by all JMAP APIs, either as a standalone capability that any JMAP server can advertise, or as a basis for upstream PRs/issues against existing specs (RFC 8620 blob upload response, draft-ietf-jmap-filenode, draft-ietf-jmap-blobext).\n\nThe gap: JMAP blobIds are opaque server-assigned identifiers, not content-addressable. Clients browsing file trees, receiving attachments, or managing blobs have no way to verify integrity, detect duplicates, or use content-addressed storage patterns without downloading the full blob.\n\nScope:\n- Session-level capability urn:ietf:params:jmap:cid\n- Extension to blob upload response: sha256 (already in JMAP-CHAT upload), plus optionally a multihash or CID field\n- Extension to FileNode objects: inline sha256 (or equivalent) on file nodes so clients can verify without downloading\n- Extension to Blob/get (JMAP-BLOBEXT): hash properties returnable on demand\n- IANA registration\n- Design decision: SHA-256 only vs multihash (future-proof but complex)\n- Design decision: standalone capability vs upstream patches to RFC 8620 / JMAP-FILENODE / JMAP-BLOBEXT\n\nIntended outcome: either a publishable companion draft, or a concrete upstream issue/PR set filed against the relevant JMAP WG drafts.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:16:08Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:16:50Z",
+  "closed_at": "2026-04-27T01:16:50Z",
+  "close_reason": "Draft written: draft-atwood-jmap-cid-00.md. Design decisions recorded in beads memory. SHA-256 only, standalone capability urn:ietf:params:jmap:cid."
+}

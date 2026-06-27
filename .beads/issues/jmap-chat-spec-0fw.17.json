@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-0fw.17",
+  "title": "receiveTypingIndicators: checked at delivery time, not subscribe time",
+  "description": "Both draft-atwood-jmap-chat-wss-00.md and jmap-chat-wss-guide.md explicitly require checking receiveTypingIndicators at event delivery time, not at ChatStreamEnable subscribe time. Chat preferences can change while a WebSocket connection is open; a subscribe-time-only check would silently deliver suppressed events to users who changed the preference mid-session. The implementer's guide reinforces this by placing the receiveTypingIndicators check in the delivery path alongside the membership check, not at subscription setup.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:56Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:46Z",
+  "closed_at": "2026-04-27T00:24:46Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.17",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:56Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

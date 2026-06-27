@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-adx",
+  "title": "WSS guide: 'server can replay' overstates — replay is implementation-defined",
+  "description": "The two-event-tracks section says state-change events are 'durable — the server can replay missed ones' as if this is guaranteed. The guide's own server section recommends retaining history but does not require it. An implementer reading the client section will expect replay and not implement a defensive catch-up path. Should say the server *may* replay missed events if it retains history, not that it can as a given.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:24Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:32:41Z",
+  "closed_at": "2026-04-26T22:32:41Z",
+  "close_reason": "Fixed in two-event-tracks section alongside scope clarification"
+}

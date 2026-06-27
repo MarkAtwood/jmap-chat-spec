@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-kq1.3",
+  "title": "Peer/typing receiver behavior missing chat-membership verification",
+  "description": "File: draft-atwood-jmap-chat-federation-00.md, Peer/typing Receiver Behavior section (line 333).\n\nThe Peer/typing receiver behavior does not require the receiving server to verify that the sending peer (senderUserId) is a current member of the identified chatId before fanning out the typing event to the owner's connected clients.\n\nAll other peer delivery methods enforce this: Peer/deliver step 3 requires membership verification for group and channel chats (line 247). The WSS spec section 5.3 (line 216) requires membership verification before delivering a ChatTypingEvent. Chat/typing (main spec line 894) returns notFound if the account is not a participant. Only Peer/typing is missing this check.\n\nImpact: A malicious peer that is authenticated (has a valid peer session on the receiving server) but is NOT a member of chatId X can call Peer/typing with chatId=X. The receiving server will fan out a typing event for that chat to the owner's clients, leaking that the chat exists and injecting false typing signals. The security section (line 569) explicitly says 'servers MUST confirm the sender is a current member of the identified chat before accepting any Peer/deliver or Peer/groupUpdate call' but does not cover Peer/typing.\n\nFix: Add to Peer/typing Receiver Behavior: the receiving server MUST verify that senderUserId is a current member of the identified chatId before forwarding any typing event. If the sender is not a member, the server MUST silently drop the call and return success.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:28:51Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:40Z",
+  "closed_at": "2026-04-27T00:24:40Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "correctness",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-kq1.3",
+      "depends_on_id": "jmap-chat-spec-kq1",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:28:51Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

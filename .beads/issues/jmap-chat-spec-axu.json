@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-axu",
+  "title": "Add JMAP RefPlus informative note to Methods section",
+  "description": "In draft-atwood-jmap-chat-00 Methods section (or Introduction): add an informative note that JMAP Chat implementations SHOULD support urn:ietf:params:jmap:refplus (draft-ietf-jmap-refplus-01) for ergonomic multi-step batch operations. Example use case: creating a Message and immediately using its returned ID in a Message/query filter within the same JMAP request array.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T16:43:45Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T17:20:39Z",
+  "closed_at": "2026-04-26T17:20:39Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-8orn.14",
+  "title": "WSS: add extensibility clause to ChatStreamEnable.dataTypes",
+  "description": "ChatStreamEnable.dataTypes (line 150-151) lists typing and presence. Line 161 says unrecognized values alongside recognized ones are silently ignored, but never says companion specs MAY register additional values. VTC needs to add vtc as a dataType for in-call ephemeral events. One sentence needed.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:43:30Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:44:57Z",
+  "closed_at": "2026-06-05T22:44:57Z",
+  "close_reason": "Added extensibility clause to ChatStreamEnable.dataTypes noting companion specs MAY register additional values, with vtc example.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.14",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:43:30Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

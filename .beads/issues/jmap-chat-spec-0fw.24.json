@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.24",
+  "title": "wss-guide: 'target owner' in fan-out section is undefined jargon",
+  "description": "In jmap-chat-wss-guide.md, the fan-out architecture section says: 'each handler MUST check Chat.receiveTypingIndicators for the target owner before sending a ChatTypingEvent frame.' The term 'target owner' is not defined anywhere in the guide or the spec. A server implementor reading this needs to understand that 'target owner' means the recipient (the user whose WebSocket connection is about to receive the frame). The guide should use the same terminology as the spec — 'recipient' or 'the account whose connection is receiving the event' — to avoid confusion.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:20Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:52Z",
+  "closed_at": "2026-04-27T00:24:52Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.24",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:19Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

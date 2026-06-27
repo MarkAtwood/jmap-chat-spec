@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-lq37.4",
+  "title": "VTC→Chat guide: live captions via ephemeral events",
+  "description": "Section on delivering live captions through Chat WSS. Caption as a custom ephemeral event on the bound chatId WebSocket. Fields: senderId (speaker attribution), text (caption text), language, isFinal (partial vs final). ChatStreamEnable with dataTypes including vtc. Client rendering: subtitle overlay on video. Speaker identification. JSON example of caption event delivery.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:06:20Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:47Z",
+  "closed_at": "2026-06-05T23:27:47Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-lq37.4",
+      "depends_on_id": "jmap-chat-spec-lq37.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:06:47Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-lq37.4",
+      "depends_on_id": "jmap-chat-spec-lq37",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:06:19Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

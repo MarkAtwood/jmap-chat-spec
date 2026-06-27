@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-lq37.7",
+  "title": "VTC→Chat guide: presence and notification coordination",
+  "description": "Section on presence and notification integration. Setting PresenceStatus to busy during active call. Muting chat notifications during call (Chat.muted or deployment-level DND). Restoring presence and notification state when call ends. Avoiding notification storms (ring push + chat push for the same event). JSON example of PresenceStatus/set during call lifecycle.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:06:21Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:47Z",
+  "closed_at": "2026-06-05T23:27:47Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-lq37.7",
+      "depends_on_id": "jmap-chat-spec-lq37",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:06:21Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-lq37.7",
+      "depends_on_id": "jmap-chat-spec-lq37.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:06:48Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

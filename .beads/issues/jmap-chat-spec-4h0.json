@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-4h0",
+  "title": "Add event suppression conditions section to jmap-chat-wss-guide.md",
+  "description": "jmap-chat-push-platform-guide.md has a clear 'When the server does not send a push' section listing suppression conditions clients must understand. jmap-chat-wss-guide.md has no equivalent. The receiveTypingIndicators suppression is buried in the server fan-out section; there is no client-facing summary of when events are silently dropped. Add a section listing when the server will not deliver ChatTypingEvent or ChatPresenceEvent to a given client: (1) receiveTypingIndicators is false for the recipient account, (2) the recipient is no longer a member of the chat at delivery time, (3) the sender is blocked by the recipient. Clients should not treat absence of events as evidence the conditions have changed.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T02:31:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T02:54:01Z",
+  "closed_at": "2026-04-27T02:54:01Z",
+  "close_reason": "Added event suppression conditions section"
+}

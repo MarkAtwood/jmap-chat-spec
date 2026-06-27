@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.30",
+  "title": "DECISION: deviceDeliveredAt added as a distinct field in deliveryReceipts",
+  "description": "Message.deliveryReceipts carries three distinct timestamps per recipient: deliveredAt (mailbox stored it), deviceDeliveredAt (OS/app process received the push notification), and readAt (human read it). deviceDeliveredAt is a separate optional field rather than being collapsed into deliveredAt. These are three genuinely different events with different sources: deliveredAt comes from the receiving mailbox server, deviceDeliveredAt comes from the platform push delivery callback (e.g., APNs delivery receipt, FCM delivery ACK), and readAt comes from the user's client after display. Keeping them separate gives senders diagnostic visibility into where in the pipeline a message is: stored-but-not-pushed vs. pushed-but-not-read. Collapsing deviceDeliveredAt into deliveredAt would lose this signal. The field is optional (MAY be absent) so implementations on platforms without push delivery receipts are not burdened.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:44Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:41:20Z",
+  "closed_at": "2026-04-27T00:41:20Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.30",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:43Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

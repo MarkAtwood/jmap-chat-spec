@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-598",
+  "title": "URN namespace inconsistency: capability vs role",
+  "description": "The capability uses urn:ietf:params:jmap:chat:filenode (IETF-style) but the role uses urn:jmap:chat:filenode:space (non-IETF-style). These are in different namespaces with no explanation. If intentional (following a JMAP convention), add a note. If not, pick one consistently across both.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:49:42Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:57:06Z",
+  "closed_at": "2026-04-26T19:57:06Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-6gzj.1",
+  "title": "Decide push timing for accumulated session commits",
+  "description": "Operational decision. As of 2026-05-12 the local main branch is 7 commits ahead of origin/main:\n\n  970bad6 docs: clarify server-side authorization model\n  38055ec docs: clarify per-method auth latitude\n  9344aec refactor: implementation-defined emoji authorization\n  c93e545 refactor: implementation-defined Space governance\n  b1e639b docs: update JMAP Quotas reference to RFC 9425\n  80d5e11 refactor: drop per-aggregate caps, use overQuota\n  4dc8fd7 docs: update references — replace superseded drafts with published RFCs, update emailpush to -03\n\nFour of these (970bad6, 38055ec, 9344aec, c93e545) are from the 2026-05-12 session. The other three are older but also not yet pushed.\n\nDecision: push now (sooner is easier to review), wait for more work to accumulate (single push for related changes), or stage by topic (push the governance/auth set as one push, then continue working).\n\nClosing condition: push command runs and origin/main matches local main, OR an explicit policy is recorded for why the delay continues.",
+  "acceptance_criteria": "- Decision made and acted upon: either git push runs, or the bead records the reason for continued delay\n- If pushed, the bead is closed with the push timestamp and resulting origin/main SHA",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:12:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T19:47:02Z",
+  "closed_at": "2026-05-12T19:47:02Z",
+  "close_reason": "Mark pushes 26-commit batch after session ends; agent does not push.",
+  "labels": [
+    "decision",
+    "operational",
+    "session-leftover"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-6gzj.1",
+      "depends_on_id": "jmap-chat-spec-6gzj",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:12:17Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

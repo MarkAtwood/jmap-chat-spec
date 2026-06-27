@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.25",
+  "title": "receiptSharing=false interaction with burnOnRead unspecified",
+  "description": "burnOnRead hard-deletes the recipient copy immediately after readAt is set. When the recipient has receiptSharing=false, the outbound Peer/receipt carrying readAt is suppressed. The sender never learns the message was read and cannot verify the burn occurred. The spec does not address whether receiptSharing=false suppresses the burnOnRead signal to the sender. This should be explicitly stated.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:20Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:45:36Z",
+  "closed_at": "2026-04-27T00:45:36Z",
+  "close_reason": "Fixed: burnOnRead now documents interaction with receiptSharing=false (chat-00.md:512)",
+  "labels": [
+    "maintainer-burden",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.25",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:19Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

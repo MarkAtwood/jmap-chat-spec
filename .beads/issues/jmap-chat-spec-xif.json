@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-xif",
+  "title": "Wrong RFC cited for push channel encryption",
+  "description": "§8.1 says 'encrypted per the Web Push message encryption specification {{RFC8030}}' but RFC 8030 is the Web Push Protocol. The encryption spec is RFC 8291 (Message Encryption for Web Push). The reference must be corrected.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:14Z",
+  "closed_at": "2026-04-26T20:41:14Z",
+  "close_reason": "Fixed RFC8030 → RFC8291 in §8.1; added RFC8291 to informative references"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-t4e",
+  "title": "Example payload missing hasMentionAll field",
+  "description": "In §5.2 hasMentionAll is defined as a non-optional Boolean, but the example payload in §7 (Example Payload) omits it entirely. Either declare the field optional or include it in the example.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:13Z",
+  "closed_at": "2026-04-26T20:41:13Z",
+  "close_reason": "Added hasMentionAll: false to example payload"
+}

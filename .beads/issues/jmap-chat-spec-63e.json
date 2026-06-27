@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-63e",
+  "title": "messageId described as ULID — implementation detail leaking into spec",
+  "description": "§5.2 defines messageId as 'The receiver-assigned ULID of the new message.' ULID is an implementation choice, not a normative constraint. The field should be defined as 'the id of the message as assigned by the server' and leave the ID format to JMAP-CHAT.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:42Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:14Z",
+  "closed_at": "2026-04-26T20:41:14Z",
+  "close_reason": "Removed ULID; now reads 'Message.id in JMAP-CHAT'"
+}

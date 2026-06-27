@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-wisp-tgu",
+  "title": "Space governance posture: implementation-defined",
+  "description": "Permanent record. The JMAP Chat spec (draft-atwood-jmap-chat-00) declares Space governance to be implementation-defined.\n\nDecision: There is no `ownerId` field on Space or Chat. There is no normative \"owner\" principal for Space governance. The spec mechanism is members + roles + permissions; the creator becomes a member with a server-defined bootstrap role that grants sufficient admin permissions. Last-administrator protection and destroy authorization are server-defined. See §Space Governance: Deployment Variation (anchor: {#space-deployment}) in draft-atwood-jmap-chat-00.md.\n\nReverses the prior locked-in single-owner direction. Spec-side counterpart to JMAP-g7wu.2.4.12 in the sibling JMAP workspace at ~/PROJECT/JMAP, which is tracking the implementation-side revert of JMAP-g7wu.2.4.11.\n\nSpec commit: refactor: implementation-defined Space governance (this bead is filed concurrently with that commit).",
+  "notes": "Filed and closed in the same operation as a permanent record of the governance posture. Not actionable work — informational pin only.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:18:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T16:18:35Z",
+  "closed_at": "2026-05-12T16:18:35Z",
+  "close_reason": "Permanent record. Spec governance posture is captured in §Space Governance: Deployment Variation in draft-atwood-jmap-chat-00.md. No further action; this bead exists only as a searchable pin.",
+  "no_history": true
+}

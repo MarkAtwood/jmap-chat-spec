@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-slb",
+  "title": "Mentions entirely absent from push spec",
+  "description": "The parent spec has hasMention in Message/query specifically because mentions are a distinct notification category. Push with no mention awareness cannot support the common pattern of loud notification for mentions, silent badge for everything else. ChatMessagePush needs a hasMention boolean field. ChatPushConfig likely needs mention-specific urgency override (e.g. mentionUrgency field).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:21:20Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:25:24Z",
+  "closed_at": "2026-04-26T20:25:24Z",
+  "close_reason": "Closed"
+}

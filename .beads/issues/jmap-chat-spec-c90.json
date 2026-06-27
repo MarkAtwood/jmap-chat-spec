@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-c90",
+  "title": "wss-guide: rate-limit 'per outbound connection' qualifier inconsistent",
+  "description": "The server rate-limiting section says typing events are limited 'per sender per chat per 3 seconds, per outbound connection'. The client section describes the same limit but omits 'per outbound connection'. If that qualifier is meaningful (same typing event rate-limited differently per recipient connection), the client section should reflect it; if not, it should be removed from the server section.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:43:36Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:48:04Z",
+  "closed_at": "2026-04-26T22:48:04Z",
+  "close_reason": "fixed in jmap-chat-wss-guide.md"
+}

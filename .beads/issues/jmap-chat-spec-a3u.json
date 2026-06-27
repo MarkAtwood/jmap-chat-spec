@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-a3u",
+  "title": "wss: no error behavior defined for structurally invalid ChatStreamEnable",
+  "description": "draft-atwood-jmap-chat-wss-00 §4.1 says ChatStreamEnable.dataTypes MUST be non-empty. If a client sends ChatStreamEnable with an empty dataTypes array, the spec defines no server behavior. The §7 unknown-type ignore rule applies to unknown @type values, not to structurally invalid messages of a known type. Decision: define what the server does — silently treat as no-op, treat as ChatStreamDisable, or send an error frame.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:01:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:22:46Z",
+  "closed_at": "2026-04-26T15:22:46Z",
+  "close_reason": "Added error behavior: empty dataTypes or all-unrecognized dataTypes returns RequestError (invalidArguments) and leaves subscription state unchanged. Unrecognized values mixed with recognized ones are silently ignored, preserving forward compatibility."
+}

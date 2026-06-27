@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-a84",
+  "title": "wss: maxConcurrentRequests sum-of-connections applies to HTTP/2+ only",
+  "description": "draft-atwood-jmap-chat-wss-00 §3 says the maxConcurrentRequests limit applies to 'the sum of in-flight requests across both the HTTP JMAP API endpoint and any open WebSocket connections'. RFC 8887 §4.3.2 qualifies this: 'When using the WebSocket JMAP subprotocol over a binding of HTTP that allows multiplexing of requests (e.g., HTTP/2), this limit applies to the sum...' — the cross-connection sum constraint is specific to HTTP/2+, not HTTP/1.1. The WSS draft overstates the scope. Fix: add the HTTP/2+ qualification or cite RFC 8887 §4.3.2 verbatim.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:00:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:24:40Z",
+  "closed_at": "2026-04-26T15:24:40Z",
+  "close_reason": "Restored RFC 8887 §4.3.2's HTTP/2+ qualification: sum-across-connections constraint now correctly applies only when using a multiplexing HTTP binding, not unconditionally."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-tj7",
+  "title": "'channel Chat' used without definition",
+  "description": "Section 5 uses the phrase 'channel Chat' (e.g., 'for a channel Chat') without defining it or cross-referencing where it is defined in JMAP-CHAT. Add a definition or a normative cross-reference to the term as used in the parent spec.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:49:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:52:28Z",
+  "closed_at": "2026-04-26T19:52:28Z",
+  "close_reason": "Closed"
+}

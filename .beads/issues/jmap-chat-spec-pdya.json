@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-pdya",
+  "title": "Future: Scene application domains (virtual worlds, simulation) are Baize-scale projects",
+  "description": "Scene is a spatial substrate. Each application domain built on it (virtual worlds, simulations, etc.) is a Baize-scale project — not a guide or thin companion spec. Baize needed a full engine (schemas, rules, AI, hidden info, 58+ games) with a thin Scene binding; a Second Life / OASIS-style virtual world would need equivalent-scale projects for land/parcels, economy/currency, inventory/transfer, scripting/behaviors, portals/world-graphs, marketplace, and reputation. Some of these may also need JMAP-level companion specs for wire format (e.g. parcel ownership as a JMAP data type), but the bulk of the work is application-layer, not protocol-layer. Not urgent — note for future exploration when deployment pain demands it.",
+  "status": "open",
+  "priority": 4,
+  "issue_type": "feature",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-06-13T05:49:10Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-13T05:53:00Z"
+}

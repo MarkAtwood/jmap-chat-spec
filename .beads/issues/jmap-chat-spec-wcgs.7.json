@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-wcgs.7",
+  "title": "Ring push guide: latency budget breakdown",
+  "description": "Section analyzing the 2-second budget. Server processing (VTCCall create, VTCParticipant creates, push construction): target \u003c100ms. Push delivery (APNs/FCM/Web Push transit): typically 200-800ms. Client wake and UI render: 200-500ms for native, 500-1500ms for web. Where time is lost (cold start, certificate validation, push batching). Monitoring recommendations (instrument each segment).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:04:00Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:44Z",
+  "closed_at": "2026-06-05T23:27:44Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wcgs.7",
+      "depends_on_id": "jmap-chat-spec-wcgs.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-wcgs.7",
+      "depends_on_id": "jmap-chat-spec-wcgs",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:04:00Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

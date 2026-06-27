@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8orn.17",
+  "title": "VTC: define protocol gateway abstraction (PSTN/SIP/ITU)",
+  "description": "JMAP VTC needs a clean interface to PSTN, SIP (RFC 3261+), and ITU-T VTC (H.323/H.324) without re-litigating every external verb. Design: (1) Replace VTCDialInNumber with a broader VTCGateway type advertising available protocol gateways and their capabilities. (2) Add gatewayMetadata opaque object on VTCParticipant for protocol-specific state. (3) Add dial-out operation for outbound gateway calls. (4) Define VTCGatewaySignal ephemeral event as a pass-through for protocol-specific signals (DTMF, SIP REFER, hold/resume, codec renegotiation) that don't map to core VTC lifecycle. The principle: lifecycle operations (join, leave, mute, kick, end) are first-class; everything else is opaque pass-through so external spec changes never require JMAP VTC amendments.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:46:42Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:49:20Z",
+  "closed_at": "2026-06-05T22:49:20Z",
+  "close_reason": "Replaced VTCDialInNumber with VTCGateway abstraction covering PSTN/SIP/H.323. Added VTCDialInEntry, gatewayData on VTCParticipant, dial-out operation, VTCGatewaySignal ephemeral event for opaque protocol pass-through. Renamed dialInPin to gatewayPin. Updated security and non-prescriptions sections. External protocol verbs now flow through without requiring spec amendments.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.17",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:46:41Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

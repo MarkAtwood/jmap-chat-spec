@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-noy7.8",
+  "title": "Write jmap-scene-landscape-guide.md — prior art and competitive comparison",
+  "description": "Write a comprehensive landscape/prior-art comparison document for JMAP Scene that positions it against every relevant existing system and protocol. This is NOT a marketing doc — it's an honest technical comparison showing what Scene borrows, what it does differently, and why.\n\nSections to cover:\n\n1. **Open standards and protocols**\n   - OASIS (the fictional protocol from Ready Player One — what it imagined vs what's real)\n   - Open Metaverse Interoperability Group (OMI) — their approach to interop\n   - VRChat OSC protocol\n   - IEEE 2888 series (interfacing cyber and physical world)\n   - Croquet OS / Multisynq\n\n2. **Corporate metaverse platforms**\n   - Meta Horizon Worlds — walled garden, custom engine, no interop\n   - Microsoft Mesh — Teams integration, enterprise spatial\n   - Apple Vision Pro / visionOS — spatial computing without 'metaverse' branding\n   - Amazon Chime spatial view — the 2D experimental variant\n\n3. **Persistent virtual worlds**\n   - Second Life — 20+ years, user-created content, land model, Vivox voice\n   - OpenSimulator — open-source SL protocol reimplementation\n   - Decentraland — blockchain-based land ownership\n   - Roblox — game creation platform with spatial social\n\n4. **Social VR**\n   - Mozilla Hubs — browser-based, WebRTC, open source, shut down\n   - Mozilla Social (the later Mastodon-adjacent attempt, also shut down)\n   - VRChat — dominant social VR, custom avatars, Udon scripting\n   - Rec Room — cross-platform social gaming\n   - AltspaceVR (Microsoft, shut down)\n\n5. **Spatial office/collaboration**\n   - Gather — 2D top-down spatial video, the primary inspiration for viewHint 2d-topdown\n   - Teamflow — similar to Gather\n   - SpatialChat — browser-based spatial audio\n   - Frame VR — browser-based 3D collaboration\n\n6. **Games as prior art**\n   - Doom (1993) — BSP trees, spatial state, networked multiplayer, 'will it run Doom' as litmus test\n   - Gauntlet (1985) — 4-player cooperative 2D dungeon crawl, shared spatial state, the original couch co-op\n   - Quake/Unreal — client-server authoritative model, the origin of modern game networking\n   - Board games — Chess, Go, Settlers of Catan, Tabletop Simulator, Board Game Arena. Spatial objects with rules, turn-based interaction, the simplest possible Scene deployment\n\n7. **What Scene does differently** (the synthesis)\n   - State not rendering (parallel to VTC's 'call state not call media')\n   - Protocol not platform — no walled garden, no vendor lock-in\n   - JMAP not custom — builds on existing RFC 8620 infrastructure\n   - Composable — Scene + Chat + VTC as independent capabilities that compose\n   - Format-agnostic — visualRef/visualType, not mesh-specific\n   - View-mode spectrum — 3D, 2D top-down, 2D side-scroll as a continuum not separate products\n   - Simulation-agnostic — simulationUri decouples real-time transport from state management\n\nFor each system, cover: what it is, what it got right, what it got wrong or what's missing, and how Scene relates to it (borrowed from, diverges from, or is orthogonal to).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-06T19:22:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T00:11:55Z",
+  "closed_at": "2026-06-07T00:11:55Z",
+  "close_reason": "Guide written, 1213 lines",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-noy7.8",
+      "depends_on_id": "jmap-chat-spec-noy7",
+      "type": "parent-child",
+      "created_at": "2026-06-06T12:22:48Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

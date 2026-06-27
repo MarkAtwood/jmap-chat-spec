@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-3k3n",
+  "title": "P1: Main Chat spec — 8 completeness gaps",
+  "description": "1. No Chat/set destroy semantics. 2. No Space/leave mechanism. 3. deliveryState transitions undefined. 4. Channel Chats not forbidden in Chat/set create. 5. send/view permissions never normatively enforced at method level. 6. hasMention filter ignores broadcast mentions targeting owner. 7. SpaceRole.color type mismatch in addRoles (String-only vs 3-format). 8. Message/set create lacks explicit membership/permission check.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:44:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:53:36Z",
+  "closed_at": "2026-06-07T18:53:36Z",
+  "close_reason": "Closed"
+}

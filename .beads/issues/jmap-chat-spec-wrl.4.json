@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.4",
+  "title": "Sec Considerations repeats receiptSharing MUST NOT",
+  "description": "The Read Receipt Privacy paragraph in Security Considerations (draft-atwood-jmap-chat-00.md lines ~1440-1441) states: 'When PresenceStatus.receiptSharing is false, the server MUST NOT invoke Peer/receipt on behalf of the account.' This is a verbatim restatement of the normative MUST NOT already in the PresenceStatus.receiptSharing field definition (~line 785): 'The server MUST NOT invoke Peer/receipt with a readAt value on behalf of this account.' The Security section adds only one non-redundant sentence (the rationale: 'This prevents a remote peer from inferring when the owner reads messages.'). Suggested improvement: collapse the Security section paragraph to just the rationale and cross-reference, e.g. 'When receiptSharing is false (see {{presence-status}} and {{JMAP-CHAT-FED}}), outbound Peer/receipt calls are suppressed invisibly to the sender, preventing a remote peer from inferring when the owner reads messages.' Remove the repeated normative MUST NOT from the security section.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:44:58Z",
+  "closed_at": "2026-04-27T00:44:58Z",
+  "close_reason": "Fixed: Security section now cross-references rather than restating MUST NOT (chat-00.md:1440)",
+  "labels": [
+    "efficiency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.4",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:10Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

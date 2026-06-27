@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-418",
+  "title": "Clarify null ambiguity in FileNode: directory vs legacy file",
+  "description": "Both directory FileNodes and pre-capability file FileNodes return sha256: null (lines 190-201). A client cannot distinguish the cause without separately inspecting the FileNode type. Add explicit guidance: 'Clients MUST check the FileNode type before interpreting a null sha256 value; null for a directory FileNode is expected, while null for a file FileNode indicates a legacy entry with no computed digest.'",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:51:01Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:55:04Z",
+  "closed_at": "2026-04-27T01:55:04Z",
+  "close_reason": "Updated FileNode Client Usage to require MUST check FileNode type to distinguish directory (null expected) from legacy file (null = unverified). Also fixed imprecise earlier null description."
+}

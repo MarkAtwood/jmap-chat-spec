@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-owe",
+  "title": "Add new well-known Endpoint and MessageAction types for calendar, task, filenode",
+  "description": "In draft-atwood-jmap-chat-00 Endpoint and MessageAction type tables, add the following new well-known type URIs: urn:jmap:chat:cap:calendar-event (links to a CalendarEvent; uri is a calendar event URL or JMAP CalendarEvent ID); urn:jmap:chat:cap:availability (invitation to Principal/getAvailability free/busy lookup); urn:jmap:chat:cap:task (links to a Task; uri is a JMAP Task ID or task tracking URL); urn:jmap:chat:cap:filenode (links to a FileNode; uri is a FileNode URL). All follow the existing extensible URI namespace pattern.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T16:43:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T17:19:28Z",
+  "closed_at": "2026-04-26T17:19:28Z",
+  "close_reason": "Closed"
+}

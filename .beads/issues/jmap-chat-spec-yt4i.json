@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-yt4i",
+  "title": "Ring calls skip start_call permission check",
+  "description": "VTC spec line 639: room calls MUST check start_call permission in Space. Ring call section (lines 564-610) has no equivalent check. A user without start_call permission in a Space channel can bypass it by creating a ring call with the same chatId/channelId instead of a room call.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:47:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:30Z",
+  "closed_at": "2026-06-07T05:57:30Z",
+  "close_reason": "Closed"
+}

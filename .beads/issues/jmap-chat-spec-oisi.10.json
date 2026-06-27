@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.10",
+  "title": "Fix jmap-vtc-chat-delegation-guide.md: 16 issues including fabricated fields + wrong API",
+  "description": "MUST-FIX: (1) Lines 352-419: lobby Chat architecture requires a VTC field that doesn't exist — guide invents a second lobby Chat id but VTCCall has no field to store it. (2) Line 303: Reaction via Message/set is wrong API — Reaction is its own data type, use Reaction/set create. (3) Lines 387-388: 'permissionOverrides' field doesn't exist in Chat or VTC spec — fabricated name. (4) VTCRingEvent doesn't carry chatId (only VTCCallPush does) — guide implies both paths provide binding. (5) Lines 108-109, 412: 'add to Chat members list' wrong mutation path — should use addMembers/removeMembers patch keys. (6) Lines 381-383: channel-as-lobby requires a Space to exist — guide omits this prerequisite. SHOULD-FIX: (7) Line 329: invalid JSON surrogate pair \\ud83d\\udc4f — should be literal emoji. (8) Lines 448-451: PresenceStatus.expiresAt resets to 'online' (SHOULD), not 'clears'. (9) Lines 301-306: Reaction mechanism omits senderReactionId and JSON Pointer patch requirement. (10) Lines 285-286: bodyType mischaracterized as semantic marker for transcripts. (11) Chat.muted bypass by broadcast mentions not noted. (12) expiresAt presence reset is SHOULD not MUST. (13) Missing start_call permission check for Space-bound calls. (14) Lines 453-455: ChatPresenceEvent conflated with federation propagation path. EDITORIAL: (15) Lines 63, 131, 507-519: vague/inconsistent section citations. (16) Line 131: unresolvable cross-reference.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:12:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:53Z",
+  "closed_at": "2026-06-07T18:23:53Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.10",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:12:16Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

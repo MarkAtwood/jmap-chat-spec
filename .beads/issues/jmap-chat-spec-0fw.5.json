@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-0fw.5",
+  "title": "receiveTypingIndicators field def uses undefined term 'typing push event'",
+  "description": "In draft-atwood-jmap-chat-00.md, the Chat object field definition for receiveTypingIndicators uses the phrase 'typing push event' before that term is introduced. The Push Notifications section is later in the document. A first-time reader working through the data type definitions will encounter this term without context. The field description should either use a term already defined at that point in the document, or add a forward reference to the push section.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:14:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:54Z",
+  "closed_at": "2026-04-27T00:24:54Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "readability",
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.5",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:14:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

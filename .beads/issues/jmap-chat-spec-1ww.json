@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-1ww",
+  "title": "Add delivered-to-device intermediate receipt state",
+  "description": "Current spec has deliveredAt (stored by mailbox) and readAt (read by human) but no intermediate delivered-to-device state. This conflates app-foreground/notification-received with human reading. Requires a new field (e.g. deviceDeliveredAt) in deliveryReceipts on Message and in Peer/receipt arguments. Low priority since it requires OS cooperation and is the weakest of the three states. Affects draft-atwood-jmap-chat-00.md (Message type) and draft-atwood-jmap-chat-federation-00.md (Peer/receipt).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:58:13Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:33:45Z",
+  "closed_at": "2026-04-27T00:33:45Z",
+  "close_reason": "Added deviceDeliveredAt to Message.deliveryReceipts (chat-00.md:519) and Peer/receipt Request Arguments (federation-00.md:295)",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-1ww",
+      "depends_on_id": "jmap-chat-spec-cj6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:01:34Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

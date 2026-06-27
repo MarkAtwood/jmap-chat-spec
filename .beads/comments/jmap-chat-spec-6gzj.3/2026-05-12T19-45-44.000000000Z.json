@@ -1,0 +1,7 @@
+{
+  "id": "1778615144000000000",
+  "issue_id": "jmap-chat-spec-6gzj.3",
+  "author": "Mark Atwood",
+  "text": "Deferred this session (2026-05-12). Working tree state recorded for next time:\n\nPre-existing modified (since pre-session):\n- AGENTS.md: trims the auto-generated Beads integration block; replaces with hand-edited version that drops the conflicting 'MUST push at session end' mandate. Net -37 +11 lines.\n- CLAUDE.md: refactored from 112-line duplicate to a 2-line 'Deprecated \\u2014 see AGENTS.md' stub. Net -111 +2 lines.\n\nUntracked:\n- OLD/: two archive snapshots dated April 26 (pre-c93e545 state). draft-atwood-jmap-chat-00.md (65KB) and draft-atwood-jmap-chat-federation-00.md (39KB). Useful as a 'before' reference for the recent governance refactors; deliberately not grep'd against during cross-corpus surveys this session.\n\nThe changes look intentional and coherent rather than abandoned WIP. When Mark decides to handle them, the suggested commit strategy is two commits (AGENTS+CLAUDE together; OLD/ separately), but holding is also fine.",
+  "created_at": "2026-05-12T19:45:44Z"
+}

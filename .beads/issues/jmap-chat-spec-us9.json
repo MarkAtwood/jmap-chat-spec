@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-us9",
+  "title": "wss-guide: no guidance on handling PresenceStatus StateChange",
+  "description": "The spec lists PresenceStatus as a push-subscribable type (changes to the owner's own PresenceStatus record). The guide covers ChatPresenceEvent (others' presence) and ChatContact/get but says nothing about what a client should do when a StateChange arrives for PresenceStatus. Should it call PresenceStatus/get? Is the /changes pattern the same?",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:43:33Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:48:04Z",
+  "closed_at": "2026-04-26T22:48:04Z",
+  "close_reason": "fixed in jmap-chat-wss-guide.md"
+}

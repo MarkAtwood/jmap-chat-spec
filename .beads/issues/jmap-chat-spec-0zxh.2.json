@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-0zxh.2",
+  "title": "Verify authority table vs spec",
+  "description": "Section 4 hybrid authority table (lines 486-492) maps physicsMode to authority sources. Cross-check each mapping against the spec's actual physicsMode definition and confirm the guide flags these as recommended policy, not normative.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:17:51Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:27:54Z",
+  "closed_at": "2026-06-07T02:27:54Z",
+  "close_reason": "Fixed: added note that physicsMode enforcement is simulation-layer-defined per spec; reframed hybrid authority table as recommended practice not spec requirement; changed column header from 'Authority' to 'Recommended authority'; added cross-link to games guide",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0zxh.2",
+      "depends_on_id": "jmap-chat-spec-0zxh",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:51Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

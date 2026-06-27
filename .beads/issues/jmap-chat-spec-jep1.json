@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-jep1",
+  "title": "P0: FileNode spec — optionality + permission gap",
+  "description": "1. Attachment fields not optional in base type but filenode says MAY omit. 2. view permission broadened to file access without acknowledging ChannelPermission gap.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:38:30Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:43:08Z",
+  "closed_at": "2026-06-07T18:43:08Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jep1",
+      "depends_on_id": "jmap-chat-spec-wz74",
+      "type": "blocks",
+      "created_at": "2026-06-07T11:38:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

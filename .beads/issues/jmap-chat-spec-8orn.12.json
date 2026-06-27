@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8orn.12",
+  "title": "VTC: document Chat delegation pattern",
+  "description": "The draft silently omits in-call chat, lobby chat, reactions, polls, captions, and invites — all of which JMAP Chat handles when the binding is present. This reads as a gap rather than a design choice. Add a section (or expand the existing Relationship to JMAP Chat section) explicitly stating: in-call chat is the bound Chat, lobby communication uses the Chat, in-call ephemeral reactions can use Chat WSS events, live captions are Chat ephemeral events with speaker attribution, and scheduled-call invitees are derived from Space membership or CalendarEvent invitees. Make the delegation explicit so it reads as architecture, not omission.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:21Z",
+  "closed_at": "2026-06-05T22:53:21Z",
+  "close_reason": "Expanded Relationship to JMAP Chat section to explicitly document delegation: in-call chat, reactions, captions, lobby chat, invitees, access control, active call banner. Changed from optional to recommended.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.12",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:36Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

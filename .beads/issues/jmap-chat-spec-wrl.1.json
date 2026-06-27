@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.1",
+  "title": "PresenceStatus/set missing receiptSharing in updatable fields",
+  "description": "Location: draft-atwood-jmap-chat-00.md, PresenceStatus Methods / PresenceStatus/set, line ~1162.\n\nThe spec defines PresenceStatus.receiptSharing as a Boolean field with a default of true that the owner can set to false. However, the PresenceStatus/set section lists only 'presence', 'statusText', 'statusEmoji', 'expiresAt' as updatable fields. The 'receiptSharing' field is omitted.\n\nBecause RFC 8620 Section 5.3 requires that servers reject updates to fields not listed as updatable (with 'invalidProperties'), an owner cannot change their receiptSharing preference at all. The entire feature is unusable.\n\nCorrect behavior: 'receiptSharing' MUST be listed in the PresenceStatus/set update-supported fields.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:35:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:44:39Z",
+  "closed_at": "2026-04-27T00:44:39Z",
+  "close_reason": "Fixed: receiptSharing added to PresenceStatus/set update list (chat-00.md:1162)",
+  "labels": [
+    "correctness"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.1",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:35:54Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

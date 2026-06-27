@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-xyq",
+  "title": "Permission required to create Space file tree root is unspecified",
+  "description": "The permission table gives send-level members the right to create files and directories, but creating the root FileNode (role: urn:jmap:chat:filenode:space) is a one-time structural operation. The spec says creation is 'subject to permission' without saying which permission. A send-level member probably should not be able to establish the root. Add an explicit rule.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T19:49:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:55:08Z",
+  "closed_at": "2026-04-26T19:55:08Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-ic5s.4",
+  "title": "Add deployment-policy note to group-chat admin role wording",
+  "description": "File: draft-atwood-jmap-chat-00.md\nLines: 442, 881 (and adjacent context if needed)\n\nCurrent text:\n  Line 442: \"For group chats, only admins may modify this list.\" (pinnedMessageIds)\n  Line 881: \"For group chats, admins additionally may update: name, description, avatarBlobId.\"\n\nThis is the odd Tier 3 item out: the fix isn't MUST → SHOULD because there is no MUST here. Both sentences describe what the `\"admin\"` role enum *means* in group chats. The two-role admin/member model is a deliberate tier distinction (group chats vs. channel chats in Spaces) and the role enum is wire-observable — generalizing it would collapse two tiers and break federation behavior.\n\nBut the spec is currently silent about whether deployments may map ADDITIONAL internal principals to the same admin authority. A deployment may legitimately want:\n- A server administrator who can pin any message in any group chat\n- An enterprise moderator with admin-equivalent authority delegated by directory service\n- An automated cleanup system that prunes pinned messages on a schedule\n\nNone of these need a new wire-level role; they just act \"as if\" they were a member with the `\"admin\"` role. The spec should say this explicitly so implementers don't think they're constrained to the literal two-role model internally.\n\nSuggested addition (a new paragraph in the group-chat creation section near line 873, or in a dedicated note near the ChatMember.role definition at line 369):\n\n  \"The `\"admin\" | \"member\"` role enum on `ChatMember` is the wire-observable representation of group-chat authority and is what remote peers see via {{JMAP-CHAT-FED}}. Servers MAY designate additional internal principals (server administrators, members of a dedicated moderator role, automated maintenance systems, or principals delegated by an external identity provider) as having admin-equivalent authority for the actions admins may perform; the means of designating such principals is deployment-defined. From a remote peer's perspective, all such administrative actions appear to originate from a member with the `\"admin\"` role on the originating server.\"\n\nThis bead is the natural follow-up that should NOT be conflated with we5b.2 (group-chat creator bootstrap). They share surface area but address different concerns:\n- we5b.2: who STARTS as admin at creation (impl-defined, paralleling Space governance)\n- This bead: whether deployments may have richer internal models behind the wire-observable admin role (yes, with an explanatory note)\n\nBoth can be true simultaneously; both should land. They are most easily reviewed as separate commits.",
+  "acceptance_criteria": "- A new paragraph (or note) appears in the main draft naming the deployment-policy latitude\n- The wire-observable nature of the `\"admin\"` role enum is explicit\n- Examples of internal principals (server admin, moderator role, automated system, external IdP) are listed as non-normative\n- The federation observability statement (remote peers see actions as originating from admin) is explicit\n- Lines 442 and 881 themselves are NOT modified; the new note is what does the work\n- The bead does not blur into we5b.2's scope (which is about who starts as admin at creation, not about who else may act with admin-equivalent authority)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:52:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:45:06Z",
+  "closed_at": "2026-05-12T18:45:06Z",
+  "close_reason": "Closed",
+  "labels": [
+    "implementer-guidance",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-ic5s.4",
+      "depends_on_id": "jmap-chat-spec-ic5s",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:52:27Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

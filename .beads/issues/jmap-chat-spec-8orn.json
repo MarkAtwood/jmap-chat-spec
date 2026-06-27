@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-8orn",
+  "title": "JMAP VTC draft-00 gap fill",
+  "description": "Address structural and feature gaps in draft-atwood-jmap-vtc-00.md identified by comparing against Jitsi Meet/Zoom feature sets minus what JMAP Chat already covers.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:33:43Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-05T22:53:21Z",
+  "close_reason": "all steps complete"
+}

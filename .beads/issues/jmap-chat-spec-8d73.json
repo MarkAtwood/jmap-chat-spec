@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-8d73",
+  "title": "Scene games implementer guide",
+  "description": "Review and improve jmap-scene-board-games-guide.md (3,881 lines). Covers 19 specific games (board, card, 2.5D, true 3D) plus 4 genre patterns. Ensure SceneObject/SceneRegion examples match current spec. Covers dimensionality spectrum from 2D through 6DOF.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T01:41:53Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-07T02:28:32Z",
+  "close_reason": "all steps complete"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-r17",
+  "title": "Add timing side-channel from deduplication to Security Considerations",
+  "description": "Section 4 (blob probing) covers hash-based probing via FileNode access but misses the storage timing side-channel: if the server deduplicates blobs, an unusually fast upload response combined with the returned sha256 reveals that identical content is already stored. This is the proof-of-possession/storage side-channel attack. Add a sentence in Security Considerations.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:51:06Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:55:05Z",
+  "closed_at": "2026-04-27T01:55:05Z",
+  "close_reason": "Added 'Upload Timing Side-Channel' subsection in Security Considerations after Blob Probing. Also added explicit {#blob-probing} anchor to enable the cross-reference."
+}

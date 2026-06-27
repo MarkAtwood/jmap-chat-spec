@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-fig9.1",
+  "title": "Design decisions: broadcast-scope mention wire format and semantics",
+  "description": "Make the design decisions for broadcast-scope @-mentions BEFORE any spec edits. Each decision below has two-or-more coherent answers; this bead exists to choose, document, and unblock the implementation beads.\n\nThis bead is BLOCKING for jmap-chat-spec-fig9.2 (main draft implementation) and indirectly for the other Epic A children.\n\n---\n\nDECISION 1 — Wire format / type discriminator location\n\nPath A — Extend the Mention type at draft-atwood-jmap-chat-00.md:263 with a `type` field:\n  Mention {\n    type: \"user\" | \"everyone\" | \"here\" | \"admins\",\n    id: String (optional, present when type==\"user\"),\n    offset: UnsignedInt,\n    length: UnsignedInt\n  }\n\nPath B — Keep the Mention type per-user only; add a separate `broadcastMentions` array on Message with its own structure.\n\nRecommendation: Path A. Cleaner; one structure handles both.\n\n---\n\nDECISION 2 — Rich-body span treatment\n\nThe `\"mention\"` span in the rich-body model (draft-atwood-jmap-chat-00.md:1285) carries `userId`. Either:\n- Add new span types per scope: `\"mention-everyone\"`, `\"mention-here\"`, `\"mention-admins\"`\n- Extend the existing `\"mention\"` span with a `scope` field: `\"user\" | \"everyone\" | \"here\" | \"admins\"`, with `userId` conditional on `scope: \"user\"`\n\nRecommendation: extend existing.\n\n---\n\nDECISION 3 — Permission model\n\nThe `mention_all` permission at draft-atwood-jmap-chat-00.md:582 currently gates Space-wide @mentions. Options:\n- Umbrella: `mention_all` covers all three broadcast scopes\n- Per-scope permissions: `mention_everyone`, `mention_here`, `mention_admins` as separate permissions in the closed vocabulary\n\nRecommendation: umbrella. Simpler vocabulary, less wire surface. But this is a real choice — granular permissioning is a legitimate ask in some deployments.\n\n---\n\nDECISION 4 — Receiver-side recipient resolution\n\nFor routing/push/UX purposes, which members are \"targeted\" by each broadcast scope:\n- `@everyone`: all current members (deterministic)\n- `@here`: members with active presence. Server-defined exactly which presence state (`\"online\"`? `\"online\" | \"away\"`?). When is the set computed (send-time on sender's server, or delivery-time on each receiving server)?\n- `@admins`: members holding administrative permissions. Server-defined which permissions count (`manage_space`? any `manage_*`? controller principals from §Space Governance?). When is the set computed?\n\nRecommendation: send-time set is informational; delivery-time set on the receiving server is authoritative for push urgency and badging.\n\n---\n\nDECISION 5 — Suppression preferences\n\nThe spec already has `Chat.muted`, `Chat.receiveTypingIndicators`, `Chat.receiptSharing`, and `Chat.muteUntil`. Adding broadcast mentions raises:\n- Can a member opt out of `@here` notifications while still receiving `@everyone`?\n- Can a member opt out of `@everyone` ever, or is it always elevated (forced unmute)?\n- What about `@admins` if you are an admin?\n- Does `Chat.muted: true` suppress broadcast mentions, or are they an exception?\n\nThis is the rabbit hole. Many existing systems (notably Slack with `@channel`) handle this poorly. The decision here directly informs which preference fields appear in Chat-update payloads.\n\nRecommendation: NEEDS DISCUSSION. Conservative default: broadcast mentions bypass `Chat.muted` for the targeted recipients but are otherwise filtered by existing preferences; per-scope opt-out preferences are a future bead. But this needs explicit alignment before locking in.\n\n---\n\nDECISION 6 — Push payload representation\n\nThe push draft has `hasMention` and `hasMentionAll` boolean fields (lines 177-180). Options:\n- Keep these two; `hasMentionAll` becomes true for any broadcast scope. Loses fidelity.\n- Add per-scope flags: `hasMentionEveryone`, `hasMentionHere`, `hasMentionAdmins`. Verbose.\n- Replace with a typed field: `mentionScopes: [\"user\" | \"everyone\" | \"here\" | \"admins\"]`. Cleaner.\n\nRecommendation: replace with a typed field. But this is a wire-format change to the push draft and warrants its own thought.\n\n---\n\nOpen questions to resolve in this bead:\n- Confirm or override each recommendation above\n- Whether to ship all three broadcast scopes at once or stage them (`@everyone` first, `@here` and `@admins` follow)\n- Whether the design accommodates future scopes (e.g., `@channel-managers`, `@bots`) cleanly",
+  "acceptance_criteria": "- Each of the six decisions has a documented chosen answer (yes/no/which-option)\n- The suppression-preferences decision in particular has explicit alignment, not a default\n- An updated dependency graph or comment explains which downstream beads are unblocked\n- The chosen wire format is unambiguous enough that jmap-chat-spec-fig9.2 (main draft implementation) can begin without further design discussion",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:34:23Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T19:38:39Z",
+  "close_reason": "All eight decisions made in collaborative session 2026-05-12. Decision record in comments unblocks fig9.2, fig9.3, fig9.4. See comment for D1-D6 + M1 + M2 resolutions.",
+  "labels": [
+    "design-decision",
+    "feature",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fig9.1",
+      "depends_on_id": "jmap-chat-spec-fig9",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:34:22Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.9",
+  "title": "Fix jmap-vtc-chat-integration-guide.md: 11 issues including activeCallId + ring scope",
+  "description": "MUST-FIX: (1) Lines 107, 195-196: activeCallId described as 'read-only to clients' — spec permits client MAY-write for lazy stale-value repair. (2) Lines 132-133, 161-162: JSON example IDs use non-ULID formats (chat-alice-bob, user-bob, etc.) — VTCCall/Chat/Space IDs must be ULIDs; user IDs follow user:email@host format. SHOULD-FIX: (3) Lines 288, 494: start_call enforcement — guide says MUST, spec says SHOULD. (4) Lines 115-117 vs 181: ring call prose restricts to 1:1 but guide's own table allows group ring — inconsistent with spec (targetParticipantIds is array). (5) Line 444: call history only covers 'missed'/'declined' — omits 'cancelled', 'failed', 'timeout'. (6) Lines 238-243: join flow step ordering wrong — creates VTCParticipant before fetching joinUri. (7) Lines 161-169: chatId and channelId set to same value without explaining they're the same id for a channel. (8) Lines 358-374: MessageAction metadata shape presented as defined but is only an Endpoint example. (9) Line 183: scheduled call type in table but no creation walkthrough. (10) No mention of VTC WebSocket spec / VTCStreamEnable. (11) Lines 216-217: activeCallId atomicity overstated vs spec's lazy-repair.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:11:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:53Z",
+  "closed_at": "2026-06-07T18:23:53Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.9",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:11:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

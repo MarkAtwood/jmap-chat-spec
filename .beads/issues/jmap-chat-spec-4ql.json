@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-4ql",
+  "title": "WSS guide: credential expiry tells client to re-fetch Session object unnecessarily",
+  "description": "The credential expiry section says to re-fetch the JMAP Session object after re-authenticating in order to get a fresh WebSocket URL. WebSocket URLs do not change between auth refresh cycles. This adds an unnecessary round-trip. The simpler approach is to reconnect to the known URL with new credentials and only re-fetch the Session object if that connection fails. Implementers following the guide as written will add latency to every credential refresh cycle.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:37Z",
+  "closed_at": "2026-04-26T22:36:37Z",
+  "close_reason": "Closed"
+}

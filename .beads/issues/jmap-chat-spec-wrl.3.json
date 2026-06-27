@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.3",
+  "title": "Receiver Behavior checks account-level receiptSharing, not effective preference",
+  "description": "Location: draft-atwood-jmap-chat-federation-00.md, Peer/receipt / Receiver Behavior, line ~315.\n\nThe Sender Behavior (line ~306) correctly computes the effective receipt-sharing preference: 'if Chat.receiptSharing is present for the relevant Chat, that value is used; otherwise the account-level PresenceStatus.receiptSharing applies.' This is the correct two-level override logic.\n\nThe Receiver Behavior, however, reads: 'when the receiving account has PresenceStatus.receiptSharing set to false' — it checks only the account-level field and ignores Chat.receiptSharing entirely.\n\nThis creates an asymmetry: a per-chat receiptSharing=false override suppresses outbound Peer/receipt calls (via Sender Behavior), but does NOT suppress inbound Peer/receipt delivery on the receiving side. The two behaviors are inconsistent and will produce incorrect results when Chat.receiptSharing=false while PresenceStatus.receiptSharing=true.\n\nCorrect behavior: The Receiver Behavior MUST compute the effective preference using the same two-level logic as the Sender Behavior (Chat.receiptSharing if present, else PresenceStatus.receiptSharing), and apply the suppression when the effective preference is false.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:08Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:44:47Z",
+  "closed_at": "2026-04-27T00:44:47Z",
+  "close_reason": "Fixed: Receiver Behavior now uses effective preference same as Sender Behavior (federation-00.md:315)",
+  "labels": [
+    "correctness"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.3",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:07Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "jmap-chat-spec-fd6.2",
+  "title": "fd6: receiveTypingIndicators in draft-atwood-jmap-chat-wss-00.md",
+  "description": "Add suppression check for receiveTypingIndicators to draft-atwood-jmap-chat-wss-00.md in two locations.\n\nWhat: Wire the Chat.receiveTypingIndicators check into the WSS spec delivery rules.\n\nAlgorithm:\n1. In ChatTypingEvent section, between the rate-limit paragraph and the membership-check paragraph, insert a new paragraph:\n   'Servers MUST check the recipient Chat receiveTypingIndicators field before delivery. If receiveTypingIndicators is false on the owner Chat record, the server MUST silently drop the ChatTypingEvent and MUST NOT deliver it to any of that owner WebSocket connections. The sender is not notified.'\n2. In the Ephemeral Event Authorization section (the bullet list), after the ChatTypingEvent membership bullet, add a new bullet:\n   'ChatTypingEvent MUST NOT be delivered if the owner Chat record has receiveTypingIndicators false at delivery time.'\n\nDefensive rules: Both changes are additions only. No existing text is removed. Normative strength: MUST in both cases (MUST-1). Placement mirrors the existing membership-check pattern exactly.",
+  "acceptance_criteria": "Both locations in draft-atwood-jmap-chat-wss-00.md updated. Suppression paragraph present between rate-limit and membership paragraphs in ChatTypingEvent section. Bullet present in Ephemeral Event Authorization section.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:10:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T23:13:20Z",
+  "closed_at": "2026-04-26T23:13:20Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fd6.2",
+      "depends_on_id": "jmap-chat-spec-fd6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:10:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

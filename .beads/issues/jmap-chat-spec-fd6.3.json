@@ -1,0 +1,26 @@
+{
+  "id": "jmap-chat-spec-fd6.3",
+  "title": "fd6: receiveTypingIndicators in jmap-chat-wss-guide.md",
+  "description": "Add suppression check note to jmap-chat-wss-guide.md fan-out architecture section.\n\nWhat: Tell implementors that the fan-out delivery path must check receiveTypingIndicators before sending ChatTypingEvent frames.\n\nAlgorithm:\n1. Locate the fan-out architecture section in jmap-chat-wss-guide.md. Find the paragraph describing the delivery path (application logic -\u003e pub/sub -\u003e handler -\u003e membership check -\u003e send).\n2. Append to that paragraph (or add a new sentence after the membership-check sentence):\n   'In addition to the membership check, each handler MUST check Chat.receiveTypingIndicators for the target owner before sending a ChatTypingEvent frame. If the field is false, the handler MUST silently drop the event. This check belongs in the delivery path alongside the membership check, not at subscribe time.'\n\nDefensive rules: The guide is non-normative prose but implementors read it. Use MUST to match the normative spec. One addition only, no removals.",
+  "acceptance_criteria": "jmap-chat-wss-guide.md fan-out architecture section updated with receiveTypingIndicators check note.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:11:07Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T23:13:21Z",
+  "closed_at": "2026-04-26T23:13:21Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fd6.3",
+      "depends_on_id": "jmap-chat-spec-fd6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:11:07Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

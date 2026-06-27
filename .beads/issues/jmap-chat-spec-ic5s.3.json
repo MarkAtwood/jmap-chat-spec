@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-ic5s.3",
+  "title": "Soften slow-mode exemption to SHOULD + rationale",
+  "description": "File: draft-atwood-jmap-chat-00.md\nLine: 427 (inside slowModeSeconds field definition on the Chat type)\n\nCurrent text:\n  \"...the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with `rateLimited`. Members with `\"manage_channels\"` permission are exempt. Clients SHOULD display a countdown to the next permitted send time. Default: `0`.\"\n\nTwo distinct claims here, and they need different treatment:\n1. \"server MUST reject ... with `rateLimited`\" — wire-interop concern, keep MUST\n2. \"Members with `\"manage_channels\"` permission are exempt\" — picks one specific policy; should be SHOULD + rationale\n\nThe reasoning behind the `manage_channels` exemption is sound: channel managers are the principals who configure `slowModeSeconds` in the first place, so subjecting them to their own setting is silly. That reasoning should be in the spec text so implementers understand the design intent and can apply the same logic to additional principals (server administrators, moderator roles, automated systems).\n\nSuggested rewording:\n\n  \"...the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with `rateLimited`. Servers SHOULD exempt members holding the `\"manage_channels\"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimited` when they exceed the rate.\n\n  Clients SHOULD display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimited`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.\"\n\nNote: this is the boundary case where impl-defined-policy meets closed-permission-vocabulary. The closed permission set is preserved (no new permission names introduced); only the spec's choice of WHICH permission grants exemption is softened.",
+  "acceptance_criteria": "- The MUST on rejection is retained\n- The exemption clause is SHOULD + rationale, not flat assertion\n- The rationale (channel managers configure slow-mode) appears in the text\n- Deployments are explicitly told they MAY define additional exempt principals\n- The wire contract (rateLimited on non-exempt overrun) is restated for clarity\n- No new permission names are introduced to the closed permission vocabulary\n- The client-side countdown SHOULD is retained, with optional fallback (try-and-react)",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:52:27Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:44:12Z",
+  "closed_at": "2026-05-12T18:44:12Z",
+  "close_reason": "Closed",
+  "labels": [
+    "implementer-guidance",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-ic5s.3",
+      "depends_on_id": "jmap-chat-spec-ic5s",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:52:26Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

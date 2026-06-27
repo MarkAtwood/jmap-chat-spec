@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-blz",
+  "title": "wss: rate limit cross-refs cite JMAP-CHAT instead of JMAP-CHAT-FED",
+  "description": "Two cross-references in draft-atwood-jmap-chat-wss-00 are wrong. §5.3 says 'consistent with the Peer/typing rate limit defined in JMAP-CHAT'. §5.4 says 'consistent with the Peer/subscribePresence delivery rate defined in JMAP-CHAT'. Both Peer/typing and Peer/subscribePresence are defined in JMAP-CHAT-FED (draft-atwood-jmap-chat-federation-00), not in the main JMAP-CHAT draft. Fix: update both references to cite JMAP-CHAT-FED.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:00:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:21:55Z",
+  "closed_at": "2026-04-26T15:21:55Z",
+  "close_reason": "Added JMAP-CHAT-FED as a normative reference; fixed both wrong citations in §5.3 (Peer/typing) and §5.4 (Peer/subscribePresence) from {{JMAP-CHAT}} to {{JMAP-CHAT-FED}}."
+}

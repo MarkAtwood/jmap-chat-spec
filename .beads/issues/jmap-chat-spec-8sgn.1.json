@@ -1,0 +1,33 @@
+{
+  "id": "jmap-chat-spec-8sgn.1",
+  "title": "Locked design decisions for DID companion draft",
+  "description": "Locked design decisions for the JMAP Chat DID companion draft (parent 8sgn). Records the answers reached in chat on 2026-05-12 after reviewing ~/PROJECT/AGORA. Filed and closed immediately as the audit trail; the actual writing work is 8sgn.2 (draft) and 8sgn.3 (guide).\n\n## Spec posture\n\nMinimal protocol contract; anything complex, opinionated, or computationally specific is deployment-defined or lives in the companion implementer guide. Target normative draft size ~5 pages, comparable to draft-atwood-jmap-chat-tasks-00. Do NOT replicate Agora's identity machinery in the draft.\n\n## Decisions\n\n### 1. Mandatory-to-implement DID methods\n\n`did:web`, `did:key`, `did:plc`.\n\nRationale: `did:web` + `did:key` mirrors Agora's two-tier model (org-rooted institutional identity + individual self-sovereign identity). `did:plc` is added for Bluesky/AT Protocol compatibility. The user expressed intent to support all three.\n\n### 2. Method extensibility\n\nThe method set is open at the wire level. The account-level capability object carries `supportedDidMethods` as an array so peers can negotiate. The draft says these three MUST resolve and verify; deployments MAY support others. Do not foreclose any other sane DID method.\n\n### 3. Federation authentication mechanism\n\nDirect cryptographic signature using a key bound to the requesting peer's DID. The spec REQUIRES a signature mechanism; the RECOMMENDED concrete realization is RFC 9421 HTTP Message Signatures with Ed25519, signing key selected from the DID document's authentication verification relationship.\n\nExact signature components, clock skew tolerance, nonce cache TTL, and replay window are DEPLOYMENT-DEFINED. The draft does not enumerate them; the implementer guide cites Agora §3.5.3 as a reference deployment.\n\nWithdrew the earlier consideration of mTLS or OAuth+DID-claim alternatives. Single mechanism, no MAY-alternatives in the draft.\n\n### 4. ChatContact shape\n\n`ChatContact.id` MAY be a DID URI (matches q15f Option B already in the core draft, commit 48b6a31).\n\n`ChatContact` MAY additionally carry an optional `did` field for the pseudonymous case (opaque id + bound DID for crypto purposes).\n\nIf both are present AND `id` parses as a DID URI, they MUST refer to the same DID.\n\n### 5. DID resolution caching\n\nImpl-defined. The draft contains ONE normative sentence: servers MUST refresh a cached DID document on signature-verification failure (assume key rotation). Everything else — per-method TTL defaults, stale-key handling, refresh triggers — is in the implementer guide as recommendations, not in the draft.\n\n### 6. Mention textual form\n\n`@{did:method:value}` with literal braces. Visually distinct from `@user@host` (which f13f handles for DNS-based federated identity). Braces are unambiguous in DID URIs. Wire form is unchanged: `type: \"user\"` with `id` carrying the DID URI in the mention annotation.\n\n### 7. Companion implementer guide\n\nSeparate dependent bead (8sgn.3, blocked-on 8sgn.2). Matches the pattern set by fig9 (implementer-guide), 7aw6 (federation-guide), 9wfr (filenode-guide). The guide receives all opinionated and operational content — RFC 9421 component lists, Agora cross-references, recommended caching defaults, did:web-with-IdP-sidecar workflow patterns.\n\n### 8. Agora citation\n\nCite Agora as an INFORMATIVE reference in the implementer guide, NOT in the normative draft. The draft must stand alone without requiring readers to understand Agora. The guide's introduction notes that JMAP Chat DID adopts identity primitives compatible with Agora deployments to enable interop, with a pointer to the Agora protocol spec.\n\n### 9. DID document conventions\n\nNOT normative in the JMAP Chat DID draft. Agora's two-VM-role split (`authentication` + `keyAgreement`) is one deployment's convention. The draft accepts whatever the resolved DID document presents and uses the W3C DID Core verificationMethod / authentication relationship model directly. No JMAP-Chat-DID-specific conventions are added.\n\n### 10. Out of scope for the draft (explicit non-prescriptions)\n\nThe following are deliberately left to deployments / impl. They are NOT spec'd in the draft. They MAY appear in the implementer guide as deployment patterns:\n\n- DID provisioning workflows (SAML/OIDC/SCIM/AD/etc. sidecar patterns — Agora has its own answer)\n- Recovery mechanisms (recovery key, social recovery, encrypted backup — Agora has its own answer)\n- Multi-device handling (one DID, multiple devices — Agora has its own answer)\n- Trust levels / peer reputation\n- Hardware attestation\n- Audit logging\n- Key rotation operational practice\n- Cross-server moderation involving DID-identified principals\n\n## What follows\n\n- 8sgn.2: Write draft-atwood-jmap-chat-did-00.md, target ~5 pages normative text.\n- 8sgn.3: Write jmap-chat-did-guide.md, blocked-on 8sgn.2.\n- Parent 8sgn closes when both children close.\n",
+  "notes": "Correction to decision D (mention textual form) during 8sgn.2 work: the core draft at line 293 (commit 48b6a31 / q15f Option B) already establishes `@did:method:value` as the textual form (bare, no braces). Earlier recommendation in this record of `@{did:method:value}` (with literal braces) was inconsistent with that. The DID draft will align with the core draft and use the bare `@did:method:value` form. Visually distinct from `@user@host` already because of the `did:` prefix; braces unnecessary.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-13T03:28:44Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-13T03:30:45Z",
+  "closed_at": "2026-05-13T03:28:50Z",
+  "close_reason": "Decision record filed. The ten locked decisions are captured in the issue body and serve as the audit trail for 8sgn.2 (draft) and 8sgn.3 (guide). Per chat with Mark on 2026-05-12: minimal protocol contract, ~5 pages of normative text in the draft, all opinionated/computational/operational content goes in the implementer guide, Agora is informative reference only.",
+  "labels": [
+    "companion-draft",
+    "decision",
+    "did",
+    "feature",
+    "human",
+    "identity"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8sgn.1",
+      "depends_on_id": "jmap-chat-spec-8sgn",
+      "type": "parent-child",
+      "created_at": "2026-05-12T20:28:43Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

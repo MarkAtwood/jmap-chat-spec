@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-xe3",
+  "title": "Consider changing category from exp to std",
+  "description": "The draft uses 'category: exp' (Experimental). The capability is small, well-scoped, and intended for broad deployment alongside RFC 8620 and JMAP-FILENODE. 'Experimental' may set incorrect expectations about deployment intent. Evaluate whether 'std' (Proposed Standard) is more appropriate, consistent with how similar JMAP extensions are categorized.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:20:04Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:27:40Z",
+  "closed_at": "2026-04-27T01:27:40Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.15",
+  "title": "DECISION: deliveredAt excluded from receiptSharing suppression",
+  "description": "deliveredAt (mailbox-received-it acknowledgement) is not suppressed when receiptSharing=false; only readAt (human-read-it) is suppressed. The Peer/receipt Receiver Behavior explicitly preserves this: 'The server MAY still record deliveredAt if present, as delivery acknowledgement is not affected by the receipt-sharing preference.' deliveredAt is infrastructure-layer feedback between servers; it does not reveal human behavior. readAt reveals when a person read a message, which is the actual privacy concern. Conflating the two would degrade delivery reliability feedback for the sender with no privacy benefit: the sender would lose the ability to distinguish 'not yet stored' from 'not yet read', making retry logic and delivery diagnostics harder. Keeping them separate correctly models the two distinct privacy surfaces.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:48Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:40:50Z",
+  "closed_at": "2026-04-27T00:40:50Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.15",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:47Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

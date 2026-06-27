@@ -1,0 +1,19 @@
+{
+  "id": "jmap-chat-spec-f13f",
+  "title": "Federated user mention textual form (@user@host)",
+  "description": "Formalize the textual `@user@host` form for federated user mentions, parallel to ActivityPub / Mastodon conventions.\n\nThe spec already implicitly supports federated user IDs in the value space (the rich-body example at line 1296 shows `userId: \"user:alice@example.com\"`), but does not specify:\n- How the textual form `@alice@example.com` is parsed by clients\n- How clients resolve the textual form to a ChatContact.id\n- How server-side mention validation handles federated mentions\n- Whether the federated mention triggers any peer-side resolution before send\n\nBlocked on the broadcast-scope mention epic (depends on the Mention type discriminator infrastructure that epic establishes — federated user mentions will be `type: \"user\"` with a federated id value, vs. a broadcast scope).\n\nAdditionally depends conceptually on the federation draft's contact-resolution maturity — at present the federation draft handles delivery to known peers but doesn't define \"resolve this textual handle to a peer\". That gap may need filling before this epic can fully land.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:33:10Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T19:54:21Z",
+  "close_reason": "all steps complete",
+  "labels": [
+    "feature",
+    "federation",
+    "mentions"
+  ]
+}

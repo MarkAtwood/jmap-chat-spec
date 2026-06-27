@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-zkhm",
+  "title": "Scene WSS implementer guide",
+  "description": "Review and improve jmap-scene-wss-guide.md (848 lines). Covers WebSocket connection setup, capability negotiation, subscription control, ephemeral event handling, rate limiting, visibility filtering, and interop with Chat/VTC WSS. Ensure consistency with draft-atwood-jmap-scene-wss-00.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T01:41:52Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-07T02:26:04Z",
+  "close_reason": "all steps complete"
+}

@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-2u2.14",
+  "title": "R2-SEC4: Chat.receiptSharing missing inline semantics",
+  "description": "wrl.22: Chat.receiptSharing (draft-atwood-jmap-chat-00.md:441-442) is defined only as 'Per-Chat override of the account-level PresenceStatus.receiptSharing preference (see presence-status). When present, this value takes precedence over the account-level setting for this Chat only. When absent, the account-level preference applies.' The definition does not state what false means — a reader must follow the cross-reference to PresenceStatus.receiptSharing to discover that false suppresses outbound read receipts. PresenceStatus.receiptSharing (line 784-785) provides the normative definition: 'When false, this account does not send read receipts to peers.' Suggested fix: add a one-sentence inline gloss to Chat.receiptSharing, e.g., 'When false, the server suppresses outbound Peer/receipt calls for this Chat; when true, the account-level preference applies unchanged.' This avoids requiring implementors to follow two hops to understand the field's effect.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:49:18Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:54:27Z",
+  "closed_at": "2026-04-27T00:54:27Z",
+  "close_reason": "Opinion: Chat.receiptSharing has cross-reference to presence-status",
+  "labels": [
+    "opinion",
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2u2.14",
+      "depends_on_id": "jmap-chat-spec-2u2",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:49:17Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

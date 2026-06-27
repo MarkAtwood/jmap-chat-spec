@@ -1,0 +1,29 @@
+{
+  "id": "jmap-chat-spec-kq1.2",
+  "title": "receiveTypingIndicators cache invalidation undefined in federated delivery path",
+  "description": "draft-atwood-jmap-chat-00.md line 916 adds a caching SHOULD for local delivery: cache each participant's receiveTypingIndicators and invalidate on Chat/set. draft-atwood-jmap-chat-federation-00.md line 333 instructs the receiving (remote) server to check the recipient's receiveTypingIndicators before forwarding Peer/typing events, but says nothing about how or when to invalidate a cached value when the remote user updates their preference. A federated server may cache the value and hold a stale copy indefinitely with no defined invalidation trigger. Either the cache invalidation requirement must be extended to cover federated delivery paths, or the spec must acknowledge that federated checks are best-effort and explain the consequence.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:28:10Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:41Z",
+  "closed_at": "2026-04-27T00:24:41Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "maintainer-burden",
+    "review",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-kq1.2",
+      "depends_on_id": "jmap-chat-spec-kq1",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:28:10Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

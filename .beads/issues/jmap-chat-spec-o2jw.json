@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-o2jw",
+  "title": "Spec out unified JMAP desktop client architecture",
+  "description": "Write an architecture document for a desktop application that is a client for ALL JMAP protocols: Mail, Chat, VTC, Scene, FileNode, Calendars, Tasks, Contacts, CID, Metadata. Cover: capability-driven adaptive UI, single WebSocket connection, spatial-first rendering, tech stack options, module boundaries.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T00:31:51Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T00:43:24Z",
+  "closed_at": "2026-06-07T00:43:24Z",
+  "close_reason": "Architecture doc written, 1949 lines"
+}

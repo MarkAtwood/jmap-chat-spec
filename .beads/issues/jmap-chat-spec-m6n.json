@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-m6n",
+  "title": "Remove non-conventional max* capability fields; use standard overQuota + JMAP Quotas pattern",
+  "description": "The chat spec advertises five per-aggregate max* capability fields that have no analog in any other JMAP spec. The aligned pattern is RFC 9425 (JMAP Quotas) + RFC 8620 §5.3 standard 'overQuota' SetError: account-level resource visibility via Quota/get, standard overQuota error at exceed time, no custom error vocabulary.\n\nNote: JMAP Quotas' scope enum (account|domain|global) cannot model per-aggregate limits like 'roles per Space'. The chat spec accepts this: servers enforce per-aggregate limits internally and return overQuota at exceed time; clients gain account-level visibility via optional Quotas integration.\n\nFields to remove from urn:ietf:params:jmap:chat:\n- maxGroupMembers\n- maxSpaceMembers\n- maxRolesPerSpace\n- maxChannelsPerSpace\n- maxCategoriesPerSpace\n\nFields to keep (direct analog to other JMAP specs):\n- maxBodyBytes, maxAttachmentBytes, maxAttachmentsPerMessage (core)\n- maxSnippetBytes, maxMessagesPerPush (push)\n\nError pattern at exceed time:\n- Use standard overQuota SetError (RFC 8620 §5.3) — defined as 'would exceed a server-defined limit on the number or total size of objects of this type', aligned with RFC 9425.\n\nNo new SetError types. No IANA registrations.\n\nFilenode (urn:ietf:params:jmap:chat:filenode) is out of scope for this change; maxSpaceStorageBytes stays as-is (already uses overQuota and defers to JMAP-QUOTAS when absent — coherent Pattern C).",
+  "acceptance_criteria": "All five problematic core capability fields and the filenode storage cap field are removed. All MUST-NOT-exceed clauses are rewritten to reference SetError types. New SetError types are defined inline and registered in IANA. No stale references to removed field names remain in any draft or guide. Cross-grep confirms consistency.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T03:59:13Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-12T04:12:53Z",
+  "close_reason": "all steps complete"
+}

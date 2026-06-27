@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-2u2",
+  "title": "Review round 2: Read receipt privacy (post-fix)",
+  "description": "Round 2 review of cj6 after R1 fix wave. Verify fixes are correct, check for new issues introduced by fixes, and determine whether remaining P3/P4 items from R1 have engineering substance warranting action.",
+  "notes": "Confidence: 30% chance of missed bug. R2 found a genuine new P0 (jmap-chat-spec-2u2.6): the burnOnRead/receiptSharing fix text introduced in R1 is causally incorrect. The spec (line 513) states 'no readAt signal will reach the sender; burnOnRead is not guaranteed to trigger' — but burnOnRead triggers on the RECEIVER's local readAt write, not on any signal reaching the sender. receiptSharing=false suppresses outbound Peer/receipt calls (sender notification) but does NOT suppress the receiver's local readAt write. A receiver implementing the corrected text could incorrectly skip the hard-delete when receiptSharing=false, causing a confidentiality failure. The R1 fix wave introduced this error by conflating two independent events. Additionally: 1 P1 (federation spec lacks burnOnRead/receiptSharing cross-ref — jmap-chat-spec-2u2.1), 2 P2 items (redundant rule restatement in Receiver Behavior — jmap-chat-spec-2u2.3; missing top-level deviceDeliveredAt explanation — jmap-chat-spec-2u2.4). The DECISION records (2u2.8) captures valid design intent but the prose that implements that intent is wrong. DONE: no. A P0 correctness error was found. A fix wave is required to correct the burnOnRead description (line 513) and the federation spec cross-reference (line 210). After that fix, a Round 3 verification pass on the burnOnRead text is warranted, but given we are finding diminishing returns on all other areas, Round 3 can be narrowly scoped to the burnOnRead paragraph only.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:46:28Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-27T00:54:39Z",
+  "close_reason": "R2 complete. All P0/P1/P2 fixed. Remaining items opinion-level."
+}

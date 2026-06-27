@@ -1,0 +1,21 @@
+{
+  "id": "jmap-chat-spec-fo22",
+  "title": "Write jmap-chat-implementer-guide.md covering deployment-defined posture topics",
+  "description": "New implementer guide for draft-atwood-jmap-chat-00 deployment topics that the spec defers to implementations. The spec deliberately leaves many security and control posture decisions to deployments (per c93e545, 9344aec, 38055ec, 970bad6, uy1m.1-6, ic5s.1-4, fig9.1 D4a/D5, q15f, f13f, and related commits). Implementations cannot punt: they must make these decisions explicitly and implement them coherently. This guide tells them what they need to decide and offers patterns and recommended starting points without prescribing.\n\nSCOPE\n\nThe guide is non-normative implementer-facing prose. No RFC 2119 keywords. Imperative-mood guidance. Each topic section follows the same shape:\n1. What the spec leaves open (with citation)\n2. What the implementation must decide\n3. Considerations / trade-offs\n4. Common patterns from production chat systems\n5. Recommended starting point (without prescribing one as 'correct')\n\nPROPOSED STRUCTURE\n\n# JMAP Chat \\u2014 Implementer's Guide\n\n## How to read this guide\n## 1. Governance and roles\n  - Space governance (controller principals)\n  - Group-chat bootstrap role assignment\n  - Additional admin-equivalent principals\n  - Slow-mode exemption\n## 2. Authorization policy\n  - Mapping deployment-internal authorization to wire permission vocabulary\n  - Custom emoji authorization\n  - Mention scope predicates (@here / @admins)\n## 3. Identity and federation\n  - Identifier scheme (ULID vs alternatives)\n  - DID URI handling\n  - Federated mention textual form parsing and resolution\n## 4. Storage and retention\n  - Outbox durability mechanism\n  - Edit-history retention policy\n  - Federation contact resolution caching\n## 5. Rate limits and timing\n  - Typing rate and decay calibration\n  - Peer/presence outbound rate\n  - receiveTypingIndicators cache TTL\n  - Retry / backoff intervals\n## 6. Privacy and suppression\n  - Broadcast-mention suppression preferences and Chat.muted bypass\n  - Receipt-sharing scope\n  - Blocked-sender ephemeral-event suppression\n\nWORK PLAN\n\nSequence:\n1. Create skeleton with all headings and one-line stubs (single commit; lets reviewer see shape)\n2. Fill in sections 1-6 in order; one commit per major section\n3. Cross-reference back into the existing guides where they touch the same topics\n4. Final pass for consistency and grep-checks\n\nAcceptance criteria below describe end-state; intermediate commits are progress markers, not failures.",
+  "acceptance_criteria": "- jmap-chat-implementer-guide.md exists at the top level of the repo\n- All six top-level sections are present and non-empty\n- Each topic listed in the description has its own subsection\n- No RFC 2119 keywords (MUST / SHOULD / MAY etc.) in the guide\n- Each topic section follows the documented shape (open decision + must-decide + considerations + patterns + starting point)\n- Every spec citation resolves (line numbers or anchor references to the current main draft, federation draft, or other guides)\n- Implementer guide is added to AGENTS.md's file-map awareness if AGENTS.md references the guide list anywhere\n- Final commit summarizes the new guide and references the parent epic in its commit message",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T20:30:14Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T20:39:31Z",
+  "closed_at": "2026-05-12T20:39:31Z",
+  "close_reason": "Implementer guide created in commits 81bcd40 (skeleton), 6f99f29 (governance), a275947 (authorization), ad116b2 (identity), 3c5c300 (storage), 4baa17e (rate limits), 0a6038a (privacy), 24423b3 (cleanup pass + AGENTS.md update). 1,333 lines covering 19 topics across 6 sections. All 16 RFC 2119 keyword usages are descriptive (quoting spec) rather than asserting requirements in guide prose; this matches AGENTS.md's 'Do not introduce RFC 2119 keywords' rule. AGENTS.md cross-file consistency table updated to reflect four guides.",
+  "labels": [
+    "deployment",
+    "guides",
+    "implementer-guidance"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-6c7",
+  "title": "FCM: response body error codes not mentioned",
+  "description": "FCM v1 returns errors in the response body as a structured Google API error object with a status field (e.g. UNREGISTERED, INVALID_ARGUMENT) that is the reliable signal for error classification, not just the HTTP status code. An implementer relying only on HTTP status codes may misclassify FCM errors. The guide should note that FCM error handling requires parsing the response body status field.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:06:11Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:25Z",
+  "closed_at": "2026-04-26T21:10:25Z",
+  "close_reason": "Closed"
+}

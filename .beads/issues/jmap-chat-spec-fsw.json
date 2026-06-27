@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-fsw",
+  "title": "wss: rate limit MUST rate-limit contradicts SHOULD be delivered",
+  "description": "ChatTypingEvent section says 'Servers MUST rate-limit outbound typing events per sender per chat: no more than one ChatTypingEvent per sender per chat per 3 seconds SHOULD be delivered.' Opening with MUST but qualifying the specific rate with SHOULD creates an internal contradiction — what exactly is mandatory? Decision: either 'Servers MUST rate-limit...MUST deliver no more than one per 3 seconds' (hard limit) or 'Servers SHOULD rate-limit...no more than one per 3 seconds' (best practice). Same issue applies to ChatPresenceEvent rate limit.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:33:33Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:37:18Z",
+  "closed_at": "2026-04-26T15:37:18Z",
+  "close_reason": "Downgraded typing rate limit from MUST to SHOULD throughout (section and security considerations), matching presence section. Presence was already consistently SHOULD."
+}

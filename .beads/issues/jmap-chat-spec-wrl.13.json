@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.13",
+  "title": "bidirectional opt-out sentence overstates guarantee",
+  "description": "Location: draft-atwood-jmap-chat-00.md, ReadPosition section, line 763. Text: 'An account that does not broadcast its own read times does not observe others read times.' Issue: This reads as a bilateral protocol guarantee. In reality the local server only suppresses inbound Peer/receipt readAt delivery when the local account has receiptSharing false; it cannot prevent a remote peer server from sending Peer/receipt calls or retaining readAt on their side. An implementor could misread this as a wire-level symmetry guarantee rather than a local-server-side suppression rule. Suggested rephrasing: 'When receiptSharing is false, the server suppresses inbound readAt delivery to the owner clients (defined in JMAP-CHAT-FED). Remote peers are not prevented from recording or retaining readAt values on their own servers; the suppression is local only.'",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "chore",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:40Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:09:01Z",
+  "closed_at": "2026-04-27T01:09:01Z",
+  "close_reason": "Resolved: 'in the affected scope' qualifier added; SEC4 R2 confirmed resolved",
+  "labels": [
+    "readability"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.13",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:40Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

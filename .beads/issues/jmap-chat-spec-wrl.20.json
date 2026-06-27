@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.20",
+  "title": "DECISION: Chat.receiptSharing optional (absent means inherit)",
+  "description": "Chat.receiptSharing is typed as 'Boolean, optional'. When absent, the account-level PresenceStatus.receiptSharing applies. This three-state model (explicitly true, explicitly false, unset/inherit) is better than requiring an explicit value on every Chat record. Most chats will never need a per-chat override; requiring an explicit value would bloat every Chat object and force clients to read and echo the account-level setting on every Chat/set create. Absence-means-inherit keeps the common case simple, allows the global default to cascade without client complexity, and is consistent with how other JMAP per-object overrides work (e.g., per-message vs. account settings in JMAP Mail).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:04Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:41:01Z",
+  "closed_at": "2026-04-27T00:41:01Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.20",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:04Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

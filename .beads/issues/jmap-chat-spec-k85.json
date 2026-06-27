@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-k85",
+  "title": "Push payload format undefined: how does ChatMessagePush relate to StateChange",
+  "description": "RFC 8620 §7.2.2 defines push notifications as carrying a StateChange object. The spec says servers 'include' a ChatMessagePush 'in the push payload' but never defines the relationship. Is ChatMessagePush the entire payload, a field on StateChange, a sibling object? An implementor has nothing to work from. Must define the exact payload structure — likely by looking at how draft-ietf-jmap-emailpush solves this and following the same pattern.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:21:07Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:25:23Z",
+  "closed_at": "2026-04-26T20:25:23Z",
+  "close_reason": "Closed"
+}

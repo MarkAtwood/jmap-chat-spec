@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-378m.1",
+  "title": "Chat→VTC guide: scaffold and intro",
+  "description": "Create jmap-chat-vtc-integration-guide.md. Audience: Chat server/client implementers adding call support. Prerequisite: reader has implemented urn:ietf:params:jmap:chat, now adding urn:ietf:params:jmap:vtc.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:05:50Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-05T23:27:45Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-378m.1",
+      "depends_on_id": "jmap-chat-spec-378m",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:05:50Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

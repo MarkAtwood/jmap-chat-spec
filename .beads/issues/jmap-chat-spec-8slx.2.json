@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8slx.2",
+  "title": "VTC WSS: capability definition",
+  "description": "Define urn:ietf:params:jmap:vtc:websocket capability. Session-level and account-level objects. Presence means server supports VTCStreamEnable on WebSocket connections.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:09:49Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:17:58Z",
+  "closed_at": "2026-06-05T23:17:58Z",
+  "close_reason": "urn:ietf:params:jmap:vtc:websocket capability defined with session example",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8slx.2",
+      "depends_on_id": "jmap-chat-spec-8slx",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:09:48Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

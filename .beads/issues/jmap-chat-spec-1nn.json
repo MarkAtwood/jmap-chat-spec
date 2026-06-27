@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-1nn",
+  "title": "fed: MUST be prepared to receive rich text in Peer/deliver",
+  "description": "New message validation step 6 says servers implementing JMAP-CHAT that support application/jmap-chat-rich 'MUST be prepared to receive it in Peer/deliver.' This is implementation readiness guidance that cannot be verified at the protocol level. A server that doesn't support rich text simply won't list it in supportedBodyTypes and will reject it at step 6. The MUST adds nothing over the existing validation. Decision: downgrade to SHOULD, or remove entirely as redundant with the supportedBodyTypes check.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:33:22Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:41:44Z",
+  "closed_at": "2026-04-26T15:41:44Z",
+  "close_reason": "Removed 'MUST be prepared to receive it in Peer/deliver' as redundant — the supportedBodyTypes gate in step 6 already handles this: servers that support rich text list it and accept it; servers that don't list it reject with invalidArguments."
+}

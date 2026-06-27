@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-3kb",
+  "title": "Rewrite draft-atwood-jmap-chat-00.md bottom-up",
+  "description": "Read draft-atwood-jmap-chat-00.md and rewrite it from the bottom up for clarity, correctness, and consistency. Check all normative references, cross-references, ABNF, examples, section anchors, IANA registrations, security considerations, and RFC boilerplate. Fix any issues found.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T02:06:26Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T02:10:46Z",
+  "closed_at": "2026-04-27T02:10:46Z",
+  "close_reason": "fixed missing JMAP-CHAT-WSS ref, wrong JMAP-BLOBEXT title, and IANA Data Types table columns"
+}

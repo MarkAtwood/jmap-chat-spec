@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.7",
+  "title": "Fix jmap-vtc-e2ee-guide.md: garbled text + MLS PCS/FS conflation + fingerprint encoding",
+  "description": "MUST-FIX: (1) Line 277: garbled/corrupted/truncated text. Needs manual inspection and rewrite. (2) MLS post-compromise security conflated with forward secrecy. These are distinct RFC 9420 properties: FS protects past messages if current key is compromised; PCS ensures that after a compromise, security is eventually restored when the compromised party updates their key material. The guide conflates them, which will mislead E2EE implementers. SHOULD-FIX: (3) Fingerprint encoding unspecified. The guide discusses fingerprint verification but never specifies the encoding format (hex? base64? emoji hash like Signal's safety numbers?). Implementers need an interoperable format to display fingerprints.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:11:37Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:53Z",
+  "closed_at": "2026-06-07T18:23:53Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.7",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:11:37Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-3g8",
+  "title": "properties filter: minimum forced-present fields beyond messageId undefined",
+  "description": "§4.1 says messageId is always included regardless of the properties filter, but says nothing about chatId, chatKind, senderId, or other fields that are practically necessary to render any notification. Without a defined minimum set, a server could return a payload with only messageId, which is useless to a client. The spec needs to define the immutable minimum field set.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:53Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:48:28Z",
+  "closed_at": "2026-04-26T20:48:28Z",
+  "close_reason": "Adopted emailpush model: properties list is authoritative, no forced floor. Replaced 'messageId always included regardless' with a MUST-support minimum set matching the default set."
+}

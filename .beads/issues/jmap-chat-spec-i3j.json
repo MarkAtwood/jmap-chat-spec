@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-i3j",
+  "title": "Resolve 'digest' term redefinition conflict in Conventions",
+  "description": "§1.1 (lines 88-91) redefines 'digest' to mean specifically 'SHA-256 hash encoded as lowercase hex'. But the word 'digest' appears in §1 (line 69-70) and §2.2 (line 162) to describe JMAP-BLOBEXT's digest:sha-256, which is base64-encoded. Those uses contradict the Conventions definition. Options: (1) rename the concept in this document (e.g. 'hex digest' or 'CID value'), or (2) remove the blanket redefinition and be explicit each time.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:19:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:25:41Z",
+  "closed_at": "2026-04-27T01:25:41Z",
+  "close_reason": "Closed"
+}

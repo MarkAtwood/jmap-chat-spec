@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-w8nh",
+  "title": "Three push paths for call start — no dedup rule",
+  "description": "VTC spec line 1282: room/scheduled call notifications should use ChatMessagePush. But a room call start also triggers: (1) Chat StateChange for activeCallId, (2) ChatMessagePush if server auto-posts 'call started' message, (3) VTC StateChange for new VTCCall. Three push paths for one event, no deduplication rule. Clients may show 3 notifications.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:47:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:31Z",
+  "closed_at": "2026-06-07T05:57:31Z",
+  "close_reason": "Closed"
+}

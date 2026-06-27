@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-53o",
+  "title": "Define owner-facing typing signal method in JMAP Chat",
+  "description": "The main spec (draft-atwood-jmap-chat-00) promises typing indicators as a feature but only defines the receive side. There is no owner-facing method for a client to signal typing state to their own server. The chain is broken: client-to-server leg is missing entirely. Peer/typing (server-to-server) is defined in the federation spec, and the SSE/WebSocket delivery to clients is defined, but the originating client has no specified way to tell its server it is typing. Need to define a method (e.g. Chat/typing) and add it to the main spec.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:50:39Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-04-26T23:35:42Z",
+  "close_reason": "Closed"
+}

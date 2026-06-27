@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-akb",
+  "title": "Rewrite draft-atwood-jmap-cid-00.md bottom-up",
+  "description": "Read draft-atwood-jmap-cid-00.md and rewrite it from the bottom up for clarity, correctness, and consistency. Check all normative references, cross-references, ABNF, examples, section anchors, IANA registrations, security considerations, and RFC boilerplate. Fix any issues found.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T02:06:32Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T02:06:51Z",
+  "closed_at": "2026-04-27T02:06:51Z",
+  "close_reason": "Rewrite pass already completed in this session."
+}

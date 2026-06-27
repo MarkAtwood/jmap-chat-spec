@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-vx3m",
+  "title": "E2EE VTC call metadata leaks via Scene spatial presence events",
+  "description": "When a VTCCall with e2eeEnabled: true is bound to a SceneRegion via activeCallId, Scene WSS delivers SceneAvatarEvent (enter/leave with displayName) to all region subscribers. This reveals real-time call participant presence via the Scene channel, undermining the E2EE privacy contract. VTC security section 'Call Metadata Exposure' (vtc-00.md lines 1552-1554) flags metadata concerns for VTC only. Scene's 'Spatial Metadata Exposure' (scene-00.md lines 2263-2265) does not mention E2EE calls. Need: guidance or suppression mechanism for Scene presence events when bound to E2EE calls.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:41:13Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:52Z",
+  "closed_at": "2026-06-07T05:57:52Z",
+  "close_reason": "Closed"
+}

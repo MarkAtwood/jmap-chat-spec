@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-ano",
+  "title": "draft-atwood-jmap-chat-filenode companion spec",
+  "description": "Define a new JMAP Chat FileNode companion spec binding FileNode (draft-ietf-jmap-filenode-13) namespaces to Spaces. The main spec Space section already has a placeholder note pointing here. Spec should: define how a Space is associated with a FileNode root (spaceFilenodeId on Space, or well-known role 'urn:jmap:chat:filenode:space'); map Space permissions (manage_channels, send, view) to FileNode permissions; define urn:jmap:chat:cap:filenode Endpoint and MessageAction types; reference Blob/convert for server-side processing (e.g., unzipping an uploaded archive into the Space file tree).",
+  "design": "1. Association: implicit well-known FileNode role 'urn:jmap:chat:filenode:space' — no field added to Space object; clients discover via FileNode/query with role filter. 2. Scope: Spaces only. 3. Structure: flat file tree per Space, no protocol-defined channel subdirs. 4. Permissions: flat Space role → FileNode access mapping only, no per-channel FileNode ACL overrides. 5. Attachments: explicit opt-in link — Message/set attachment MAY specify filenodeId to surface the blob in the Space tree; no automatic mirroring. 6. Upload flow: defer entirely to FileNode spec (both blob-then-set and HTTP PUT are valid per FileNode). 7. Federation: out of scope for v1; note that a future federation companion doc may address it. 8. Space deletion cascade: server SHOULD destroy the FileNode tree when a Space is destroyed, but MAY leave it accessible to former members for a grace period (implementation-defined duration).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T16:43:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T19:44:06Z",
+  "closed_at": "2026-04-26T19:44:06Z",
+  "close_reason": "Spec written at draft-atwood-jmap-chat-filenode-00.md"
+}

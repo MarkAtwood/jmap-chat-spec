@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.28",
+  "title": "DECISION: timestamp coarsening placed in Security Considerations",
+  "description": "The SHOULD for UI timestamp coarsening (present as hour-granularity or relative, not sub-minute) appears in Security Considerations, not in ReadPosition or Message field definitions. This is the correct placement. Coarsening is a presentation guidance — the underlying UTCDate values retain full precision for protocol purposes, and the spec explicitly says 'coarsening is a presentation concern only'. Putting it in the Security Considerations section ensures it is read by implementers performing a security review, which is the audience that needs to act on it. Placing it in the ReadPosition or Message definitions would conflate display behavior with data-model semantics and could mislead implementers into thinking the stored timestamps must be coarsened at the protocol level, which would break interoperability.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:37:29Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:41:12Z",
+  "closed_at": "2026-04-27T00:41:12Z",
+  "close_reason": "Decision record — informational only",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.28",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:37:28Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

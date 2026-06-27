@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-g2r",
+  "title": "FCM registration token does not fit PushSubscription.url model",
+  "description": "The intro states the server uses PushSubscription.url (RFC 8620) as the delivery endpoint. FCM breaks this: there is no per-device URL. The guide says store the registration token but never explains how a JMAP server using RFC 8620 PushSubscription accommodates this. Does the token go in a custom extension property? In a synthetic URL? Does the server need a non-standard PushSubscription extension? This is a real architectural question implementers will hit immediately and the guide needs to address it.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:05:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:20:52Z",
+  "closed_at": "2026-04-26T21:20:52Z",
+  "close_reason": "Resolved: FCM/APNs reframed as out-of-band server-side backends; PushSubscription.url is Web Push only"
+}

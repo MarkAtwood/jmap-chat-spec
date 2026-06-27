@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ai2",
+  "title": "state field semantics undefined for batched payload",
+  "description": "§5.1 says state is 'the current state string' but does not define what 'current' means when the server batches multiple messages into one ChatMessagePush. Is it the state after all batched messages are applied, at push-generation time, or at delivery time? Only one interpretation is safe to use as sinceState. A MUST is needed.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:34:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:41:15Z",
+  "closed_at": "2026-04-26T20:41:15Z",
+  "close_reason": "Rewrote state field description: server MUST set it to post-application state"
+}

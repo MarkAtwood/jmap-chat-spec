@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-8d73.6",
+  "title": "Check viewHint consistency in tables",
+  "description": "The summary tables (lines 3837-3859) list viewHint values for each game and genre. Cross-check these against the actual viewHint values in each game's Region JSON example. Verify Battlezone is listed as '3d' (not '2.5d') in the table since viewHint is always '3d' for first-person games.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T02:17:54Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T02:33:12Z",
+  "closed_at": "2026-06-07T02:33:12Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8d73.6",
+      "depends_on_id": "jmap-chat-spec-8d73",
+      "type": "parent-child",
+      "created_at": "2026-06-06T19:17:53Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

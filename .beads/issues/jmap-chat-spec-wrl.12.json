@@ -1,0 +1,28 @@
+{
+  "id": "jmap-chat-spec-wrl.12",
+  "title": "Sender Behavior for group chats with mixed receiptSharing preferences is unspecified",
+  "description": "draft-atwood-jmap-chat-federation-00.md Sender Behavior (Peer/receipt): The spec says 'the sending server MUST determine the effective receipt-sharing preference' before invoking Peer/receipt. In a group chat, Peer/receipt is sent from a recipient mailbox back to the original sender's mailbox. The 'relevant Chat' and 'relevant account' are the receipt-sending user (the reader), not the message sender. But the spec does not say this explicitly. Furthermore, if a group chat has N members and some have receiptSharing=false and others have receiptSharing=true, the original message sender receives receipts from some members but not others — this is the intended design but it is not stated. Implementors building the group-chat receipt path may get confused about whose preference is being checked (the reader's vs the original sender's). The spec should make explicit that the preference being evaluated is always that of the user sending the receipt (the reader), not any other participant.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:45:26Z",
+  "closed_at": "2026-04-27T00:45:26Z",
+  "close_reason": "Fixed: Sender Behavior now specifies 'for the reading account (recipient of original message, not original sender)' (federation-00.md:306)",
+  "labels": [
+    "maintainer-burden",
+    "risk"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.12",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:38Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

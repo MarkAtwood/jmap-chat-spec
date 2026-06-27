@@ -1,0 +1,33 @@
+{
+  "id": "jmap-chat-spec-8orn.7",
+  "title": "VTC: add ask-to-unmute moderator action",
+  "description": "Jitsi and Zoom have ask-to-unmute: moderator sends a request, participant sees a prompt, participant chooses whether to unmute. The draft only has hard-mute (moderator patches mediaState.audio to false). Add either a VTCUnmuteRequestEvent ephemeral event or an unmuteRequested (Boolean) field on VTCParticipant that the moderator can set and the participant clears by unmuting or dismissing.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:34Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:19Z",
+  "closed_at": "2026-06-05T22:53:19Z",
+  "close_reason": "Added unmuteRequested field on VTCParticipant and VTCUnmuteRequestEvent ephemeral event. Moderator ask-to-unmute action defined in participant-level moderator actions.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.7",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:34Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-8orn.7",
+      "depends_on_id": "jmap-chat-spec-8orn.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T15:34:45Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

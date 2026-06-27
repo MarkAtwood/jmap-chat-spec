@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-tvg",
+  "title": "WSS guide: pushState gap detection is wrong — client cannot detect when server skipped replay",
+  "description": "The pushState catch-up section says the client can detect when the server did not replay missed changes because 'it returns a StateChange with a different pushState without replaying missed changes'. The client has no reliable way to know whether the server replayed history or just started fresh — both look like a normal StateChange frame. RFC 8887 says servers that cannot honor a pushState simply skip replay with no explicit signal. The correct guidance is to issue a proactive /changes sweep on reconnect for critical types regardless, treating the pushState mechanism as an optimization that may or may not have replayed history.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:28:42Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T22:36:38Z",
+  "closed_at": "2026-04-26T22:36:38Z",
+  "close_reason": "Closed"
+}

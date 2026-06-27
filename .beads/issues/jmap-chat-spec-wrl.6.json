@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.6",
+  "title": "Receiver Behavior silent on deviceDeliveredAt suppression when receiptSharing=false",
+  "description": "Location: draft-atwood-jmap-chat-federation-00.md, Peer/receipt / Receiver Behavior, line ~315.\n\nThe Receiver Behavior explicitly addresses two fields when receiptSharing=false:\n- readAt: MUST NOT update Message.deliveryReceipts with this value, MUST NOT deliver state-change event\n- deliveredAt: MAY still record (explicitly permitted)\n\nHowever, the newly added 'deviceDeliveredAt' field (Peer/receipt Request Arguments, line ~295) is not mentioned at all in the Receiver Behavior suppression logic. It is unspecified whether deviceDeliveredAt should be suppressed like readAt (it carries sub-minute timing information that could reveal behavioral patterns) or permitted like deliveredAt (it is a delivery-layer fact rather than a reading event).\n\nThis gap means implementors will make inconsistent decisions. Given that the security section (line ~1442) specifically lists 'deviceDeliveredAt' alongside 'readAt' as a timestamp that SHOULD NOT be exposed at sub-minute precision, the intent appears to be that deviceDeliveredAt is privacy-sensitive and should be suppressed along with readAt.\n\nCorrect behavior: The Receiver Behavior MUST explicitly specify the treatment of deviceDeliveredAt when receiptSharing=false, stating whether it is suppressed (like readAt) or permitted (like deliveredAt).",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:17Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:44:50Z",
+  "closed_at": "2026-04-27T00:44:50Z",
+  "close_reason": "Fixed: Added MUST NOT record deviceDeliveredAt when effective preference is false (federation-00.md:315)",
+  "labels": [
+    "correctness"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.6",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:16Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

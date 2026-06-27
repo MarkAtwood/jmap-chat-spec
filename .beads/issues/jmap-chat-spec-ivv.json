@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-ivv",
+  "title": "E2EE detection rule is circular: plaintext types must be enumerated",
+  "description": "The spec says omit bodySnippet when bodyType 'is not one of the plaintext types listed in supportedBodyTypes as a plaintext type.' But supportedBodyTypes is the set of types the server accepts, not a classification of what is encrypted. A server that accepts both text/plain and application/mls-ciphertext lists both. The plaintext types must be enumerated explicitly: text/plain, text/markdown, application/jmap-chat-rich.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:21:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:25:24Z",
+  "closed_at": "2026-04-26T20:25:24Z",
+  "close_reason": "Closed"
+}

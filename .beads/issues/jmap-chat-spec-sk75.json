@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-sk75",
+  "title": "P0: Calendars spec — metadata key + URI scheme",
+  "description": "1. startTime vs startsAt metadata key mismatch with main spec. 2. jmap: URI scheme unregistered — no IANA registration or ABNF. 3. Misleading claim that calendarId is introduced in JMAP-CHAT.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:38:42Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:43:08Z",
+  "closed_at": "2026-06-07T18:43:08Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-sk75",
+      "depends_on_id": "jmap-chat-spec-wz74",
+      "type": "blocks",
+      "created_at": "2026-06-07T11:38:59Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

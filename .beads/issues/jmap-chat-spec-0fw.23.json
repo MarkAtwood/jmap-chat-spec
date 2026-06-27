@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-0fw.23",
+  "title": "receiveTypingIndicators: owner-side preference, not federated",
+  "description": "The field is explicitly marked as an owner-side preference that is not shared with peers. The receiving server enforces the suppression locally; the sending server does not need to know about it. Propagating the preference to peers would create a privacy leak (the peer server would learn the recipient is suppressing their indicators) and would add unnecessary state to the federation protocol. Keeping it local to the recipient's server is simpler and more private.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "decision",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T23:15:19Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:24:45Z",
+  "closed_at": "2026-04-27T00:24:45Z",
+  "close_reason": "Fixed in review fix wave or recorded as accepted design decision.",
+  "labels": [
+    "review"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-0fw.23",
+      "depends_on_id": "jmap-chat-spec-0fw",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:15:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

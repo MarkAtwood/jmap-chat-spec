@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-oisi.1",
+  "title": "Fix draft-atwood-jmap-vtc-00.md: 25+ normative spec bugs",
+  "description": "Main VTC spec has the most critical issues. MUST-FIX: (1) Line 1500: multi-device forking says VTCCall/set but answer is VTCParticipant/set. (2) Lines 430,680-696: cancel-ring path undefined; endReason 'cancelled'/'failed' unreachable. (3) Lines 309,1376: gatewayData contradiction — defined as opaque relay but pendingSignal requires server to parse/extract/delete. (4) Lines 806-858: blocked-sender check missing for room/scheduled join. (5) Line 399: e2eeEnabled no access control (moderator-only not specified). (6) Line 303,771-792: callResponse never set to 'accepted' in answer flow. (7) Lines 1466-1477: VTCUnmuteRequestEvent missing participantId. (8) Line 361 vs 1328: endReason enum collision between VTCCall and VTCCallEndEvent never distinguished. (9) No VTCCallEndEvent for active call ending (only ringing). (10) ChatStreamEnable with ['vtc'] alone fails per Chat WSS spec. SHOULD-FIX: Lines 501/1581 streamUri sensitivity broken xref. Lines 1188/1192 livestream update contradicts. Lines 442-446 pending→ended missing. Line 1262 VTCCallPush missing channelId. Line 1340 silent end-push no payload type. Line 75 abstract miscounts data types. Line 1874 'Space activeCallId' wrong (it's on Chat). Scheduled join-before-start undefined. VTCRingEvent missing initiatorDisplayName. EDITORIAL: Line 1569 'muted:true' wrong field name. Line 973 endReason 'in gatewayData' wrong location. 6 unused anchors. Line 130 scheduledStartAt implication wrong. Normative downref: Chat MUST points to informative VTC WSS.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:10:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:18:46Z",
+  "closed_at": "2026-06-07T18:18:46Z",
+  "close_reason": "Fixed 16 issues in main VTC spec: wrong method name in multi-device forking, callResponse not set on answer, missing participantId in VTCUnmuteRequestEvent, cancel-ring path defined, e2eeEnabled access control added, gatewayData opacity contradiction resolved, blocked-sender check for room/scheduled join, endReason enum distinction clarified, livestream update contradiction resolved, field name in security section, channelId added to VTCCallPush, pending→ended transition for scheduled calls, streamUri sensitivity, Space→Chat activeCallId, endReason triggers defined, gatewayData failure reason",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.1",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:10:38Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

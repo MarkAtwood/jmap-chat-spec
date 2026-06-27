@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-8orn.8",
+  "title": "VTC: add kickedBy field to VTCParticipant",
+  "description": "Line 487 references kickedBy for audit purposes when a moderator kicks a participant, but VTCParticipant (lines 194-223) has no kickedBy field. Add kickedBy (String|null, server-set) to VTCParticipant.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:39:57Z",
+  "closed_at": "2026-06-05T22:39:57Z",
+  "close_reason": "Added kickedBy (String|null, server-set) field to VTCParticipant as part of the data model promotion.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.8",
+      "depends_on_id": "jmap-chat-spec-8orn.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T15:34:45Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-8orn.8",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:34Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

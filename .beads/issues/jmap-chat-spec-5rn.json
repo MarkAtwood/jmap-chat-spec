@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-5rn",
+  "title": "bodySnippet over unencrypted channels should be MUST NOT not SHOULD NOT",
+  "description": "§8.1 says 'Servers SHOULD NOT deliver bodySnippet content over unencrypted push channels.' The same section establishes a MUST NOT against including ciphertext in snippets (§6). Delivering plaintext message content over an unencrypted channel is a privacy violation; the normative strength should be MUST NOT, or the weaker level needs an explicit justification.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T20:35:05Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T20:49:23Z",
+  "closed_at": "2026-04-26T20:49:23Z",
+  "close_reason": "Decision: keep SHOULD NOT. Server may not have reliable visibility into push channel transport; MUST NOT would be unimplementable for servers using third-party push relays."
+}

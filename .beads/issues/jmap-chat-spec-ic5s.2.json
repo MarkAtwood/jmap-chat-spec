@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-ic5s.2",
+  "title": "Add calibration rationale for 3-second typing rate limit",
+  "description": "File: draft-atwood-jmap-chat-00.md\nLine: 931\n\nCurrent text:\n  \"Servers SHOULD rate-limit `Chat/typing` calls per account per chat. Servers SHOULD accept no more than one call per account per chat per 3 seconds; calls that exceed this rate MAY be silently discarded without error.\"\n\nThis is already SHOULD + specific number, which is the right shape. What's missing is the *rationale* — readers see \"3 seconds\" with no explanation of why that value rather than 1 or 10 or 30. Adding the rationale converts an arbitrary-looking number into a calibrated default and tells implementers what trade-offs they're making if they deviate.\n\nSuggested addition (one sentence appended to the existing text, or a new sentence immediately after):\n\n  \"Servers SHOULD rate-limit `Chat/typing` calls per account per chat. Servers SHOULD accept no more than one call per account per chat per 3 seconds; calls that exceed this rate MAY be silently discarded without error.\n\n  The recommended 3-second value pairs with the 10-second client-side decay timer described later in this section: with one accepted event per 3 seconds while a sender is actively typing, the receiver's decay timer sees at least three events before deciding the sender has stopped. Servers using a significantly lower rate impose unnecessary load on themselves and on federated peers; servers using a significantly higher rate risk receivers clearing the typing indicator while the sender is still active.\"\n\nThis bead is paired with T3-1 (jmap-chat-spec-ic5s.1). Recommend doing both in one commit so the cross-references resolve correctly and the calibration arguments stay consistent.",
+  "acceptance_criteria": "- The existing SHOULD + 3-second wording is retained unchanged\n- A rationale paragraph follows, naming the 10s decay pairing\n- The federation-load and receiver-misbehavior consequences of significant deviation are both named\n- The text reads as guidance, not new normative requirement",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:52:26Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:46:26Z",
+  "closed_at": "2026-05-12T18:46:26Z",
+  "close_reason": "Closed",
+  "labels": [
+    "implementer-guidance",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-ic5s.2",
+      "depends_on_id": "jmap-chat-spec-ic5s",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:52:26Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

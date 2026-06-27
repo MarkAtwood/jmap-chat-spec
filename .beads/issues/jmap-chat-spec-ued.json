@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-ued",
+  "title": "wss: §2 cites RFC 8887 §4.1 but the relevant text is in §4.2",
+  "description": "draft-atwood-jmap-chat-wss-00 §2 (Authentication and Identity) says 'per RFC 8887 Section 4.1' for the rule that the WebSocket handshake authentication establishes the owner identity for the connection duration. RFC 8887 §4.1 only says to use HTTP credentials at handshake. The specific language about credentials remaining in effect for the connection duration is in RFC 8887 §4.2. Fix: change the section reference from §4.1 to §4.2.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T15:00:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T15:26:17Z",
+  "closed_at": "2026-04-26T15:26:17Z",
+  "close_reason": "Fixed section reference from §4.1 to §4.2; the credentials-remain-in-effect-for-connection language is in §4.2 (Handshake), not §4.1 (Authentication)."
+}

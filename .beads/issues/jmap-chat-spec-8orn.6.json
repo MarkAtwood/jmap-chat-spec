@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8orn.6",
+  "title": "VTC: add E2EE state signaling",
+  "description": "Signal is cited as a design influence for E2EE but the draft defines zero E2EE fields. Jitsi has E2EE via Insertable Streams, Zoom has E2EE. At minimum add: e2eeEnabled (Boolean) on VTCCall, e2eeFingerprint (String|null) on VTCParticipant for key verification display. Full key negotiation is media-layer, but the call-state model needs to signal whether E2EE is active so clients can display the security indicator.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:34Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:18Z",
+  "closed_at": "2026-06-05T22:53:18Z",
+  "close_reason": "Added e2eeEnabled on VTCCall and e2eeFingerprint on VTCParticipant. Recording/livestream forbidden when e2eeEnabled is true.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.6",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:33Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

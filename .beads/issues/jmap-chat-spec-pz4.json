@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-pz4",
+  "title": "Reconsider stream: ietf without WG adoption",
+  "description": "Front matter sets 'stream: ietf' which implies WG sponsorship. If this document is not yet adopted by the JMAP WG, 'stream: independent' is more accurate and avoids a process question from any AD or RFC Editor review. Confirm WG adoption status and update stream field accordingly.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:51:10Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:57:24Z",
+  "closed_at": "2026-04-27T01:57:24Z",
+  "close_reason": "Changed stream: ietf to stream: independent. Document is currently an individual submission; revert to stream: ietf when JMAP WG adopts it."
+}

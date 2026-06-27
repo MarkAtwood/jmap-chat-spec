@@ -1,0 +1,33 @@
+{
+  "id": "jmap-chat-spec-8orn.3",
+  "title": "VTC: fix ring-call decline mechanism (don't abuse lobbyState)",
+  "description": "Line 463 says declining a ring call patches lobbyState to rejected, but lobbyState is defined only for lobby-enabled calls. The parenthetical '(or a dedicated decline signal)' admits this is unfinished. Add a dedicated responseState field on VTCParticipant for ring calls with values: pending, accepted, declined. Or use a dedicated VTCCall/set decline operation.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:32Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T22:53:17Z",
+  "closed_at": "2026-06-05T22:53:17Z",
+  "close_reason": "Added callResponse field (pending/accepted/declined) to VTCParticipant for ring-call decline. No longer abuses lobbyState.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.3",
+      "depends_on_id": "jmap-chat-spec-8orn.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T15:34:44Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-8orn.3",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:32Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

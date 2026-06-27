@@ -1,0 +1,32 @@
+{
+  "id": "jmap-chat-spec-9sti.6",
+  "title": "Implementer guide: recording and storage",
+  "description": "Section on recording backend decisions. Where recordings land (JMAP blob store, S3, local filesystem). VTCRecording state machine (recording→stopped→processing→available). Blob lifecycle and retention. Consent notification delivery via VTCRecordingStateEvent. Format choices (MP4 vs WebM). Cloud vs local recording architectures.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T23:02:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-05T23:27:41Z",
+  "closed_at": "2026-06-05T23:27:41Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9sti.6",
+      "depends_on_id": "jmap-chat-spec-9sti",
+      "type": "parent-child",
+      "created_at": "2026-06-05T16:02:58Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-9sti.6",
+      "depends_on_id": "jmap-chat-spec-9sti.1",
+      "type": "blocks",
+      "created_at": "2026-06-05T16:04:11Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

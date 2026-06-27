@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-kr0",
+  "title": "Fix backwards normative relationship between JMAP-CHAT and this doc",
+  "description": "§1 (lines 76-78) says this document 'formalizes the sha256 field introduced in JMAP-CHAT', implying JMAP-CHAT is the origin. For this to be a standalone reusable capability, JMAP-CHAT should cite this document normatively for the sha256 definition, not the other way around. As written, both documents independently define the same field, creating a conformance ambiguity if they diverge. Update JMAP-CHAT to cite this doc normatively; update this doc's framing.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T01:19:55Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T01:26:42Z",
+  "closed_at": "2026-04-27T01:26:42Z",
+  "close_reason": "Closed"
+}

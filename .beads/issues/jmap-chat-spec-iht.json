@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-iht",
+  "title": "APNs urgency: normal maps to priority 10 which may be too aggressive",
+  "description": "The urgency table maps both high and normal JMAP urgency to apns-priority:10 (immediate delivery, wakes device from Doze). In Web Push, normal is opportunistic delivery. Mapping normal chat urgency to APNs 10 means every normal-urgency message immediately wakes the device, which contradicts the spirit of the urgency model. Consider mapping normal to apns-priority:5 to match the opportunistic delivery semantics of the spec.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:06:15Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:23:26Z",
+  "closed_at": "2026-04-26T21:23:26Z",
+  "close_reason": "Over-specified: priority mapping is an implementer choice based on app architecture. Guide should explain the platform affordances, not prescribe a single mapping."
+}

@@ -1,0 +1,33 @@
+{
+  "id": "jmap-chat-spec-i3i",
+  "title": "Add symmetry rule for read receipts",
+  "description": "The spec has no rule requiring that if A opts out of sending read receipts, A also stops receiving them from others. Without this, opting out is asymmetric and creates a surveillance gap. Need a MUST in draft-atwood-jmap-chat-federation-00.md (Peer/receipt receiver behavior) and draft-atwood-jmap-chat-00.md (Chat/ReadPosition section) stating that a server MUST NOT deliver inbound Peer/receipt events to a client whose account has receipt sharing disabled.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "feature",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T22:57:59Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:31:33Z",
+  "closed_at": "2026-04-27T00:31:33Z",
+  "close_reason": "Added Peer/receipt Receiver Behavior (federation-00.md:310) with receiptSharing symmetry suppression; added bidirectional note to ReadPosition (chat-00.md:760)",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-i3i",
+      "depends_on_id": "jmap-chat-spec-scp",
+      "type": "blocks",
+      "created_at": "2026-04-26T15:58:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-i3i",
+      "depends_on_id": "jmap-chat-spec-cj6",
+      "type": "parent-child",
+      "created_at": "2026-04-26T16:01:28Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

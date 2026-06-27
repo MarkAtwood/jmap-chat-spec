@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-af7v.7",
+  "title": "Add blocked-sender suppression to Scene WSS",
+  "description": "Add normative blocked-sender check for all 3 ephemeral event types. If originator is on recipient blocked list, server MUST silently drop. Match Chat/VTC WSS patterns.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-06T19:41:35Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-06T19:55:46Z",
+  "closed_at": "2026-06-06T19:55:46Z",
+  "close_reason": "Merged into specs",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-af7v.7",
+      "depends_on_id": "jmap-chat-spec-af7v",
+      "type": "parent-child",
+      "created_at": "2026-06-06T12:41:34Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

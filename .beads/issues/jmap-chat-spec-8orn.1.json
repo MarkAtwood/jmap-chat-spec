@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-8orn.1",
+  "title": "VTC: fix participant data model (array→map or top-level type)",
+  "description": "VTCParticipant is an embedded array on VTCCall. JMAP /set uses JSON Pointer paths for updates; array-index patching is fragile under concurrent joins/leaves. Either change participants from VTCParticipant[] to Id[VTCParticipant] (map keyed by participantId), or promote VTCParticipant to a top-level JMAP type with its own get/set/changes and a callId FK. Option B scales better for large calls. This blocks all participant operations (join, leave, mute, kick).",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-05T22:34:31Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-06-05T22:39:56Z",
+  "close_reason": "Promoted VTCParticipant to top-level JMAP type with id, callId, kickedBy fields and full get/set/changes/query/queryChanges methods. Removed participants array from VTCCall, replaced with activeParticipantCount. Rewrote all participant operations to use VTCParticipant/set. Added reconnection semantics.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8orn.1",
+      "depends_on_id": "jmap-chat-spec-8orn",
+      "type": "parent-child",
+      "created_at": "2026-06-05T15:34:31Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

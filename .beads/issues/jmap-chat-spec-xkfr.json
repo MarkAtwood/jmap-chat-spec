@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-xkfr",
+  "title": "Multiple VTCCalls per Chat — ambiguous activeCallId",
+  "description": "Nothing prevents two VTCCall/set creates with the same chatId. When both calls reach 'active' state, Chat.activeCallId can only hold one id. Which call wins? No conflict resolution defined. Chat spec line 530-531 says 'a VTCCall that is currently active' (singular) but doesn't handle the plural case.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:47:58Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T05:57:31Z",
+  "closed_at": "2026-06-07T05:57:31Z",
+  "close_reason": "Closed"
+}

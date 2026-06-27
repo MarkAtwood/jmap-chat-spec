@@ -1,0 +1,24 @@
+{
+  "id": "jmap-chat-spec-oisi.2",
+  "title": "Fix draft-atwood-jmap-vtc-wss-00.md: blocked-sender suppression incomplete",
+  "description": "WSS spec covers blocked-sender suppression for ring/end events but NOT for 6 in-call event types: VTCParticipantEvent, VTCMediaStateEvent, VTCActiveSpeakerEvent, VTCUnmuteRequestEvent, VTCRecordingStateEvent, VTCCaptionEvent. A blocked user joining a room call can still leak presence/activity via these events to the blocker. Pattern: if sender is on recipient's blocked list (ChatContact.blocked=true), the event MUST be silently dropped. Matches the existing pattern for ChatTypingEvent (filed previously as dim0).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T18:10:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T18:23:52Z",
+  "closed_at": "2026-06-07T18:23:52Z",
+  "close_reason": "All issues fixed across 11 VTC files",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-oisi.2",
+      "depends_on_id": "jmap-chat-spec-oisi",
+      "type": "parent-child",
+      "created_at": "2026-06-07T11:10:46Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

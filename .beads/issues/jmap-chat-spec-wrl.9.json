@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-wrl.9",
+  "title": "ReadPosition bidirectional note references only account-level receiptSharing, not Chat-level override",
+  "description": "Location: draft-atwood-jmap-chat-00.md, ReadPosition section, line ~763.\n\nThe bidirectionality note reads: 'when PresenceStatus.receiptSharing is false, the server MUST NOT deliver inbound Peer/receipt events (carrying readAt) to the owner's clients.' This references only the account-level PresenceStatus.receiptSharing field.\n\nHowever, Chat.receiptSharing (line ~441) is defined as a per-chat override that takes precedence over the account-level setting. If Chat.receiptSharing is false for a specific Chat (while PresenceStatus.receiptSharing is true), the bidirectionality property should equally apply for that Chat. The current wording implies it does not — an account with a per-chat override of receiptSharing=false would still receive inbound Peer/receipt events for that Chat.\n\nAdditionally, the bidirectionality note is in the ReadPosition section but does not address the Chat-scoped case at all, leaving an incomplete picture of when inbound receipts are suppressed.\n\nCorrect behavior: The bidirectionality note (and/or the Receiver Behavior in federation-00.md) MUST be updated to cover the effective preference (Chat.receiptSharing if present, else PresenceStatus.receiptSharing), not just the account-level field.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-27T00:36:25Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-27T00:44:54Z",
+  "closed_at": "2026-04-27T00:44:54Z",
+  "close_reason": "Fixed: ReadPosition bidirectional note now covers both account-level and per-Chat override (chat-00.md:763)",
+  "labels": [
+    "correctness"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-wrl.9",
+      "depends_on_id": "jmap-chat-spec-wrl",
+      "type": "parent-child",
+      "created_at": "2026-04-26T17:36:24Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

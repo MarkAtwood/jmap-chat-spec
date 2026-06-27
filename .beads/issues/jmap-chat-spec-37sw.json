@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-37sw",
+  "title": "Filenode spec: update JMAP-QUOTAS reference to RFC9425 (now published)",
+  "description": "draft-atwood-jmap-chat-filenode-00.md still references {{JMAP-QUOTAS}} as a draft (lines 46 and 107). JMAP Quotas is now published as RFC 9425. Core draft was updated to use the bare RFC9425 reference under jmap-chat-spec-m6n.1; filenode should follow the same pattern for consistency.\n\nChanges:\n1. Replace the JMAP-QUOTAS entry in the informative references block (line ~46) with a bare 'RFC9425:' entry, placed numerically among other bare RFC references.\n2. Replace the body citation '{{JMAP-QUOTAS}}' on line ~107 with '{{RFC9425}}'.\n3. Grep the filenode draft afterward to confirm zero remaining JMAP-QUOTAS references.\n\nOut of scope for m6n.1 (which was scoped to core spec only); filed separately to avoid 'while I'm here' creep.",
+  "acceptance_criteria": "grep -n 'JMAP-QUOTAS' draft-atwood-jmap-chat-filenode-00.md returns zero matches. RFC9425 appears in the informative reference block and in the body where the JMAP Quota extension is cited.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T04:12:47Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T04:17:06Z",
+  "closed_at": "2026-05-12T04:17:06Z",
+  "close_reason": "Applied 2 edits to draft-atwood-jmap-chat-filenode-00.md:\n\n1. Reference block (line 46): replaced 3-line JMAP-QUOTAS draft entry with bare 'RFC9425:' (informative).\n2. Body citation (now line 105): replaced {{JMAP-QUOTAS}} with {{RFC9425}}.\n\nVerification:\n- grep for JMAP-QUOTAS in filenode draft: zero matches.\n- Project-wide grep for JMAP-QUOTAS across all *.md outside OLD/: zero matches.\n- Filenode draft now matches the core spec convention established in 80d5e11.\n\nCommitted as 'docs: update JMAP Quotas reference to RFC 9425'."
+}

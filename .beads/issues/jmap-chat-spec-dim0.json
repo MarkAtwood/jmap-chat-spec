@@ -1,0 +1,22 @@
+{
+  "id": "jmap-chat-spec-dim0",
+  "title": "WSS draft missing blocked-sender suppression for ChatTypingEvent",
+  "description": "File: draft-atwood-jmap-chat-wss-00.md\nLocations: line 214 (Server Behavior for ChatTypingEvent), lines 374-376 (Security Considerations: Ephemeral Event Authorization).\n\nThe WSS guide (jmap-chat-wss-guide.md line 45-52) tells clients:\n\n  ### ChatTypingEvent suppression\n  The server silently drops a `ChatTypingEvent` for a recipient when:\n  - `Chat.receiveTypingIndicators` is `false` for the recipient account.\n  - The recipient is no longer a member of the chat at delivery time.\n  - The sender is blocked by the recipient.\n\nThe WSS draft normatively requires only the first two:\n- Line 214: 'For direct and group Chats, servers MUST check each recipient's receiveTypingIndicators field...'\n- Line 374: 'ChatTypingEvent MUST only be delivered for Chats in which the owner is a current member at delivery time.'\n- Line 375: 'ChatTypingEvent MUST NOT be delivered to a recipient whose Chat record (for a direct or group Chat) has receiveTypingIndicators: false at delivery time.'\n\nThe blocked-sender case is missing from the draft. The guide promises it; the draft does not require it. Concretely: an implementation that strictly follows the draft would still deliver ChatTypingEvent frames originating from a sender the recipient has blocked, contradicting both the guide and the main draft's blocked-sender privacy posture.\n\nMain draft line 354 (ChatContact.blocked) and line 1473 (Security Considerations) establish that messages from blocked senders MUST be silently dropped. The natural extension is that ephemeral signals from those senders are also suppressed — otherwise a blocked user can spam typing notifications and reveal their presence/attention pattern to the recipient even though their messages are dropped. This is a real privacy regression.\n\nSuggested fix (one or both of these sites):\n\n1. Server Behavior (line 216 area, after the existing membership check):\n\n  Servers MUST NOT deliver a `ChatTypingEvent` whose `senderId` corresponds to a ChatContact that is `blocked` on the recipient's ChatContact record. The sender is not notified.\n\n2. Security Considerations (line 374-376), add a new bullet:\n\n  - `ChatTypingEvent` MUST NOT be delivered when the sender (`senderId`) is a ChatContact whose `blocked` field is `true` on the recipient's ChatContact record.\n\nChatPresenceEvent already has the blocked-contact rule (draft line 253 and SC line 376); this finding closes that asymmetry.\n\nCross-document consistency: after the fix, the guide's line 52 is normatively backed by the draft.",
+  "acceptance_criteria": "- WSS draft normatively requires ChatTypingEvent suppression when the sender is blocked on the recipient's ChatContact record\n- Both the Server Behavior section (line 214 area) and the Ephemeral Event Authorization section (line 374-376) mention this rule\n- After the fix, the WSS guide line 52 ('The sender is blocked by the recipient') is consistent with the WSS draft normatively, not just aspirationally\n- ChatPresenceEvent rule (line 253) wording is unchanged; the asymmetry between the two event types is resolved",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:30:30Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:32:57Z",
+  "closed_at": "2026-05-12T18:32:57Z",
+  "close_reason": "Closed",
+  "labels": [
+    "privacy",
+    "spec-consistency",
+    "survey-finding",
+    "wss-draft"
+  ]
+}

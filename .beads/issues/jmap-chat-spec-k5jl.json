@@ -1,0 +1,20 @@
+{
+  "id": "jmap-chat-spec-k5jl",
+  "title": "Add design note explaining position 0 for implicit @everyone role",
+  "description": "The spec hardcodes 'position 0' as the slot for the implicit @everyone role at draft-atwood-jmap-chat-00.md:560: 'The implicit @everyone role (position 0) is held by all Space members and is not included in the roles array.'\n\nThe choice of position 0 is intentional and architecturally significant — it anchors @everyone as the lowest-priority role in the position-ordered hierarchy. If position semantics ever change (descending → ascending order, integer → fractional positions, or repurposing position 0 for something else), the implicit @everyone slot becomes a special-case carve-out that needs to be remembered.\n\nCurrently there is no explanatory comment in the spec describing why position 0 specifically. The information lives only in the one declarative sentence at line 560.\n\nSuggested fix: add a brief design note alongside the SpaceRole.position field definition, or in §Space Permission Resolution, explicitly stating:\n- Position values are unsigned integers, sorted descending (higher = outranks lower)\n- Position 0 is reserved for the implicit @everyone role\n- Defined SpaceRoles MUST have position \u003e 0\n- This means @everyone is always the lowest-priority role; this is intentional\n\nThis is a minor doc-only addition. Not blocking anything; just hardens a design choice against future drift.\n\nIdentified during the 2026-05-12 session's principal-name survey.",
+  "acceptance_criteria": "- A brief design note appears either at SpaceRole.position field definition or in §Space Permission Resolution\n- The note covers: position is unsigned int sorted descending; position 0 is reserved for @everyone; defined roles MUST have position \u003e 0\n- The wording is minimal (one to three sentences) — this is hardening a design choice, not introducing new behavior",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:12:46Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:54:10Z",
+  "closed_at": "2026-05-12T18:54:10Z",
+  "close_reason": "Closed",
+  "labels": [
+    "design-note",
+    "spec-clarity"
+  ]
+}

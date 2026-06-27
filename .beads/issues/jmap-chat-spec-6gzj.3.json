@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-6gzj.3",
+  "title": "Decide what to do with pre-existing unstaged WIP",
+  "description": "Throughout the 2026-05-12 session, the following files have been sitting as pre-existing unstaged changes, untouched per explicit instruction:\n\n  modified:   .beads/config.yaml\n  modified:   .beads/metadata.json\n  modified:   AGENTS.md\n  modified:   CLAUDE.md\n\nPlus an untracked OLD/ directory (probably draft snapshots).\n\nThe instruction during the session was 'leave the pre-existing unstaged edits to AGENTS.md, CLAUDE.md, or .beads/* — those are unrelated work-in-progress.' But unrelated WIP that sits indefinitely is itself a state to manage.\n\nPossible decisions:\n- Commit them with whatever commit message describes the change (if Mark remembers what they were)\n- Stash them if not ready to commit\n- Discard them with git checkout if they were experimental and aren't wanted\n- Leave them indefinitely (the current state)\n\nThe .beads/ working state has accumulated more changes from this session's bead creation activity, so the .beads/ files now contain a mix of session-relevant and pre-session changes. Untangling that may require some care.\n\nThis bead is a reminder, not a directive. Mark decides.",
+  "acceptance_criteria": "- Each of AGENTS.md, CLAUDE.md, and the .beads/ files has a recorded decision (committed, stashed, discarded, or explicit 'leave indefinitely')\n- If 'leave indefinitely' is chosen, the bead's close-reason states the policy so subsequent sessions don't waste cycles re-evaluating\n- The OLD/ directory similarly has a decision (gitignored, deleted, or left untracked indefinitely)",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T18:12:18Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T20:14:38Z",
+  "closed_at": "2026-05-12T20:14:38Z",
+  "close_reason": "All three pre-existing WIP items resolved in same session: OLD/ discarded, AGENTS.md committed with consistency fixes, CLAUDE.md committed as deprecation stub.",
+  "labels": [
+    "decision",
+    "session-leftover",
+    "working-tree"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-6gzj.3",
+      "depends_on_id": "jmap-chat-spec-6gzj",
+      "type": "parent-child",
+      "created_at": "2026-05-12T11:12:18Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

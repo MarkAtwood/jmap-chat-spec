@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-au2i",
+  "title": "Two stream-enable mechanisms on same WebSocket lack interaction spec",
+  "description": "Chat WSS defines ChatStreamEnable and Scene WSS defines SceneStreamEnable, both operating on the same RFC 8887 WebSocket connection. No spec text defines how they interact: subscription lifecycle, error handling when one fails, whether disabling one affects the other, or ordering requirements. The ChatStreamEnable convenience path (dataTypes including 'scene') partially overlaps with SceneStreamEnable but deduplication is only MUST-level in the WSS guide, not in the spec.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-06-07T05:34:15Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-07T06:01:54Z",
+  "closed_at": "2026-06-07T06:01:54Z",
+  "close_reason": "Closed"
+}

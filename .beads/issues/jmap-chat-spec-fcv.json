@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-fcv",
+  "title": "FCM section: iOS devices need apns config block, not android",
+  "description": "The FCM client registration section says the Android or iOS client calls the FCM SDK, but the request format only shows android:{priority:...}. FCM HTTP v1 has platform-specific config blocks: android for Android, apns for iOS, webpush for web. Sending to an iOS device token with only an android config block results in wrong priority handling. The guide must either scope FCM to Android only, or show how to select the correct platform config block based on the client platform.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:05:50Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:24Z",
+  "closed_at": "2026-04-26T21:10:24Z",
+  "close_reason": "Closed"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-i4w",
+  "title": "Delivery failures table: 201 Created wrong for FCM and APNs",
+  "description": "The delivery failures lifecycle table lists only 201 Created as the success response. FCM HTTP v1 returns 200 OK on success. APNs returns 200 OK on success. Only Web Push endpoints return 201 Created. An implementer applying this table uniformly to all three platforms will log false failures on every successful FCM or APNs delivery. The table needs platform-specific success codes or a note that 200 OK is success for FCM and APNs.",
+  "status": "closed",
+  "priority": 0,
+  "issue_type": "bug",
+  "assignee": "Mark Atwood",
+  "owner": "mark@wolfssl.com",
+  "created_at": "2026-04-26T21:05:46Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-04-26T21:10:24Z",
+  "closed_at": "2026-04-26T21:10:24Z",
+  "close_reason": "Closed"
+}

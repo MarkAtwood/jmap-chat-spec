@@ -1,0 +1,30 @@
+{
+  "id": "jmap-chat-spec-we5b.2",
+  "title": "Make group-chat creator bootstrap role impl-defined",
+  "description": "File: draft-atwood-jmap-chat-00.md\nLocations: lines 369, 869, 873\n\nThree sites in the group-chat creation flow encode the same single-creator-as-admin pattern that c93e545 removed for Spaces:\n\n- Line 369 (ChatMember.role definition): \"The creator is automatically assigned the \\\"admin\\\" role.\"\n- Line 869 (group-chat create memberIds): \"ChatContact.ids of initial non-owner members.\"\n- Line 873 (group-chat create behavior): \"The server assigns the chatId (a ULID), sets the owner as an admin member, and MUST send Peer/groupUpdate to each initial member before any messages are sent.\"\n\nNote: the word \"owner\" here is the Space-governance flavor, NOT the RFC 8620 mailbox-owner sense. Other uses of \"owner\" in the same draft (mailbox owner, ReadPosition owner, etc.) are correct and MUST be preserved.\n\nWire-interop concern is the role enum (`\"admin\" | \"member\"`) and what admins may do. *Who starts as admin* is deployment policy: a flat peer group, all-initial-admins, or single-bootstrap-admin are all viable.\n\nSuggested wording for line 873 (paralleling the Space create text at line 1069):\n\n  \"The server assigns the chatId (a ULID), adds the creator to `members` with at least one role granting permissions sufficient to administer the chat (the specific bootstrap-role configuration is server-defined), and MUST send Peer/groupUpdate to each initial member before any messages are sent.\"\n\nSuggested wording for line 869: replace \"initial non-owner members\" with \"additional initial members\".\n\nSuggested wording for line 369: replace \"The creator is automatically assigned the \\\"admin\\\" role.\" with a sentence noting the bootstrap-role assignment is server-defined, or just drop the trailer (the role enum and admin-action list are independent of how seats are assigned at creation).",
+  "acceptance_criteria": "- Line 369: no normative single-principal bootstrap statement remains\n- Line 869: no use of \"non-owner\" remains\n- Line 873: bootstrap-role assignment wording is server-defined, paralleling the Space create wording at line 1069\n- After the edit, grep -ni '\\\\bowner\\\\b' on the main draft returns only mailbox-owner-sense matches (RFC 8620 principal, federation OwnerInfo, ReadPosition owner, etc.) — no group-chat-governance matches remain\n- The Authorization section (lines ~1396-1403) remains untouched",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "Mark Atwood",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T16:47:38Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-05-12T18:20:22Z",
+  "closed_at": "2026-05-12T18:20:22Z",
+  "close_reason": "Closed",
+  "labels": [
+    "governance",
+    "spec-consistency"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-we5b.2",
+      "depends_on_id": "jmap-chat-spec-we5b",
+      "type": "parent-child",
+      "created_at": "2026-05-12T09:47:38Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}

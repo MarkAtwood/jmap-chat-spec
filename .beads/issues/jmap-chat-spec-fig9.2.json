@@ -1,0 +1,39 @@
+{
+  "id": "jmap-chat-spec-fig9.2",
+  "title": "Main draft implementation: broadcast-scope mention types",
+  "description": "Implement the design decisions from jmap-chat-spec-fig9.1 in draft-atwood-jmap-chat-00.md.\n\nBlocked on jmap-chat-spec-fig9.1.\n\nThis bead is BLOCKING for jmap-chat-spec-fig9.3 (push), .4 (federation), .5 (push platform guide) — those depend on the main draft having committed wire-format definitions.\n\nLikely scope (assumes Path A for Decision 1, extend-existing for Decision 2, umbrella for Decision 3):\n- Extend Mention type at line 263 with `type` field and conditional `id`\n- Extend rich-body `\"mention\"` span at line 1285 with `scope` field\n- Update mention validation at line 1461 to handle new types (no `id` for broadcasts; `offset + length` still bounds-checked)\n- Update Message/set send-side authorization to gate broadcast mentions on `mention_all` permission\n- Update server behavior on inbound delivery to compute recipient set per Decision 4\n- Add suppression-preference handling per Decision 5 (may add new fields to Chat or PresenceStatus)\n- Update the Mention type IANA-style example at line 1296 (rich-body example) to show a broadcast mention\n\nDoes NOT include: push payload changes (separate bead), federation Peer/deliver changes (separate bead), implementer-guide updates (separate bead).",
+  "acceptance_criteria": "- Mention type extended; Mention validation updated\n- Rich-body span model extended; existing example updated\n- Send-side authorization rules updated (with \"Requires X\" wording consistent with §Authorization clarification)\n- Receiver-side recipient-set computation rules added per Decision 4\n- Suppression handling per Decision 5\n- All cross-references resolve; no broken anchors\n- Spec corpus consistency check: grep for old field shapes returns expected matches; new fields appear where expected",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "bd-spin/bd-spin-20260513T000635Z-2256273",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-05-12T17:34:23Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-06-26T20:02:02Z",
+  "closed_at": "2026-05-13T00:12:54Z",
+  "close_reason": "Implemented per fig9.1 decision record (Path B, D2-A, umbrella-renamed permission, hybrid resolution, D5-Impl, M1 all-at-once). Main draft only; push draft (fig9.4), federation (fig9.3), and implementer guide (newly filed fig9.6) are tracked separately.",
+  "labels": [
+    "feature",
+    "main-draft",
+    "mentions"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fig9.2",
+      "depends_on_id": "jmap-chat-spec-fig9",
+      "type": "parent-child",
+      "created_at": "2026-05-12T10:34:23Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-fig9.2",
+      "depends_on_id": "jmap-chat-spec-fig9.1",
+      "type": "blocks",
+      "created_at": "2026-05-12T10:34:23Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}
