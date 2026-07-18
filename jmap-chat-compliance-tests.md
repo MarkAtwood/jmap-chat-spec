@@ -1,6 +1,6 @@
 # JMAP Chat Compliance Test Suite
 
-A structured checklist and test harness specification for verifying any JMAP Chat implementation against the spec suite. Derived from 20 audit rounds against a reference implementation that found and fixed ~190 gaps.
+A structured checklist and test harness specification for verifying any JMAP Chat implementation against the spec suite. Derived from 22 audit rounds plus 2 code reviews against a reference implementation that found and fixed ~250 gaps.
 
 Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and the round in which the gap was first discovered.
 
@@ -572,22 +572,170 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ---
 
+## 13. Late-Discovery Edge Cases (Rounds 15-22)
+
+These tests catch subtle issues that survived 14+ audit rounds. They represent the deepest compliance gaps — the kind that only surface under adversarial review or cross-spec interaction analysis.
+
+### 13.1 Session-level chat capability must be empty `{}`
+**Spec:** draft-atwood-jmap-chat-00 line 197
+**Severity:** MUST | **Round:** 15
+
+**Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:ietf:params:jmap:chat"]` is exactly `{}`. The chat properties (maxBodyBytes, supportedBodyTypes, etc.) must ONLY appear in per-account `accountCapabilities["urn:ietf:params:jmap:chat"]`.
+
+**Common failure:** Copying the properties into both session-level and account-level. Session-level must be empty.
+
+### 13.2 Direct chat contactId accepts remote/federated users
+**Spec:** draft-atwood-jmap-chat-00 Section 4.10
+**Severity:** MUST | **Round:** 16
+
+**Test:** Call `Chat/set` create with `{"kind": "direct", "contactId": "remote.peer.example"}` where that userId has no local account. Verify success — the server should auto-create a placeholder account for the remote user.
+
+**Common failure:** Server validates contactId against local accounts table and rejects with "account does not exist".
+
+### 13.3 CustomEmoji name uniqueness within scope
+**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 791
+**Severity:** MUST | **Round:** 17
+
+**Test:** Create two CustomEmojis with identical `name` in the same Space. Verify the second returns `alreadyExists` error. Also test across scopes: same name in different Spaces should succeed.
+
+**Common failure:** No UNIQUE constraint or application-level check on (name, space_id).
+
+### 13.4 ChatMember role restricted to admin|member
+**Spec:** draft-atwood-jmap-chat-00 Section 4.8, line 446
+**Severity:** MUST | **Round:** 18
+
+**Test:** Via `Peer/groupUpdate` create, send members with `role: "owner"` or `role: "guest"`. Verify the server either rejects or normalizes to "member". Only `"admin"` and `"member"` are valid.
+
+**Test:** Verify the admin-verification check for group updates only accepts `role == "admin"` (not "owner").
+
+**Common failure:** Implementation defines "owner"/"guest" roles from internal design that don't exist in the spec's wire protocol.
+
+### 13.5 SpaceBan silent-drop response has String receivedMsgId
+**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.1.1, line 296
+**Severity:** MUST | **Round:** 19
+
+**Test:** Deliver a message from a space-banned sender via `Peer/deliver`. Verify the `receivedMsgId` in the response is a String (a ULID), not `null`.
+
+**Common failure:** Returns `null` for silently-dropped messages, violating the String type constraint.
+
+### 13.6 Peer/receipt preserves previously-stored fields
+**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
+**Severity:** MUST | **Round:** 13 (rediscovered 19)
+
+**Test:** Call `Peer/receipt` with only `deliveredAt`. Then call again with only `readAt` (no `deliveredAt`). Verify BOTH values are preserved in the delivery receipt — the second call must NOT null out the previously-stored `deliveredAt`.
+
+**Common failure:** Using INSERT OR REPLACE which overwrites the entire row, nulling fields not provided in the current call.
+
+### 13.7 deviceDeliveredAt suppressed unconditionally when receiptSharing=false
+**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2, lines 354-362
+**Severity:** MUST | **Round:** 10
+
+**Test:** Set receiptSharing=false for a message sender. Call `Peer/receipt` with `deliveredAt` and `deviceDeliveredAt` (but NO `readAt`). Verify `deviceDeliveredAt` is NOT stored.
+
+**Common failure:** Only suppressing `deviceDeliveredAt` when `readAt` is also present. The spec says: "The server MUST NOT record deviceDeliveredAt when the effective preference is false" — regardless of what other fields are present.
+
+### 13.8 Rich body mention guard in update AND federation edit paths
+**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 1390
+**Severity:** MUST | **Round:** 9
+
+**Test:** Send `Message/set` update with `bodyType: "application/jmap-chat-rich"` and non-empty `mentions`. Verify rejection. Send `Peer/deliver` edit with same. Verify rejection.
+
+**Common failure:** Validation only on create path; update and federation edit paths allow mentions on rich bodies.
+
+### 13.9 Rich body inline span parsing for push mentions
+**Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
+**Severity:** MUST | **Round:** 12
+
+**Test:** Send a message with `bodyType: "application/jmap-chat-rich"` and body containing `{"spans": [{"type": "mention", "userId": "<owner-id>"}]}`. Verify `hasMention: true` in the push notification.
+
+**Test:** Same with `{"type": "broadcast", "scope": "everyone"}` span. Verify it appears in `mentionScopes`.
+
+**Common failure:** Only checking `Message.mentions` array (mandated empty for rich bodies) and never parsing the body JSON for inline spans.
+
+### 13.10 Peer/deliver mention offset/length must be stored
+**Spec:** draft-atwood-jmap-chat-00 Section 4.4
+**Severity:** MUST | **Round:** 11
+
+**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1", "offset": 5, "length": 3}]`. Query the message back. Verify offset and length are preserved (not just the user id).
+
+**Common failure:** INSERT INTO mentions only stores (message_id, account_id), dropping the offset/length columns.
+
+### 13.11 Slow mode must use received_at, not sent_at
+**Spec:** draft-atwood-jmap-chat-00 §4.11 lines 612-615, federation §6.1.2 step 6
+**Severity:** MUST | **Round:** 21
+
+**Test:** Send two messages via `Peer/deliver` to a channel with slowModeSeconds=60. The second message has `sentAt` backdated 120 seconds but arrives immediately. Verify the server rejects the second message (rate limited by actual arrival time, not the forged sentAt).
+
+**Common failure:** Slow mode query uses `sent_at` column (untrusted, sender-supplied) instead of `received_at` (authoritative, server-assigned). Spec explicitly states: "sentAt MUST NOT be used for ordering."
+
+---
+
+## 14. Security and Robustness (Code Review Findings)
+
+These are implementation-quality issues found via code review rather than spec audit. They don't violate spec text but represent security or correctness risks.
+
+### 14.1 Peer authentication header bypass
+**Severity:** P0 Security | **Round:** Code Review 1
+
+**Test:** Send a `Peer/deliver` request without a TLS client certificate, but with an `X-Peer-Hostname: victim.example` header. Verify the server rejects with 403 (not proceeds as if authenticated).
+
+**Common failure:** Accepting an HTTP header as peer identity without requiring it to be gated behind an explicit test-mode flag. Combined with CERT_OPTIONAL, this allows any HTTP client to impersonate any peer.
+
+### 14.2 Transaction atomicity for multi-step writes
+**Severity:** P1 Correctness | **Round:** Code Review 1
+
+**Test:** During message creation (INSERT message + INSERT attachments + INSERT mentions + UPDATE chat.lastMessageAt + INSERT state_log), simulate a crash after the message INSERT but before the mentions INSERT. Verify the database is not left in an inconsistent state.
+
+**Common failure:** Each `execute()` auto-commits. No transaction wrapping means partial writes survive crashes.
+
+### 14.3 State counter atomicity
+**Severity:** P1 Correctness | **Round:** Code Review 1
+
+**Test:** Issue two concurrent `record_change()` calls for the same (account_id, data_type). Verify they produce distinct, monotonically increasing state tokens (no duplicates).
+
+**Common failure:** Read-increment-write pattern across multiple awaits allows interleaving that produces duplicate tokens.
+
+### 14.4 LIKE wildcard injection in Chat/query
+**Severity:** P2 | **Round:** Code Review 2
+
+**Test:** Call `Chat/query` with `filter: {name: "%"}`. Verify it does NOT return all chats — the `%` should be treated as a literal character, not a wildcard.
+
+**Common failure:** Passing user-supplied filter value directly into a LIKE clause without escaping `%` and `_`.
+
+### 14.5 Nested transaction safety
+**Severity:** P1 | **Round:** Code Review 2
+
+**Test:** If your implementation has a transaction context manager, verify that nested calls do not prematurely commit. The outer transaction must own the commit; inner calls should be no-ops.
+
+**Common failure:** Boolean `_in_transaction` flag set to False on any exit, regardless of nesting depth.
+
+### 14.6 Channel with NULL space_id bypasses enforcement
+**Severity:** P1 | **Round:** Code Review 2
+
+**Test:** Create a channel chat with `space_id = NULL` in the database. Send a message to it via `Peer/deliver`. Verify SpaceBan checks, send-permission checks, and slow-mode enforcement still run (or the server rejects the channel as invalid).
+
+**Common failure:** All Space-related checks gated behind `if space_id:`, silently skipping enforcement for malformed channels.
+
+---
+
 ## Summary Statistics
 
 | Category | MUST tests | SHOULD tests | Total |
 |----------|:----------:|:------------:|:-----:|
 | Data types | 10 | 0 | 10 |
 | Wire format | 5 | 0 | 5 |
-| Session/capabilities | 6 | 1 | 7 |
+| Session/capabilities | 7 | 1 | 8 |
 | Validation | 13 | 1 | 14 |
 | Permissions | 5 | 0 | 5 |
-| Push | 10 | 0 | 10 |
-| Federation | 10 | 0 | 10 |
+| Push | 12 | 0 | 12 |
+| Federation | 15 | 0 | 15 |
 | WebSocket | 4 | 1 | 5 |
 | Scheduling | 2 | 2 | 4 |
-| Space | 5 | 0 | 5 |
+| Space | 6 | 0 | 6 |
+| Late-discovery edge cases | 11 | 0 | 11 |
+| Security/robustness | 6 | 0 | 6 |
 | Other | 2 | 0 | 2 |
-| **Total** | **72** | **5** | **77** |
+| **Total** | **93** | **5** | **98** |
 
 ---
 
@@ -600,3 +748,5 @@ The tests are ordered by the round in which the gap was first discovered, which 
 - **Rounds 5-8 (Hard):** Permission gating, wire format semantics, rich body interactions
 - **Rounds 9-13 (Subtle):** Update path omissions, privacy field leaks, delivery receipt semantics
 - **Rounds 14-19 (Edge cases):** Capability placement, type constraints on error responses, role enum values, uniqueness constraints, federation contact lifecycle
+- **Rounds 20-22 (Final):** Untrusted timestamp usage in rate limiting, session/account capability placement
+- **Code Reviews (Security):** Auth bypass chains, transaction atomicity, state counter races, wildcard injection, nesting safety
