@@ -1,6 +1,6 @@
 # JMAP Chat Compliance Test Suite
 
-A structured checklist and test harness specification for verifying any JMAP Chat implementation against the spec suite. Derived from 22 audit rounds plus 2 code reviews against a reference implementation that found and fixed ~250 gaps.
+A structured checklist and test harness specification for verifying any JMAP Chat implementation against the spec suite. Derived from 23 audit rounds plus 3 code reviews against a reference implementation that found and fixed ~260 gaps.
 
 Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and the round in which the gap was first discovered.
 
@@ -716,6 +716,83 @@ These are implementation-quality issues found via code review rather than spec a
 
 **Common failure:** All Space-related checks gated behind `if space_id:`, silently skipping enforcement for malformed channels.
 
+### 14.7 burn_on_read column missing from base schema
+**Severity:** P0 | **Round:** Code Review 3
+
+**Test:** On a fresh database (no V2 migration applied), mark a message as read. Verify the server does NOT crash with a "no such column: burn_on_read" error.
+
+**Common failure:** The `burn_on_read` column is added by a secondary migration but the code path that checks it after setting `readAt` has no column-existence guard.
+
+### 14.8 Peer/groupUpdate partial write on validation failure
+**Severity:** P1 | **Round:** Code Review 3
+
+**Test:** Send `Peer/groupUpdate` create with 3 members: two valid, one with an invalid ULID-format ID that doesn't exist locally. Verify the chat row is NOT left in the database with only the first two members.
+
+**Common failure:** The chat INSERT commits before member validation completes. A validation error mid-loop leaves an orphaned chat row with partial membership.
+
+### 14.9 Permission check logic divergence between modules
+**Severity:** P2 | **Round:** Code Review 3
+
+**Test:** Store `role_ids` as a JSON array `["role-a", "role-b"]` (not CSV). Call a channel operation that checks permissions. Verify it works. Then call a different operation (e.g., create_channel vs. Message/set broadcast mention check). Verify both give the same result.
+
+**Common failure:** Multiple copies of "check space permission" logic diverge over time. One handles JSON arrays, the other only handles CSV. The CSV-only version silently returns "no permission" for JSON-encoded role_ids.
+
+### 14.10 Migration error suppression too broad
+**Severity:** P1 | **Round:** Code Review 1
+
+**Test:** Introduce a real schema error (e.g., invalid SQL in a migration). Run the server. Verify the error is surfaced, not silently swallowed.
+
+**Common failure:** `except Exception: pass` around migration statements masks disk-full errors, constraint violations, and typos — then bumps the schema version anyway, declaring the broken migration "complete."
+
+### 14.11 Password hash timing oracle
+**Severity:** P1 | **Round:** Code Review 1
+
+**Test:** Time authentication attempts for: (a) a non-existent username, (b) an existing username with wrong password. Verify both take approximately the same time (within 10% variance).
+
+**Common failure:** Non-existent user path runs a different code branch (e.g., dummy hash with a pre-generated salt) that takes measurably different time than the real hash-then-compare path.
+
+### 14.12 scrypt work factor below OWASP minimum
+**Severity:** P1 | **Round:** Code Review 1
+
+**Test:** Check the scrypt N parameter. Verify N >= 2^17 (131072). Lower values (2^14 = 16384) make offline dictionary attacks against a stolen DB 8x cheaper.
+
+**Common failure:** Using N=16384 which was adequate in 2015 but is below the 2024 OWASP minimum of 2^17.
+
+### 14.13 Variable-time comparison for blob SHA256 verification
+**Severity:** P2 | **Round:** Code Review 1
+
+**Test:** Verify that blob hash comparison uses constant-time comparison (e.g., `hmac.compare_digest`), not `!=` or `==`.
+
+**Common failure:** `if actual_sha256 != expected_sha256:` leaks information about how many bytes match via timing.
+
+### 14.14 Content-Disposition header injection via filename
+**Severity:** P2 | **Round:** Code Review 1
+
+**Test:** Upload a blob with filename `"test.txt` (contains a double-quote). Download it. Verify the `Content-Disposition` header is correctly encoded (RFC 6266) and doesn't produce a malformed HTTP header.
+
+**Common failure:** Filename interpolated directly into `attachment; filename="{name}"` without escaping quotes or non-ASCII.
+
+### 14.15 Bare except swallowing real DB errors
+**Severity:** P1 | **Round:** Code Review 2
+
+**Test:** On a database with a V2-schema column present, introduce a constraint violation (e.g., NOT NULL on a column). Attempt the operation. Verify you get an error, not silent success via the fallback path.
+
+**Common failure:** `except Exception:` around V2-column INSERT/UPDATE catches ALL errors (disk full, type mismatch, constraint violation), not just the intended "missing column" case. Should be `except sqlite3.OperationalError:` with message check.
+
+### 14.16 update_message not atomic
+**Severity:** P1 | **Round:** Code Review 2
+
+**Test:** Simulate a crash after updating message body but before re-inserting mentions. Verify the database is consistent (either both body and mentions are updated, or neither is).
+
+**Common failure:** Message UPDATE, mention DELETE, and mention INSERT are separate auto-committed statements with no transaction wrapper.
+
+### 14.17 Per-request session creation in federation outbox
+**Severity:** P2 | **Round:** Code Review 1
+
+**Test:** Under load, verify the server does not create hundreds of TCP connections to the same peer. Each outbound delivery should reuse a connection pool.
+
+**Common failure:** `aiohttp.ClientSession()` created per-request instead of once at startup, bypassing HTTP connection pooling.
+
 ---
 
 ## Summary Statistics
@@ -733,9 +810,9 @@ These are implementation-quality issues found via code review rather than spec a
 | Scheduling | 2 | 2 | 4 |
 | Space | 6 | 0 | 6 |
 | Late-discovery edge cases | 11 | 0 | 11 |
-| Security/robustness | 6 | 0 | 6 |
+| Security/robustness | 17 | 0 | 17 |
 | Other | 2 | 0 | 2 |
-| **Total** | **93** | **5** | **98** |
+| **Total** | **104** | **5** | **109** |
 
 ---
 
@@ -749,4 +826,4 @@ The tests are ordered by the round in which the gap was first discovered, which 
 - **Rounds 9-13 (Subtle):** Update path omissions, privacy field leaks, delivery receipt semantics
 - **Rounds 14-19 (Edge cases):** Capability placement, type constraints on error responses, role enum values, uniqueness constraints, federation contact lifecycle
 - **Rounds 20-22 (Final):** Untrusted timestamp usage in rate limiting, session/account capability placement
-- **Code Reviews (Security):** Auth bypass chains, transaction atomicity, state counter races, wildcard injection, nesting safety
+- **Code Reviews (Security):** Auth bypass chains, transaction atomicity, state counter races, wildcard injection, nesting safety, burn_on_read schema guard, partial write atomicity, permission logic divergence, migration error masking, timing oracles, scrypt params, constant-time comparison, header injection, bare except scope
