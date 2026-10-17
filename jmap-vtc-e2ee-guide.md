@@ -211,7 +211,9 @@ that point.
 ## 4. Gateway reality
 
 Gateways are the hard boundary for E2EE. Each gateway protocol has different
-encryption capabilities, and none of them can participate in an MLS group.
+encryption capabilities, and no far-end endpoint on these protocols can
+participate in an MLS group. The gateway itself can, as a disclosed
+key-holding participant (see "What the server SHOULD do" below).
 
 ### PSTN
 
@@ -221,9 +223,12 @@ between the VTC media and G.711/G.729 PCM. To do this, it must decrypt the
 VTC media — which means it must have the key — which means the call is not
 E2EE for anyone.
 
-**Consequence:** A PSTN participant in a call breaks E2EE for the entire call.
-There is no partial E2EE where "everyone except the phone participant" is
-encrypted. The gateway is in the key schedule, and it has plaintext audio.
+**Consequence:** The gateway is in the key schedule, and it has plaintext
+audio. The spec allows this only when the gateway joins as a disclosed
+key-holding participant: it gets media keys through the normal key agreement
+and appears in the participant list. The JMAP server and SFU still see only
+ciphertext, but everyone in the call should assume the gateway, and the phone
+network behind it, can hear the call.
 
 ### SIP / SRTP
 
@@ -256,9 +261,9 @@ between the endpoint and the gateway — the same hop-by-hop limitation as SIP.
 | All participants are WebRTC | Yes | Full E2EE via Insertable Streams + MLS |
 | All participants are native app | Yes | Full E2EE via SFrame + MLS |
 | Mix of WebRTC and native | Yes | SFrame for interop, or per-transport encryption with shared MLS key |
-| Any PSTN participant | No | Gateway decrypts; entire call loses E2EE |
-| Any SIP participant (via gateway) | No | Gateway terminates SRTP; call loses E2EE |
-| Any H.323 participant (via gateway) | No | Same as SIP |
+| Any PSTN participant | Only up to the gateway | Gateway joins as a disclosed key-holding participant, or reject |
+| Any SIP participant (via gateway) | Only up to the gateway | Same as PSTN; gateway terminates SRTP |
+| Any H.323 participant (via gateway) | Only up to the gateway | Same as SIP |
 
 **The all-or-nothing rule.** The spec's `e2eeEnabled` is a Boolean on VTCCall,
 not per-participant. This is correct: E2EE is a property of the call, not of
@@ -269,14 +274,22 @@ agreement, the call is not E2EE.
 
 When `e2eeEnabled` is `true` on a call:
 
-- **Reject gateway dial-out.** If a moderator attempts to create a
-  VTCParticipant with `joinMethod` of `"pstn"`, `"sip"`, or `"h323"`, the
-  server SHOULD return `forbidden` with a description explaining that gateway
-  participants cannot join an E2EE call.
+- **Reject gateway dial-out unless the gateway holds keys openly.** If a
+  moderator attempts to create a VTCParticipant with `joinMethod` of
+  `"pstn"`, `"sip"`, or `"h323"`, and the gateway cannot join as a disclosed
+  key-holding participant, the server SHOULD return `forbidden` with a
+  description explaining why.
 
-- **Reject gateway dial-in.** If a gateway connection arrives for a call with
-  `e2eeEnabled: true`, the server SHOULD reject the connection and return an
-  appropriate error to the gateway (e.g., SIP 488 Not Acceptable Here).
+- **Reject gateway dial-in on the same terms.** If a gateway connection
+  arrives for a call with `e2eeEnabled: true` and the gateway cannot join as
+  a disclosed key-holding participant, the server SHOULD reject the
+  connection and return an appropriate error to the gateway (e.g., SIP 488
+  Not Acceptable Here).
+
+- **Never tap media server-side.** The spec forbids server-side media taps,
+  SFU-side decryption, and giving media keys to anyone not in the
+  participant list. A gateway, recorder, or livestream bridge either joins
+  as a visible participant or does not get plaintext.
 
 - **Warn on downgrade.** If a moderator attempts to set `e2eeEnabled: false`
   on an active E2EE call (to admit a gateway participant), this is a security
@@ -288,24 +301,25 @@ When `e2eeEnabled` is `true` on a call:
 
 ## 5. Feature degradation
 
-When `e2eeEnabled: true`, several features become unavailable because they
-require server-side media access. Implementers MUST surface these constraints
-clearly in the client UI.
+When `e2eeEnabled: true`, the server has no access to plaintext media.
+Features that need plaintext either move to the client or run in a disclosed
+key-holding participant that appears in the participant list. Implementers
+MUST surface these constraints clearly in the client UI.
 
 ### Degradation matrix
 
 | Feature | Available with E2EE? | Why |
 |---|---|---|
-| Recording (VTCRecording) | No | Server cannot access plaintext media |
-| Livestreaming (VTCLivestream) | No | Server cannot re-encode for RTMP |
-| PSTN dial-in/out | No | Gateway cannot join MLS group |
-| SIP dial-in/out | No | Gateway terminates SRTP at boundary |
-| H.323 dial-in/out | No | Same as SIP |
+| Recording (VTCRecording) | Via key-holding recorder only | Server cannot access plaintext media; a recorder that joins as a visible participant can, announced by `VTCRecordingStateEvent` |
+| Livestreaming (VTCLivestream) | Via key-holding bridge only | Same as recording; the bridge re-encodes for RTMP |
+| PSTN dial-in/out | Via key-holding gateway only | Far-end phone cannot join MLS group; the gateway joins as a visible participant |
+| SIP dial-in/out | Via key-holding gateway only | Gateway terminates SRTP at boundary |
+| H.323 dial-in/out | Via key-holding gateway only | Same as SIP |
 | Server-side transcription | No | Server cannot access plaintext audio |
 | Server-side noise suppression | No | Server cannot process audio frames |
 | Simulcast layer selection | Yes* | SFU selects layers by RTP headers, not frame content |
 | Bandwidth adaptation | Yes* | SFU adjusts bitrate via REMB/TWCC, not frame content |
-| Active speaker detection | Partial | SFU can use audio levels from RTP header extensions (RFC 6464) if client includes them unencrypted |
+| Active speaker detection | Client-side | Server SHOULD NOT map media streams to participant ids or send `VTCActiveSpeakerEvent`; clients detect from decrypted audio levels. An SFU can still use unencrypted RFC 6464 levels for forwarding decisions without knowing who is speaking |
 | Live captions (via Chat) | Client-side only | Client runs local speech-to-text and sends as Chat ephemeral events |
 | In-call chat (via Chat) | Yes | Chat messages are independent of media E2EE (Chat has its own E2EE story per {{JMAP-CHAT}} §E2EE) |
 | Reactions (via Chat) | Yes | Same as chat |
@@ -320,14 +334,39 @@ clearly in the client UI.
 Before a user enables E2EE (or joins an E2EE call), the client SHOULD
 display a clear summary of what will be unavailable:
 
-- "Recording and livestreaming are not available in encrypted calls."
-- "Phone and SIP participants cannot join encrypted calls."
+- "Recording and livestreaming in encrypted calls are done by a recorder
+  that joins as a visible participant and can hear the call."
+- "Phone and SIP participants join through a gateway that appears as a
+  participant and can hear the call."
 - "Live captions are device-local only — they are not shared with other
   participants unless your device generates them."
 
 If a moderator attempts a disabled action (e.g., taps "Start recording" on
-an E2EE call), the client SHOULD show an explanatory error before the
-request reaches the server.
+an E2EE call in a deployment without a key-holding recorder), the client
+SHOULD show an explanatory error before the request reaches the server.
+Show key-holding recorders, bridges, and gateways distinctly in the
+participant list.
+
+### Metadata the server still sees
+
+Media E2EE does not hide call metadata. The server knows the participant
+list, join and leave times, and `activeParticipantCount`. If it maps media
+streams to participants it also learns `speakerTimeMs` and the active
+speaker, which show who answered whom and for how long. For E2EE calls:
+
+- Do not map SFU streams to participant ids in the server. Leave
+  `speakerTimeMs` at `0`, skip `VTCActiveSpeakerEvent`, and let clients
+  detect the active speaker from decrypted audio.
+- Hide VTCParticipant records from users who are not in the call, even
+  members of a bound Chat. This mirrors JMAP Scene's suppression of
+  avatar events for regions bound to E2EE calls. Non-participants still
+  see that the call exists and its `activeParticipantCount`.
+- Send the content-free `VTCCallPush` on APNs and FCM so the platform
+  operator does not learn who is calling whom. The client fetches call
+  details after waking, which costs at least one round trip and can push
+  the incoming-call UI past the two-second ring target on a cold
+  connection. On iOS, report the call to CallKit with a generic caller
+  label first and update it when the fetch returns.
 
 ---
 
@@ -492,8 +531,8 @@ work while sending plaintext).
 5. **Gateway rejection.** Attempt to add a PSTN participant to an E2EE call.
    Verify that the server returns `forbidden`.
 
-6. **Recording rejection.** Attempt VTCRecording/set create on an E2EE call.
-   Verify `forbidden`.
+6. **Recording rejection.** In a deployment without a key-holding recorder,
+   attempt VTCRecording/set create on an E2EE call. Verify `forbidden`.
 
 7. **Downgrade notification.** If your deployment supports disabling E2EE
    mid-call, verify that all participants receive a notification before
@@ -520,7 +559,8 @@ If you do implement it, consider a phased rollout:
 - Ephemeral X25519 key agreement (no MLS needed)
 - Insertable Streams with AES-GCM encryption
 - SHA-256 fingerprints with TOFU
-- `e2eeEnabled: true` disables recording and gateway dial-in/out
+- `e2eeEnabled: true` disables recording and gateway dial-in/out (key-holding
+  participants come in Phase 4)
 - Ship and validate
 
 ### Phase 2: Group room calls
@@ -541,6 +581,7 @@ If you do implement it, consider a phased rollout:
 - Cross-signing / PKI for enterprise deployments
 - SFrame for cross-transport interoperability
 - Client-side recording (encrypted locally, uploaded as blob)
+- Key-holding recorder, livestream bridge, and gateway participants
 
 Each phase is independently deployable. The `e2eeEnabled` boolean is the
 same in all phases — clients do not need to know which phase the server

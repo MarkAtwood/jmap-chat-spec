@@ -48,6 +48,12 @@ informative:
       RFC: "9404"
     date: 2023
     target: https://www.rfc-editor.org/rfc/rfc9404
+  MULTIFORMATS-CID:
+    title: "CID (Content IDentifier) Specification"
+    author:
+      org: Protocol Labs
+    date: 2026
+    target: https://github.com/multiformats/cid
 
 --- abstract
 
@@ -181,6 +187,20 @@ than base64. Clients MAY use both mechanisms to cross-validate results, provided
 convert encodings before comparing and request the BLOBEXT digest over
 the full blob rather than a partial byte range.
 
+## Client-Encrypted Blobs {#encrypted-blobs}
+
+Some deployments encrypt blob content on the client before upload, for
+example to provide end-to-end encryption. In that case the server
+receives and stores only ciphertext, and `sha256` is the SHA-256 digest
+of the ciphertext bytes as uploaded. The verification rules in
+{{upload-client}} and {{filenode-client}} apply to the ciphertext.
+
+A client that encrypts blob content before upload SHOULD NOT expose the
+SHA-256 digest of the plaintext, or any other unkeyed digest of the
+plaintext, outside the encrypted payload. A client that needs the
+plaintext digest, for example to check content after decryption, SHOULD
+carry it only inside encrypted data. See {{plaintext-hash}}.
+
 # FileNode Extension {#filenode}
 
 When a server advertises both `urn:ietf:params:jmap:cid` and the
@@ -268,6 +288,22 @@ risk described in {{blob-probing}}. Servers that perform cross-account
 deduplication SHOULD consider uniform-duration upload responses or other
 countermeasures if this channel is a concern.
 
+## Plaintext Hash Disclosure {#plaintext-hash}
+
+A digest of plaintext content that is visible to any party without the
+decryption key enables a confirmation-of-file attack. A party that holds
+or can guess a candidate file computes its digest and compares it with
+the disclosed value, learning whether the encrypted blob contains that
+file without breaking the encryption. Files with low entropy or a
+predictable structure can also be recovered by guessing.
+
+For client-encrypted blobs ({{encrypted-blobs}}), `sha256` is computed
+over ciphertext and does not have this property when the encryption is
+randomized. Encryption schemes that derive the key or nonce from the
+plaintext, such as convergent encryption used to enable deduplication,
+produce identical ciphertext for identical plaintext and reintroduce the
+attack.
+
 # IANA Considerations {#iana}
 
 ## JMAP Capability Registration
@@ -306,6 +342,44 @@ normative content defined here maps naturally to upstream changes:
 
 Authors of those specifications are encouraged to consider incorporating
 this content, at which point this document would be obsoleted.
+
+# Mapping to CIDv1 {#cidv1}
+
+This appendix is informative. It does not add a field to any JMAP
+object.
+
+A `sha256` value converts losslessly to a CIDv1 as defined by
+{{MULTIFORMATS-CID}}, using the `raw` codec and the `sha2-256`
+multihash. Implementations that interoperate with content-addressed
+stores using that format MAY perform this conversion. The binary CIDv1
+is the concatenation of the following bytes:
+
+- `0x01`: CID version 1.
+- `0x55`: multicodec `raw`, meaning the CID addresses the blob bytes
+  as stored.
+- `0x12`: multihash function code for `sha2-256`.
+- `0x20`: multihash digest length, 32 bytes.
+- The 32 bytes obtained by decoding the 64 hex digits of `sha256`.
+
+The common string form is the multibase prefix `b` followed by the
+binary CIDv1 encoded as lowercase base32 without padding. The reverse
+conversion checks the four prefix bytes and hex-encodes the remaining
+32 bytes. For client-encrypted blobs the resulting CIDv1 addresses the
+ciphertext, as `sha256` does.
+
+For the example `sha256` value in {{upload}}, the string form is:
+
+~~~
+bafkreie7q3iidccmpvszul7kudcvvuavuo7u6gzlbobczuk5nqk3b4akba
+~~~
+
+For empty content (`sha256` value
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`),
+the string form is:
+
+~~~
+bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku
+~~~
 
 # Acknowledgements
 

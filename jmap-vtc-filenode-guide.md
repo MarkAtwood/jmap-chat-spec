@@ -189,10 +189,11 @@ the VTCRecording's own visibility rules, or what metadata is attached to it beyo
   Per-speaker tracks are separate FileNodes in the same call folder, named by participant
   display name. Multi-track is operationally more complex; default to composite unless
   the deployment's media stack produces per-speaker tracks natively.
-- *E2EE calls*: `draft-atwood-jmap-vtc-00` §7.4 notes that servers SHOULD reject
-  VTCRecording creates with `forbidden` when `e2eeEnabled` is `true`. If a deployment
-  nonetheless supports client-side encrypted recordings, the recording blob is opaque
-  to the server; do not attempt server-side processing or thumbnail generation on it.
+- *E2EE calls*: `draft-atwood-jmap-vtc-00` (End-to-End Encrypted Calls) forbids
+  server-side media access when `e2eeEnabled` is `true`. A recording is possible only
+  through a disclosed key-holding recorder that joins the call as a participant. If
+  that recorder encrypts its output before upload, the recording blob is opaque to the
+  server; do not attempt server-side processing or thumbnail generation on it.
 
 ### Common patterns
 
@@ -330,7 +331,7 @@ When both VTC and JMAP Chat are present:
 | VTC recording lifecycle | `draft-atwood-jmap-vtc-00` §5.3 (VTCRecording/set) |
 | VTCRecording data type fields | `draft-atwood-jmap-vtc-00` §4.5 |
 | Recording consent notification | `draft-atwood-jmap-vtc-00` §7.3 |
-| E2EE and recording incompatibility | `draft-atwood-jmap-vtc-00` §4.2 (VTCCall, `e2eeEnabled`) |
+| E2EE and recording (key-holding recorders) | `draft-atwood-jmap-vtc-00` End-to-End Encrypted Calls; VTCCall `e2eeEnabled` |
 | JMAP FileNode data model | `draft-ietf-jmap-filenode` |
 | FileNode storage backend choice | `jmap-chat-filenode-guide.md` §1 |
 | FileNode quota management | `jmap-chat-filenode-guide.md` §4 |

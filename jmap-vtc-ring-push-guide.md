@@ -37,10 +37,14 @@ Unlike chat message notifications, a ring push must:
 - **Present a native incoming-call UI.** Users expect a full-screen call interface, not
   a banner. On iOS this requires CallKit. On Android this requires `ConnectionService` or
   `TelecomManager`. On web it is a partial approximation at best.
-- **Carry enough data to render without a network round-trip.** The `VTCCallPush` payload
-  is self-contained: it includes `initiatorDisplayName`, `mediaTypes`, `joinUri`, and
-  `subject` so the device can display the call screen while the app connects to the JMAP
-  server in the background.
+- **Carry enough data to render without a network round-trip, unless privacy wins.** The
+  full `VTCCallPush` payload is self-contained: it includes `initiatorDisplayName`,
+  `mediaTypes`, `joinUri`, and `subject` so the device can display the call screen while
+  the app connects to the JMAP server in the background. The draft also defines a
+  content-free form (`draft-atwood-jmap-vtc-00` Content-Free Form) carrying only `@type`,
+  `accountId`, `callId`, and `callType`. Servers SHOULD use it for E2EE calls delivered
+  through APNs or FCM, and MAY use it for any call. It hides call metadata from the
+  platform operator at the cost of a follow-up fetch; see "Content-free ring pushes" below.
 - **Self-destruct promptly.** A ring push that arrives after the call has already been
   answered or declined is worse than no notification: it wakes the device unnecessarily
   and confuses the user. The spec's `TTL` guidance (30–60 seconds on Web Push) and
@@ -113,11 +117,25 @@ by revoking VoIP push entitlement entirely for repeated violations. The app cann
 defer this: it must synchronously report the incoming call before performing any
 asynchronous network operation.
 
-Implementation consequence: the `VTCCallPush` payload MUST contain enough data to
-call `reportNewIncomingCall` without a network round-trip. The
-`CXCallUpdate` object requires at minimum a caller handle and display name; the payload
-provides both via `initiatorId` and `initiatorDisplayName`. The app calls
+Implementation consequence: the app MUST call `reportNewIncomingCall` before any
+network round-trip. The `CXCallUpdate` object wants a caller handle and display name.
+A full payload provides both via `initiatorId` and `initiatorDisplayName`. The app calls
 `VTCCall/get` to refresh state after reporting to CallKit, not before.
+
+### Content-free ring pushes
+
+A content-free `VTCCallPush` has no `initiatorId` or `initiatorDisplayName`. The app
+still reports the call to CallKit immediately, with a generic caller label (for
+example, "Incoming call") and `callId` as the handle. It then calls `VTCCall/get` for
+`callId` and, if it needs the caller's name, `VTCParticipant/get`, and updates the
+call with `CXProvider.reportCall(with:updated:)` once the fetch returns.
+
+The trade-off is latency against metadata privacy. The follow-up fetch adds at least
+one round trip, plus connection setup on a cold start, before the incoming-call screen
+shows who is calling. On a slow network this can exceed the two-second ring target. In
+exchange, Apple or Google never sees who is calling whom, the subject, or the bound
+Chat or Space. Web Push payloads are already encrypted to the client (RFC 8291), so
+servers typically keep the full form there.
 
 ### APNs request format
 

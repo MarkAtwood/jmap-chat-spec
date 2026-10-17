@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.4",
+  "title": "jmap-did: single previousDid definition",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.172904499Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:25.866790956Z",
+  "started_at": "2026-10-17T06:51:11.399925084Z",
+  "closed_at": "2026-10-17T07:00:25.866790956Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.4",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.1890058Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.11",
+  "title": "vtc/vtc-wss: E2EE participant/active-speaker privacy",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.648314108Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:26.34499334Z",
+  "started_at": "2026-10-17T06:52:05.817692386Z",
+  "closed_at": "2026-10-17T07:00:26.34499334Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.11",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.667888611Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

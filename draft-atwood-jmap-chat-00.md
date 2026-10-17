@@ -146,7 +146,7 @@ This specification accommodates two primary deployment topologies.
 
 In the **mailbox-per-user** model, each participant runs their own JMAP server storing only their own messages. Mailboxes exchange messages directly using the server-to-server methods defined in {{JMAP-CHAT-FED}}.
 
-In the **relay** model, a shared server routes messages between clients. The Peer/* methods are implemented by the relay rather than by individual user-controlled mailboxes. Relay deployments are designed to handle only opaque ciphertext; see {{e2ee}} for the normative requirements.
+In the **relay** model, a shared server routes messages between clients. The Peer/* methods are implemented by the relay rather than by individual user-controlled mailboxes. Relay deployments are designed to handle only opaque ciphertext plus the routing fields listed in {{e2ee}}; see {{e2ee}} for the normative requirements.
 
 Both topologies are fully compatible with this specification. Transport, identity, and encryption choices are confined to the deployment layer.
 
@@ -561,6 +561,8 @@ A Message is a single transmission within a Chat.
 Message IDs are ULIDs {{ULID}}, assigned by the **receiving** mailbox at storage time. ULIDs are lexicographically ordered by time, enabling ordered retrieval without a separate sort field.
 
 The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox and carried in `Peer/deliver`. The receiving mailbox stores both its own `id` and the `senderMsgId`. Servers MUST maintain a durable index of `senderMsgId` values per chat to support idempotent delivery, `Peer/retract` lookup, and resolution of `replyTo` / `threadRootId` references. If a `senderMsgId` is seen again for the same chat, the server MAY silently discard the duplicate.
+
+`senderMsgId` is the cross-server reference for a message. Receiver-assigned `id` values differ between mailboxes, so on the federation wire `replyTo`, `threadRootId`, edits, retractions, and reactions identify their target message by `senderMsgId` ({{JMAP-CHAT-FED}}). A sending server MAY also include an optional causal hint, the `senderMsgId` of the latest message it had stored in the chat when the message was composed, which receivers MAY use for display ordering as defined in {{JMAP-CHAT-FED}}.
 
 ### Message Object Fields
 
@@ -1657,7 +1659,21 @@ In relay deployments, the relay routes Peer/* messages but MUST NOT have access 
 - The `body` field carries ciphertext only; plaintext MUST never be transmitted to the relay in an encrypted deployment.
 - The relay is architecturally excluded from the encryption key schedule (e.g., by using MLS {{RFC9420}} or a similar protocol that does not involve the relay in key agreement).
 - Servers MUST NOT reject or transform `body` based on content when `bodyType` indicates an encrypted type.
-- Metadata visible to the relay — sender id, recipient id, timestamp, and body size — remains an information-leakage surface. Deployments requiring metadata privacy SHOULD apply message padding and cover traffic at the transport layer; those techniques are outside the scope of this document.
+- Metadata visible to the relay (the routing fields listed below, timestamps, body size, and the arguments of `reactionUpdate` payloads and `Peer/retract`) remains an information-leakage surface. Deployments requiring metadata privacy SHOULD apply message padding and cover traffic at the transport layer; those techniques are outside the scope of this document.
+
+### Fields Inside the Ciphertext {#e2ee-fields}
+
+When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, and `threadRootId` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. Servers MUST reject a `Message/set` create or update, or a `Peer/deliver` payload, that has an encrypted `bodyType` and any of these fields non-empty, with `invalidArguments`.
+
+As a consequence, the server cannot validate mention offsets, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
+
+In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are therefore limited to the routing arguments `accountId`, `chatId`, `chatKind`, and `senderUserId`, and the `message` fields `senderMsgId`, `bodyType`, `body` (as ciphertext), `sentAt`, `senderExpiresAt`, and `burnOnRead`. For `edit` payloads they are `senderMsgId`, `bodyType`, `body` (as ciphertext), and `editedAt`.
+
+### Sender Authentication and Relay Enforcement {#e2ee-enforcement}
+
+The sender's identity MAY be authenticated inside the end-to-end encryption layer instead of by the relay (for example, MLS {{RFC9420}} authenticates every sender through its group credential). In that case the relay needs only a recipient or group routing handle (`accountId` or `chatId`) to route the message, and `senderUserId` MAY be an opaque value bound to the sender's transport credential rather than the sender's user id. The relay still compares `senderUserId` with the authenticated transport credential before accepting the call. Receiving clients MUST authenticate the sender from the end-to-end encryption layer and MUST NOT rely on a relay-supplied `senderId` for that purpose.
+
+Relay-side enforcement of SpaceBan and slow mode (steps 4 and 6 of new-message validation in {{JMAP-CHAT-FED}}) is OPTIONAL. A relay that sees only an opaque sender value also cannot evaluate `"send"` permission or block state (steps 5 and 7). Receiving clients MUST perform each of these checks that the relay does not perform, and the `"mention_broadcast"` check for broadcast mentions carried inside the ciphertext, against signed group state (for example, the MLS group context, or Space state signed by the Space's authority), and MUST discard messages that fail them.
 
 ## Federation Security
 

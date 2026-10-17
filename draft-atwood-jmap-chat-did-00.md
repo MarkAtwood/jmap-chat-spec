@@ -34,6 +34,13 @@ normative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
+  JMAP-DID:
+    title: JMAP Decentralized Identifiers
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-did-00
+    date: 2026
 
 informative:
   JMAP-CHAT-FED:
@@ -54,6 +61,9 @@ informative:
   DID-PLC:
     title: "did:plc Method Specification"
     target: https://web.plc.directory/spec/v0.1/did-plc
+  DID-WEBVH:
+    title: "The did:webvh DID Method"
+    target: https://identity.foundation/didwebvh/
 
 --- abstract
 
@@ -69,7 +79,7 @@ This document defines JMAP Chat DID, a companion specification to JMAP Chat ({{J
 
 This specification follows three principles consistent with the broader JMAP Chat corpus:
 
-- **Wire contract is minimal.** A single capability URN, an array of supported DID methods, an optional ChatContact field, and one normative authentication requirement. No new methods. No new data types beyond an optional field on ChatContact.
+- **Wire contract is minimal.** A single capability URN, reuse of the supported DID method list from {{JMAP-DID}}, an optional ChatContact field, and one normative authentication requirement. No new methods. No new data types beyond an optional field on ChatContact.
 - **Operational and computational policy is deployment-defined.** Concrete signature mechanisms, signed-component lists, clock-skew tolerances, nonce caches, DID-document role conventions, multi-device handling, key-rotation cadences, DID-provisioning workflows, and recovery mechanisms are explicitly out of scope. Implementer guidance for these is in the companion implementer guide.
 - **Method set is open.** Three DID methods are mandatory-to-implement; deployments MAY support any other DID method. The capability advertises the actual supported set so peers can negotiate at the wire level. No `did:*` method spec is foreclosed.
 
@@ -84,6 +94,10 @@ This document does not redefine ChatContact, does not introduce new JMAP methods
 - A reaffirmation of the textual mention form for DID URIs already noted in {{JMAP-CHAT}}.
 
 Implementations of this specification MUST also implement {{JMAP-CHAT}}. A deployment that supports JMAP Chat but does not resolve any DID method MUST NOT advertise the capability defined here.
+
+## Relationship to JMAP DID
+
+This document builds normatively on {{JMAP-DID}}. A server advertising `urn:ietf:params:jmap:chat:did` MUST also advertise `urn:ietf:params:jmap:did` and MUST follow {{JMAP-DID}} for account-to-DID binding and DID lifecycle. The lifecycle terms "key rotation" (new keys in the DID Document, same DID) and "DID migration" (the DID itself changes) have the meanings defined in {{JMAP-DID}}.
 
 ## Relationship to W3C DID Core
 
@@ -105,16 +119,15 @@ Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:c
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:chat:did"]` at the session level is an empty JSON object `{}`. The session-level capability carries no parameters; per-account policy is exposed in the account-level capability object.
+The value of `capabilities["urn:ietf:params:jmap:chat:did"]` at the session level is an empty JSON object `{}`. The session-level capability carries no parameters.
+
+The DID methods the server is able to resolve and verify are advertised in the `supportedMethods` field of the `urn:ietf:params:jmap:did` session-level capability object ({{JMAP-DID}}). This document defines no separate method list. The `supportedMethods` array MUST include at least the three mandatory-to-implement methods specified in {{methods}}. Peers MUST NOT assume the absence of a method name from this array implies that the method is invalid, only that this server cannot resolve it.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat:did"]` is a JSON object with the following field:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat:did"]` is an empty JSON object `{}`.
 
-`supportedDidMethods` (String[]):
-: A non-empty array of DID method names (the portion of a DID URI between the leading `did:` and the second `:`, for example `web`, `key`, `plc`) that this server is able to resolve and verify. The array MUST include at least the three mandatory-to-implement methods specified in {{methods}}. Servers MAY include additional method names corresponding to any other DID methods they support; peers MUST NOT assume the absence of a method name from this array implies that the method is invalid, only that this server cannot resolve it.
-
-Servers MAY include other fields in the account-level capability object as deployment policy hints; clients and peers MUST ignore unknown fields. This specification does not define any other fields in this revision.
+Servers MAY include other fields in the account-level capability object as deployment policy hints; clients and peers MUST ignore unknown fields. This specification does not define any fields in this revision.
 
 # Mandatory DID Methods {#methods}
 
@@ -126,7 +139,9 @@ A server advertising the `urn:ietf:params:jmap:chat:did` capability MUST be able
 
 This list is mandatory-to-implement. A server that cannot resolve any one of these three methods MUST NOT advertise the `urn:ietf:params:jmap:chat:did` capability.
 
-Servers MAY additionally support any other DID method registered in the W3C DID Methods registry or otherwise specified. Support for additional methods is advertised by including the method name in the `supportedDidMethods` account capability array.
+Support for `did:webvh` ({{DID-WEBVH}}) is RECOMMENDED but not mandatory-to-implement. `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, it SHOULD NOT trust keys from the `did:web` DID Document that are not present in the verified `did:webvh` log.
+
+Servers MAY additionally support any other DID method registered in the W3C DID Methods registry or otherwise specified. Support for additional methods is advertised by including the method name in the `supportedMethods` array ({{capability}}).
 
 This specification does not foreclose any DID method. Future companion specifications MAY raise additional methods to mandatory-to-implement status for specific deployment contexts; this document does not.
 
@@ -142,7 +157,7 @@ This specification does not foreclose any DID method. Future companion specifica
 
 ## Optional `did` field {#did-field}
 
-ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable opaque `ChatContact.id` is preserved (for example, to keep MLS group membership stable across DID rotations in a relay deployment) while a separately bound DID provides the cryptographic identity used for federation authentication and key resolution.
+ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable opaque `ChatContact.id` is preserved (for example, to keep MLS group membership stable across DID migrations ({{JMAP-DID}}) in a relay deployment) while a separately bound DID provides the cryptographic identity used for federation authentication and key resolution.
 
 `did` (String, optional):
 : A DID URI ({{DID-CORE}}) bound to this ChatContact for cryptographic purposes. When present, the DID's verification methods are the authoritative source of public-key material for verifying signatures attributed to this ChatContact. When absent, no DID is bound to this ChatContact; cryptographic identity is derived from the authentication layer as defined in {{JMAP-CHAT}}.
@@ -224,7 +239,7 @@ Implementations MUST document the trust assumptions of each supported DID method
 
 ## Key compromise and rotation
 
-When a DID's signing key is compromised, the DID's controller is expected to publish an updated DID Document removing the compromised verification method. Receiving servers learn of the rotation by refreshing their cached DID Document, which is mandated ({{resolution}}) only on signature-verification failure. Between the time of compromise and the time the receiving server's cache refreshes, the compromised key may continue to authenticate fraudulent requests. Implementations SHOULD therefore:
+When a DID's signing key is compromised, the DID's controller is expected to publish an updated DID Document removing the compromised verification method. This is a key rotation as defined in {{JMAP-DID}}: the DID is unchanged. Receiving servers learn of the rotation by refreshing their cached DID Document, which is mandated ({{resolution}}) only on signature-verification failure. Between the time of compromise and the time the receiving server's cache refreshes, the compromised key may continue to authenticate fraudulent requests. Implementations SHOULD therefore:
 
 - Use cache TTLs no longer than what their threat model tolerates.
 - Implement out-of-band signaling for high-priority rotations where the controller can notify resolving peers proactively (such mechanisms are deployment-defined and not part of this protocol).
@@ -236,11 +251,11 @@ When a DID's signing key is compromised, the DID's controller is expected to pub
 
 ## did:web DNS and TLS dependency
 
-`did:web` resolution depends on DNS and TLS. A compromise of the DNS resolver, the TLS infrastructure, or the HTTPS host serving the DID Document is a compromise of any `did:web` DID resolved through that path. Implementations SHOULD pin TLS chains for `did:web` resolutions where operator policy permits and SHOULD treat TLS handshake failures as resolution failures.
+`did:web` resolution depends on DNS and TLS. A compromise of the DNS resolver, the TLS infrastructure, or the HTTPS host serving the DID Document is a compromise of any `did:web` DID resolved through that path. Implementations SHOULD pin TLS chains for `did:web` resolutions where operator policy permits and SHOULD treat TLS handshake failures as resolution failures. `did:web` also keeps no verifiable key history; `did:webvh` ({{methods}}) addresses this.
 
 ## did:key non-rotatability
 
-`did:key` DIDs are deterministically derived from the public key encoded in the DID URI. There is no key-rotation mechanism: rotating the key creates a new DID. A `did:key` whose private key is compromised cannot be recovered or rotated; the DID itself must be retired and a new DID adopted. Deployments using `did:key` as a long-term identity SHOULD plan for key-loss as a likely event and SHOULD provide deployment-level migration paths (typically out of scope for this protocol; see the companion implementer guide).
+`did:key` DIDs are deterministically derived from the public key encoded in the DID URI. There is no key-rotation mechanism: changing the key creates a new DID, which is a DID migration ({{JMAP-DID}}). A `did:key` whose private key is compromised cannot be recovered or rotated; the DID itself must be retired and a new DID adopted. Deployments using `did:key` as a long-term identity SHOULD plan for key-loss as a likely event and SHOULD provide deployment-level migration paths (typically out of scope for this protocol; see the companion implementer guide).
 
 ## Cross-method consistency
 

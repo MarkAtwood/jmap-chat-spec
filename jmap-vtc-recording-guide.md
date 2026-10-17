@@ -184,7 +184,7 @@ The server MUST return an error for the create in each of these cases:
 | Condition | Error type | Why |
 |---|---|---|
 | Caller is not a moderator | `forbidden` | Only moderators may start recordings. |
-| `e2eeEnabled: true` on the call | `forbidden` | Recording requires server-side media access, which is incompatible with E2EE. |
+| `e2eeEnabled: true` on the call and the recording would need server-side media access | `forbidden` | The server must not access plaintext media in an E2EE call. A disclosed key-holding recorder that joins as a participant is allowed (see below). |
 | `supportsRecording` is `false` | `forbidden` | The account does not support recording. |
 | Call is not in state `"active"` | `invalidArguments` | You cannot record a call that has not started or has already ended. |
 | Storage quota exceeded | `overQuota` | Deployment-defined; see section 9. |
@@ -197,7 +197,7 @@ Example error response (E2EE conflict):
   "notCreated": {
     "r0": {
       "type": "forbidden",
-      "description": "Recording is unavailable when end-to-end encryption is enabled."
+      "description": "Recording this end-to-end encrypted call would require server-side media access."
     }
   }
 }, "0"]]
@@ -208,7 +208,8 @@ Example error response (E2EE conflict):
 Before sending the create request, the client SHOULD check:
 
 1. The account capability `supportsRecording` is `true`.
-2. The call's `e2eeEnabled` is `false`.
+2. The call's `e2eeEnabled` is `false`, or the deployment records E2EE calls
+   through a key-holding recorder participant.
 3. The call's `state` is `"active"`.
 4. The current user's `role` on their VTCParticipant record is `"moderator"`.
 
@@ -1145,7 +1146,8 @@ made and documented each of the following decisions:
 
 **Permissions**
 - [ ] Non-moderator create/update/destroy returns `forbidden`
-- [ ] E2EE call recording create returns `forbidden`
+- [ ] E2EE call recording create returns `forbidden` unless a key-holding recorder participant performs it
+- [ ] Key-holding recorder appears in the participant list and is visually distinguished
 - [ ] `supportsRecording: false` create returns `forbidden`
 - [ ] Non-active call create returns `invalidArguments`
 

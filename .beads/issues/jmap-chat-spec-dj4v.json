@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-dj4v",
+  "title": "Apply Agora-review suggestions to jmap drafts",
+  "description": "Mark 2026-10-16: apply the 14 suggestions in /home/mark/PROJECT/agora/notes/jmap-draft-suggestions.md (changes good regardless of Agora). Agora-only overrides listed there are NOT applied. Do not commit without Mark's approval.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:45.90857467Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:26.612709325Z",
+  "closed_at": "2026-10-17T07:00:26.612709325Z",
+  "close_reason": "All 14 suggestions applied plus integration follow-ups"
+}

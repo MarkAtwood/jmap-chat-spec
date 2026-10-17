@@ -794,15 +794,19 @@ abuse.
    executing them. Do not execute an arbitrary SIP URI from a `refer` signal
    without validating that the URI is within an acceptable domain.
 
-8. **Recording and E2EE incompatibility.** The spec states that when
-   `e2eeEnabled` is `true`, gateway participants are typically unavailable and
-   the server SHOULD reject VTCRecording and VTCLivestream creates with
-   `forbidden`. This is correct: E2EE media cannot be decoded by a gateway.
-   Enforce this in your gateway: if a call transitions to `e2eeEnabled: true`
-   while gateway participants are present, evict those participants or notify
-   them that they have been disconnected. Do not leave a gateway participant in
-   an E2EE call receiving unintelligible media.
-   See also *JMAP VTC Implementer's Guide* §4 (E2EE deployment) for the full set of E2EE constraints including recording and livestream restrictions.
+8. **Gateways in E2EE calls.** When `e2eeEnabled` is `true`, the server MUST
+   NOT access plaintext media itself (`draft-atwood-jmap-vtc-00` End-to-End
+   Encrypted Calls). A gateway can bridge an E2EE call only as a disclosed
+   key-holding participant: it has a VTCParticipant record for as long as it
+   receives media, its join and departure are announced like anyone else's, and
+   it obtains media keys through the media layer's key agreement. A gateway that
+   would decrypt through a server-side media tap or SFU-side decryption is
+   forbidden. If a call transitions to `e2eeEnabled: true` while a gateway
+   participant is present that cannot join the key agreement, evict it or notify
+   it that it has been disconnected. Do not leave a gateway participant in an
+   E2EE call receiving unintelligible media. Make clear in the UI that a PSTN or
+   SIP leg means the gateway, and the phone network beyond it, hear plaintext.
+   See also *JMAP VTC Implementer's Guide* §4 (E2EE deployment) for the full set of E2EE constraints, including how recorders and livestream bridges join as key-holding participants.
 
 ### Considerations
 

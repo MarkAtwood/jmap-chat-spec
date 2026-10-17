@@ -95,9 +95,9 @@ Decentralized Identifiers (DIDs) ({{DID-CORE}}) are globally unique, self-sovere
 This document bridges the two by defining a JMAP capability that binds each account to a DID. When this capability is present:
 
 - Every account has an associated DID, advertised in the account-level capability object.
-- JMAP data types designated by consuming specifications gain a server-set `did` property derived from the owning account's DID.
+- JMAP data types designated by consuming specifications gain a server-set `did` property recording the owning account's DID at creation.
 - Clients MAY verify the server's DID attestation independently.
-- DID lifecycle events (rotation, suspension, revocation) have defined effects on the JMAP session.
+- DID lifecycle events (key rotation, DID migration, suspension, revocation) have defined effects on the JMAP session.
 
 The capability is horizontal infrastructure. It does not define new data types or methods. It extends existing JMAP objects with identity metadata, the same way {{JMAP-CID}} extends blob uploads with integrity metadata. Any JMAP specification — mail ({{RFC8621}}), calendars ({{RFC8984}}), contacts ({{JMAP-CONTACTS}}), file storage ({{JMAP-FILENODE}}), chat ({{JMAP-CHAT}}), video conferencing ({{JMAP-VTC}}), spatial environments ({{JMAP-SCENE}}), or any future JMAP capability — may declare which of its data types carry DID-derived properties.
 
@@ -114,7 +114,7 @@ A server supporting this extension MUST advertise the `urn:ietf:params:jmap:did`
 The value of `capabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
 
 `supportedMethods` (String[]):
-: The DID methods the server supports for account binding. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method. (Note: the Chat DID companion spec uses the field name `supportedDidMethods` for a semantically equivalent field in its own capability object. Servers advertising both capabilities SHOULD ensure the two lists are consistent.)
+: The DID methods the server is able to resolve and verify. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method. Every account's bound DID MUST use a listed method. Companion specifications that need to advertise DID method support reuse this field rather than defining their own.
 
 `verificationEndpoint` (String|null):
 : A URL where clients can submit a DID for server-side verification. `null` if the server does not offer a verification endpoint. The verification protocol is out of scope for this document.
@@ -144,7 +144,10 @@ The value of `accountCapabilities["urn:ietf:params:jmap:did"]` is a JSON object 
 : A URI where the DID document can be fetched. For `did:web` this is derivable from the DID itself; for `did:key` the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method. When `didDocumentUri` is non-null but unreachable (network error, HTTP 4xx/5xx), clients SHOULD fall back to standard method-specific resolution for the DID. The `didDocumentUri` is a convenience hint, not a binding constraint.
 
 `previousDid` (String|null):
-: The DID that was previously bound to this account, retained after rotation until the grace period expires. `null` when no rotation has occurred. See {{rotation}}.
+: The DID bound to this account immediately before the most recent DID migration ({{migration}}). The server retains it for a deployment-defined transition period after the migration. `null` when no migration has occurred or the transition period has expired.
+
+`keyCustody` (String|null):
+: Who holds the private keys for the verification methods in the bound DID's `authentication` verification relationship. `"server"` means the server, or a party operating on its behalf, holds at least one of those private keys. `"user"` means the server holds none of them. `null` means the server does not disclose custody; clients and peers MUST NOT infer `"user"` from `null`. See {{binding}}.
 
 Example:
 
@@ -156,7 +159,8 @@ Example:
         "urn:ietf:params:jmap:did": {
           "did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
           "didDocumentUri": null,
-          "previousDid": null
+          "previousDid": null,
+          "keyCustody": "user"
         }
       }
     }
@@ -173,12 +177,14 @@ The server is authoritative for the mapping between an accountId and a DID. This
 - **Self-registration.** The user presents a DID and proves control of the corresponding private key (e.g., by signing a challenge). The server records the binding after verification.
 - **Server-generated.** The server generates a `did:key` from a keypair it controls, on behalf of the user. This is the simplest deployment model but provides no user-sovereign key control.
 
+When the server, or a party operating on its behalf, holds a private key for the bound DID's `authentication` verification relationship (as in the server-generated model), the server can produce signatures indistinguishable from the user's, and the DID gives no assurance independent of the server ({{server-generated-keys}}). Such a server MUST NOT set `keyCustody` to `"user"` or otherwise represent the binding as verifiable independently of the server, and SHOULD set `keyCustody` to `"server"` ({{account-capability}}) so that clients and federated peers can choose a trust level. The server-generated model is NOT RECOMMENDED outside employer-managed deployments ({{employer-managed}}).
+
 Regardless of mechanism, the server MUST ensure that:
 
 1. Each account is bound to exactly one DID at any given time.
 2. The DID is a valid DID as defined in {{DID-CORE}}.
 3. The binding is reflected in the account-level capability object ({{account-capability}}).
-4. Changes to the binding (rotation, revocation) are propagated as defined in {{lifecycle}}.
+4. Changes to the binding (DID migration, revocation) are propagated as defined in {{lifecycle}}.
 
 # The `did` Property {#did-property}
 
@@ -186,7 +192,7 @@ Regardless of mechanism, the server MUST ensure that:
 
 When `urn:ietf:params:jmap:did` is advertised, consuming specifications MAY designate their data types as DID-bearing. A DID-bearing data type gains the following property:
 
-A DID-bearing property is a String|null value, server-set, whose value is a DID derived from the account-to-DID binding defined in {{binding}}. The value is `null` when the account has no DID binding (transitional state during migration) or when the object represents a non-user entity (system-generated objects, anonymous participants).
+A DID-bearing property is a String|null value, server-set, whose value is the DID given by the account-to-DID binding defined in {{binding}} at the time the object was created. The value is `null` when the account has no DID binding (transitional state during migration) or when the object represents a non-user entity (system-generated objects, anonymous participants).
 
 The property name is not required to be `did`. A consuming specification MAY define multiple DID-bearing properties on a single data type when different fields reference different identities. For example, a delegation record might carry both `delegatorDid` and `delegateeDid`.
 
@@ -195,17 +201,19 @@ Properties that reference the DID of an entity other than the owning account (e.
 All DID-bearing properties share these semantics:
 
 - **Server-set.** Clients MUST NOT include DID-bearing properties in create or update operations. Servers MUST reject such requests with a SetError of type `invalidProperties`, listing the DID-bearing property name in the `properties` array.
-- **Derived.** The value is always derived from the account binding, never stored independently. When the account's DID changes (rotation), all DID-bearing properties derived from that account reflect the new DID.
-- **Immutable per binding.** The value changes only when the underlying account-to-DID binding changes, never as a result of object mutation.
+- **Recorded at creation.** The value is the DID bound to the relevant account when the object was created, and the server records it with the object. A later DID migration ({{migration}}) does not change it.
+- **Immutable.** The value never changes after creation, neither as a result of object mutation nor as a result of a change to the account-to-DID binding.
+
+Signatures and other attestations on an object verify against the DID recorded on that object, not against the account's current DID.
 
 ## Consuming Specification Obligations
 
 A consuming specification that designates a data type as DID-bearing MUST document:
 
 1. Which data type gains DID-bearing properties, and the property names.
-2. Which identity each property represents and from which account binding it is derived.
+2. Which identity each property represents and from which account binding it is taken.
 3. The semantic role of the DID on that type (see {{did-roles}}).
-4. Any type-specific behavior when the DID is rotated or revoked.
+4. Any type-specific behavior when the DID is migrated or revoked.
 
 This document does not unilaterally add DID-bearing properties to any JMAP data type. Each consuming specification opts in by declaring its DID-bearing types.
 
@@ -295,19 +303,23 @@ This pattern requires no direct trust relationship between the client and the or
 
 # DID Lifecycle {#lifecycle}
 
-## Rotation {#rotation}
+This document uses "rotation" only for key rotation. A change of the DID itself is a DID migration.
 
-A DID rotation occurs when an account's bound DID changes. This may happen due to key compromise recovery, method migration (e.g., `did:key` to `did:web`), or organizational policy.
+## Key Rotation {#key-rotation}
 
-When a DID rotation occurs:
+A key rotation replaces verification methods in the DID document while the DID stays the same. Whether and how keys can be rotated depends on the DID method (for example, `did:web` supports it by updating the hosted document; `did:key` does not, because a new key is a new DID).
 
-1. The server MUST update the account-level capability object ({{account-capability}}) to reflect the new DID.
-2. The server MUST ensure that all `did` properties on the account's objects return the new DID in subsequent responses.
-3. The server SHOULD emit a JMAP StateChange ({{RFC8620}} Section 7.1) for every data type that has objects owned by the rotated account. Clients subscribed to those types will receive the change and can refetch. Servers that compute DID-bearing properties at response time (rather than materializing them on stored objects) SHOULD emit StateChange only for the account's Session resource rather than for every data type, to avoid triggering unnecessary client re-syncs.
-4. The server SHOULD include the previous DID in a `previousDid` field on the account-level capability object for a deployment-defined transition period, to help clients that cached the old DID update their records.
+A key rotation requires no action at the JMAP layer. The account-level capability object and all DID-bearing property values are unchanged. Clients and peers learn of the new keys by resolving the DID document again.
 
-`previousDid` (String|null):
-: The DID that was previously bound to this account, retained for a deployment-defined transition period after rotation. `null` when no rotation has occurred or the transition period has expired.
+## DID Migration {#migration}
+
+A DID migration occurs when an account's bound DID changes. This may happen due to key compromise recovery for a method without key rotation, method migration (e.g., `did:key` to `did:web`), or organizational policy.
+
+When a DID migration occurs:
+
+1. The server MUST update the account-level capability object ({{account-capability}}) to reflect the new DID. This changes the Session resource `state`, which clients observe through `sessionState` in method responses ({{RFC8620}} Section 3.4).
+2. Objects created after the migration carry the new DID. The server MUST NOT change DID-bearing property values on existing objects ({{did-property}}).
+3. The server SHOULD set `previousDid` on the account-level capability object to the DID that was bound before the migration, to help clients that cached the old DID update their records.
 
 ## Suspension {#suspension}
 
@@ -365,9 +377,9 @@ A `did:web` DID is anchored to a domain name. An attacker who registers a visual
 
 DID methods that allow identifier reuse after revocation create a risk: a new controller could impersonate the previous controller's historical objects. Deployments SHOULD prefer DID methods where revoked identifiers cannot be reassigned (e.g., `did:key`, where the identifier is derived from the public key and cannot be reused with a different key).
 
-### Server-Generated DID Key Pairs
+### Server-Generated DID Key Pairs {#server-generated-keys}
 
-When the server generates a `did:key` on behalf of a user and retains the private key (as in the server-generated binding model), the DID provides no cryptographic assurance independent of the server itself. The server can produce signatures indistinguishable from those of the user. Client verification (Section 6) provides no benefit in this model because the server trivially controls the signing key. Deployments that require DID verification to provide security guarantees independent of the server MUST use binding mechanisms where the private key is held exclusively by the user or by an independent identity provider.
+When the server generates a `did:key` on behalf of a user and retains the private key (as in the server-generated binding model), the DID provides no cryptographic assurance independent of the server itself. The server can produce signatures indistinguishable from those of the user. {{binding}} requires such servers not to represent the binding as user-verifiable and to disclose custody through `keyCustody`. Client verification ({{verification}}) provides no benefit in this model because the server trivially controls the signing key. Deployments that require DID verification to provide security guarantees independent of the server MUST use binding mechanisms where the private key is held exclusively by the user or by an independent identity provider.
 
 # IANA Considerations {#iana}
 

@@ -659,6 +659,14 @@ wants to moderate, but the offender's account is administered by A.
   policy may be unacceptable by B's policy. Local moderation enforces
   B's policy on B's territory; the peer operator on A is not obligated
   to mirror B's enforcement.
+- *Broadcast-mention permission for Spaces you host*: the federation
+  draft lets a receiving server re-check the sender's `mention_broadcast`
+  permission only when it holds an authoritative or signed copy of the
+  Space's permission state (federation draft, §Broadcast Mention
+  Resolution). A server that hosts the Space qualifies and MAY reject an
+  unauthorized broadcast mention with `forbidden`. A server that only sees
+  its own members of a remotely hosted Space does not qualify and must not
+  re-check.
 - *Anti-retaliation*: a hostile user reporting non-hostile users to
   retaliate is a known pattern. Peer abuse reports SHOULD be
   investigated by the receiving operator, not blindly acted upon.

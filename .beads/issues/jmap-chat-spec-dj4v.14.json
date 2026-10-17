@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.14",
+  "title": "federation: allow broadcast-mention re-check with authoritative state",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.857894801Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:26.546857915Z",
+  "started_at": "2026-10-17T06:51:21.111193033Z",
+  "closed_at": "2026-10-17T07:00:26.546857915Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.14",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.873083441Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

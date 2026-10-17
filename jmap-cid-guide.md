@@ -88,6 +88,15 @@ characters. Common mistakes:
 function with explicit lowercase and zero-padding. Validate on read that the
 string matches `^[0-9a-f]{64}$`.
 
+**Mapping to multiformats CIDv1.** The draft's informative appendix (Mapping
+to CIDv1) describes a lossless conversion from `sha256` to a CIDv1 with the
+`raw` codec and `sha2-256` multihash: prefix the 32 digest bytes with
+`0x01 0x55 0x12 0x20`, then encode as multibase base32 (`b` prefix, lowercase,
+no padding). Empty content maps to
+`bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku`. The conversion
+is optional and adds no JMAP field; it is useful when a deployment also
+stores blobs in a content-addressed store that uses multiformats CIDs.
+
 ### 2.2 Relationship to JMAP-BLOBEXT `digest:sha-256`
 
 **What the spec defines.** RFC 9404 (JMAP Blob Management Extensions) defines
@@ -392,7 +401,29 @@ side-channel risks when servers perform cross-account deduplication:
   model.
 - If cross-account deduplication is not implemented, these risks do not apply.
 
-### 7.3 Algorithm longevity
+### 7.3 Client-encrypted blobs
+
+**What the spec defines.** When a client encrypts content before upload, the
+server stores ciphertext and `sha256` is the digest of the ciphertext. Clients
+SHOULD NOT expose an unkeyed digest of the plaintext outside the encrypted
+payload, because anyone who sees it can confirm whether the blob contains a
+file they hold or can guess (a confirmation-of-file attack).
+
+**What you must decide.** Where to keep the plaintext digest, if your client
+needs one.
+
+**Recommended starting point.**
+
+- Verify uploads and downloads against the ciphertext `sha256`, as for any
+  other blob.
+- If you need a plaintext digest to check content after decryption, put it
+  inside the encrypted message or metadata, never in a plaintext field the
+  server or a relay can read.
+- Avoid convergent encryption (key or nonce derived from the plaintext) unless
+  you accept the confirmation-of-file exposure: identical plaintext then
+  yields identical ciphertext and an identical `sha256`.
+
+### 7.4 Algorithm longevity
 
 SHA-256 is currently considered cryptographically strong. The spec does not
 define algorithm negotiation; if SHA-256 is deprecated in the future, a new

@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.5",
+  "title": "jmap-did: server-held keys warning in binding; keyCustody field",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.236573816Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:25.938006326Z",
+  "started_at": "2026-10-17T06:51:11.443176439Z",
+  "closed_at": "2026-10-17T07:00:25.938006326Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.5",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.253434608Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
