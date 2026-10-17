@@ -266,6 +266,11 @@ This returns ids; fetch VTCParticipant records with `VTCParticipant/get` to get
 `displayName` values. For the banner, showing the first two or three names plus an
 overflow count is sufficient: "Alice, Bob, and 2 others".
 
+For calls with `e2eeEnabled: true`, the server should hide VTCParticipant records
+from users who are not in the call, including members of the bound Chat
+(`draft-atwood-jmap-vtc-00`, End-to-End Encrypted Calls). Expect `notFound` or an
+empty query result, and fall back to the count alone: "3 people in call".
+
 ---
 
 ## 4. Permissions and access control

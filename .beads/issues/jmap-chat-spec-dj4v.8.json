@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.8",
+  "title": "chat-push: content-free wake-only mode",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.441293969Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:26.148055392Z",
+  "started_at": "2026-10-17T06:51:23.53589363Z",
+  "closed_at": "2026-10-17T07:00:26.148055392Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.8",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.458976409Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -168,10 +168,11 @@ channel. Participants send Messages to that Chat using the standard
 and `Message/changes` calls. No new VTC methods are required.
 
 The VTC layer's only responsibility here is ensuring that each participant's
-Chat client knows which `chatId` corresponds to the current call. The
+Chat client knows which `chatId` corresponds to the current call. The full
 `VTCCallPush` ring notification payload already carries `chatId`
 (`draft-atwood-jmap-vtc-00` Section on VTCCallPush), so clients receive this
-binding at ring time. Clients can also read `VTCCall.chatId` directly.
+binding at ring time. The content-free form of `VTCCallPush` omits it; in
+that case, and at any other time, clients read `VTCCall.chatId` directly.
 
 ### Client UI considerations
 

@@ -380,6 +380,30 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Call `PushSubscription/set` create with `chatPush.urgency: "invalid"`. Verify `invalidArguments` error (not `invalidProperties`).
 
+### 6.11 wakeOnly payload is content-free
+**Spec:** draft-atwood-jmap-chat-push-00 ChatPushConfig `wakeOnly`; ChatMessagePush
+**Severity:** MUST | **Round:** spec change (wake-only push)
+
+**Test:** Create a PushSubscription with `chatPush: {"wakeOnly": true, "properties": ["messageId", "chatId", "bodySnippet"]}`. Send a message to the owner. Verify the payload has exactly the keys `@type` (`"ChatMessagePush"`), `accountId`, and `state`, and that `messages` is absent even though `properties` was supplied. Call `Message/changes` with a `sinceState` from before the send. Verify the returned `newState` equals the payload's `state` and that the new message id appears in `created`.
+
+**Common failure:** Server sends a `messages` array with only some fields removed, or honors `properties` in wake-only mode.
+
+### 6.12 wakeOnly ignores maxMessagesPerPush
+**Spec:** draft-atwood-jmap-chat-push-00 ChatMessagePush; Delivery, Batching and Retry
+**Severity:** MUST | **Round:** spec change (wake-only push)
+
+**Test:** On a server that advertises `maxMessagesPerPush: N` and batches, configure `wakeOnly: true` and send N+1 messages in quick succession. Verify every payload is wake-only and that the final payload's `state` lets `Message/changes` return all N+1 messages. A single wake-only payload that covers more than N messages is conformant and is not a failure. Also verify `mentionUrgency` is used when any covered message mentions the owner.
+
+**Common failure:** Server applies the `maxMessagesPerPush` limit to wake-only payloads, or drops urgency elevation because the payload has no entries.
+
+### 6.13 Encrypted message omits hasMention and mentionScopes
+**Spec:** draft-atwood-jmap-chat-push-00 ChatMessageEntry; End-to-End Encrypted Deployments
+**Severity:** MUST | **Round:** spec change (E2EE field visibility)
+
+**Test:** With `wakeOnly: false` and default `properties`, send a message with `bodyType: "application/mls-ciphertext"`. Verify the entry has `encrypted: true` and that `bodySnippet`, `hasMention`, and `mentionScopes` are all absent. Set `mentionUrgency` above `urgency`. Verify the push uses `urgency`. Mute the Chat and send another encrypted message. Verify no push is delivered.
+
+**Common failure:** Server emits `hasMention: false` and `mentionScopes: []` for encrypted messages, which claims knowledge the server does not have.
+
 ---
 
 ## 7. Federation
@@ -451,6 +475,14 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Severity:** MUST | **Round:** 3
 
 **Test:** Send many `Peer/deliver` calls in rapid succession from the same peer. Verify `rateLimited` error after exceeding the limit.
+
+### 7.11 Encrypted bodyType carries no plaintext structure
+**Spec:** draft-atwood-jmap-chat-federation-00 New Message Validation; draft-atwood-jmap-chat-00 End-to-End Encrypted Deployments, Fields Inside the Ciphertext
+**Severity:** MUST | **Round:** spec change (E2EE field visibility)
+
+**Test:** Deliver a message via `Peer/deliver` with `bodyType: "application/mls-ciphertext"` and a non-empty `mentions` array. Verify `invalidArguments`. Repeat with non-empty `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, and `lastSeenSenderMsgId` in turn; verify each is rejected. Repeat each case with `Message/set` create (omitting `lastSeenSenderMsgId`, which is federation-only). Then deliver an encrypted message with all of those fields empty or absent. Verify it is accepted and that no attachment fetch is attempted.
+
+**Common failure:** Server runs mention-offset and attachment-hash validation against ciphertext, or accepts plaintext mention and attachment metadata alongside an encrypted body.
 
 ---
 
@@ -804,15 +836,15 @@ These are implementation-quality issues found via code review rather than spec a
 | Session/capabilities | 7 | 1 | 8 |
 | Validation | 13 | 1 | 14 |
 | Permissions | 5 | 0 | 5 |
-| Push | 12 | 0 | 12 |
-| Federation | 15 | 0 | 15 |
+| Push | 15 | 0 | 15 |
+| Federation | 16 | 0 | 16 |
 | WebSocket | 4 | 1 | 5 |
 | Scheduling | 2 | 2 | 4 |
 | Space | 6 | 0 | 6 |
 | Late-discovery edge cases | 11 | 0 | 11 |
 | Security/robustness | 17 | 0 | 17 |
 | Other | 2 | 0 | 2 |
-| **Total** | **104** | **5** | **109** |
+| **Total** | **108** | **5** | **113** |
 
 ---
 

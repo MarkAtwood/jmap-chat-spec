@@ -10,9 +10,11 @@ and offers patterns and starting points for using Decentralized
 Identifiers as JMAP Chat identities.
 
 The DID draft itself defines a minimal wire contract: the capability
-URN `urn:ietf:params:jmap:chat:did`, the three mandatory-to-implement
-methods (`did:web`, `did:key`, `did:plc`) with an open extensibility
-hook, optional ChatContact extensions for explicit DID binding, and
+URN `urn:ietf:params:jmap:chat:did` (which builds on
+`urn:ietf:params:jmap:did` and reuses its `supportedMethods` list and
+its key rotation and DID migration lifecycle), the three
+mandatory-to-implement methods (`did:web`, `did:key`, `did:plc`) plus
+RECOMMENDED `did:webvh` with an open extensibility hook, optional ChatContact extensions for explicit DID binding, and
 the high-level requirement that federation authentication verify a
 DID-bound signature. The main `jmap-chat-implementer-guide.md` covers
 identity topics that overlap with core JMAP Chat concerns (the
@@ -295,6 +297,11 @@ For each supported method:
   Hard refresh on signature failure. Pin TLS chain where operator
   policy permits.
 - **`did:key`**: no caching. Recompute on each use.
+- **`did:webvh`** (RECOMMENDED by the draft): cache the resolved DID
+  Document plus the verified log head. Refresh on signature failure.
+  When a `did:webvh` DID exists for the same domain and path as a
+  `did:web` DID, do not trust `did:web` keys that are absent from the
+  verified log (draft §Methods).
 - **`did:plc`**: cache the resolved DID Document plus the operation-
   log head from the PLC directory. Poll the log head every 60 minutes
   per active DID. Refresh the document on log-head advancement and
@@ -843,8 +850,8 @@ are linked, and what UX surfaces these relationships.
 - **Single ChatContact with bound DID for pseudonymity.** Uses the
   optional `did` field per the spec. Stable opaque `id`, bound
   DID for crypto. Specifically for the case where the user wants
-  identity stability under DID rotation (e.g., MLS group
-  membership across `did:plc` rotations).
+  identity stability under DID migration (e.g., MLS group
+  membership when a user moves from `did:key` to `did:web`).
 - **Verifiable Credential-based cross-method linking.** Out of
   scope for the current spec; some deployments may adopt a VC
   format where DID A signs a credential asserting "I am the same
@@ -917,9 +924,10 @@ security postures real in a deployment. This guide expands on each.
   An annual rotation cadence is a defensible baseline for routine
   hygiene; faster cadences (quarterly, monthly) are appropriate for
   high-risk environments. Rotation MUST be triggered immediately on
-  suspected or confirmed compromise. For `did:key`, rotation creates
-  a new DID; for `did:web`, rotation updates the DID Document; for
-  `did:plc`, rotation publishes a PLC operation.
+  suspected or confirmed compromise. For `did:key`, a key change creates
+  a new DID (a DID migration, not a key rotation); for `did:web`,
+  rotation updates the DID Document; for `did:plc`, rotation publishes
+  a PLC operation.
 - *Threat models vary.* A self-sovereign individual using `did:key`
   defends primarily against device theft and account loss; an
   enterprise using `did:web` defends primarily against insider
@@ -1008,8 +1016,9 @@ document the recovery interaction.
 
 | Topic | Draft Section |
 |---|---|
-| Capability URN and account-level `supportedDidMethods` | `draft-atwood-jmap-chat-did-00.md` §Capability |
-| Mandatory DID methods | `draft-atwood-jmap-chat-did-00.md` §Methods |
+| Capability URN; method list via JMAP DID `supportedMethods` | `draft-atwood-jmap-chat-did-00.md` §Capability |
+| Dependency on JMAP DID; key rotation vs DID migration | `draft-atwood-jmap-chat-did-00.md` §Relationship to JMAP DID |
+| Mandatory DID methods; RECOMMENDED `did:webvh` | `draft-atwood-jmap-chat-did-00.md` §Methods |
 | ChatContact `id`-as-DID and optional `did` field | `draft-atwood-jmap-chat-did-00.md` §ChatContact Extensions |
 | Federation authentication requirement | `draft-atwood-jmap-chat-did-00.md` §Federation Authentication |
 | DID resolution refresh-on-failure rule | `draft-atwood-jmap-chat-did-00.md` §DID Resolution |
@@ -1034,6 +1043,7 @@ document the recovery interaction.
 | `did:web` method specification | did:web v0.1 (w3c-ccg.github.io/did-method-web) |
 | `did:key` method specification | did:key v0.7 (w3c-ccg.github.io/did-method-key) |
 | `did:plc` method specification | PLC directory spec (web.plc.directory/spec/v0.1/did-plc) |
+| `did:webvh` method specification | did:webvh (identity.foundation/didwebvh) |
 | HTTP Message Signatures | RFC 9421 |
 
 ### Reference deployment

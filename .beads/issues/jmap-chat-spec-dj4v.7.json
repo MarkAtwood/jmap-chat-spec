@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.7",
+  "title": "jmap-cid: E2EE ciphertext-hash guidance; CID mapping",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.3717729Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:26.075280053Z",
+  "started_at": "2026-10-17T06:51:23.481057332Z",
+  "closed_at": "2026-10-17T07:00:26.075280053Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.7",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.389415912Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

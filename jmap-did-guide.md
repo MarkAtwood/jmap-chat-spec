@@ -62,8 +62,9 @@ properties to their data types.
 
 ### 2.1 Choosing a DID method
 
-**What the spec defines.** The server declares `supportedMethods` in the
-session-level capability object. The spec does not mandate any specific DID
+**What the spec defines.** The server declares `supportedMethods` (the DID
+methods it can resolve and verify) in the session-level capability object.
+Companion specs such as Chat DID reuse this field. The spec does not mandate any specific DID
 method (draft §Capability (Session-Level)).
 
 **What you must decide.** Which DID methods to support.
@@ -178,14 +179,17 @@ User creates account
   → Account capability object populated with did
 ```
 
-**When to use:** Single-server deployments where cross-server identity is
-desirable but user-sovereign key control is not required. Suitable for
-bootstrapping: users can migrate to self-sovereign keys later.
+**When to use:** Employer-managed deployments, or as a temporary bootstrap
+before users move to self-sovereign keys. The draft makes this model NOT
+RECOMMENDED outside employer-managed deployments (draft §Account-to-DID
+Binding).
 
 **Tradeoff:** The server holds the private key, so the DID is not truly
-self-sovereign. The server can impersonate the user. But the DID is still
-globally unique and verifiable by third parties — it's better than accountId
-alone.
+self-sovereign. The server can impersonate the user, and verifying the DID
+gives no assurance independent of the server. The draft forbids presenting
+this binding as user-verifiable. Set `keyCustody` to `"server"` in the
+account capability object so clients and federated peers can see this and
+choose a trust level.
 
 #### Strategy B: Self-registration
 
@@ -265,11 +269,16 @@ account table. Index it for reverse lookups (DID → accountId). The column is:
 - UNIQUE — the spec requires exactly one DID per account (draft §Account-to-DID Binding).
   The reverse (one account per DID) is not required by the spec but is
   RECOMMENDED to prevent confusion.
-- Updated on rotation (the old value is replaced, not appended).
+- Updated on DID migration (the old value is replaced, not appended). Key
+  rotation does not touch this column; the DID stays the same.
 
-For `previousDid` (draft §Rotation), store the old DID in a separate column
-or audit log with a timestamp. Clear it after the deployment-defined transition
-period.
+For `previousDid` (draft §Account-Level Capability Object, §DID Migration),
+store the old DID in a separate column or audit log with a timestamp. Clear it
+after the deployment-defined transition period.
+
+Store the custody state alongside the binding so you can populate
+`keyCustody` (`"server"` for Strategy A, and for any strategy where your
+server or a party acting for it holds an authentication private key).
 
 ### 3.3 Startup and migration
 
@@ -279,10 +288,13 @@ capability is first enabled.
 **Recommended starting point.**
 
 1. Generate a `did:key` for every existing account that lacks a DID binding
-   (Strategy A — server-generated). This ensures the capability object is
-   immediately populated for all accounts.
+   (Strategy A, server-generated), with `keyCustody` set to `"server"`. This
+   ensures the capability object is immediately populated for all accounts.
+   Outside employer-managed deployments, treat this as a temporary bootstrap
+   only (Strategy A is NOT RECOMMENDED there).
 2. Allow users to replace the server-generated DID with a self-sovereign DID
-   later (Strategy B — self-registration).
+   later (Strategy B, self-registration). The replacement is a DID migration
+   (Section 6.1).
 3. Document the migration path so users know their initial DID is server-held
    and can be upgraded.
 
@@ -295,30 +307,24 @@ capability can be enabled.
 
 ### 4.1 Populating DID-bearing properties
 
-**What the spec defines.** DID-bearing properties are server-set and derived
-from the account binding (draft §DID-Bearing Properties). The server MUST reject client
+**What the spec defines.** DID-bearing properties are server-set, recorded
+at object creation from the account binding, and immutable afterward. A DID
+migration does not change them, and signatures on an object verify against the
+DID recorded on it (draft §The `did` Property). The server MUST reject client
 attempts to set them.
 
-**What you must decide.** Whether to store DID values on objects or compute
-them at response time.
+**What you must decide.** How to record the DID at creation.
 
-**Considerations.**
+**Recommended starting point.** Write the account's current DID into a column
+on the object in the same transaction that creates it. Never update it
+afterward. Do not compute the value at response time from the current binding:
+after a DID migration that would relabel old objects with the new DID, which
+the draft forbids.
 
-- *Compute at response time*: query the account binding, inject the DID into
-  the response. Pro: rotation is instant — no stored values to update. Con:
-  every response requires a join against the account table.
-- *Store on the object*: write the DID when the object is created, update on
-  rotation. Pro: no join needed at response time. Con: rotation requires
-  updating every object owned by the account.
-
-**Recommended starting point.** Compute at response time. The account-to-DID
-mapping is a single lookup (accountId → did) that can be cached in memory. This
-avoids the fan-out update problem on rotation: when a DID changes, you update
-one row in the account table, not thousands of objects.
-
-If response-time computation is infeasible (e.g., your data layer cannot join
-efficiently), store the DID on objects and use a background job to propagate
-rotation.
+A response-time lookup is still acceptable if it resolves the DID that was
+bound at the object's creation time (for example, from a binding history table
+keyed by accountId and validity interval). Storing the value on the object is
+simpler.
 
 ### 4.2 Rejecting client-supplied DIDs
 
@@ -356,8 +362,9 @@ attestation is consistent.
 
 **Recommended starting point.** Verify on first contact with a new DID. Cache
 the verification result (DID → verified/unverified) with a TTL matching the DID
-document's `Cache-Control` header. Re-verify on cache expiry or when the `did`
-value changes (rotation detected via StateChange).
+document's `Cache-Control` header. Re-verify on cache expiry, after a key rotation is suspected (for example,
+a signature fails), or when an account's DID changes (DID migration, seen as a
+Session `state` change). DID values on existing objects never change.
 
 ### 5.2 Verification procedure
 
@@ -414,33 +421,36 @@ with unverified identities; the verification indicator is informational.
 
 ## 6. DID lifecycle handling
 
-### 6.1 Rotation
+### 6.1 Key rotation and DID migration
 
-**What the spec defines.** When a DID rotation occurs, the server MUST update
-the account capability object, ensure all DID-bearing properties reflect the
-new DID, and emit StateChange notifications (draft §Rotation).
+**What the spec defines.** The draft uses "rotation" only for key rotation:
+new keys in the DID document, same DID. Key rotation needs no JMAP-layer
+action. A DID migration is a change of the bound DID. On migration the server
+MUST update the account capability object, new objects carry the new DID,
+existing objects keep the DID recorded at creation, and the server SHOULD set
+`previousDid` (draft §Key Rotation, §DID Migration).
 
 **What you must decide.**
 
 - How long to retain `previousDid`.
-- How to notify connected clients.
 
 **Recommended starting point.**
 
+- Key rotation: do nothing in the JMAP layer. Invalidate any cached DID
+  document for the DID so the next verification picks up the new keys.
+- DID migration: update the account table, set `previousDid`, and let the
+  Session `state` change. No per-type StateChange is needed, because no
+  existing object changes.
 - Retain `previousDid` for 30 days. This gives clients time to update cached
   DID-to-identity mappings. After 30 days, set `previousDid` to null.
-- Emit a StateChange for every data type that has objects owned by the rotated
-  account. In practice, this means: enumerate the data types with DID-bearing
-  properties, check whether the account has objects of each type, and emit
-  StateChange for those types.
-- If you compute DIDs at response time (Section 4.1), the rotation is
-  already instant — just update the account table and emit StateChange.
 
 **Client-side handling:**
 
-- On receiving a StateChange, refetch objects with DID-bearing properties.
-- If the new DID differs from the cached DID, update any local identity
-  mappings (display name associations, verification cache, block lists).
+- When `sessionState` changes, refetch the Session and compare the account's
+  `did` with the cached value.
+- If it differs, update local identity mappings that should follow the person
+  (display name associations, block lists). Keep the old DID on old objects for
+  signature verification and attribution.
 - If `previousDid` is present, clients that cached the old DID can correlate
   old and new identities without user intervention.
 
@@ -492,8 +502,8 @@ new authentication. Objects SHOULD retain the revoked DID for provenance
   your compliance requirements. After the retention period, objects MAY be
   deleted.
 - Account recovery (re-binding to a new DID) is a deployment decision. If
-  supported, create a new DID binding and emit rotation StateChange. The
-  revoked DID becomes `previousDid`.
+  supported, handle it as a DID migration (Section 6.1). The revoked DID
+  becomes `previousDid`.
 
 ---
 
@@ -509,16 +519,16 @@ data types. The pattern is always the same:
 1. Identify which data types are DID-bearing (defined by the consuming spec).
 2. For each DID-bearing type, identify which account binding the DID derives
    from (usually the object's `accountId`).
-3. At response time, resolve the accountId to a DID and include it in the
-   response.
+3. At creation time, record the owning account's current DID on the object
+   (Section 4.1). Return the recorded value in responses.
 4. On create/update, reject any client-supplied DID-bearing properties.
 
 ### 7.2 JMAP Mail
 
 **Email objects.** Add `senderDid` — the DID of the authenticated sender.
 
-For locally-originated mail, `senderDid` is derived from the sender's account
-binding. For inbound mail from external servers, `senderDid` is `null` unless
+For locally-originated mail, `senderDid` is the DID bound to the sender's account
+when the Email was created; a later DID migration does not change it. For inbound mail from external servers, `senderDid` is `null` unless
 the originating server provides a DID attestation via a mail header or
 out-of-band mechanism. Do not fabricate a DID for external senders.
 
@@ -671,7 +681,7 @@ for verification when the user explicitly requests it.
 | Concern | `did:key` | `did:web` |
 |---|---|---|
 | Setup cost | None (generate keypair) | Moderate (host DID document over HTTPS) |
-| Key rotation | Impossible (new key = new DID) | Supported (update document) |
+| Key rotation | Impossible (new key = new DID, a DID migration) | Supported (update document) |
 | Key recovery | None | Organization controls the document |
 | Resolution speed | Instant (no network) | HTTPS fetch + TLS handshake |
 | Censorship risk | None | Domain seizure disables the DID |
@@ -695,8 +705,8 @@ Before enabling `urn:ietf:params:jmap:did` in production:
 - [ ] DID-bearing properties added to relevant data types (Section 4.1)
 - [ ] Client-supplied DID rejection tested (Section 4.2)
 - [ ] Session capability object populated with `supportedMethods` (draft §Capability (Session-Level))
-- [ ] Account capability object populated with `did` and `didDocumentUri` (draft §Capability (Account-Level))
-- [ ] Rotation handling implemented: account update + StateChange emission (Section 6.1)
+- [ ] Account capability object populated with `did`, `didDocumentUri`, and `keyCustody` (draft §Capability (Account-Level))
+- [ ] DID migration handling implemented: account update + `previousDid`, existing objects untouched (Section 6.1)
 - [ ] Suspension handling implemented: session rejection + presence termination (Section 6.2)
 - [ ] Revocation handling implemented: session termination + object retention (Section 6.3)
 - [ ] `did:web` document hosting validated (if applicable): HTTPS, correct Content-Type, Cache-Control (Section 2.3)

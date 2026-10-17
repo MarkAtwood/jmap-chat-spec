@@ -1178,6 +1178,12 @@ remains deployment-defined.
 - *Per-scope granularity* (mute `@here` only) is feasible client-side or
   via deployment preferences but not via wire fields — the spec deferred
   wire-level per-scope opt-out to a future revision.
+- *End-to-end encrypted messages*: when `bodyType` is an encrypted type,
+  `broadcastMentions` and `mentions` are empty on the wire and the mention
+  lives inside the ciphertext (main draft, §End-to-End Encrypted
+  Deployments). The server cannot see the mention, so it cannot apply the
+  mute bypass or mention urgency. Any bypass for encrypted messages is
+  decided by the client after decryption.
 
 **Common patterns.**
 

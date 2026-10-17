@@ -86,7 +86,7 @@ Video and voice calling is a core function of modern communication systems, yet 
 
 This document defines a JMAP capability that models call state as JMAP data types with standard get/set/changes/query methods. The server tracks who created a call, who is in it, what media types are active, and how to join — but the server does not participate in media negotiation or transport. The `joinUri` field on every VTCCall points to the deployment's media-layer entry point; JMAP VTC has no opinion on what lives behind that URI.
 
-## Design Philosophy
+## Design Philosophy {#design-philosophy}
 
 - **Call state, not call media.** The JMAP server is a call-state database. It knows a call exists, who is in it, and whether someone is recording. It does not negotiate codecs, route RTP, or manage ICE candidates. Media signaling is the media stack's job.
 - **Three call models, one object.** Ring calls (caller rings, callee answers), room calls (persistent or ephemeral drop-in), and scheduled calls (bound to a calendar event) are three state-machine paths through the same VTCCall type.
@@ -318,7 +318,7 @@ VTCParticipant IDs are opaque server-assigned identifiers. For authenticated use
 : The participant's current self-reported media state.
 
 `speakerTimeMs` (UnsignedInt, server-set):
-: Cumulative milliseconds of talk time for this participant, tracked by the server or media layer. Servers that cannot track speaker time MUST set this to `0`.
+: Cumulative milliseconds of talk time for this participant, tracked by the server or media layer. Servers that cannot track speaker time MUST set this to `0`. For calls with `e2eeEnabled: true`, see {{e2ee-active-speaker}}.
 
 `kickedBy` (String|null, server-set):
 : The userId of the moderator who removed this participant from the call. `null` if the participant left voluntarily or is still in the call.
@@ -403,7 +403,7 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 : PIN or access code for joining this call via a protocol gateway. Present when a gateway (PSTN, SIP, H.323) requires a PIN to associate an inbound connection with this call. `null` when no gateway requires a PIN or no gateways are configured.
 
 `e2eeEnabled` (Boolean):
-: `true` when end-to-end encryption is active for this call's media streams. The mechanism (WebRTC Insertable Streams, SFrame, or other) is media-layer-defined; this field is the state signal for client UI (e.g., displaying a lock icon). Default: `false`. Only the call creator (at create time) or a moderator (via update) MAY set this field; the server MUST return `forbidden` if a non-moderator attempts to update `e2eeEnabled`. When `true`, features that require server-side media access (recording, livestreaming, gateway participants) are unavailable; the server MUST reject VTCRecording and VTCLivestream creates with `forbidden` when `e2eeEnabled` is `true`.
+: `true` when end-to-end encryption is active for this call's media streams. The mechanism (WebRTC Insertable Streams, SFrame, or other) is media-layer-defined; this field is the state signal for client UI (e.g., displaying a lock icon). Default: `false`. Only the call creator (at create time) or a moderator (via update) MAY set this field; the server MUST return `forbidden` if a non-moderator attempts to update `e2eeEnabled`. When `true`, the server MUST NOT access plaintext media itself. Recording, livestreaming, and gateway participants are available only through a disclosed key-holding participant ({{e2ee-media-participants}}); the server MUST reject VTCRecording and VTCLivestream creates with `forbidden` when `e2eeEnabled` is `true` and the request would require server-side media access. See {{e2ee-calls}}.
 
 ### Optional Binding Fields
 
@@ -1070,7 +1070,7 @@ Example create:
 }
 ~~~
 
-The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true`, because recording requires server-side media access that is incompatible with end-to-end encryption. The server MUST return `forbidden` when the account-level `supportsRecording` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
+The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true` and the recording would require server-side media access. The server MAY accept the create for such a call when the recording is performed by a key-holding recorder that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsRecording` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
 
 On success, the server MUST deliver a `VTCRecordingStateEvent` ({{vtc-recording-state-event}}) with `state: "recording"` to all participants in the call. This is a mandatory consent signal (see {{recording-consent}}).
 
@@ -1179,7 +1179,7 @@ Example create:
 
 The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error. The `"starting"` → `"live"` and `"starting"` → `"failed"` transitions are server-initiated.
 
-The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true`, because livestreaming requires server-side media access that is incompatible with end-to-end encryption. The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
+The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true` and the livestream would require server-side media access. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
 
 #### Stopping a Livestream
 
@@ -1234,7 +1234,7 @@ Ring notification is the mechanism by which the server alerts a callee that an i
 
 ## Push: VTCCallPush {#vtc-call-push}
 
-When a ring call is created, the server constructs a `VTCCallPush` payload and delivers it to all registered push endpoints for each target participant. The payload is standalone and sufficient to render an incoming-call UI without a follow-up request.
+When a ring call is created, the server constructs a `VTCCallPush` payload and delivers it to all registered push endpoints for each target participant. The full payload is standalone and sufficient to render an incoming-call UI without a follow-up request. A server MAY instead send the content-free form defined in {{ring-push-content-free}}, which omits every field below except `@type`, `accountId`, `callId`, and `callType`.
 
 `@type` (String):
 : MUST be `"VTCCallPush"`.
@@ -1287,6 +1287,27 @@ Example `VTCCallPush` payload:
   "joinUri": "https://meet.example.com/room/xkz",
   "chatId": null,
   "spaceId": null
+}
+~~~
+
+### Content-Free Form {#ring-push-content-free}
+
+Payloads sent through APNs, FCM, or another platform push service are visible to the platform operator unless the server encrypts them at the application layer. Web Push payloads are encrypted to the client per {{RFC8291}}; other platforms provide no equivalent protection. A full `VTCCallPush` therefore tells the platform operator who is calling whom, with what subject, and in which Chat or Space.
+
+A content-free `VTCCallPush` carries only `@type`, `accountId`, `callId`, and `callType`. Servers SHOULD send the content-free form for calls with `e2eeEnabled: true` when delivering through a platform push service other than Web Push. Servers MAY send it for any call. The urgency and blocked-sender rules below apply to both forms.
+
+A client that receives a `VTCCallPush` without `initiatorId` SHOULD fetch the call details after waking, by calling `VTCCall/get` for `callId` and, if it needs the caller's display name, `VTCParticipant/get` for the call. Where the platform requires the incoming-call UI to be presented before any network request completes (as iOS PushKit does), the client SHOULD present it with a generic caller label and update it once the fetch returns.
+
+The follow-up fetch adds at least one network round trip, plus connection setup if the client has no open connection, between wake and a fully populated incoming-call UI. On a slow or cold connection this can push ring presentation past the two-second target in {{design-philosophy}}. Deployments that choose the content-free form trade that latency for not disclosing call metadata to the platform operator.
+
+Example content-free `VTCCallPush` payload:
+
+~~~json
+{
+  "@type": "VTCCallPush",
+  "accountId": "alice-account",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callType": "ring"
 }
 ~~~
 
@@ -1465,7 +1486,7 @@ Delivered when a participant's media state changes (mute/unmute, camera on/off, 
 
 ### VTCActiveSpeakerEvent
 
-Delivered when the active (dominant) speaker changes. The server or media layer determines the active speaker based on audio levels.
+Delivered when the active (dominant) speaker changes. The server or media layer determines the active speaker based on audio levels. For calls with `e2eeEnabled: true`, the server SHOULD NOT deliver this event and clients determine the active speaker locally ({{e2ee-active-speaker}}).
 
 `@type` (String):
 : `"VTCActiveSpeakerEvent"`.
@@ -1502,8 +1523,11 @@ Delivered to all participants when recording state changes. This is a mandatory 
 `callId` (String):
 : The VTCCall id.
 
-`recordingId` (String):
-: The VTCRecording id.
+`recordingId` (String, optional):
+: The VTCRecording id. Absent when the event reports a livestream bridge.
+
+`livestreamId` (String, optional):
+: The VTCLivestream id. Present only when the event reports a key-holding livestream bridge ({{e2ee-media-participants}}). Exactly one of `recordingId` and `livestreamId` is present.
 
 `state` (String):
 : The new recording state (`"recording"`, `"paused"`, `"stopped"`).
@@ -1521,13 +1545,42 @@ When a call targets multiple participants, answering by any one target transitio
 
 Servers SHOULD enforce a ring timeout. If no target participant answers within a deployment-defined period (RECOMMENDED: 30 seconds), the server transitions the call to `"ended"` with `endReason: "missed"` and dispatches `VTCCallEndEvent` with `endReason: "timeout"` to all ringing devices.
 
+# End-to-End Encrypted Calls {#e2ee-calls}
+
+This section applies to calls with `e2eeEnabled: true`.
+
+## Key-Holding Media Participants {#e2ee-media-participants}
+
+A recorder, livestream bridge, or protocol gateway needs plaintext media. In an E2EE call it MAY obtain plaintext only by joining the call as a disclosed key-holding participant:
+
+- It MUST have a VTCParticipant record in the call for as long as it receives media, and the server MUST include that record in the participant list and announce its join and departure with `VTCParticipantEvent` like any other participant.
+- It MUST obtain media keys only through the media layer's key agreement, on the same terms as other participants. Its `e2eeFingerprint` is populated like any other participant's.
+- Its `displayName` SHOULD state its function (for example, "Recorder" or "Livestream"). Gateway participants carry the `joinMethod` of their gateway protocol.
+- When a key-holding recorder or livestream bridge starts, pauses, resumes, or stops capturing media, the server MUST deliver `VTCRecordingStateEvent` ({{vtc-recording-state-event}}) to all participants. For a livestream bridge, the event carries `livestreamId` instead of `recordingId`. This is the same consent signal required by {{recording-consent}}.
+
+The server MUST NOT use any other path to plaintext media in an E2EE call. Server-side media taps, SFU-side decryption, and delivery of media keys to the server or to any party that does not appear in the participant list are forbidden. A recording or livestream request that can only be met by such a path MUST be rejected with `forbidden`.
+
+Clients SHOULD visually distinguish key-holding recorders, bridges, and gateways from human participants, so that users can see who outside the conversation holds plaintext.
+
+## Active Speaker and Speaker Time {#e2ee-active-speaker}
+
+The participant list, `speakerTimeMs`, and the active speaker are visible to the server when the server populates them. Speaking patterns can reveal content (who answered whom, and for how long), so E2EE calls limit what the server learns:
+
+- The server SHOULD NOT map media-layer streams (for example, SFU stream or RTP SSRC identifiers) to VTCParticipant ids.
+- A server that does not map streams cannot attribute audio, so it SHOULD NOT deliver `VTCActiveSpeakerEvent` for the call and MUST set `speakerTimeMs` to `0`.
+- Clients MAY determine the active speaker locally from decrypted audio levels, using the stream-to-participant mapping learned inside the E2EE layer. Clients SHOULD prefer local detection over `VTCActiveSpeakerEvent` when both are available.
+
+## Participant Visibility {#e2ee-participant-visibility}
+
+The server SHOULD NOT expose VTCParticipant records or VTCParticipant state changes for the call to users who do not have a VTCParticipant record in it, even where {{access-control}} would otherwise make the call visible to them (for example, members of a bound Chat). For such users the server SHOULD return `notFound` for `VTCParticipant/get` and exclude the records from `VTCParticipant/query` and `VTCParticipant/changes`. This matches the rule in {{JMAP-SCENE}} that suppresses SceneAvatarEvent delivery for a region bound to an E2EE call to subscribers who are not participants. Servers that cannot implement this suppression MUST document the limitation.
+
 # Access Control {#access-control}
 
 ## Chat-Bound Calls
 
 When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:ietf:params:jmap:chat` is present, access control is inherited from JMAP Chat's permission model:
 
-- **Visibility:** A call is visible to members of the bound Chat or Space channel. Non-members MUST receive `notFound` for `VTCCall/get` and `VTCParticipant/get` requests on the call.
+- **Visibility:** A call is visible to members of the bound Chat or Space channel. Non-members MUST receive `notFound` for `VTCCall/get` and `VTCParticipant/get` requests on the call. For calls with `e2eeEnabled: true`, participant records are further restricted per {{e2ee-participant-visibility}}.
 - **Join permission:** In a Space-bound call, the server SHOULD check the `"start_call"` permission (see {{JMAP-CHAT}}) before allowing `VTCParticipant/set create`. Participants who can `"view"` the channel MAY join an existing call even without `"start_call"` permission; `"start_call"` gates call creation, not joining.
 - **Recording and livestream access:** VTCRecording and VTCLivestream objects inherit visibility from their parent VTCCall.
 - **Space ban enforcement:** When a user is banned from a Space (via SpaceBan creation) and has an active VTCParticipant record in a call bound to that Space (via `spaceId`), the server MUST set `leftAt` on that VTCParticipant record and emit a `VTCParticipantEvent` with event `"left"`. The ban takes effect immediately on active calls.
@@ -1579,6 +1632,8 @@ Servers SHOULD provide a mechanism for participants to leave a call when recordi
 ## Call Metadata Exposure
 
 Even without access to the media stream, the JMAP server observes: who called whom, when, for how long, from which device, and who else was on the call. This metadata is privacy-sensitive. Deployments requiring metadata privacy SHOULD apply the same mitigations noted in the E2EE section of {{JMAP-CHAT}}: message padding, cover traffic, and other transport-layer techniques outside the scope of this document.
+
+`e2eeEnabled: true` protects media content, not call metadata. The server still knows the participant list, join and leave times, and `activeParticipantCount`. If it maps media streams to participants it also learns `speakerTimeMs` and the active speaker, which can reveal the shape of a conversation. {{e2ee-active-speaker}} and {{e2ee-participant-visibility}} limit this exposure. A full `VTCCallPush` also discloses call metadata to the push platform operator; see {{ring-push-content-free}}. A key-holding recorder, bridge, or gateway ({{e2ee-media-participants}}) holds plaintext media by design; its presence in the participant list is what keeps the E2EE claim honest.
 
 ## Media State Accuracy {#media-state-accuracy}
 

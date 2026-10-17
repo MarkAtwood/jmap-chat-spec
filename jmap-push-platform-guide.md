@@ -611,6 +611,13 @@ vendor infrastructure that can read the payload in transit. Servers SHOULD NOT i
 sensitive content — such as message body snippets — in push payloads delivered over
 non-Web-Push channels.
 
+Metadata is sensitive too: sender, recipient, and conversation names in a payload reveal
+who communicates with whom, even when message bodies are end-to-end encrypted. Unless the
+payload is encrypted at the application layer, deployments that need to hide this from
+the platform operator SHOULD send content-free wake-up payloads and let the client fetch
+details after waking. For chat, this is the `wakeOnly` mode described in
+[the chat push supplement](jmap-chat-push-platform-guide.md#wake-only-payloads).
+
 ### Credential security
 
 OAuth tokens (FCM, ADM, HPK, WNS) SHOULD be cached and refreshed proactively before

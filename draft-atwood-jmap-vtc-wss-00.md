@@ -577,6 +577,29 @@ event filtering and delivery MUST be scoped to that identity.
 SHOULD NOT rely on `VTCMediaStateEvent` for security-critical
 decisions, as documented in {{JMAP-VTC}} Security Considerations.
 
+## End-to-End Encrypted Calls {#e2ee}
+
+Media end-to-end encryption (`e2eeEnabled: true` in {{JMAP-VTC}})
+does not hide the events defined here from the server.  The server
+generates or relays every `VTCParticipantEvent`, so it knows who is
+in the call and when they join and leave.  `VTCActiveSpeakerEvent`
+requires the server to map media streams to participants, which
+reveals who speaks, when, and for how long.
+
+For calls with `e2eeEnabled: true`, the server SHOULD NOT map media
+streams to participant ids and SHOULD NOT deliver
+`VTCActiveSpeakerEvent`, as specified in the End-to-End Encrypted
+Calls section of {{JMAP-VTC}}.  Clients determine the active speaker
+locally from decrypted audio levels instead.  The rate limit in
+{{rate-limiting}} applies only when the server delivers the event.
+
+A disclosed key-holding recorder, livestream bridge, or gateway in
+an E2EE call appears in `VTCParticipantEvent` like any other
+participant, and a recorder or bridge is announced with
+`VTCRecordingStateEvent`.  The blocked-sender exemption for
+`VTCRecordingStateEvent` ({{blocked-sender}}) applies to these
+announcements.
+
 # IANA Considerations {#iana}
 
 ## JMAP Capability Registration

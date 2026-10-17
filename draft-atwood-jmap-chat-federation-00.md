@@ -218,6 +218,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection.
   - `replyTo` (String, optional) — The `senderMsgId` of the message being replied to, as assigned by the sending server. The receiver resolves this to a local message `id` via the `senderMsgId` index. See {{outbound-preparation}} for how the sending server constructs this value.
   - `threadRootId` (String, optional) — The `senderMsgId` of the thread root message, as assigned by the sending server. The receiver resolves this similarly. See {{outbound-preparation}}. If the receiver cannot resolve a `replyTo` or `threadRootId` senderMsgId to a local message id (because the referenced message was never received or was hard-deleted), the receiver MUST store the message with `replyTo` and/or `threadRootId` set to null. The message MUST NOT be rejected on this basis.
+  - `lastSeenSenderMsgId` (String, optional): causal hint. The `senderMsgId` of the latest message in this chat that the sending server had stored when the message was composed. Informational only. See {{message-ordering}}.
   - `senderExpiresAt` (UTCDate, optional) — Hard-deletion deadline. Servers MUST reject a value that is already in the past at delivery time with `invalidArguments`.
   - `burnOnRead` (Boolean, optional) — When `true`, the receiver MUST permanently hard-delete the message immediately after setting `readAt`. When the recipient's effective `receiptSharing` preference is `false`, no `Peer/receipt` notification will reach the sender's server after the message is read — but the hard-delete on the receiving mailbox still occurs. See `burnOnRead` in {{JMAP-CHAT}}.
 
@@ -251,7 +252,7 @@ The receiving server's delivery-time set is authoritative for that server's owne
 
 Two servers federating the same Chat will commonly produce different recipient sets for `"here"` and `"admins"` on the same message: each server sees only its own local owners, and the deployment-defined predicates may differ between deployments. This is expected; the wire contract does not require predicate alignment between peers.
 
-Send-side authorization (the `"mention_broadcast"` permission gate defined in {{JMAP-CHAT}}) is enforced at the sending server. The receiving server MUST NOT re-check the sender's permission state — it does not have authority over the sending deployment's permission graph. The receiving server's enforcement responsibility is limited to wire-format validation (scope enum, offset/length bounds) and to its own targeted owners' opt-out preferences (which are deployment-defined and NOT exposed via federation).
+Send-side authorization (the `"mention_broadcast"` permission gate defined in {{JMAP-CHAT}}) is enforced at the sending server. A receiving server generally does not have authority over the sending deployment's permission graph, and in that case it MUST NOT re-check the sender's permission state. A receiving server that holds an authoritative or signed copy of the Space's permission state (for example, because it hosts the Space, or because the Space state is signed by the Space's authority) MAY re-check the sender's `"mention_broadcast"` permission against that state, and MAY reject the message with `forbidden` if the sender lacks it. Apart from such a re-check, the receiving server's enforcement responsibility is limited to wire-format validation (scope enum, offset/length bounds) and to its own targeted owners' opt-out preferences (which are deployment-defined and NOT exposed via federation).
 
 ### Outbound Message Preparation {#outbound-preparation}
 
@@ -280,11 +281,13 @@ Before storing a new message, the server MUST perform the following steps in ord
 13. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, `"admins"`, or if `offset + length` exceeds the body byte length. The receiving server MUST NOT use the sending server's send-time recipient set (if any) for authorization or push-elevation decisions; the recipient set is computed by the receiving server at delivery time as defined in {{broadcast-mention-resolution}}.
 14. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. If `burnOnRead` is also `true`, register a trigger to hard-delete the message when `readAt` is set.
 
+When `bodyType` indicates an encrypted type (e.g., `"application/mls-ciphertext"`), the server MUST, at step 10, reject with `invalidArguments` any message in which `attachments`, `mentions`, `broadcastMentions`, `actions`, `replyTo`, `threadRootId`, or `lastSeenSenderMsgId` is present and non-empty, and MUST skip steps 11 through 13. That information, if any, is carried inside the ciphertext, as specified in the End-to-End Encrypted Deployments section of {{JMAP-CHAT}}.
+
 Failure at any step MUST result in rejection with no data stored and no side effects.
 
 ### Edit and Reaction Validation
 
-For `edit` payloads: perform steps 1 through 7 of {{new-message-validation}}, then validate `body` and `bodyType` per steps 8 and 9, and validate `mentions` and `broadcastMentions` against the new body per steps 12 and 13. Verify that the identified message exists in the given chat and that `senderUserId` matches the recorded sender of that message. Reject if the sender does not match.
+For `edit` payloads: perform steps 1 through 7 of {{new-message-validation}}, then validate `body` and `bodyType` per steps 8 and 9, and validate `mentions` and `broadcastMentions` against the new body per steps 12 and 13 (for an encrypted `bodyType`, apply the empty-field check and skip steps 12 and 13 as described above). Verify that the identified message exists in the given chat and that `senderUserId` matches the recorded sender of that message. Reject if the sender does not match.
 
 For `reactionUpdate` payloads: perform steps 1 through 7. Validate `emoji` as a non-empty string. For `"add"`, verify the target message exists. For `"remove"`, verify the target reaction exists and was originally added by `senderUserId`. Reject if any check fails.
 
@@ -649,9 +652,11 @@ The `deliveryState` field on an outbound Message transitions as follows:
 
 In group chats delivered to multiple peers, `deliveryState` reflects the aggregate: `"delivered"` when at least one peer has accepted, `"failed"` only when ALL peers have permanently failed. Per-recipient granularity is available via `deliveryReceipts` if supported.
 
-### Message Ordering
+### Message Ordering {#message-ordering}
 
-Message ordering is receiver-determined: each server assigns `receivedAt` independently upon acceptance, and message order MAY differ across servers in the same group chat. This is a known property of the decentralized model. There is no vector clock, causal ordering, or consensus mechanism. Concurrent operations (retract vs. react, edit vs. edit) resolve by last-write-wins on each server independently.
+Message ordering is receiver-determined: each server assigns `receivedAt` independently upon acceptance, and message order MAY differ across servers in the same group chat. This is a known property of the decentralized model. There is no vector clock or consensus mechanism. Concurrent operations (retract vs. react, edit vs. edit) resolve by last-write-wins on each server independently.
+
+Cross-server references to a message use its `senderMsgId` (see {{outbound-preparation}}). A sending server MAY include the optional `lastSeenSenderMsgId` causal hint in a `message` payload. A receiving server MAY store the hint and MAY use it, or expose it to clients, to order the display of messages that arrive out of causal order, for example placing a message after the message it names. The hint MUST NOT change `receivedAt`, MUST NOT be used for expiry or rate-limit calculations, and MUST NOT cause rejection; a hint that does not resolve to a known message MUST be ignored.
 
 ### Error Handling
 
@@ -721,7 +726,9 @@ Servers implementing `Peer/subscribePresence` MUST authenticate the subscriber b
 
 When the federation protocol is used in conjunction with end-to-end encrypted deployments (as described in {{JMAP-CHAT}}), the relay or forwarding server routes Peer/* messages but MUST NOT have access to plaintext message content. Servers operating in an encrypted deployment MUST ensure that `body` carries only ciphertext when `bodyType` indicates an encrypted payload type (e.g., `"application/mls-ciphertext"`). The encryption key schedule MUST exclude the relay (e.g., by using MLS {{RFC9420}} or a similar protocol that does not involve the relay in key agreement).
 
-Metadata visible to relay servers — including sender id, recipient id, timestamp, and body size — remains an information-leakage surface even in encrypted deployments. Deployments with strong metadata-privacy requirements SHOULD apply message padding and cover traffic at the transport layer; those techniques are outside the scope of this document.
+The End-to-End Encrypted Deployments section of {{JMAP-CHAT}} defines which `Peer/deliver` fields are outside the ciphertext. When `bodyType` is encrypted, `mentions`, `broadcastMentions`, attachment metadata, `actions`, `replyTo`, `threadRootId`, and `lastSeenSenderMsgId` are carried inside the ciphertext or omitted, and steps 11 through 13 of {{new-message-validation}} are skipped. The sender MAY be authenticated inside the end-to-end encryption layer, in which case a relay needs only a recipient or group routing handle and `senderUserId` MAY be an opaque value bound to the transport credential. Relay-side enforcement of SpaceBan and slow mode is OPTIONAL; receiving clients enforce any check the relay does not perform against signed group state.
+
+Metadata visible to relay servers (including the routing fields, timestamp, body size, and `reactionUpdate` and `Peer/retract` arguments) remains an information-leakage surface even in encrypted deployments. Deployments with strong metadata-privacy requirements SHOULD apply message padding and cover traffic at the transport layer; those techniques are outside the scope of this document.
 
 # IANA Considerations
 

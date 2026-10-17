@@ -40,6 +40,11 @@ capability object for `urn:ietf:params:jmap:chat:push`. It contains:
 - `supportedUrgencyValues` — the urgency values the server accepts in `ChatPushConfig`
 - `maxMessagesPerPush` (optional) — the maximum number of entries in one `ChatMessagePush`
 
+Clients that want content-free pushes set `wakeOnly: true` in the `ChatPushConfig`.
+The server then sends a `ChatMessagePush` carrying only `@type`, `accountId`, and
+`state`, with no `messages` array, and the client fetches new messages after waking
+(see [Wake-only payloads](#wake-only-payloads)).
+
 Clients MUST NOT request an `urgency` or `mentionUrgency` value not in
 `supportedUrgencyValues`; the server will reject the `PushSubscription/set` call with
 `invalidArguments`.
@@ -148,6 +153,25 @@ See the platform delivery guide for when each mode is appropriate and how to set
 
 `ChatMessagePush` JSON is the entire message body — no wrapper envelope is needed.
 
+### Wake-only payloads
+
+When `ChatPushConfig.wakeOnly` is `true`, the embedding is the same as above for every
+platform, but the `ChatMessagePush` object contains only three fields:
+
+```json
+{ "@type": "ChatMessagePush", "accountId": "u1", "state": "d35ecb040aab" }
+```
+
+On APNs, an alert push still needs a Notification Service Extension: it fetches and,
+in end-to-end encrypted deployments, decrypts the new messages, then rewrites the
+placeholder alert. If the fetch does not finish in time, the placeholder text is shown.
+A background push suits wake-only delivery for non-urgent messages, subject to the same
+timeliness limits described in the platform delivery guide.
+
+Deployments that use end-to-end encryption SHOULD use wake-only payloads on every
+platform except Web Push with RFC 8291 encryption (`draft-atwood-jmap-chat-push-00`
+§End-to-End Encrypted Deployments).
+
 ---
 
 ## Urgency
@@ -155,9 +179,11 @@ See the platform delivery guide for when each mode is appropriate and how to set
 Servers MUST derive the platform urgency from `ChatPushConfig.urgency` using the
 mapping tables in the platform delivery guide.
 
-If `ChatPushConfig.mentionUrgency` is set and at least one entry in `messages` has
-`hasMention: true` or a non-empty `mentionScopes` array, the server MUST use
-`mentionUrgency` instead of `urgency` for the entire push. When a batch mixes mention
+If `ChatPushConfig.mentionUrgency` is set and at least one message covered by the push
+has `hasMention: true` or a non-empty `mentionScopes` array, the server MUST use
+`mentionUrgency` instead of `urgency` for the entire push. This also holds for
+wake-only payloads, where the server evaluates the covered messages even though the
+payload carries no entries. When a batch mixes mention
 and non-mention messages, all messages in that payload MUST share the elevated urgency
 — the mention notification MUST NOT be silently demoted.
 
@@ -167,6 +193,10 @@ for which the account owner was in the locally-resolved recipient set at deliver
 Broadcast Mention Resolution rules). A recipient who received a message tagged `@here`
 but who did not satisfy the deployment's "active" predicate at delivery time gets
 `mentionScopes: []` and therefore no urgency elevation from that message alone.
+
+For an end-to-end encrypted message (`encrypted: true`), mentions are inside the
+ciphertext, so the server omits `hasMention` and `mentionScopes` and the message never
+triggers `mentionUrgency`. Clients detect mentions after decryption.
 
 ### Per-scope urgency recommendations
 
@@ -220,13 +250,16 @@ compatibility for future scope additions).
 ## The `state` field
 
 `ChatMessagePush.state` is the `Message` state token for the account after all messages
-in the payload have been applied. Clients SHOULD update their locally cached `Message`
-state token on receipt. Using this value as `sinceState` in a subsequent `Message/changes`
+in the payload (or, for a wake-only payload, all messages it covers) have been applied.
+Clients SHOULD update their locally cached `Message` state token on receipt. Using this value as `sinceState` in a subsequent `Message/changes`
 call will not re-surface messages already present in the payload.
 
 ---
 
 ## Payload truncation
+
+Wake-only payloads contain no `messages` array and are always far below every platform
+limit, so this section does not apply to them.
 
 When a `ChatMessagePush` payload exceeds the platform size limit (see the platform
 delivery guide for per-platform limits), servers SHOULD drop fields from
@@ -245,7 +278,9 @@ delivered by default or because the client requested them via `properties`). If 
 will already be absent and SHOULD be skipped in the sequence.
 
 Servers MUST NOT drop: `@type`, `accountId`, `state` (on the outer object), `messageId`,
-`chatId`, `chatKind`, `senderId`, `hasMention`, `mentionScopes`, `encrypted`.
+`chatId`, `chatKind`, `senderId`, `hasMention`, `mentionScopes`, `encrypted`. (For an
+encrypted message `hasMention` and `mentionScopes` are absent from the start, because
+the server cannot see mentions inside the ciphertext.)
 
 A client receiving a `ChatMessageEntry` with no `bodySnippet` SHOULD display a generic
 "new message" notification and fetch full content via `Message/changes` on next
@@ -272,6 +307,16 @@ push channels that are not RFC 8291 encrypted.
 Push channel encryption and message body end-to-end encryption are independent. A
 message body may be E2E encrypted regardless of whether the push channel is encrypted,
 and vice versa.
+
+### Platform operator visibility
+
+APNs, FCM, and the other non-Web-Push platforms can read every payload they relay unless
+the server encrypts it at the application layer. Omitting `bodySnippet` for encrypted
+messages does not hide `senderId`, `senderDisplayName`, `chatName`, or `spaceName`; the
+operator still learns who messaged whom and in which chat and Space. Wake-only payloads
+remove those fields. The operator can still see the device token, delivery timing and
+frequency, payload size, and the platform priority, which reveals when `mentionUrgency`
+was applied.
 
 ### Sender display name freshness
 

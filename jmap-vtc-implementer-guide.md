@@ -391,9 +391,12 @@ layer, but treat the JMAP rejection as the primary gate.
 
 The spec defines two fields: `e2eeEnabled` on VTCCall (Boolean, default
 `false`) and `e2eeFingerprint` on VTCParticipant (the participant's public key
-fingerprint). When `e2eeEnabled` is `true`, `VTCRecording/set` and
-`VTCLivestream/set` both mandate that the server MUST return `forbidden` for
-create operations — recording and livestreaming are incompatible with E2EE.
+fingerprint). When `e2eeEnabled` is `true`, the server MUST NOT access
+plaintext media itself, and `VTCRecording/set` and `VTCLivestream/set` MUST
+return `forbidden` for creates that would need server-side media access.
+Recording, livestreaming, and gateways remain possible through a disclosed
+key-holding participant (`draft-atwood-jmap-vtc-00` Key-Holding Media
+Participants).
 Only the call creator or a moderator may set `e2eeEnabled`. The key exchange
 mechanism, the encryption protocol, and the fingerprint format are explicitly
 out of scope for the spec.
@@ -456,13 +459,16 @@ requires a key distribution and revocation infrastructure. For most
 deployments, TOFU with UI warnings on fingerprint change is the right starting
 point.
 
-**Constraints imposed by E2EE.** When `e2eeEnabled: true`, the server SHOULD
-reject recording and livestreaming creates. Gateway participants
-(PSTN, SIP, H.323) also cannot participate in an E2EE call without key material
-— the gateway has no way to decrypt the media. Clients SHOULD make these
-limitations clear in the UI before the user enables E2EE, and the server SHOULD
-return a descriptive `forbidden` error if a moderator attempts to start a
-recording on an E2EE call.
+**Constraints imposed by E2EE.** When `e2eeEnabled: true`, server-side media
+taps, SFU-side decryption, and delivery of media keys to the server are
+forbidden. A recorder, livestream bridge, or gateway (PSTN, SIP, H.323) may take
+part only as a disclosed key-holding participant: it has a VTCParticipant
+record, its join and departure are announced, it gets keys through the media
+layer's key agreement, and recorders and bridges trigger
+`VTCRecordingStateEvent`. Clients SHOULD visually distinguish these participants
+from people. The server MUST reject recording and livestream creates that could
+only be met by server-side media access, and SHOULD return a descriptive
+`forbidden` error.
 
 ### Common patterns
 
@@ -484,9 +490,10 @@ When adding E2EE: use WebRTC Insertable Streams on the media side and MLS for
 key agreement. Store the full hex-encoded SHA-256 of the public key in
 `e2eeFingerprint`; display it as 4-6 words from a standardized word list
 for voice verification. Implement TOFU fingerprint verification in the client.
-Enforce the recording/livestream prohibition in the `VTCRecording/set` and
-`VTCLivestream/set` handlers. Make it clear to the user before enabling E2EE
-that PSTN dial-in and recording will be unavailable.
+In the `VTCRecording/set` and `VTCLivestream/set` handlers, reject creates
+that would need server-side media access. If the deployment has no key-holding
+recorder or gateway, make it clear to the user before enabling E2EE that PSTN
+dial-in and recording will be unavailable.
 
 ---
 
@@ -570,8 +577,9 @@ noting that this is a non-spec extension). Do not destroy the VTCRecording
 object itself if the VTCCall record still exists; the object is a historical
 record of the recording event.
 
-**E2EE constraint.** See section 4. When `e2eeEnabled: true`, the server SHOULD
-reject `VTCRecording/set create` with `forbidden`.
+**E2EE constraint.** See section 4. When `e2eeEnabled: true`, the server MUST
+reject `VTCRecording/set create` with `forbidden` unless a disclosed key-holding
+recorder participant performs the recording.
 
 ### Common patterns
 
@@ -956,14 +964,14 @@ made and documented each of the following decisions:
 - [ ] E2EE decision made: supported or explicitly deferred
 - [ ] If supported: mechanism chosen; key exchange documented
 - [ ] Fingerprint format defined and displayed in client UI
-- [ ] Recording/livestream prohibition enforced when `e2eeEnabled: true`
+- [ ] Server-side media access refused when `e2eeEnabled: true`; recorders, bridges, and gateways join only as disclosed key-holding participants
 
 **Recording (section 5)**
 - [ ] `VTCRecordingStateEvent` delivered on every state change
 - [ ] Recording backend and format documented
 - [ ] `"processing"` → `"available"` transition wired to recording pipeline
 - [ ] Blob retention period configured
-- [ ] E2EE call recording prohibition enforced
+- [ ] E2EE call recording without a key-holding recorder participant returns `forbidden`
 
 **Breakout rooms (section 6)**
 - [ ] Breakout room feature flag (`supportsBreakoutRooms`) set correctly

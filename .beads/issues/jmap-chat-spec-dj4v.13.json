@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-dj4v.13",
+  "title": "chat/federation: senderMsgId references; optional causal hint",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-17T06:50:46.793765235Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-17T07:00:26.477030346Z",
+  "started_at": "2026-10-17T06:51:21.061988471Z",
+  "closed_at": "2026-10-17T07:00:26.477030346Z",
+  "close_reason": "Applied 2026-10-17 from Agora review suggestions",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dj4v.13",
+      "depends_on_id": "jmap-chat-spec-dj4v",
+      "type": "parent-child",
+      "created_at": "2026-10-17T06:50:46.812420923Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
