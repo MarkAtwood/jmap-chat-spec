@@ -529,7 +529,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `topic` (String, optional):
 : **Channel Chats only.** Short description shown in the channel header. Mutable by members with `"manage_channels"` permission.
 
-`slowModeSeconds` (UnsignedInt, optional):
+`slowModeSeconds` (UnsignedInt):
 : **Channel Chats only.** When non-zero, the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with `rateLimited`. Servers SHOULD exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimited` when they exceed the rate. Clients SHOULD display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimited`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
 
 `permissionOverrides` (ChannelPermission[]):
@@ -545,7 +545,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : Count of Messages in this Chat whose `id` ULID is lexicographically greater than `ReadPosition.lastReadMessageId`. Derived server-side from the owner's ReadPosition record. If `lastReadMessageId` is absent, all messages are counted as unread.
 
 `pinnedMessageIds` (String[]):
-: Ordered list of pinned Message ids, most-recently-pinned first. For group chats, only admins may modify this list. For direct chats, the owner may modify it freely. For channel chats, only members with the `"pin"` Space permission may modify this list. Empty by default.
+: Ordered list of pinned Message ids, most-recently-pinned first. For group chats, only admins may modify this list. For direct chats, the owner may modify it freely. For channel chats, only members with the `"pin"` Space permission may modify this list. Each id MUST be the id of a Message in this Chat; the server MUST reject a `Chat/set` update that would add any other id with `invalidProperties`. When a pinned Message is hard-deleted, the server MUST remove its id from this list. Empty by default.
 
 `muted` (Boolean):
 : When `true`, push notifications for this chat are suppressed. Owner-side preference; not shared with peers. Default: `false`.
