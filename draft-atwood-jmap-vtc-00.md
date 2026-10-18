@@ -3,7 +3,7 @@ title: JMAP for Video/Voice Teleconferencing
 abbrev: JMAP VTC
 docname: draft-atwood-jmap-vtc-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
@@ -927,8 +927,9 @@ Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipan
 **Mute another participant:**
 : Update the target's `mediaState/audio` to `false`. The media layer SHOULD honor this by muting the participant's audio stream; enforcement is media-layer-dependent.
 
-**Ask to unmute:** {#ask-to-unmute}
+**Ask to unmute:**
 : When `policy.participantsCanUnmute` is `false`, a moderator may request that a participant unmute by updating the target's `unmuteRequested` to `true`. The server delivers a `VTCUnmuteRequestEvent` (see {{unmute-request-event}}) to the target participant's WebSocket connections. The participant may then choose to unmute (which clears `unmuteRequested`) or ignore the request. This is a soft request, not a forced unmute.
+  {: #ask-to-unmute}
 
 **Kick a participant:**
 : Update the target's `leftAt` to the current time. The server sets `kickedBy` to the moderator's userId.

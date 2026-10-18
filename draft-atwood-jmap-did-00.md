@@ -2,7 +2,7 @@
 title: JMAP Decentralized Identifiers
 abbrev: JMAP DID
 docname: draft-atwood-jmap-did-00
-category: std
+category: exp
 stream: independent
 
 ipr: trust200902
@@ -193,7 +193,7 @@ Regardless of mechanism, the server MUST ensure that:
 
 When `urn:ietf:params:jmap:did` is advertised, consuming specifications MAY designate their data types as DID-bearing. A DID-bearing data type gains the following property:
 
-A DID-bearing property is a String|null value, server-set, whose value is the DID given by the account-to-DID binding defined in {{binding}} at the time the object was created. The value is `null` when the account has no DID binding (transitional state during migration) or when the object represents a non-user entity (system-generated objects, anonymous participants).
+A DID-bearing property is a String\|null value, server-set, whose value is the DID given by the account-to-DID binding defined in {{binding}} at the time the object was created. The value is `null` when the account has no DID binding (transitional state during migration) or when the object represents a non-user entity (system-generated objects, anonymous participants).
 
 The property name is not required to be `did`. A consuming specification MAY define multiple DID-bearing properties on a single data type when different fields reference different identities. For example, a delegation record might carry both `delegatorDid` and `delegateeDid`.
 

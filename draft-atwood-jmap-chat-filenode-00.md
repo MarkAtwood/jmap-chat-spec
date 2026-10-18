@@ -3,7 +3,7 @@ title: JMAP Chat File Storage
 abbrev: JMAP Chat FileNode
 docname: draft-atwood-jmap-chat-filenode-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
