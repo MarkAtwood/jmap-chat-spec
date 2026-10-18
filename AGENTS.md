@@ -13,9 +13,28 @@ This is a spec-writing project. All deliverables are Markdown files. There is no
 
 **Normative drafts** (`draft-atwood-*.md`): IETF Internet-Draft format. Use RFC 2119 keywords (MUST, SHOULD, MAY). The drafts are the source of truth for all protocol behavior.
 
-Nine drafts are currently in the corpus: the core (`draft-atwood-jmap-chat-00.md`) plus eight companion specs covering push (`-push-00`), WebSocket transport (`-wss-00`), federation (`-federation-00`), file storage (`-filenode-00`), content identifiers (`draft-atwood-jmap-cid-00`), calendars (`-calendars-00`), tasks (`-tasks-00`), and Decentralized Identifiers (`-did-00`). Each companion has its own capability URN and is optional; the core stays focused on the chat protocol itself.
+Ten drafts are currently in the corpus: the core (`draft-atwood-jmap-chat-00.md`) plus nine companion specs covering push (`-push-00`), WebSocket transport (`-wss-00`), federation (`-federation-00`), file storage (`-filenode-00`), content identifiers (`draft-atwood-jmap-cid-00`), calendars (`-calendars-00`), tasks (`-tasks-00`), Decentralized Identifiers (`-did-00`), and MIMI gateway mapping (`-mimi-00`). Each companion is optional and, except `-mimi-00` (gateway behavior only), has its own capability URN; the core stays focused on the chat protocol itself.
 
 **Implementer guides** (`jmap-*-guide.md`): Non-normative companions. No RFC 2119 keywords. When a guide describes behavior defined in a draft, the guide must be consistent with the draft.
+
+## Upstream draft sources
+
+Editor's copies of the IETF drafts this corpus cites, cloned in `~/GIT` (shallow, `--depth 50`). They are often ahead of the posted revision; read them to see changes coming, but cite only posted revisions from datatracker. Checked 2026-10-18.
+
+| Local clone (`~/GIT/`) | Origin | Holds | Notes |
+|---|---|---|---|
+| `draft-ietf-mimi-content` | github.com/ietf-wg-mimi/draft-ietf-mimi-content | -09 | Detached at tag `draft-ietf-mimi-content-09` on purpose (the cited revision); `main` is ahead |
+| `mimi-protocol` | github.com/ietf-wg-mimi/mimi-protocol | -06 | |
+| `mimi-room-policy` | github.com/ietf-wg-mimi/mimi-room-policy | -04 | |
+| `jmapio-jmap` | github.com/jmapio/jmap | calendars -33 | Fastmail-edited drafts under `spec/`: calendars, contacts, sharing, tasks |
+| `draft-gondwana-jmap-filenode` | github.com/brong/draft-gondwana-jmap-filenode | -16 | Repo name predates WG adoption; file is `draft-ietf-jmap-filenode.mkd` |
+| `draft-gondwana-jmap-conditional` | github.com/brong/draft-gondwana-jmap-conditional | -01 | Not cited; overlap check only |
+| `draft-gondwana-jmap-object-history` | github.com/brong/draft-gondwana-jmap-object-history | individual -00 | Stale: posted WG -02 is not in this repo; its source location is unknown |
+| `draft-gondwana-jmap-blobext` | github.com/brong/draft-gondwana-jmap-blobext | individual -06 | Stale: posted WG -02 is not here (branch `msater` is older too); source unknown |
+
+No editor's repo was found for draft-ietf-jmap-metadata, -refplus, or -mail-sharing. MLS drafts live under github.com/mlswg; none are cited directly (RFC 9420 is final).
+
+To check for upstream changes: `git -C ~/GIT/<clone> fetch` and diff, then confirm against the posted revision before changing a citation.
 
 ## Before editing any file
 
