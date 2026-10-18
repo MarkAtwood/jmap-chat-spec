@@ -3,7 +3,7 @@ title: JMAP Chat Push Notifications
 abbrev: JMAP Chat Push
 docname: draft-atwood-jmap-chat-push-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 

@@ -2,7 +2,7 @@
 title: JMAP Chat DID
 abbrev: JMAP Chat DID
 docname: draft-atwood-jmap-chat-did-00
-category: std
+category: exp
 stream: independent
 
 ipr: trust200902

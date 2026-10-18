@@ -3,7 +3,7 @@ title: JMAP for Scenes
 abbrev: JMAP Scene
 docname: draft-atwood-jmap-scene-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
@@ -61,6 +61,12 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-scene-wss-00
     date: 2026
+  JMAP-METADATA:
+    title: JMAP Metadata
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-metadata-03
+    date: 2026
+    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
 
 --- abstract
 

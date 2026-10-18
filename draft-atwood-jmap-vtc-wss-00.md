@@ -3,7 +3,7 @@ title: JMAP VTC over WebSocket
 abbrev: JMAP VTC WebSocket
 docname: draft-atwood-jmap-vtc-wss-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
@@ -394,7 +394,7 @@ A server receiving a client-to-server message with an unrecognized
 `@type` value SHOULD silently ignore the message and SHOULD NOT
 close the WebSocket connection.
 
-# Complete Example {#example}
+# Complete Example {#complete-example}
 
 The following example illustrates a WebSocket session where a client
 joins a call, subscribes to VTC events, receives several events, and
@@ -558,7 +558,7 @@ the connection is open:
   `moderator` role unless the deployment explicitly permits broader
   delivery.
 
-## Rate Limiting
+## Rate Limiting {#security-rate-limiting}
 
 The rate limits defined in {{rate-limiting}} SHOULD be enforced
 server-side.  Without these limits, a high-frequency media-state or

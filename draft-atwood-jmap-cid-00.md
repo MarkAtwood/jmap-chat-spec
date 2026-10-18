@@ -2,7 +2,7 @@
 title: JMAP Blob Content Identifiers
 abbrev: JMAP Blob CID
 docname: draft-atwood-jmap-cid-00
-category: std
+category: exp
 stream: independent
 
 ipr: trust200902

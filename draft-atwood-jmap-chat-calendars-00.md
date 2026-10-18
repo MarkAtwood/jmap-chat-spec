@@ -3,7 +3,7 @@ title: JMAP Chat Calendars
 abbrev: JMAP Chat Calendars
 docname: draft-atwood-jmap-chat-calendars-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 

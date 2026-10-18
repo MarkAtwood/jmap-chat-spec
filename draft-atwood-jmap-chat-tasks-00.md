@@ -3,7 +3,7 @@ title: JMAP Chat Tasks
 abbrev: JMAP Chat Tasks
 docname: draft-atwood-jmap-chat-tasks-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 

@@ -3,7 +3,7 @@ title: JMAP Chat over WebSocket
 abbrev: JMAP Chat WebSocket
 docname: draft-atwood-jmap-chat-wss-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 

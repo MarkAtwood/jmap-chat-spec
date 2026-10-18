@@ -3,7 +3,7 @@ title: JMAP for Chat
 abbrev: JMAP Chat
 docname: draft-atwood-jmap-chat-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
@@ -151,6 +151,11 @@ informative:
   W3C-DID-CORE:
     title: Decentralized Identifiers (DIDs) v1.0
     target: https://www.w3.org/TR/did-core/
+    author:
+      org: W3C
+    date: 2022-07-19
+    seriesinfo:
+      W3C: REC-did-core-20220719
 
 --- abstract
 
@@ -209,7 +214,7 @@ Peer:
 : Another mailbox server communicating with this mailbox.
 
 id / userId:
-: A ChatContact's `id` is the stable, opaque identity string provided by the authentication layer for that user. These two terms are intentionally equivalent in this protocol: ChatContact.id IS the userId. There is no separate identity namespace. Servers MUST set ChatContact.id to the userId string obtained from the authentication layer. The specific form of the identifier (for example, a `user@host`-style string, a Decentralized Identifier URI {{?W3C-DID-CORE}}, or any other URI form) is not constrained by this specification; servers MUST treat it as opaque regardless of form.
+: A ChatContact's `id` is the stable, opaque identity string provided by the authentication layer for that user. These two terms are intentionally equivalent in this protocol: ChatContact.id IS the userId. There is no separate identity namespace. Servers MUST set ChatContact.id to the userId string obtained from the authentication layer. The specific form of the identifier (for example, a `user@host`-style string, a Decentralized Identifier URI {{W3C-DID-CORE}}, or any other URI form) is not constrained by this specification; servers MUST treat it as opaque regardless of form.
 
 ## Color Representation {#color-convention}
 
@@ -349,7 +354,7 @@ A Mention identifies a user referenced within a message body.
 `length` (UnsignedInt):
 : Byte length of the mention text. Servers MUST reject a mention where `offset + length` exceeds the byte length of `body`.
 
-The `id` field carries the full identifier of the mentioned user as known to the authoritative server, regardless of textual form. Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{?W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined; server-side validation of the resulting Mention (offset/length checks above, ChatContact existence) applies unchanged. The same principle applies to the `userId` field on rich-body `"mention"` spans ({{rich-body}}).
+The `id` field carries the full identifier of the mentioned user as known to the authoritative server, regardless of textual form. Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined; server-side validation of the resulting Mention (offset/length checks above, ChatContact existence) applies unchanged. The same principle applies to the `userId` field on rich-body `"mention"` spans ({{rich-body}}).
 
 The Mention type carries per-user mentions only. Broadcast-scope mentions (such as `@everyone`, `@here`, and `@admins`) are carried in the separate `broadcastMentions` array on Message; see {{broadcast-mention}}.
 
@@ -1255,7 +1260,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 : Metadata fields. Require `"manage_space"` permission.
 
 `addRoles` (Object[]):
-: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String|Object|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeRoles` (String[]):
 : SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Requires `"manage_roles"`.

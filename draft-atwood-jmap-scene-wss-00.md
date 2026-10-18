@@ -3,7 +3,7 @@ title: JMAP Scene over WebSocket
 abbrev: JMAP Scene WebSocket
 docname: draft-atwood-jmap-scene-wss-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
@@ -927,7 +927,7 @@ A server receiving a client-to-server message with an unrecognized
 `@type` value SHOULD silently ignore the message and SHOULD NOT
 close the WebSocket connection.
 
-# Complete Example {#example}
+# Complete Example {#complete-example}
 
 The following example illustrates a WebSocket session where a client
 enters a region, subscribes to Scene events, receives several
@@ -1114,7 +1114,7 @@ the connection is open:
 - `SceneInteractionEvent` for objects the user cannot see (per the
   visibility contract) MUST NOT be delivered.
 
-## Rate Limiting
+## Rate Limiting {#security-rate-limiting}
 
 The rate limits defined in {{rate-limiting}} SHOULD be enforced
 server-side.  Without these limits, a high-frequency object-update

@@ -3,7 +3,7 @@ title: JMAP Chat Federation
 abbrev: JMAP Chat Federation
 docname: draft-atwood-jmap-chat-federation-00
 category: std
-stream: ietf
+stream: IETF
 
 ipr: trust200902
 
