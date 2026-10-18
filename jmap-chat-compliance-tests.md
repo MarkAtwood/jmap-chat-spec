@@ -480,9 +480,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-federation-00 New Message Validation; draft-atwood-jmap-chat-00 End-to-End Encrypted Deployments, Fields Inside the Ciphertext
 **Severity:** MUST | **Round:** spec change (E2EE field visibility)
 
-**Test:** Deliver a message via `Peer/deliver` with `bodyType: "application/mls-ciphertext"` and a non-empty `mentions` array. Verify `invalidArguments`. Repeat with non-empty `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, and `lastSeenSenderMsgId` in turn; verify each is rejected. Repeat each case with `Message/set` create (omitting `lastSeenSenderMsgId`, which is federation-only). Then deliver an encrypted message with all of those fields empty or absent. Verify it is accepted and that no attachment fetch is attempted.
+**Test:** Deliver a message via `Peer/deliver` with `bodyType: "application/mls-ciphertext"` and a non-empty `mentions` array. Verify `invalidArguments`. Repeat with non-empty `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` in turn; verify each is rejected. Repeat each case with `Message/set` create (omitting `lastSeenSenderMsgId`, which is federation-only). Then deliver an encrypted message with all of those fields empty or absent. Verify it is accepted and that no attachment fetch is attempted.
 
-**Common failure:** Server runs mention-offset and attachment-hash validation against ciphertext, or accepts plaintext mention and attachment metadata alongside an encrypted body.
+**Common failure:** Server runs mention-offset and attachment-hash validation against ciphertext, or accepts plaintext mention, attachment, or topic metadata alongside an encrypted body.
 
 ---
 
