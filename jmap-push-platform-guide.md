@@ -615,8 +615,8 @@ Metadata is sensitive too: sender, recipient, and conversation names in a payloa
 who communicates with whom, even when message bodies are end-to-end encrypted. Unless the
 payload is encrypted at the application layer, deployments that need to hide this from
 the platform operator SHOULD send content-free wake-up payloads and let the client fetch
-details after waking. For chat, this is the `wakeOnly` mode described in
-[the chat push supplement](jmap-chat-push-platform-guide.md#wake-only-payloads).
+details after waking. The RFC 8620 `StateChange` is such a payload. For chat, see
+[the chat push supplement](jmap-chat-push-platform-guide.md#content-free-pushes).
 
 ### Credential security
 
