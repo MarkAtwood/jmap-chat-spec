@@ -464,6 +464,10 @@ Method name: `Peer/retract`
 `senderMsgId` (String):
 : The sender-assigned ULID of the message to retract.
 
+### Sender Behavior
+
+When a `Message/set` update sets `deletedForAll: true` on a message whose `senderId` is `"self"` ({{JMAP-CHAT}}), the server MUST send `Peer/retract` to the server of every other participant in the Chat before marking the local record.
+
 ### Receiver Behavior
 
 The receiving server MUST look up the message by `senderMsgId` within `chatId`. It MUST verify that the stored message's `senderId` matches `senderUserId` before applying any changes. If the sender does not match, the server MUST reject the request.

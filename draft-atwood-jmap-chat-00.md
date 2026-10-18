@@ -688,7 +688,7 @@ Note: {{JMAP-OBJ-HISTORY}} defines a general JMAP mechanism for retrieving histo
 : Time the message was deleted. When set, `body` is empty, `attachments` is empty, and `editHistory` is absent. The record is retained as a tombstone unless a hard-delete rule applies.
 
 `deletedForAll` (Boolean, optional):
-: `true` when deletion was propagated to all participants via `Peer/retract`.
+: `true` when the message was deleted for all participants rather than only on this mailbox. A server that supports {{JMAP-CHAT-FED}} propagates such a deletion with `Peer/retract`.
 
 Note: {{JMAP-METADATA}} defines per-type `metadata` and `privateMetadata` properties for data types declared in the `urn:ietf:params:jmap:metadata` capability's `dataTypes` map. Implementations MAY include `Message` in that map, enabling use cases such as per-message bookmarks or personal labels readable and writable via `Message/get` and `Message/set` without modifying the message record itself.
 
@@ -1157,7 +1157,7 @@ Clients SHOULD only add or remove reactions where `senderId` is `"self"`. Server
 
 `update` with `deletedAt: <timestamp>`.
 
-- If `deletedForAll: true` is also set, the server MUST send `Peer/retract` to all participants before marking the local record. Servers MUST reject `deletedForAll: true` for messages where `senderId` is not `"self"`.
+- If `deletedForAll: true` is also set, the deletion applies to all participants. Servers MUST reject `deletedForAll: true` for messages where `senderId` is not `"self"`. A server that supports {{JMAP-CHAT-FED}} propagates the deletion to other servers as that document specifies.
 - Otherwise, deletion is local only: `body` and `attachments` are cleared on this mailbox with no peer notification.
 
 #### Marking as Read
