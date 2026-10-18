@@ -146,8 +146,8 @@ not the initial-seat policy.
 
 - Whether the creator of a group chat automatically becomes admin.
 - Whether non-creator members start as admin or member.
-- What happens to a group chat that loses all its admins (no member holds
-  `"admin"` after the last admin leaves or is demoted).
+- What happens to a group chat whose last admin is demoted. (The last admin
+  *leaving* is settled by the spec; see below.)
 
 **Considerations.**
 
@@ -175,13 +175,27 @@ not the initial-seat policy.
   consent.
 - Matrix: power level system from rooms; creator default PL 100.
 
+**What the spec settles.** Any member, admin or not, leaves a group by
+sending `Chat/set` update with `removeMembers` listing only their own id; the
+server must permit it and tells the other members' servers with a
+`Peer/groupUpdate` of action `"leave"`. If the leaving member is the last
+admin and other members remain, the group *closes*: the server sets the
+server-set `Chat.closedAt`, sends `Peer/groupUpdate` action `"close"` in place
+of `"leave"`, and from then on rejects `Message/set` create, membership
+changes, and shared-setting changes on that Chat with `forbidden`. History
+stays readable, and the remaining members can still `Chat/set` destroy the
+Chat to hide it. A closed group cannot be reopened. So "require the last
+admin to promote a successor" is no longer something a server can enforce
+by refusing the leave; it is a client prompt.
+
 **Recommended starting point.**
 
-The creator SHOULD automatically receive the `"admin"` role. Deployments
-SHOULD prevent admin-less groups by requiring the last remaining admin to
-promote a successor before leaving (or by destroying the group). Deployments
-SHOULD provide an out-of-band promotion flow for cases where the creator's
-account is lost or abandoned.
+The creator SHOULD automatically receive the `"admin"` role. Clients SHOULD
+confirm before the last admin leaves, stating that the group will close, and
+SHOULD offer to promote a successor first. Deployments SHOULD avoid
+admin-less open groups by refusing to let the last admin demote themselves
+via `updateMemberRoles`. Deployments SHOULD provide an out-of-band promotion
+flow for cases where the creator's account is lost or abandoned.
 
 For enterprise deployments: layer this with a System Admin override
 (see §1.3) so that an organizational admin can recover an admin-less group

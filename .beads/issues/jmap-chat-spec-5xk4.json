@@ -2,11 +2,15 @@
   "id": "jmap-chat-spec-5xk4",
   "title": "Extend draft-atwood-jmap-chat-mimi-00 with mimid's client surface",
   "description": "Decision (Mark, 2026-10-18; recorded as kaiwa-g2v5.13): the draft gains the client-facing surface mimid already plans (mimid-1wgh.12, approved 2026-10-17): a urn:ietf:params:jmap:chat:mimi capability; KeyPackage, KeyMaterial/fetch, Room/create, Room/update, GroupInfo/fetch methods; Chat.roomId; MLS-ciphertext body types application/mimi-content and application/mimi-fanout. Today the draft is gateway conversion rules only and defines no client surface. Read mimid-1wgh.12 in ~/PROJECT/mimid/.beads for the planned shapes; keep the existing gateway rules. Consumers: mimid's JMAP endpoint; kaiwa's later E2EE layer (kaiwa-g2v5.17). Drafting needs Mark (he owns the text).",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "task",
+  "assignee": "agent",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-18T20:56:20.270171921Z",
   "created_by": "agent",
-  "updated_at": "2026-10-18T20:56:20.270171921Z"
+  "updated_at": "2026-10-18T22:37:55.559463361Z",
+  "started_at": "2026-10-18T21:17:24.730044463Z",
+  "closed_at": "2026-10-18T22:37:55.559463361Z",
+  "close_reason": "Edits reviewed and decided by Mark 2026-10-18; committed in spec(chat) resolve gaps / mimi client surface."
 }

@@ -625,7 +625,8 @@ SceneInteractionEvent
 **Responsibilities:**
 - DID field extension on ChatContact (`ChatContact.did`)
 - DID document resolution
-- Verified identity badge display
+- Identity indicator display, only from the client's own DID resolution
+  and verification (never from the mere presence of `did`)
 
 **Requires:** Chat module
 
@@ -1561,7 +1562,7 @@ interact in the client UI.
 
 | Integration Point | Mechanism |
 |---|---|
-| Verified identity badge | ChatContacts with a `did` field display a verified badge on their display name |
+| Identity indicator | A `did` field alone is not a verified badge: the DID draft forbids showing a contact as verified merely because `did` is present or the id is DID-form. A client that shows an indicator bases it on its own resolution and verification of the DID |
 | DID resolution | The client resolves the DID document to verify the association between the ChatContact identity and the DID |
 | Federation identity | In federated deployments, DID provides cryptographic identity verification across server boundaries |
 

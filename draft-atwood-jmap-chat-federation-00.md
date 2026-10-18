@@ -285,7 +285,7 @@ Before storing a new message, the server MUST perform the following steps in ord
 
 1. Verify caller identity via the authentication layer.
 2. Confirm `senderUserId` matches the verified identity. Reject immediately if they differ.
-3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id; otherwise create a new Chat record with this chatId and set `contactId` to the sender (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat.
+3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id; otherwise create a new Chat record with this chatId and set `contactId` to the sender (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat. If the group chat's `closedAt` is set, or the channel's Space has `closedAt` set ({{JMAP-CHAT}}), reject with `forbidden`.
 4. For channel chats: verify that no active SpaceBan exists for `senderUserId` in the Space containing the identified channel. If a SpaceBan exists, silently drop the message and return success.
 5. For channel chats: verify that `senderUserId` holds the `"send"` permission in the identified channel per the Space permission resolution defined in {{JMAP-CHAT}}. If the sender lacks `"send"`, reject with `forbidden`.
 6. For channel chats where the channel's `slowModeSeconds` is non-zero: verify that `senderUserId` is not rate-limited by the slow-mode policy. If the sender's last accepted message in this channel was received within `slowModeSeconds` seconds and the sender does not hold `"manage_channels"` permission, reject with `rateLimited`.
@@ -508,6 +508,7 @@ Method name: `Peer/groupUpdate`
   - `"updateRoles"` — One or more members' roles within the group were changed.
   - `"updateMetadata"` — The group's `name`, `description`, or `avatarBlobId` was changed.
   - `"leave"` — The sender is voluntarily departing the group. Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list without requiring admin authorization. This is equivalent to `"removeMembers"` with `removedMemberIds: [senderUserId]` but does not require admin role.
+  - `"close"` — The sender, the group's last admin, is departing while other members remain, which closes the group ({{JMAP-CHAT}}). Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list and set the local Chat record's `closedAt`. The sending server sends `"close"` in place of `"leave"`.
 
 `members` (ChatMember[], required for `"create"`):
 : Full membership list at the time of this update, including the calling server's owner. If the `members` list contains ChatContact ids unknown to the receiving server, the receiver SHOULD create placeholder ChatContact records for them optimistically, populated with the id only. Full contact details will be learned via subsequent interactions.
@@ -532,7 +533,9 @@ Method name: `Peer/groupUpdate`
 
 ### Receiver Behavior
 
-The receiving server MUST verify that `senderUserId` is authenticated. For all actions other than `"create"`, it MUST also verify that `senderUserId` holds an admin role in the named group on the receiving server's local Chat record before applying any changes. For `"create"`, it MUST verify that `senderUserId` is one of the members listed in `members`.
+The receiving server MUST verify that `senderUserId` is authenticated. For all actions other than `"create"` and `"leave"`, it MUST also verify that `senderUserId` holds an admin role in the named group on the receiving server's local Chat record before applying any changes. For `"create"`, it MUST verify that `senderUserId` is one of the members listed in `members`. For `"leave"`, it MUST verify that `senderUserId` is a current member.
+
+Once the local Chat record has `closedAt` set, the receiving server MUST reject every subsequent `Peer/groupUpdate` for that chat with `forbidden`.
 
 On success, the receiving server updates its local Chat record to reflect the change indicated by `action`.
 
@@ -543,7 +546,7 @@ On success, the receiving server updates its local Chat record to reflect the ch
 
 ### Space-Level Federation
 
-This specification defines federation for group chats only. Space-level operations (channel creation, permission changes, SpaceBan propagation) are enforced by the Space-hosting server at delivery time (per the validation steps in Peer/deliver) but are not proactively federated to remote members. Remote members discover Space-level changes through rejected delivery attempts or via periodic `Space/get` synchronization.
+This specification defines federation for group chats only. Space-level operations (channel creation, permission changes, SpaceBan propagation) are enforced by the Space-hosting server at delivery time (per the validation steps in Peer/deliver) but are not proactively federated to remote members. Remote members discover Space-level changes through rejected delivery attempts or via periodic `Space/get` synchronization. This includes Space closure ({{JMAP-CHAT}} `Space.closedAt`): no Peer/* method signals it, and the Space-hosting server rejects deliveries to a closed Space's channels with `forbidden` (see {{new-message-validation}}).
 
 ## Peer/subscribePresence {#peer-subscribepresence}
 
@@ -717,7 +720,7 @@ Servers that do not implement this resolution will produce duplicate direct-chat
 
 ## Group Admin Verification
 
-`Peer/groupUpdate` MUST verify that `senderUserId` holds an admin role in the named group on the receiving server's local Chat record before applying any membership or metadata changes. For `"create"` actions, the sender MUST be listed as a member in the provided `members` array. Servers MUST reject requests where these conditions are not met.
+`Peer/groupUpdate` MUST verify that `senderUserId` holds an admin role in the named group on the receiving server's local Chat record before applying any membership or metadata changes, except for `"leave"` actions, which require only that the sender be a current member. For `"create"` actions, the sender MUST be listed as a member in the provided `members` array. Servers MUST reject requests where these conditions are not met.
 
 ## Direct Address Hints {#direct-address-security}
 
