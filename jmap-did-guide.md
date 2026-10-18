@@ -722,7 +722,7 @@ Before enabling `urn:ietf:params:jmap:did` in production:
 | Content-addressed blob integrity | `jmap-cid-guide.md` and `draft-atwood-jmap-cid-00.md` |
 | JMAP Mail | RFC 8621 |
 | JMAP Calendars | RFC 8984 |
-| JMAP Contacts | `draft-ietf-jmap-contacts` |
+| JMAP Contacts | RFC 9610 |
 | JMAP File Storage | `draft-ietf-jmap-filenode` |
 | JMAP Chat (governance, authorization) | `jmap-chat-implementer-guide.md` |
 | JMAP VTC (calls, participants) | `jmap-vtc-implementer-guide.md` |

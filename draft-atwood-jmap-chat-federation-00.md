@@ -461,7 +461,7 @@ Method name: `Peer/retract`
 
 The receiving server MUST look up the message by `senderMsgId` within `chatId`. It MUST verify that the stored message's `senderId` matches `senderUserId` before applying any changes. If the sender does not match, the server MUST reject the request.
 
-On success, the server MUST: clear `body` to an empty string, clear `attachments` to an empty array, set `deletedAt` to the current time, and set `deletedForAll` to `true`. The message record is retained as a tombstone.
+On success, the server MUST: clear `body` to an empty string, clear `attachments` to an empty array, remove `editHistory`, set `deletedAt` to the current time, and set `deletedForAll` to `true`. The message record is retained as a tombstone.
 
 ### Response
 
