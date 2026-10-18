@@ -33,7 +33,7 @@ normative:
     author:
       fullname: Neil Jenkins
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-calendars-26
+      Internet-Draft: draft-ietf-jmap-calendars-33
     date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-calendars/
 
@@ -101,8 +101,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:calendars"]` is a J
 : `true` if the server parses `.ics` ({{RFC5545}}) attachments to surface structured CalendarEvent representations; `false` otherwise. See {{ics-parsing}}.
 
 `supportsAvailabilityLookup` (Boolean):
-: `true` if the server exposes `Principal/getAvailability` ({{JMAP-CALENDARS}}) in the in-chat context defined here; `false` otherwise. See {{availability}}. The method name `Principal/getAvailability` references the free/busy query mechanism defined in {{JMAP-CALENDARS}}. Implementations SHOULD track the actual method name in the version of JMAP Calendars they support, as it may have been renamed across draft revisions.
-
+: `true` if the server exposes `Principal/getAvailability` ({{JMAP-CALENDARS}}) in the in-chat context defined here; `false` otherwise. See {{availability}}.
 # Space Extension: Calendar Binding {#calendar-binding}
 
 The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:ietf:params:jmap:chat:calendars` capability is active.

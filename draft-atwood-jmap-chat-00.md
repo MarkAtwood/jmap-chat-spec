@@ -68,7 +68,10 @@ informative:
     date: 2026
   JMAP-OBJ-HISTORY:
     title: JMAP Object History
-    target: https://datatracker.ietf.org/doc/draft-gondwana-jmap-object-history/
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-object-history-02
+    date: 2026
+    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-object-history/
   RFC9610:
   RFC9670:
   JMAP-FILENODE:
@@ -81,11 +84,12 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-filenode-00
     date: 2026
-  JMAP-WEBPUSH-VAPID:
-    title: JMAP WebPush VAPID
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-webpush-vapid/
+  RFC9749:
   JMAP-BLOBEXT:
     title: JMAP Blob Management
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-blobext-02
+    date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-blobext/
   JMAP-CID:
     title: JMAP Blob Content Identifiers
@@ -117,6 +121,9 @@ informative:
     date: 2026
   JMAP-METADATA:
     title: JMAP Metadata
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-metadata-03
+    date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
   JMAP-REFPLUS:
     title: JMAP Result References Plus
@@ -681,10 +688,10 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `editHistory` (MessageRevision[], optional, server-set):
 : Prior versions, oldest first. Servers MAY limit the number of retained revisions.
 
-Note: {{JMAP-OBJ-HISTORY}} defines a general JMAP mechanism for retrieving historical object versions via `Foo/get` with `includeReplaced`. This specification instead embeds edit history inline within the Message object, trading on-demand retrieval for always-available history at the cost of response size. Servers implementing both specifications MAY register `"Message"` with `canRetrieveHistory: true` in the JMAP Data Types Registry, enabling `Message/get` with `includeReplaced` as an alternative retrieval path for clients that prefer on-demand history.
+Note: {{JMAP-OBJ-HISTORY}} defines a general JMAP mechanism for retrieving historical object versions via `Foo/get` with `includeReplaced` and `includeDestroyed`. This specification instead embeds edit history inline within the Message object, trading on-demand retrieval for always-available history at the cost of response size. Servers implementing both specifications MAY list `"Message"` in the `supportedTypes` of the {{JMAP-OBJ-HISTORY}} account capability, enabling `Message/get` with `includeReplaced` as an alternative retrieval path for clients that prefer on-demand history. Such a server MUST NOT return any prior or destroyed version of a Message once that Message is deleted (`deletedAt` set) or hard-deleted, and MUST permanently remove those versions at the same time. Otherwise {{JMAP-OBJ-HISTORY}} would expose content that deletion, `senderExpiresAt`, `burnOnRead`, and `expiresAfterReadSeconds` are required to remove.
 
 `deletedAt` (UTCDate, optional):
-: Time the message was deleted. When set, `body` is empty and `attachments` is empty. The record is retained as a tombstone unless a hard-delete rule applies.
+: Time the message was deleted. When set, `body` is empty, `attachments` is empty, and `editHistory` is absent. The record is retained as a tombstone unless a hard-delete rule applies.
 
 `deletedForAll` (Boolean, optional):
 : `true` when deletion was propagated to all participants via `Peer/retract`.
@@ -1504,7 +1511,7 @@ Servers MUST support the EventSource mechanism defined in {{RFC8620}} Section 7.
 
 Servers SHOULD also support the push subscription mechanism defined in {{RFC8620}} Section 7.2 for deployments requiring offline and mobile push delivery.
 
-Servers that deliver push subscriptions via Web Push SHOULD also advertise the `urn:ietf:params:jmap:webpush-vapid` capability {{JMAP-WEBPUSH-VAPID}} and authenticate their Web Push messages with a VAPID-signed JWT. VAPID authentication allows push services to verify the server's identity, which is required for reliable authenticated delivery to mobile clients. Servers that use only the EventSource mechanism or a non-Web-Push delivery channel are not subject to this recommendation.
+Servers that deliver push subscriptions via Web Push SHOULD also advertise the `urn:ietf:params:jmap:webpush-vapid` capability {{RFC9749}} and authenticate their Web Push messages with a VAPID-signed JWT. VAPID authentication allows push services to verify the server's identity, which is required for reliable authenticated delivery to mobile clients. Servers that use only the EventSource mechanism or a non-Web-Push delivery channel are not subject to this recommendation.
 
 ## State-Change Events
 
@@ -1543,7 +1550,7 @@ The RFC 8620 push model delivers a `StateChange` containing an opaque state toke
 
 Standard JMAP blob upload and download per {{RFC8620}} Section 6, using the `uploadUrl` and `downloadUrl` Session templates.
 
-Implementations requiring additional blob operations (Blob/get, Blob/copy) SHOULD refer to {{RFC9404}} (JMAP Blob Management Extensions). The more recent {{JMAP-BLOBEXT}} (`urn:ietf:params:jmap:blob2`) obsoletes RFC 9404 and adds substantial new capabilities; servers SHOULD advertise `urn:ietf:params:jmap:blob2` where available.
+`Blob/copy` is defined in {{RFC8620}} Section 6.3. Implementations requiring additional blob operations (such as `Blob/get`) SHOULD refer to {{JMAP-BLOBEXT}} (`urn:ietf:params:jmap:blob2`), which obsoletes {{RFC9404}} (`urn:ietf:params:jmap:blob`) and adds substantial new capabilities; servers SHOULD advertise `urn:ietf:params:jmap:blob2` where available. A server MAY advertise both capabilities, but a client uses only one of them in a request, per {{JMAP-BLOBEXT}}.
 
 The upload response defined here includes the `sha256` field as specified
 in {{JMAP-CID}}; see that document for the normative definition, client

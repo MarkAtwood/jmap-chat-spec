@@ -32,7 +32,7 @@ normative:
     author:
       fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-13
+      Internet-Draft: draft-ietf-jmap-filenode-16
     date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/
 
@@ -42,6 +42,9 @@ informative:
     target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
   JMAP-BLOBEXT:
     title: JMAP Blob Management Extensions
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-blobext-02
+    date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-blobext/
   RFC9425:
 
@@ -122,7 +125,7 @@ Servers MUST support `spaceId` as a filter criterion in `FileNode/query`, enabli
 
 ## Creating the File Tree Root {#root-creation}
 
-When a client creates a FileNode with `role: "urn:jmap:chat:filenode:space"`, it MUST supply `spaceId`. The server MUST validate:
+When a client creates a FileNode with `role: "urn:jmap:chat:filenode:space"`, it MUST supply `@type: "Directory"` (as {{JMAP-FILENODE}} requires on create) and `spaceId`. The server MUST validate:
 
 - The Space identified by `spaceId` exists and the requesting user is a member. If not, the server MUST return `forbidden`. Servers SHOULD return `forbidden` in both cases — Space not found and user not a member — to avoid revealing Space existence to non-members.
 - No file tree root already exists for that Space (at most one root per Space is permitted). If one exists, the server MUST return `invalidArguments`.
@@ -181,7 +184,7 @@ The FileNode is not modified when linked as an attachment. The message's attachm
 
 When a FileNode contains an image blob, clients MAY generate a thumbnail for inline preview using `Blob/convert` as defined in {{JMAP-BLOBEXT}}, provided the server advertises the `urn:ietf:params:jmap:blob2` capability. The workflow is:
 
-1. The client calls `Blob/convert` on the FileNode's blob, specifying a target `type` suitable for preview display (for example, `image/jpeg` or `image/webp`) and any implementation-defined size or quality parameters.
+1. The client calls `Blob/convert` on the FileNode's blob, specifying a target `type` suitable for preview display (for example, `image/jpeg` or `image/webp`) and size or quality parameters as defined by the `ImageConvertRecipe` in {{JMAP-BLOBEXT}} Section 8.1.
 2. The server returns a new `blobId` for the converted thumbnail.
 3. The client includes this `blobId` as `thumbnailBlobId` in the Attachment alongside `filenodeId`.
 

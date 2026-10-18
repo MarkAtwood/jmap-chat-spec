@@ -35,14 +35,15 @@ informative:
     author:
       fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-contacts-01
-    date: 2025
+      RFC: "9610"
+    date: 2024
+    target: https://www.rfc-editor.org/rfc/rfc9610
   JMAP-FILENODE:
     title: JMAP File Storage Extension
     author:
       fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-13
+      Internet-Draft: draft-ietf-jmap-filenode-16
     date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/
   JMAP-CHAT:

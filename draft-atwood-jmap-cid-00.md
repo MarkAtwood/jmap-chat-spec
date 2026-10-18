@@ -36,7 +36,7 @@ informative:
     author:
       fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-13
+      Internet-Draft: draft-ietf-jmap-filenode-16
     date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/
   JMAP-BLOBEXT:
