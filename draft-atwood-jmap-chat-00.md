@@ -49,12 +49,12 @@ informative:
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-protocol-06
     date: 2026
-  MIMI-MESSAGE-STATUS:
-    title: "A Message Status format for the More Instant Messaging Interoperability (MIMI) content format"
+  JMAP-CHAT-MIMI:
+    title: JMAP Chat MIMI Mapping
     author:
-      fullname: R. Mahy
+      fullname: Mark Atwood
     seriesinfo:
-      Internet-Draft: draft-mahy-mimi-message-status-01
+      Internet-Draft: draft-atwood-jmap-chat-mimi-00
     date: 2026
   JMAP-CHAT-FED:
     title: JMAP Chat Federation
@@ -187,13 +187,7 @@ In the mailbox-per-user deployment topology, the peer authentication model is de
 
 The IETF MIMI (More Instant Messaging Interoperability) working group {{MIMI-PROTOCOL}} {{MIMI-CONTENT}} is developing a separate approach to messaging interoperability, primarily targeting provider-to-provider federation between large existing messaging platforms under regulatory interoperability mandates. MIMI's client-server API layer is intentionally outside the MIMI charter scope; this document fills that gap for JMAP-based deployments.
 
-The two specifications are complementary rather than competing. MIMI defines `application/mimi-content` {{MIMI-CONTENT}}, a CBOR-encoded message body format designed to operate as an MLS PrivateMessage payload. A JMAP Chat server that also participates in a MIMI federation domain MAY include `"application/mimi-content"` in its `supportedBodyTypes` capability and accept MIMI-formatted message bodies in `Message/set` and `Peer/deliver`. This document does not require or preclude such interoperability.
-
-A server or client that converts `application/mimi-content` messages to JMAP Chat MUST derive each message's `senderMsgId` from its MIMI message ID: the 16 octets that follow the MIMI message ID's first (hash algorithm) octet, read as a 128-bit big-endian integer and encoded as a ULID {{ULID}}. Every party that holds a MIMI message ID therefore derives the same `senderMsgId` without coordination, including for a referenced message it never received. The timestamp component of such a ULID carries no meaning; ordering uses the receiving mailbox's `id` ({{message}}). A MIMI edit, whose `replaces` field always names the first version of the message {{MIMI-CONTENT}}, maps to an edit of the message whose `senderMsgId` is derived from `replaces`. The converting party records the `senderMsgId` derived from each edit's own MIMI message ID as an alias of that message, so a MIMI reply or reaction that names a later version refers to the message as a whole.
-
-MIMI's `topicId` {{MIMI-CONTENT}}, a byte string, maps to the Message `topicId` field ({{message}}) as its unpadded base64url encoding ({{?RFC4648}}, Section 5). A MIMI media reaction (a reaction that is not an emoji) is carried in JMAP Chat as a reply containing the media, as {{MIMI-CONTENT}} permits; JMAP Chat reactions ({{reaction}}) remain emoji and custom emoji.
-
-MIMI message statuses `expired`, `hidden`, and `error` {{MIMI-MESSAGE-STATUS}} are not read acknowledgements, so a server bridging MIMI does not set `readAt` or a ReadDisposition for them.
+The two specifications are complementary rather than competing. MIMI defines `application/mimi-content` {{MIMI-CONTENT}}, a CBOR-encoded message body format designed to operate as an MLS PrivateMessage payload. A JMAP Chat server that also participates in a MIMI federation domain MAY include `"application/mimi-content"` in its `supportedBodyTypes` capability and accept MIMI-formatted message bodies in `Message/set` and `Peer/deliver`. This document does not require or preclude such interoperability. {{JMAP-CHAT-MIMI}} defines how a gateway converts MIMI messages to JMAP Chat Messages, including message identifiers, edits, topics, media reactions, and message statuses.
 
 The federation protocol defined in {{JMAP-CHAT-FED}} uses a mailbox-per-user architecture distinct from MIMI's hub-and-spoke room ownership model; see {{JMAP-CHAT-FED}} for discussion of that distinction.
 
