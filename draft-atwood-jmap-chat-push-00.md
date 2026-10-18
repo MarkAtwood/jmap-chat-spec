@@ -47,7 +47,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat Push Notifications, a companion specification to JMAP Chat ({{JMAP-CHAT}}). It extends the RFC 8620 PushSubscription mechanism to deliver inline message content in push notification payloads, enabling mobile and background clients to display a notification without a follow-up server request. The extension defines a per-account push configuration, a notification payload object carrying message metadata and an optional body snippet, per-chat and per-kind filtering, mention-aware urgency, a content-free wake-only mode, and behavior for end-to-end encrypted deployments where body content must not leave the server.
+This document defines JMAP Chat Push Notifications, a companion specification to JMAP Chat ({{JMAP-CHAT}}). It extends the RFC 8620 PushSubscription mechanism to deliver inline message content in push notification payloads, enabling mobile and background clients to display a notification without a follow-up server request. The extension defines a per-account push configuration, a notification payload object carrying message metadata and an optional body snippet, per-chat and per-kind filtering, mention-aware urgency, and behavior for end-to-end encrypted deployments where body content must not leave the server.
 
 --- middle
 
@@ -64,7 +64,7 @@ Chat notifications have a different operational constraint. Every chat message i
 - The extension is additive to the RFC 8620 `PushSubscription`. Servers that do not support this specification deliver unmodified `StateChange` payloads; clients are expected to handle those regardless.
 - Per-account and per-chat filtering allows clients to limit push volume to the conversations that matter.
 - Mention-aware urgency allows a single configuration to request high-urgency delivery for mentions and normal-urgency delivery for everything else.
-- In end-to-end encrypted deployments, the server cannot access plaintext body content. The `encrypted` flag and metadata-only mode provide enough context to display a useful notification without exposing ciphertext. The wake-only mode carries no message metadata at all, for deployments where the push platform operator must not learn who messaged whom.
+- In end-to-end encrypted deployments, the server cannot access plaintext body content. The `encrypted` flag and metadata-only mode provide enough context to display a useful notification without exposing ciphertext. Deployments where the push platform operator must not learn who messaged whom omit `chatPush` and rely on the RFC 8620 `StateChange`, which carries no message metadata.
 - The push delivery infrastructure is entirely that of {{RFC8620}} and the underlying push channel {{RFC8030}}, unchanged.
 
 ## Relationship to JMAP Email Push
@@ -126,9 +126,6 @@ A `ChatPushConfig` specifies which messages trigger inline push and what content
 `mentionUrgency` (String, optional):
 : When present, overrides `urgency` for payloads that contain a direct @user mention (`hasMention: true`) or a broadcast-scope mention (`mentionScopes` is non-empty). MUST be one of the values in `supportedUrgencyValues`. If absent, mention messages use the same urgency as all other messages. The same `invalidArguments` rule applies as for `urgency`.
 
-`wakeOnly` (Boolean, optional):
-: Default `false`. When `true`, the server delivers content-free `ChatMessagePush` payloads that carry only `@type`, `accountId`, and `state`, with no `messages` array (see {{chat-message-push}}). The `properties` field is ignored. `kinds`, `chatIds`, `urgency`, and `mentionUrgency` apply as usual. After waking, the client fetches new messages with `Message/changes` and `Message/get` and decrypts them locally if needed. Servers advertising `urn:ietf:params:jmap:chat:push` MUST support this field.
-
 # Push Payload {#push-payload}
 
 ## ChatMessagePush {#chat-message-push}
@@ -144,10 +141,8 @@ A `ChatMessagePush` object is the push payload delivered directly to the registe
 `state` (String):
 : The `Message` state string for this account after all messages in the `messages` array have been applied, equivalent to the value that would appear in `StateChange.changed[accountId]["Message"]` following those deliveries. The server MUST set this field to the post-delivery state, so that a client using it as `sinceState` in a subsequent `Message/changes` call will not re-receive any message already present in this payload. Clients SHOULD update their locally cached `Message` state on receipt. If a client receives push notifications out of order (e.g., two pushes generated in quick succession delivered in reverse order), the client SHOULD use the lexicographically greatest `state` value as `sinceState` in subsequent `Message/changes` calls, discarding any `state` from a push whose `state` is less than the client's current known state.
 
-`messages` (ChatMessageEntry[], optional):
-: The message entries that triggered this push. MUST be absent when the associated `ChatPushConfig` has `wakeOnly: true`. Otherwise MUST be present and non-empty, containing exactly one entry for a single new message, or multiple entries when the server batches messages that arrived in quick succession (see {{delivery}}).
-
-A wake-only payload covers one or more new messages without describing them. Its `state` is the post-delivery state after all covered messages, as defined above. `maxMessagesPerPush` does not limit how many messages one wake-only payload covers.
+`messages` (ChatMessageEntry[]):
+: MUST be a non-empty array of message entries that triggered this push. Contains exactly one entry for a single new message, or multiple entries when the server batches messages that arrived in quick succession (see {{delivery}}).
 
 ## ChatMessageEntry {#chat-message-entry}
 
@@ -205,7 +200,9 @@ For an encrypted message, mentions and broadcast mentions are carried inside the
 
 The remaining fields (`messageId`, `chatId`, `chatKind`, `chatName`, `senderId`, `senderDisplayName`, `sentAt`, and `encrypted`) carry enough context for clients to display a useful notification such as "New message from Alice" without exposing message content. Servers MUST NOT decrypt message content to generate a snippet.
 
-These fields still reveal who sent a message to whom, in which named Chat and Space, and when, to any party that can read the push payload. On push platforms other than Web Push with {{RFC8291}} encryption, that includes the platform operator (see {{platform-visibility}}). Clients in end-to-end encrypted deployments SHOULD set `wakeOnly: true` on any `ChatPushConfig` delivered over such a platform.
+These fields still reveal who sent a message to whom, in which named Chat and Space, and when, to any party that can read the push payload. On push platforms other than Web Push with {{RFC8291}} encryption, that includes the platform operator (see {{platform-visibility}}).
+
+Clients in end-to-end encrypted deployments SHOULD NOT set `chatPush` for an account on any `PushSubscription` delivered through a platform push service other than Web Push with {{RFC8291}} encryption. The server then delivers {{RFC8620}} `StateChange` notifications for that account, which carry no message metadata; after waking, the client fetches new messages with `Message/changes` and `Message/get` and decrypts them locally. Such a subscription loses per-Chat filtering, mute suppression, and mention urgency, because those are properties of `ChatPushConfig`.
 
 # Delivery {#delivery}
 
@@ -223,13 +220,13 @@ For clarity: a direct `@user` mention (`hasMention: true` with empty `mentionSco
 
 ## Urgency
 
-The server uses `urgency` as the Web Push urgency for the delivery. If the `ChatPushConfig` specifies a `mentionUrgency` and at least one message covered by the payload would have `hasMention: true` or a non-empty `mentionScopes`, the server MUST use `mentionUrgency` for the entire payload instead. This rule applies to wake-only payloads as well, even though they carry no entries. When a batch contains both mention and non-mention messages, all messages share the elevated urgency to ensure the mention notification is not silently demoted.
+The server uses `urgency` as the Web Push urgency for the delivery. If the `ChatPushConfig` specifies a `mentionUrgency` and at least one entry in `messages` has `hasMention: true` or a non-empty `mentionScopes`, the server MUST use `mentionUrgency` for the entire payload instead. When a batch contains both mention and non-mention messages, all messages share the elevated urgency to ensure the mention notification is not silently demoted.
 
 ## Batching and Retry
 
 Servers SHOULD deliver at most one `ChatMessagePush` per message per `PushSubscription`. If delivery fails and the server retries, the payload MUST NOT be altered between attempts. When a single account has multiple `PushSubscription` objects with `chatPush` configurations, each subscription is evaluated and delivered to independently.
 
-If multiple new messages arrive in quick succession, servers MAY include multiple `ChatMessageEntry` objects in the `messages` array of a single `ChatMessagePush` rather than delivering a separate payload per message. In wake-only mode, servers MAY cover such messages with a single wake-only payload. When `maxMessagesPerPush` is advertised, the server MUST NOT exceed it; if more matching messages are pending than the limit allows, the server MUST deliver additional `ChatMessagePush` payloads to cover the remainder.
+If multiple new messages arrive in quick succession, servers MAY include multiple `ChatMessageEntry` objects in the `messages` array of a single `ChatMessagePush` rather than delivering a separate payload per message. When `maxMessagesPerPush` is advertised, the server MUST NOT exceed it; if more matching messages are pending than the limit allows, the server MUST deliver additional `ChatMessagePush` payloads to cover the remainder.
 
 ## Rate Limiting and Fallback
 
@@ -293,16 +290,6 @@ The following variant shows the payload when the same channel message also tags 
 
 The receiving server set `mentionScopes` to `["here"]` because the owner appeared in the `@here` recipient set under the deployment's `@here` predicate at delivery time (see Broadcast Mention Resolution in {{JMAP-CHAT-FED}}). The owner's id was also in `Message.mentions`, so `hasMention` remains `true`.
 
-The following variant shows the wake-only payload for the same message when the `ChatPushConfig` has `wakeOnly: true`:
-
-~~~json
-{
-  "@type": "ChatMessagePush",
-  "accountId": "u1",
-  "state": "d35ecb040aab"
-}
-~~~
-
 # Security Considerations {#security}
 
 ## Push Channel Encryption
@@ -315,7 +302,7 @@ Note that push-channel encryption ({{RFC8291}}) and message body end-to-end encr
 
 {{RFC8291}} encryption applies only to Web Push. Platform push services such as Apple Push Notification service (APNs) and Firebase Cloud Messaging (FCM) relay payloads through infrastructure run by the platform operator, and those payloads are visible to the operator unless the server encrypts them at the application layer. Without such encryption, a `ChatMessagePush` delivered over these platforms discloses its `ChatMessageEntry` fields, including `senderId`, `senderDisplayName`, `chatName`, and `spaceName`, even when `encrypted` is `true` and `bodySnippet` is absent.
 
-The wake-only mode ({{chat-push-config}}) limits the payload to `@type`, `accountId`, and `state`. The operator can still observe the device token, delivery time and frequency, payload size, and the delivery priority derived from `urgency` or `mentionUrgency`, which can indicate that a message contained a mention.
+A subscription without `chatPush` for the account ({{e2ee}}) receives only {{RFC8620}} `StateChange` payloads, which carry account ids, type names, and state strings. The operator can still observe the device token, delivery time and frequency, and payload size.
 
 ## Notification Content Sanitization
 

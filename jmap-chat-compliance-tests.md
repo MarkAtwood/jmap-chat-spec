@@ -380,27 +380,19 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Call `PushSubscription/set` create with `chatPush.urgency: "invalid"`. Verify `invalidArguments` error (not `invalidProperties`).
 
-### 6.11 wakeOnly payload is content-free
-**Spec:** draft-atwood-jmap-chat-push-00 ChatPushConfig `wakeOnly`; ChatMessagePush
-**Severity:** MUST | **Round:** spec change (wake-only push)
+### 6.11 Absent chatPush delivers StateChange
+**Spec:** draft-atwood-jmap-chat-push-00 PushSubscription Extension (`chatPush`); RFC 8620 Section 7.1
+**Severity:** MUST | **Round:** spec change (content-free push)
 
-**Test:** Create a PushSubscription with `chatPush: {"wakeOnly": true, "properties": ["messageId", "chatId", "bodySnippet"]}`. Send a message to the owner. Verify the payload has exactly the keys `@type` (`"ChatMessagePush"`), `accountId`, and `state`, and that `messages` is absent even though `properties` was supplied. Call `Message/changes` with a `sinceState` from before the send. Verify the returned `newState` equals the payload's `state` and that the new message id appears in `created`.
+**Test:** Create a PushSubscription with no `chatPush` property. Send a message to the owner. Verify the payload is a `StateChange` as defined in RFC 8620 Section 7.1: `@type` is `"StateChange"`, `changed` maps the account id to an object containing a `Message` state string, and the payload contains no `messages` array or other message metadata. Call `Message/changes` with a `sinceState` from before the send. Verify the returned `newState` equals that `Message` state and that the new message id appears in `created`.
 
-**Common failure:** Server sends a `messages` array with only some fields removed, or honors `properties` in wake-only mode.
+**Common failure:** Server sends a `ChatMessagePush` (or any message metadata) to a subscription that did not request `chatPush`.
 
-### 6.12 wakeOnly ignores maxMessagesPerPush
-**Spec:** draft-atwood-jmap-chat-push-00 ChatMessagePush; Delivery, Batching and Retry
-**Severity:** MUST | **Round:** spec change (wake-only push)
-
-**Test:** On a server that advertises `maxMessagesPerPush: N` and batches, configure `wakeOnly: true` and send N+1 messages in quick succession. Verify every payload is wake-only and that the final payload's `state` lets `Message/changes` return all N+1 messages. A single wake-only payload that covers more than N messages is conformant and is not a failure. Also verify `mentionUrgency` is used when any covered message mentions the owner.
-
-**Common failure:** Server applies the `maxMessagesPerPush` limit to wake-only payloads, or drops urgency elevation because the payload has no entries.
-
-### 6.13 Encrypted message omits hasMention and mentionScopes
+### 6.12 Encrypted message omits hasMention and mentionScopes
 **Spec:** draft-atwood-jmap-chat-push-00 ChatMessageEntry; End-to-End Encrypted Deployments
 **Severity:** MUST | **Round:** spec change (E2EE field visibility)
 
-**Test:** With `wakeOnly: false` and default `properties`, send a message with `bodyType: "application/mls-ciphertext"`. Verify the entry has `encrypted: true` and that `bodySnippet`, `hasMention`, and `mentionScopes` are all absent. Set `mentionUrgency` above `urgency`. Verify the push uses `urgency`. Mute the Chat and send another encrypted message. Verify no push is delivered.
+**Test:** With default `properties`, send a message with `bodyType: "application/mls-ciphertext"`. Verify the entry has `encrypted: true` and that `bodySnippet`, `hasMention`, and `mentionScopes` are all absent. Set `mentionUrgency` above `urgency`. Verify the push uses `urgency`. Mute the Chat and send another encrypted message. Verify no push is delivered.
 
 **Common failure:** Server emits `hasMention: false` and `mentionScopes: []` for encrypted messages, which claims knowledge the server does not have.
 
