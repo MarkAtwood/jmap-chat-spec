@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-hmj4",
+  "title": "mimi draft extension: review findings to fix before it's usable",
+  "description": "Proposed edits to draft-atwood-jmap-chat-mimi-00.md (bead jmap-chat-spec-5xk4) are uncommitted and failed adversarial review twice. Open defects: (1) Chat.roomId rule forbids a 'members' patch key the core draft doesn't have; core changes membership via addMembers/removeMembers/updateMemberRoles (core L1022-1035), so those must be named instead. (2) Removed members keep receiving traffic: nothing unbinds a Chat or stops storing FanoutMessages after a commit removes all of an account's clients. (3) What members holds for a Chat created by Room/create or a Welcome is unsaid; core Message/set create requires a ChatMember record (core L1117). (4) Message Identifiers section conflicts with Mark's 2026-10-18 decision in mimid-1wgh.10/.12 (senderMsgId = hub-accepted timestamp + octets 1..10); the draft now holds two ULID recipes. (5) IANA: register the KeyPackage data type (Can Use for State Change = Yes), the media types application/mimi-content and application/mimi-fanout, the epochTooOld SetError, and the new method names. (6) Front matter category: std vs kramdown-rfc submissionType=independent makes xml2rfc fail (pre-existing). Choices made that need Mark: fanout senderId = a server-created ChatContact for the hub (vs an explicit senderId override); duplicate KeyPackageRef -\u003e invalidProperties.",
+  "notes": "Mark 2026-10-18 on the fixed draft: references resolve by matching the 80-bit random part, clashes within a Chat rejected (recipe unchanged); SemiPrivateMessage removals: client destroys the Chat; MLS-wrapped bodies get a SEPARATE media type (use RFC 9420 message/mls unless a MIMI-specific type is needed) so application/mimi-content keeps MIMI-CONTENT's meaning; fanout senderId = server-created hub ChatContact; duplicate KeyPackageRef -\u003e invalidProperties.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-18T22:05:45.096189248Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-18T22:37:55.659335825Z",
+  "closed_at": "2026-10-18T22:37:55.659335825Z",
+  "close_reason": "Edits reviewed and decided by Mark 2026-10-18; committed in spec(chat) resolve gaps / mimi client surface."
+}

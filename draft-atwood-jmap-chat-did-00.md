@@ -164,6 +164,8 @@ ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous c
 
 If both `id` and `did` are present AND `id` parses as a DID URI, the two MUST refer to the same DID. A server detecting a mismatch (the parsed DID from `id` differs from the DID in `did`) MUST treat the ChatContact record as invalid and MUST NOT use either DID for authentication.
 
+This document defines no client-visible indication that a server has verified a ChatContact's DID. A client MUST NOT present a ChatContact as verified solely because `did` is present or `id` is DID-form; a client that displays such an indication MUST base it on its own resolution and verification of the DID, the procedure for which is outside the scope of this document.
+
 The `did` field is OPTIONAL. Implementations MAY ignore it entirely if their deployment topology does not require pseudonymous DID binding; in that case, deployments SHOULD use the `id`-as-DID form ({{did-as-id}}) instead.
 
 # Federation Authentication {#federation-auth}

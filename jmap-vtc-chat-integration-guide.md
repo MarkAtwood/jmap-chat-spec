@@ -104,10 +104,11 @@ server creates the VTCCall, assigns a ULID as its id, generates a `joinUri` poin
 the deployment's media stack, and returns the new VTCCall. The Chat's `activeCallId`
 field is set server-side when the call enters the active state (see section 3).
 
-The client does not normally set `activeCallId` on the Chat. That field is server-set.
-Clients MAY clear a stale `activeCallId` (one that references an ended or nonexistent
-VTCCall) via `Chat/set` update as a lazy-repair mechanism, but MUST NOT set it to a
-new call id directly.
+The client never sets `activeCallId` on the Chat. That field is server-set and is not
+a `Chat/set` patch key, so the client can neither set it to a new call id nor clear it.
+A client that sees a stale `activeCallId` (one that references an ended or nonexistent
+VTCCall) treats it as `null` in the UI and leaves the repair to the server, which clears
+it on next read.
 
 ### Choosing the call model
 

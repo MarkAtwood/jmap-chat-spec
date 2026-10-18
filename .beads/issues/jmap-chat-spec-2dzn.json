@@ -2,14 +2,18 @@
   "id": "jmap-chat-spec-2dzn",
   "title": "Spec gaps found by kaiwa's coverage map",
   "description": "For jmap-chat-spec (Mark's drafts). From kaiwa-g2v5.1 design (A s5, B s E, C): Chat.activeCallId server-set vs client may clear (L569); Message.readDisposition server-set vs Message/set (L677); ChatContact.displayName editability; Category.channelIds vs Chat.categoryId/position, which wins; unstated permissions for Category, CustomEmoji, SpaceInvite create, pinnedMessageIds in groups/channels, Space updateMembers nick (incl. own), SpaceBan update; @here/@admins recipient sets deployment-defined; Chat/typing notFound as a method error (unregistered); error type for non-self edit and deletedForAll unnamed; leaving a group chat (no self-removal exemption); mention_broadcast defined only for Spaces but used in groups; StateChange example lists 3 of 9 types; Space/join errors split across invalidArguments/notPermitted/forbidden; rateLimited method-level vs SetError unclear; validation errors untyped; leaving a Space vs last-admin protection; group roles free-form beyond 'member'; DID verified badge promised in architecture doc but not specified.",
-  "notes": "Moved from kaiwa-g2v5.15 on 2026-10-18. Full context, with line numbers, is in kaiwa-g2v5.1's design field (~/PROJECT/kaiwa), parts A section 5, B section E and C.",
-  "status": "open",
+  "notes": "Moved from kaiwa-g2v5.15 on 2026-10-18. Full context, with line numbers, is in kaiwa-g2v5.1's design field (~/PROJECT/kaiwa), parts A section 5, B section E and C.\nMark 2026-10-18 on the applied edits: closed group keeps personal per-chat settings editable (muted, muteUntil, receiveTypingIndicators, messageExpirySeconds, receiptSharing); closed Space forbids SpaceInvite/set create; closedAt shown in the non-member Space/get view.",
+  "status": "closed",
   "priority": 2,
   "issue_type": "task",
+  "assignee": "agent",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-18T20:57:32.330797606Z",
   "created_by": "agent",
-  "updated_at": "2026-10-18T20:57:32.330797606Z",
+  "updated_at": "2026-10-18T22:37:54.046130851Z",
+  "started_at": "2026-10-18T21:17:24.789155788Z",
+  "closed_at": "2026-10-18T22:37:54.046130851Z",
+  "close_reason": "Edits reviewed and decided by Mark 2026-10-18; committed in spec(chat) resolve gaps / mimi client surface.",
   "labels": [
     "spec"
   ]
