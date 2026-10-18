@@ -31,11 +31,31 @@ informative:
   RFC9420:
   RFC9425:
   MIMI-CONTENT:
-    title: More Instant Messaging Interoperability (MIMI) Content Format
-    target: https://datatracker.ietf.org/doc/draft-ietf-mimi-content/
+    title: "More Instant Messaging Interoperability (MIMI) message content"
+    author:
+      fullname: R. Mahy
+    seriesinfo:
+      Internet-Draft: draft-ietf-mimi-content-09
+    date: 2026
   MIMI-PROTOCOL:
-    title: More Instant Messaging Interoperability (MIMI) Protocol
-    target: https://datatracker.ietf.org/doc/draft-ietf-mimi-protocol/
+    title: "More Instant Messaging Interoperability (MIMI) using HTTPS and MLS"
+    author:
+      - fullname: R. L. Barnes
+      - fullname: M. Hodgson
+      - fullname: K. Kohbrok
+      - fullname: R. Mahy
+      - fullname: T. Ralston
+      - fullname: R. Robert
+    seriesinfo:
+      Internet-Draft: draft-ietf-mimi-protocol-06
+    date: 2026
+  MIMI-MESSAGE-STATUS:
+    title: "A Message Status format for the More Instant Messaging Interoperability (MIMI) content format"
+    author:
+      fullname: R. Mahy
+    seriesinfo:
+      Internet-Draft: draft-mahy-mimi-message-status-01
+    date: 2026
   JMAP-CHAT-FED:
     title: JMAP Chat Federation
     target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
@@ -161,6 +181,8 @@ In the mailbox-per-user deployment topology, the peer authentication model is de
 The IETF MIMI (More Instant Messaging Interoperability) working group {{MIMI-PROTOCOL}} {{MIMI-CONTENT}} is developing a separate approach to messaging interoperability, primarily targeting provider-to-provider federation between large existing messaging platforms under regulatory interoperability mandates. MIMI's client-server API layer is intentionally outside the MIMI charter scope; this document fills that gap for JMAP-based deployments.
 
 The two specifications are complementary rather than competing. MIMI defines `application/mimi-content` {{MIMI-CONTENT}}, a CBOR-encoded message body format designed to operate as an MLS PrivateMessage payload. A JMAP Chat server that also participates in a MIMI federation domain MAY include `"application/mimi-content"` in its `supportedBodyTypes` capability and accept MIMI-formatted message bodies in `Message/set` and `Peer/deliver`. This document does not require or preclude such interoperability.
+
+MIMI message statuses `expired`, `hidden`, and `error` {{MIMI-MESSAGE-STATUS}} are not read acknowledgements, so a server bridging MIMI does not set `readAt` or a ReadDisposition for them.
 
 The federation protocol defined in {{JMAP-CHAT-FED}} uses a mailbox-per-user architecture distinct from MIMI's hub-and-spoke room ownership model; see {{JMAP-CHAT-FED}} for discussion of that distinction.
 
@@ -623,6 +645,9 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `burnOnRead` (Boolean, optional, immutable):
 : When `true`, the receiving server MUST permanently hard-delete this message (row removal, not tombstone) immediately after setting `readAt`. Applies only to the receiving mailbox; the sender's own copy is not affected. In E2EE relay deployments, the relay cannot observe read events; the bridge or client layer MUST enforce this rule after receiving the read acknowledgement from the owner. When the recipient's effective `receiptSharing` preference is `false`, the receiver's server still sets `readAt` locally and the `burnOnRead` hard-delete fires as normal — the message IS deleted from the receiving mailbox. However, the sending server receives no `Peer/receipt` confirmation and cannot verify the deletion occurred. Senders MUST NOT rely on `Peer/receipt` delivery to confirm that a `burnOnRead` message was destroyed.
 
+`expiresAfterReadSeconds` (UnsignedInt, optional, immutable):
+: When present, the receiving server MUST permanently hard-delete this message (row removal, not tombstone) this many seconds after setting `readAt`. Applies only to the receiving mailbox; the sender's own copy is not affected. If `burnOnRead` is also `true`, `burnOnRead` takes precedence and the message is hard-deleted immediately after `readAt` is set. In E2EE relay deployments, the relay cannot observe read events; the bridge or client layer MUST enforce this rule after receiving the read acknowledgement from the owner. When the recipient's effective `receiptSharing` preference is `false`, the receiver's server still sets `readAt` locally and the hard-delete still occurs, but the sending server receives no `Peer/receipt` confirmation and cannot verify the deletion occurred. Senders MUST NOT rely on `Peer/receipt` delivery to confirm that an `expiresAfterReadSeconds` message was destroyed.
+
 `deliveryState` (String, server-set):
 : `"pending"`, `"delivered"`, `"failed"`, or `"received"`. For group chats, reflects aggregate state across all recipients; see `deliveryReceipts` for per-recipient detail.
 
@@ -1071,7 +1096,7 @@ Standard JMAP `/set`.
 
 `chatId` (String, required), `body` (String, required), `bodyType` (String, required), `sentAt` (UTCDate, required).
 
-Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean).
+Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean), `expiresAfterReadSeconds` (UnsignedInt).
 
 The server MUST verify the sender is a current member of the target Chat. For group chats, this means a ChatMember record exists; for channel chats, the sender must be a member of the containing Space. Non-members MUST receive a SetError of type `forbidden`.
 
@@ -1663,11 +1688,11 @@ In relay deployments, the relay routes Peer/* messages but MUST NOT have access 
 
 ### Fields Inside the Ciphertext {#e2ee-fields}
 
-When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, and `threadRootId` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. Servers MUST reject a `Message/set` create or update, or a `Peer/deliver` payload, that has an encrypted `bodyType` and any of these fields non-empty, with `invalidArguments`.
+When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, and `threadRootId` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update, or a `Peer/deliver` payload, that has an encrypted `bodyType` and any of these fields non-empty, with `invalidArguments`.
 
 As a consequence, the server cannot validate mention offsets, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
 
-In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are therefore limited to the routing arguments `accountId`, `chatId`, `chatKind`, and `senderUserId`, and the `message` fields `senderMsgId`, `bodyType`, `body` (as ciphertext), `sentAt`, `senderExpiresAt`, and `burnOnRead`. For `edit` payloads they are `senderMsgId`, `bodyType`, `body` (as ciphertext), and `editedAt`.
+In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are therefore limited to the routing arguments `accountId`, `chatId`, `chatKind`, and `senderUserId`, and the `message` fields `senderMsgId`, `bodyType`, `body` (as ciphertext), `sentAt`, `senderExpiresAt`, `burnOnRead`, and `expiresAfterReadSeconds`. For `edit` payloads they are `senderMsgId`, `bodyType`, `body` (as ciphertext), and `editedAt`.
 
 ### Sender Authentication and Relay Enforcement {#e2ee-enforcement}
 

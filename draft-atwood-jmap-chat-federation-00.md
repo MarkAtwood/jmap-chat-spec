@@ -43,6 +43,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-protocol-06
     date: 2026
+  MIMI-ROOM-POLICY:
+    title: "Room Policy for the More Instant Messaging Interoperability (MIMI) Protocol"
+    author:
+      - fullname: R. Mahy
+    seriesinfo:
+      Internet-Draft: draft-ietf-mimi-room-policy-04
+    date: 2026
 
 --- abstract
 
@@ -79,7 +86,7 @@ This document extracts and formalizes the server-to-server elements of {{JMAP-CH
 
 The IETF MIMI working group {{MIMI-PROTOCOL}} is developing a provider-to-provider federation protocol for messaging interoperability. MIMI adopts a hub-and-spoke architecture in which each room is owned by one provider (the "hub") and other providers connect as "followers." The hub is authoritative for room state and distributes messages to follower providers.
 
-This document takes a different approach: each participant operates an independent mailbox server with no central room owner. Message delivery is point-to-point between mailboxes; room state is derived from the union of messages each mailbox has received. This design prioritizes decentralization and avoids any single provider holding authority over a conversation, at the cost of additional complexity in race condition handling (see {{direct-chat-race}}).
+This document takes a different approach: each participant operates an independent mailbox server with no central room owner. Message delivery is point-to-point between mailboxes; room state is derived from the union of messages each mailbox has received. This design prioritizes decentralization and avoids any single provider holding authority over a conversation, at the cost of additional complexity in race condition handling (see {{direct-chat-race}}). MIMI defines room roles and capabilities in {{MIMI-ROOM-POLICY}}, while JMAP Chat uses Space roles as defined in {{JMAP-CHAT}}.
 
 The two protocols are not interoperable at the federation layer and serve different deployment contexts. They are not in conflict; a deployment could implement both, using this protocol for JMAP-native mailbox-to-mailbox federation and MIMI for cross-provider interoperability with non-JMAP messaging platforms.
 
@@ -221,6 +228,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `lastSeenSenderMsgId` (String, optional): causal hint. The `senderMsgId` of the latest message in this chat that the sending server had stored when the message was composed. Informational only. See {{message-ordering}}.
   - `senderExpiresAt` (UTCDate, optional) — Hard-deletion deadline. Servers MUST reject a value that is already in the past at delivery time with `invalidArguments`.
   - `burnOnRead` (Boolean, optional) — When `true`, the receiver MUST permanently hard-delete the message immediately after setting `readAt`. When the recipient's effective `receiptSharing` preference is `false`, no `Peer/receipt` notification will reach the sender's server after the message is read — but the hard-delete on the receiving mailbox still occurs. See `burnOnRead` in {{JMAP-CHAT}}.
+  - `expiresAfterReadSeconds` (UnsignedInt, optional): When present, the receiver MUST permanently hard-delete the message this many seconds after setting `readAt`. If `burnOnRead` is also `true`, `burnOnRead` takes precedence. See `expiresAfterReadSeconds` in {{JMAP-CHAT}}.
 
 `edit` (Object, optional):
 : An edit to an existing message. Fields:
@@ -279,7 +287,7 @@ Before storing a new message, the server MUST perform the following steps in ord
 11. Fetch each attachment blob from its `fetchUrl`; verify the byte count against `size` and the content against `sha256`. Reject with `invalidArguments` if either check fails. See {{ssrf}} for restrictions on `fetchUrl` targets.
 12. Validate each `mentions` entry's `offset + length` against the body byte length. Reject with `invalidArguments` if any entry exceeds the body bounds. When `bodyType` is `"application/jmap-chat-rich"`, the `mentions` and `broadcastMentions` arrays MUST be empty (per {{JMAP-CHAT}}); if either is non-empty, reject with `invalidArguments`. The receiving server MUST parse the rich body to extract inline `"mention"` and `"broadcast"` spans for push-notification mention elevation and delivery-time recipient-set computation.
 13. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, `"admins"`, or if `offset + length` exceeds the body byte length. The receiving server MUST NOT use the sending server's send-time recipient set (if any) for authorization or push-elevation decisions; the recipient set is computed by the receiving server at delivery time as defined in {{broadcast-mention-resolution}}.
-14. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. If `burnOnRead` is also `true`, register a trigger to hard-delete the message when `readAt` is set.
+14. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. Whether or not `senderExpiresAt` is present, if `burnOnRead` is `true`, register a trigger to hard-delete the message when `readAt` is set; otherwise, if `expiresAfterReadSeconds` is present, register a trigger to hard-delete the message that many seconds after `readAt` is set.
 
 When `bodyType` indicates an encrypted type (e.g., `"application/mls-ciphertext"`), the server MUST, at step 10, reject with `invalidArguments` any message in which `attachments`, `mentions`, `broadcastMentions`, `actions`, `replyTo`, `threadRootId`, or `lastSeenSenderMsgId` is present and non-empty, and MUST skip steps 11 through 13. That information, if any, is carried inside the ciphertext, as specified in the End-to-End Encrypted Deployments section of {{JMAP-CHAT}}.
 
