@@ -50,6 +50,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-room-policy-04
     date: 2026
+  JMAP-CHAT-MIMI:
+    title: JMAP Chat MIMI Mapping
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-mimi-00
+    date: 2026
 
 --- abstract
 
@@ -88,7 +95,7 @@ The IETF MIMI working group {{MIMI-PROTOCOL}} is developing a provider-to-provid
 
 This document takes a different approach: each participant operates an independent mailbox server with no central room owner. Message delivery is point-to-point between mailboxes; room state is derived from the union of messages each mailbox has received. This design prioritizes decentralization and avoids any single provider holding authority over a conversation, at the cost of additional complexity in race condition handling (see {{direct-chat-race}}). MIMI defines room roles and capabilities in {{MIMI-ROOM-POLICY}}, while JMAP Chat uses Space roles as defined in {{JMAP-CHAT}}.
 
-The two protocols are not interoperable at the federation layer and serve different deployment contexts. They are not in conflict; a deployment could implement both, using this protocol for JMAP-native mailbox-to-mailbox federation and MIMI for cross-provider interoperability with non-JMAP messaging platforms.
+The two protocols are not interoperable at the federation layer and serve different deployment contexts. They are not in conflict; a deployment could implement both, using this protocol for JMAP-native mailbox-to-mailbox federation and MIMI for cross-provider interoperability with non-JMAP messaging platforms. {{JMAP-CHAT-MIMI}} defines how a gateway between the two converts MIMI messages to JMAP Chat Messages.
 
 # Conventions and Definitions
 
