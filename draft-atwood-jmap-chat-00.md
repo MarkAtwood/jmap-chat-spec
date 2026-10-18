@@ -182,6 +182,8 @@ The IETF MIMI (More Instant Messaging Interoperability) working group {{MIMI-PRO
 
 The two specifications are complementary rather than competing. MIMI defines `application/mimi-content` {{MIMI-CONTENT}}, a CBOR-encoded message body format designed to operate as an MLS PrivateMessage payload. A JMAP Chat server that also participates in a MIMI federation domain MAY include `"application/mimi-content"` in its `supportedBodyTypes` capability and accept MIMI-formatted message bodies in `Message/set` and `Peer/deliver`. This document does not require or preclude such interoperability.
 
+MIMI's `topicId` {{MIMI-CONTENT}}, a byte string, maps to the Message `topicId` field ({{message}}) as its unpadded base64url encoding ({{?RFC4648}}, Section 5). A MIMI media reaction (a reaction that is not an emoji) is carried in JMAP Chat as a reply containing the media, as {{MIMI-CONTENT}} permits; JMAP Chat reactions ({{reaction}}) remain emoji and custom emoji.
+
 MIMI message statuses `expired`, `hidden`, and `error` {{MIMI-MESSAGE-STATUS}} are not read acknowledgements, so a server bridging MIMI does not set `readAt` or a ReadDisposition for them.
 
 The federation protocol defined in {{JMAP-CHAT-FED}} uses a mailbox-per-user architecture distinct from MIMI's hub-and-spoke room ownership model; see {{JMAP-CHAT-FED}} for discussion of that distinction.
@@ -632,6 +634,12 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 
 `unreadReplyCount` (UnsignedInt, server-set, optional):
 : Count of replies to this message received after the owner's `ReadPosition.lastReadMessageId` in this Chat. Present only when `supportsThreads` is `true` and this message is a thread root (`threadRootId` is absent). A value of zero means all replies have been read.
+
+`topicId` (String, optional, immutable):
+: An opaque, sender-chosen identifier that groups this Message with other Messages in the same Chat into a named topic; Messages in a Chat with equal `topicId` values belong to the same topic. MUST be non-empty and MUST NOT exceed 255 bytes. A topic is independent of reply threads ({{threads}}): a reply inherits neither `topicId` nor `subject` from the Message it replies to, and servers MUST NOT set `topicId` on the sender's behalf. This document defines no topic object and no method for listing topics.
+
+`subject` (String, optional, immutable):
+: The human-readable name of the topic identified by `topicId`. MUST be valid UTF-8 text. MUST be absent when `topicId` is absent. Clients SHOULD display the `subject` of the most recent Message in a topic that carries one as that topic's name.
 
 `sentAt` (UTCDate):
 : Sender's claimed composition time. Peer-supplied; MUST be treated as untrusted and MUST NOT be used for ordering.
@@ -1096,7 +1104,7 @@ Standard JMAP `/set`.
 
 `chatId` (String, required), `body` (String, required), `bodyType` (String, required), `sentAt` (UTCDate, required).
 
-Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean), `expiresAfterReadSeconds` (UnsignedInt).
+Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `topicId` (String), `subject` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean), `expiresAfterReadSeconds` (UnsignedInt).
 
 The server MUST verify the sender is a current member of the target Chat. For group chats, this means a ChatMember record exists; for channel chats, the sender must be a member of the containing Space. Non-members MUST receive a SetError of type `forbidden`.
 
@@ -1171,6 +1179,9 @@ Filter properties:
 
 `threadRootId` (String, optional):
 : Return only messages in this thread. Valid only when `supportsThreads` is `true`; otherwise servers MUST return `unsupportedFilter`.
+
+`topicId` (String, optional):
+: Return only messages whose `topicId` equals this value. Messages with an encrypted `bodyType` carry no server-visible `topicId` ({{e2ee-fields}}) and never match this filter.
 
 `hasAttachment` (Boolean, optional):
 : Filter to messages with or without attachments.
@@ -1630,6 +1641,8 @@ All peer-supplied fields are attacker-controlled. Servers MUST validate:
 - `chatId`: verify per {{chat-id}} — confirm match with stored id or verify membership; reject mismatches.
 - `emoji`: validate as a non-empty string; enforce an implementation-defined maximum byte length to prevent denial of service.
 - `mentions`: reject any entry where `offset + length` exceeds body byte length.
+- `topicId`: reject an empty value or a value exceeding 255 bytes.
+- `subject`: validate UTF-8; enforce an implementation-defined maximum byte length; reject when `topicId` is absent.
 - `broadcastMentions`: reject any entry whose `scope` is not one of `"everyone"`, `"here"`, `"admins"`, and any entry where `offset + length` exceeds body byte length. Additionally enforce the `"mention_broadcast"` permission check defined in {{broadcast-mention}}.
 
 ## Denial of Service
@@ -1688,9 +1701,9 @@ In relay deployments, the relay routes Peer/* messages but MUST NOT have access 
 
 ### Fields Inside the Ciphertext {#e2ee-fields}
 
-When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, and `threadRootId` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update, or a `Peer/deliver` payload, that has an encrypted `bodyType` and any of these fields non-empty, with `invalidArguments`.
+When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, and `subject` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update, or a `Peer/deliver` payload, that has an encrypted `bodyType` and any of these fields non-empty, with `invalidArguments`.
 
-As a consequence, the server cannot validate mention offsets, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
+As a consequence, the server cannot validate mention offsets, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. Likewise, the `topicId` filter of `Message/query` matches only messages with a non-encrypted `bodyType`; clients group encrypted messages into topics after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
 
 In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are therefore limited to the routing arguments `accountId`, `chatId`, `chatKind`, and `senderUserId`, and the `message` fields `senderMsgId`, `bodyType`, `body` (as ciphertext), `sentAt`, `senderExpiresAt`, `burnOnRead`, and `expiresAfterReadSeconds`. For `edit` payloads they are `senderMsgId`, `bodyType`, `body` (as ciphertext), and `editedAt`.
 
