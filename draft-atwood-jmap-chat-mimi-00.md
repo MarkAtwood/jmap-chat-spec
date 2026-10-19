@@ -104,11 +104,24 @@ Terminology from {{RFC8620}}, {{RFC9420}}, and {{MIMI-PROTOCOL}} (hub, follower,
 
 Every byte-string property defined in {{capability}} through {{mls-messages}} is the unpadded base64url encoding ({{RFC4648, Section 5}}) of the exact octets of the named MLS {{RFC9420}} or MIMI {{MIMI-PROTOCOL}} structure in the TLS presentation language encoding those documents use. Servers MUST NOT re-encode these octets, because clients sign some of them and verify signatures over others.
 
+The encoding is that of the whole structure. For a structure that is a variable-size vector, such as a KeyPackageRef or a ProposalRef (`opaque HashReference<V>`, {{RFC9420, Section 5.2}}), it begins with the vector's variable-length length prefix ({{RFC9420, Section 2.1.2}}). For example, a KeyPackageRef whose 32-octet hash value is the octets 0x00 through 0x1f is the 33 octets
+
+~~~
+20 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e
+0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+~~~
+
+and its `keyPackageRef` is `"IAABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4f"`.
+
 # Message Identifiers {#message-ids}
 
 A converting party MUST derive each message's `senderMsgId` as the ULID {{ULID}} whose 48-bit time component is the hub's acceptance time of the message in milliseconds (the FanoutMessage `timestamp` ({{MIMI-PROTOCOL, Section 5.5}}), or, for the party's own message, the `accepted_timestamp` of the SubmitMessageResponse ({{MIMI-PROTOCOL, Section 5.4}})) and whose 80-bit random component is octets 1 through 10 of its MIMI message ID, counting from 0: the ten octets that follow the hash algorithm octet. Every party that receives a MIMI message therefore derives the same `senderMsgId` without coordination.
 
-A MIMI reference to another message (`replaces` or `inReplyTo` {{MIMI-CONTENT}}, the latter also naming the message a reaction applies to) carries only a MIMI message ID. A converting party resolves it to the Message in the same Chat whose `senderMsgId` random component, or one of whose aliases ({{edits}}), equals octets 1 through 10 of that ID. A reference to a message the party has not stored does not resolve.
+A MIMI reference to another message (`replaces` or `inReplyTo` {{MIMI-CONTENT}}, the latter also naming the message a reaction applies to) carries only a MIMI message ID. A converting party resolves it to the Message in the same Chat whose `senderMsgId` random component, or one of whose aliases ({{edits}}), equals octets 1 through 10 of that ID. When an `inReplyTo` reference resolves, the converted Message's `replyTo` is that Message's `id`. A reference to a message the party has not stored does not resolve, and an unresolved `inReplyTo` leaves `replyTo` absent.
+
+# Senders {#senders}
+
+The sender's MIMI user URI ({{MIMI-PROTOCOL}}) is the identity of the Basic credential ({{RFC9420, Section 5.3}}) in the MLS sender's leaf. A converted Message's `senderId` is the `id` of the local ChatContact ({{JMAP-CHAT}}) whose `identity` is that user URI. If no ChatContact has that `identity`, the converting party MUST create one, with that `identity` and an `id` the server assigns, before storing the Message. When that user URI equals the account's `ownerUserId` ({{JMAP-CHAT}}), the same identity mapping {{JMAP-CHAT}} and {{JMAP-CHAT-FED}} use, `senderId` is the `accountId` ({{JMAP-CHAT}}) and no ChatContact is created.
 
 # Edits {#edits}
 
@@ -116,7 +129,7 @@ A MIMI edit, whose `replaces` field always names the first version of the messag
 
 # Topics {#topics}
 
-MIMI's `topicId` {{MIMI-CONTENT}}, a byte string, maps to the Message `topicId` field ({{JMAP-CHAT}}) as its unpadded base64url encoding ({{RFC4648, Section 5}}).
+MIMI's `topicId` {{MIMI-CONTENT}}, a byte string, maps to the Message `topicId` field ({{JMAP-CHAT}}) as UTF-8 in both directions: the JMAP `topicId` is the MIMI `topicId` octets decoded as UTF-8, and the MIMI `topicId` is the UTF-8 encoding of the JMAP `topicId`. A MIMI `topicId` that is empty, is not valid UTF-8, or exceeds 255 octets maps to no `topicId` and no `subject`; the converting party still converts the message.
 
 # Reactions {#reactions}
 
@@ -181,7 +194,7 @@ Standard JMAP `/get` ({{RFC8620, Section 5.1}}).
 
 Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that `update` is not supported: the server MUST reject every update with a SetError of type `forbidden`.
 
-On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not a client URI ({{MIMI-PROTOCOL}}) whose authority is this server's domain. The first KeyPackage the server accepts for a client URI binds that client URI to the account. The server MUST reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose client URI is bound to another account.
+On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account. The server MUST reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
 
 The server MUST reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`.
 
@@ -190,6 +203,8 @@ Each client has at most one last-resort KeyPackage. Creating a last-resort KeyPa
 ## Handing Out KeyPackages {#keypackage-claim}
 
 When this server answers a key material request for the owner ({{MIMI-PROTOCOL, Section 5.2}}), it returns at most one KeyPackage for each of the owner's clients. For each client it returns a KeyPackage compatible with the request that is not last-resort and destroys that record in the same transaction, so that no KeyPackage is handed out twice. When the client has no such KeyPackage, the server returns the client's compatible last-resort KeyPackage, if any, and keeps it. Returning a last-resort KeyPackage more than once departs from {{MIMI-PROTOCOL, Section 5.2}}, which forbids repeating key material across responses, and follows {{RFC9420, Section 16.8}}.
+
+The `clientUri` the server returns for each client ({{MIMI-PROTOCOL, Section 5.2}}) is implementation-defined, but MUST be stable and unique per leaf: the server MUST return the same `clientUri` in every response for a given signature key ({{keypackage}}), and different `clientUri` values for different signature keys.
 
 The server MUST keep the KeyPackageRef of every KeyPackage it hands out, with the account it belongs to, until a Welcome naming it has been delivered or its leaf node lifetime has passed. A destroyed record appears in a new state for the KeyPackage type, so a client that receives the `StateChange` can replenish its KeyPackages.
 
@@ -237,7 +252,7 @@ A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and meta
 
 The server does not mirror the participant list into ChatMember records: `members` of a Chat with a `roomId` is the empty list, whether `Room/create` ({{room-create}}) or a Welcome ({{fanout-messages}}) created it.
 
-A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every client whose client URI is bound to the account ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients MUST then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/send`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}).
+A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every leaf whose credential identity is the account's `userUri` ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients MUST then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/send`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}).
 
 ## Room/create {#room-create}
 
@@ -257,7 +272,7 @@ The request arguments are:
 The server MUST reject the call with `invalidArguments` unless all of the following hold:
 
 1. The GroupInfo signature verifies, and its cipher suite is in `cipherSuites`.
-2. The `ratchetTree` matches the tree hash in the GroupInfo's GroupContext and contains exactly one leaf, whose credential identity is a client URI bound to the account ({{keypackage}}).
+2. The `ratchetTree` matches the tree hash in the GroupInfo's GroupContext and contains exactly one leaf, whose credential identity is `userUri` and whose signature key is bound to the account ({{keypackage}}).
 3. The `external_senders` extension contains exactly one ExternalSender, equal to `hubSender`.
 4. The participant list ({{MIMI-PROTOCOL, Section 7.5}}) contains exactly one participant, `userUri`.
 5. The `room_uri` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) is `roomIdPrefix` followed by the unpadded lowercase base32 encoding ({{RFC4648, Section 6}}) of 16 octets, and no room this server hosts has that room ID.
@@ -421,7 +436,7 @@ For such a Message:
 - `senderMsgId` is the ULID {{ULID}} whose 48-bit time component is the FanoutMessage `timestamp` and whose 80-bit random component is the first 10 octets of the SHA-256 hash of the FanoutMessage octets. The server MUST NOT store a FanoutMessage whose `senderMsgId` it has already stored in the Chat, so a repeated `/notify` yields one Message.
 - The server MUST NOT store a FanoutMessage whose `message` is byte-identical to the `message` of a FanoutMessage already stored in the Chat. A hub may return the owner's own message, for example after failover ({{MIMI-PROTOCOL, Section 5.5}}).
 - `sentAt` is the FanoutMessage `timestamp`.
-- `senderId` is the id of the ChatContact ({{JMAP-CHAT}}) that represents the room's hub, whose `id` and `login` are the hub's provider URI as authenticated by the MIMI transport ({{MIMI-PROTOCOL}}); the server creates that ChatContact if it does not exist. This holds also for the Messages that `Room/send` and `Room/update` store ({{room-send}}, {{room-update}}), which are not owner-composed in the sense of {{JMAP-CHAT}}. The `blocked` field of that ChatContact applies as {{JMAP-CHAT}} defines it, so blocking the hub drops every FanoutMessage of the rooms it hosts. Clients authenticate the MLS sender as {{JMAP-CHAT}} requires for encrypted deployments.
+- `senderId` is the id of the ChatContact ({{JMAP-CHAT}}) that represents the room's hub, whose `identity` and `login` are the hub's provider URI as authenticated by the MIMI transport ({{MIMI-PROTOCOL}}); the server creates that ChatContact, with an `id` it assigns, if it does not exist. This holds also for the Messages that `Room/send` and `Room/update` store ({{room-send}}, {{room-update}}), which are not owner-composed in the sense of {{JMAP-CHAT}}. The `blocked` field of that ChatContact applies as {{JMAP-CHAT}} defines it, so blocking the hub drops every FanoutMessage of the rooms it hosts. Clients authenticate the MLS sender as {{JMAP-CHAT}} requires for encrypted deployments.
 
 # Examples {#examples}
 
@@ -446,7 +461,7 @@ Response:
   "oldState": "s7",
   "newState": "s8",
   "created": {
-    "k1": { "id": "kp42", "keyPackageRef": "3qJ4dWvT..." }
+    "k1": { "id": "kp42", "keyPackageRef": "IJ3qJ4dWvT..." }
   }
 }, "c1"]
 ~~~

@@ -18,7 +18,7 @@ RECOMMENDED `did:webvh` with an open extensibility hook, optional ChatContact ex
 the high-level requirement that federation authentication verify a
 DID-bound signature. The main `jmap-chat-implementer-guide.md` covers
 identity topics that overlap with core JMAP Chat concerns (the
-opaque-id rule, the `@user@host` mention form, ChatContact federation
+opaque-identity rule, the `@user@host` mention form, ChatContact federation
 caching). This guide focuses on what those documents do not cover:
 the concrete realization of DID-based identity and authentication,
 plus the operational practice of running DIDs as identities at scale.
@@ -785,8 +785,8 @@ DID Document is refreshed.
 ### What the spec leaves open
 
 The DID draft (§ChatContact Extensions) establishes a consistency rule:
-if a ChatContact carries both an `id` field and a `did` field, and
-the `id` parses as a DID URI, the two MUST refer to the same DID.
+if a ChatContact carries both an `identity` and a `did` field, and
+the `identity` parses as a DID URI, the two MUST refer to the same DID.
 Beyond that single rule, the spec is silent on how a deployment
 handles a user with multiple DIDs across methods, how related DIDs
 are linked, and what UX surfaces these relationships.
@@ -817,8 +817,8 @@ are linked, and what UX surfaces these relationships.
   address book groups related DIDs under one display entry). Wire
   contract is unchanged; ChatContact federation is unchanged.
 - *One ChatContact with multiple DIDs is more complex.* The
-  `ChatContact.id` is opaque (per the core draft); a separate field
-  could list additional DIDs. This breaks the consistency rule of
+  `ChatContact.identity` holds one opaque identity string (per the
+  core draft); a separate field could list additional DIDs. This breaks the consistency rule of
   the DID draft if not carefully designed. The DID draft does NOT
   introduce such a field; deployments wanting one would need to
   extend the data model out-of-band or in a future spec revision.
@@ -836,8 +836,8 @@ are linked, and what UX surfaces these relationships.
   surfaces it; no protocol-level verification is performed. This
   works for most deployment contexts.
 - *Pseudonymous-id case (DID draft, §Optional `did` Field).* The optional
-  `did` field on a ChatContact accommodates an opaque `id` plus a
-  bound `did` for crypto. This is NOT a multi-DID case; it is a
+  `did` field on a ChatContact accommodates a non-DID `identity`
+  plus a bound `did` for crypto. This is NOT a multi-DID case; it is a
   single-DID-with-opaque-handle case. Multi-DID handling is
   separate.
 
@@ -848,7 +848,7 @@ are linked, and what UX surfaces these relationships.
   book maintains a "this is the same person" mapping based on user
   input. Most common pattern; no protocol changes needed.
 - **Single ChatContact with bound DID for pseudonymity.** Uses the
-  optional `did` field per the spec. Stable opaque `id`, bound
+  optional `did` field per the spec. Stable non-DID `identity`, bound
   DID for crypto. Specifically for the case where the user wants
   identity stability under DID migration (e.g., MLS group
   membership when a user moves from `did:key` to `did:web`).
@@ -1019,7 +1019,7 @@ document the recovery interaction.
 | Capability URN; method list via JMAP DID `supportedMethods` | `draft-atwood-jmap-chat-did-00.md` §Capability |
 | Dependency on JMAP DID; key rotation vs DID migration | `draft-atwood-jmap-chat-did-00.md` §Relationship to JMAP DID |
 | Mandatory DID methods; RECOMMENDED `did:webvh` | `draft-atwood-jmap-chat-did-00.md` §Methods |
-| ChatContact `id`-as-DID and optional `did` field | `draft-atwood-jmap-chat-did-00.md` §ChatContact Extensions |
+| ChatContact `identity`-as-DID and optional `did` field | `draft-atwood-jmap-chat-did-00.md` §ChatContact Extensions |
 | Federation authentication requirement | `draft-atwood-jmap-chat-did-00.md` §Federation Authentication |
 | DID resolution refresh-on-failure rule | `draft-atwood-jmap-chat-did-00.md` §DID Resolution |
 | Mention textual form | `draft-atwood-jmap-chat-did-00.md` §Mentions |
@@ -1029,7 +1029,7 @@ document the recovery interaction.
 
 | Topic | File |
 |---|---|
-| Core opaque-id rule (`ChatContact.id` is opaque) | `draft-atwood-jmap-chat-00.md` |
+| Core opaque-identity rule (`ChatContact.identity` is opaque) | `draft-atwood-jmap-chat-00.md` |
 | `@user@host` mention form | `draft-atwood-jmap-chat-00.md` |
 | Federation method set (`Peer/*`) | `draft-atwood-jmap-chat-federation-00.md` |
 | Federation peer authentication framing | `jmap-chat-federation-guide.md` §1 |

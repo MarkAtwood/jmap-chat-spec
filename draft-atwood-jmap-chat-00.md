@@ -213,8 +213,8 @@ Owner:
 Peer:
 : Another mailbox server communicating with this mailbox.
 
-id / userId:
-: A ChatContact's `id` is the stable, opaque identity string provided by the authentication layer for that user. These two terms are intentionally equivalent in this protocol: ChatContact.id IS the userId. There is no separate identity namespace. Servers MUST set ChatContact.id to the userId string obtained from the authentication layer. The specific form of the identifier (for example, a `user@host`-style string, a Decentralized Identifier URI {{W3C-DID-CORE}}, or any other URI form) is not constrained by this specification; servers MUST treat it as opaque regardless of form.
+identity / id:
+: A user's identity is the stable, opaque identity string the authentication layer provides for that user, recorded in the `identity` property of the user's ChatContact ({{chat-contact}}). Its form (for example, a `user@host`-style string, a Decentralized Identifier URI {{W3C-DID-CORE}}, or any other URI form) is not constrained by this specification; servers MUST treat it as opaque regardless of form. A ChatContact's `id` is an Id ({{RFC8620}} Section 1.2) that the server assigns; it is local to that server. Every reference to a user that a client sends or receives carries the `id` of the user's ChatContact on the client's server. Every reference to a user that passes between servers ({{JMAP-CHAT-FED}}) carries the user's identity; the receiving server maps it to its own ChatContact with that `identity`. The owner has no ChatContact: a client-facing reference to the owner carries the accountId of the owner's account ({{RFC8620}} Section 1.6.2), including where this document describes the reference as a ChatContact.id, and no ChatContact has that accountId as its `id`. Between servers, the owner's identity is the `ownerUserId` Session field; a server maps its `ownerUserId` to its accountId on receipt and its accountId to its `ownerUserId` when sending.
 
 ## Color Representation {#color-convention}
 
@@ -242,7 +242,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object
 : Maximum number of attachments per message.
 
 `supportedBodyTypes` (String[]):
-: MIME types accepted in `bodyType`. MUST include `"text/plain"`. End-to-end encrypted deployments SHOULD also include an appropriate encrypted-content type such as `"application/mls-ciphertext"`. Servers SHOULD support `"text/markdown"` (CommonMark profile, as specified in {{RFC7763}}) and `"application/jmap-chat-rich"` (defined in {{rich-body}}). Servers participating in MIMI federation domains MAY also include `"application/mimi-content"` {{MIMI-CONTENT}}.
+: The MIME types a Message `bodyType` can take on this account. The server MUST accept in `Message/set` create every listed type except types a companion specification reserves for server-created Messages. MUST include `"text/plain"` unless the server accepts only end-to-end encrypted body types ({{e2ee-fields}}). End-to-end encrypted deployments SHOULD also include an appropriate encrypted-content type such as `"application/mls-ciphertext"`. Servers SHOULD support `"text/markdown"` (CommonMark profile, as specified in {{RFC7763}}) and `"application/jmap-chat-rich"` (defined in {{rich-body}}). Servers participating in MIMI federation domains MAY also include `"application/mimi-content"` {{MIMI-CONTENT}}.
 
 `supportsThreads` (Boolean):
 : Whether this server supports the optional thread model defined in {{threads}}.
@@ -256,7 +256,7 @@ Note: {{RFC9425}} defines a `Quota` data type for exposing account-level storage
 When the `urn:ietf:params:jmap:chat` capability is present, servers MAY include the following additional fields in the Session object:
 
 `ownerUserId` (String):
-: The id of the mailbox owner (equals the owner's ChatContact.id on any peer server that has recorded this mailbox as a contact). Servers implementing {{JMAP-CHAT-FED}} MUST include this field; other servers MAY include it.
+: The identity of the mailbox owner (equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact). Servers implementing {{JMAP-CHAT-FED}} MUST include this field; other servers MAY include it.
 
 `ownerLogin` (String):
 : A human-readable login name for the mailbox owner.
@@ -324,7 +324,7 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
 
 ## MessageAction {#message-action}
 
-A MessageAction is a per-message out-of-band action invitation carried in a Message and in `Peer/deliver`. It signals that a message is associated with an out-of-band interaction — a video call invitation, a payment request, a file available outside the blob channel, etc. Servers MUST store and forward MessageAction records without inspection or transformation. Clients MUST NOT act on a MessageAction automatically; all OOB actions require explicit user initiation.
+A MessageAction is a per-message out-of-band action invitation carried in a Message and in `Peer/deliver`. It signals that a message is associated with an out-of-band interaction — a video call invitation, a payment request, a file available outside the blob channel, etc. Servers MUST store and forward MessageAction records without inspection or transformation, except that a server implementing {{JMAP-CHAT-FED}} maps any user reference that this or a companion specification defines in `metadata` as that document specifies. Clients MUST NOT act on a MessageAction automatically; all OOB actions require explicit user initiation.
 
 `type` (String):
 : Same URI namespace as Endpoint `type` (see {{endpoint}}). Clients MUST ignore actions whose `type` they do not recognize.
@@ -346,11 +346,11 @@ A MessageAction is a per-message out-of-band action invitation carried in a Mess
 A Mention names a user that a message mentions.
 
 `id` (String):
-: The ChatContact.id (userId) of the mentioned participant.
+: The `id` of the mentioned participant's ChatContact, or the accountId when the mentioned participant is the owner.
 
 A Mention carries no position in `body`. Where the mention appears, and how it is rendered, is presentation: a rich body marks it with a `"mention"` span ({{rich-body}}), and for other body types clients locate the textual form themselves. The `mentions` array is authoritative for every `bodyType`: servers MUST take mentions only from it, for mention-based push, notification, and query behavior, and MUST NOT derive mentions from `body`.
 
-The `id` field carries the full identifier of the mentioned user as known to the authoritative server, regardless of textual form. Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined. The same principle applies to the `userId` field on rich-body `"mention"` spans ({{rich-body}}).
+The `id` field carries the mentioned user's ChatContact `id`, or the accountId for the owner, regardless of textual form; between servers, a Mention carries the mentioned user's identity instead ({{JMAP-CHAT-FED}}). Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate identity, and resolving that candidate to a known ChatContact, are deployment-defined. This does not apply to the `userId` of a rich-body `"mention"` span, which is display data that servers never map ({{rich-body}}).
 
 The Mention type carries per-user mentions only. Broadcast-scope mentions (such as `@everyone`, `@here`, and `@admins`) are carried in the separate `broadcastMentions` array on Message; see {{broadcast-mention}}.
 
@@ -398,7 +398,7 @@ A Reaction is an emoji response to a Message, stored as a value in the `reaction
 : The id of a Space-scoped custom emoji. When present, `emoji` SHOULD contain a fallback representation (e.g., the emoji name) for clients that do not support custom emoji.
 
 `senderId` (String):
-: `"self"` for the owner's reaction, or a ChatContact.id.
+: The accountId for the owner's reaction, or the reacting user's ChatContact.id.
 
 `sentAt` (UTCDate):
 : Time the reaction was added.
@@ -420,16 +420,19 @@ Implementations MUST NOT reject messages or receipts that carry an unrecognized 
 
 ## ChatContact {#chat-contact}
 
-A ChatContact represents a remote user known to this mailbox. A ChatContact's `id` is exactly the userId provided by the authentication layer: it is the single, global identity key for that user within this deployment.
+A ChatContact represents a remote user known to this mailbox.
 
-`id` (String, immutable, server-set):
-: The userId provided by the authentication layer. Servers MUST set this to the verified identity string and MUST NOT assign a different value.
+`id` (Id, immutable, server-set):
+: The server-assigned identifier of this ChatContact ({{RFC8620}} Section 1.2). It identifies the ChatContact only on this server; another server holds a different `id` for the same user. How the server chooses it is implementation-defined, except that the server MUST NOT assign the accountId of the owner's account.
+
+`identity` (String, immutable):
+: The identity string the authentication layer provides for this user, for example a `user@host`-style string, a Decentralized Identifier URI {{W3C-DID-CORE}}, or another URI. It is set by the server when the server records the contact automatically, or by the owner in `ChatContact/set` create. Servers MUST treat it as opaque and compare it octet for octet. Within a server, at most one ChatContact has a given `identity`.
 
 `login` (String, server-set):
-: A non-empty human-readable identifier for this contact, suitable for display when `displayName` is absent. The format is deployment-specific but MUST be a valid UTF-8 string of at least one non-whitespace character. Clients SHOULD fall back to `login` when `displayName` is absent or empty, and MAY fall back to `id` when `login` is unavailable.
+: A non-empty human-readable identifier for this contact, suitable for display when `displayName` is absent. The format is deployment-specific but MUST be a valid UTF-8 string of at least one non-whitespace character. Clients SHOULD fall back to `login` when `displayName` is absent or empty, and MAY fall back to `identity` when `login` is unavailable.
 
 `displayName` (String, optional):
-: Human-readable display name. MAY be absent or empty. Clients SHOULD fall back to `login`, then `id`. Set by the owner via `ChatContact/set`. Owner-side preference; not shared with peers.
+: Human-readable display name. MAY be absent or empty. Clients SHOULD fall back to `login`, then `identity`. Set by the owner via `ChatContact/set`. Owner-side preference; not shared with peers.
 
 `firstSeenAt` (UTCDate, server-set):
 : Time this ChatContact was first recorded.
@@ -457,14 +460,14 @@ A ChatContact represents a remote user known to this mailbox. A ChatContact's `i
 
 Additional ChatContact fields used in federation deployments (`serverUrl`, `directAddress`) are defined in {{JMAP-CHAT-FED}}.
 
-Note: {{RFC9610}} defines `ContactCard` (a JSContact record) for storing rich contact information in a JMAP address book. `ChatContact` and `ContactCard` serve different purposes and have distinct identity models: `ChatContact.id` is the authenticated userId assigned by the transport layer, while `ContactCard.id` is an opaque JMAP-assigned identifier. Implementations MAY surface `ChatContact` records as `ContactCard` objects in a user's address book as a display-layer mapping; this is not a protocol requirement.
+Note: {{RFC9610}} defines `ContactCard` (a JSContact record) for storing rich contact information in a JMAP address book. `ChatContact` and `ContactCard` serve different purposes. Both `ChatContact.id` and `ContactCard.id` are server-assigned Ids, but only a ChatContact records the identity the authentication layer provides for its user (`ChatContact.identity`). Implementations MAY surface `ChatContact` records as `ContactCard` objects in a user's address book as a display-layer mapping; this is not a protocol requirement.
 
 ## ChatMember {#chat-member}
 
-A ChatMember describes one participant in a group Chat. The `id` field is the participant's ChatContact.id.
+A ChatMember describes one participant in a group Chat. The `id` field is the participant's ChatContact.id, or the accountId for the owner.
 
 `id` (String):
-: The participant's ChatContact.id / userId.
+: The participant's ChatContact.id, or the accountId for the owner.
 
 `role` (String):
 : Either `"admin"` or `"member"`. Admins may add and remove members and update group chat metadata. The bootstrap-role assignment at chat creation — whether and how the creator initially receives the `"admin"` role — is server-defined.
@@ -473,7 +476,7 @@ A ChatMember describes one participant in a group Chat. The `id` field is the pa
 : Time this participant joined the chat.
 
 `invitedBy` (String, optional):
-: The ChatContact.id of the member who added this participant.
+: The ChatContact.id of the member who added this participant, or the accountId when the owner added them.
 
 The `"admin" | "member"` role enum is the wire-observable representation of group-chat authority and is what remote peers see via {{JMAP-CHAT-FED}}. Servers MAY designate additional internal principals (server administrators, members of a dedicated moderator role, automated maintenance systems, or principals delegated by an external identity provider) as having admin-equivalent authority for the actions admins may perform; the means of designating such principals is deployment-defined. From a remote peer's perspective, all such administrative actions appear to originate from a member with the `"admin"` role on the originating server.
 
@@ -485,7 +488,7 @@ A Chat is a conversation between two or more participants. Three kinds are defin
 
 All Chat IDs are ULIDs {{ULID}} assigned by the creating server at the moment the chat is created. IDs are opaque and stable for the lifetime of the chat.
 
-For a **direct chat**, the creating server is the one whose owner sends the first message. Before assigning a new chatId, the server MUST check whether a direct chat with the relevant contactId already exists locally. If one exists, the server MUST use the existing chatId rather than creating a new one. When a `Peer/deliver` arrives for a direct chat with an unknown chatId, the receiving server creates a new Chat record with that chatId and sets `contactId` to the sender.
+For a **direct chat**, the creating server is the one whose owner sends the first message. Before assigning a new chatId, the server MUST check whether a direct chat with the relevant contactId already exists locally. If one exists, the server MUST use the existing chatId rather than creating a new one. When a `Peer/deliver` arrives for a direct chat with an unknown chatId, the receiving server creates a new Chat record with that chatId and sets `contactId` to the `id` of the sender's ChatContact.
 
 For a **group chat**, the creating server assigns the chatId and distributes it to all initial members via `Peer/groupUpdate` ({{JMAP-CHAT-FED}}) before any messages are sent.
 
@@ -603,7 +606,7 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 : ID of the containing Chat.
 
 `senderId` (String, immutable, server-set):
-: `"self"` for owner-composed messages; the sender's ChatContact.id for inbound messages, as verified by the authentication layer.
+: The accountId for owner-composed messages; for inbound messages, the `id` of the ChatContact whose `identity` is the sender identity verified by the authentication layer.
 
 `body` (String):
 : Message content. When `bodyType` is `"text/plain"` or another plaintext type, `body` MUST be valid UTF-8 text. When `bodyType` indicates an end-to-end encrypted payload (e.g., `"application/mls-ciphertext"`), `body` contains ciphertext encoded as a base64url string; servers MUST store and forward it without inspection or transformation. Cleared to empty string when the message is deleted.
@@ -665,7 +668,7 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
   State transitions: `"pending"` → `"delivered"` (remote server accepted the message), `"pending"` → `"failed"` (delivery abandoned after retries exhausted), `"delivered"` → `"received"` (recipient returned a read receipt via `Peer/receipt`). The `"received"` state indicates the message was read, not merely delivered.
 
 `deliveryReceipts` (Object, optional, server-set):
-: For group chats, a JSON object mapping each non-owner participant's ChatContact.id to `{"deliveredAt": <UTCDate-or-null>, "deviceDeliveredAt": <UTCDate-or-null>, "readAt": <UTCDate-or-null>, "readDisposition": <String-or-null>}`. Present only when `senderId` is `"self"`. `deviceDeliveredAt` is optional and MAY be absent if the recipient's platform does not support device-delivery confirmation (e.g., APNs content-available callbacks or FCM data delivery receipts); implementations that cannot obtain this signal MUST omit the field rather than approximate it with `deliveredAt`. `readDisposition` is absent when `readAt` is null. See {{read-disposition-type}}. Unlike the top-level `deliveredAt` and `readAt` fields, `deviceDeliveredAt` has no top-level parallel because device-delivery confirmation is always a per-recipient event with no aggregate owner-side equivalent.
+: For group chats, a JSON object mapping each non-owner participant's ChatContact.id to `{"deliveredAt": <UTCDate-or-null>, "deviceDeliveredAt": <UTCDate-or-null>, "readAt": <UTCDate-or-null>, "readDisposition": <String-or-null>}`. Present only when `senderId` is the accountId. `deviceDeliveredAt` is optional and MAY be absent if the recipient's platform does not support device-delivery confirmation (e.g., APNs content-available callbacks or FCM data delivery receipts); implementations that cannot obtain this signal MUST omit the field rather than approximate it with `deliveredAt`. `readDisposition` is absent when `readAt` is null. See {{read-disposition-type}}. Unlike the top-level `deliveredAt` and `readAt` fields, `deviceDeliveredAt` has no top-level parallel because device-delivery confirmation is always a per-recipient event with no aggregate owner-side equivalent.
 
 `deliveredAt` (UTCDate, optional, server-set):
 : Time the first outbound delivery was acknowledged.
@@ -729,7 +732,7 @@ A SpaceRole is a named set of permissions within a Space. Roles are ordered by `
 A SpaceMember describes one participant in a Space.
 
 `id` (String):
-: The participant's ChatContact.id.
+: The participant's ChatContact.id, or the accountId for the owner.
 
 `roleIds` (String[]):
 : SpaceRole ids held by this member. Order is not significant. An empty list means the member holds only the `@everyone` role.
@@ -763,7 +766,7 @@ A Category is a named grouping of channels within a Space.
 A ChannelPermission record overrides Space-level role permissions for a specific channel, for a specific role or member. The evaluation order for these overrides is defined in {{space-permissions}}.
 
 `targetId` (String):
-: A SpaceRole id or a SpaceMember ChatContact.id.
+: A SpaceRole id or a SpaceMember `id`.
 
 `targetType` (String):
 : `"role"` or `"member"`.
@@ -817,7 +820,7 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 `closedAt` (UTCDate, optional, server-set):
 : Time the Space closed. Absent while the Space is open. A Space closes when its last administrator, the last member holding `"manage_space"`, leaves while other members remain (see `removeMembers` under Space/set). Once set, `closedAt` MUST NOT be cleared. After it is set, the Space's channels are read-only: the server MUST reject every `Message/set` create in them with a `forbidden` SetError. The server MUST also reject `Space/join` for the Space with a `forbidden` method error, `SpaceInvite/set` create for the Space with a `forbidden` SetError, and every `Space/set` update to the Space with a `forbidden` SetError, except a member removing themselves via `removeMembers`. Message history remains readable.
 
-Note: {{RFC9670}} defines a general JMAP sharing framework (`shareWith`, `myRights`) designed for binary resource sharing — "can this principal read/write/admin this object." That model maps a single principal to a flat rights set on a single resource. Space permissions are structurally different: a member holds multiple named roles, each role carries a set of named permissions, roles are ordered by hierarchy position, and individual channels within the Space can override the role-derived permissions on a per-role or per-member basis. This is a full role-based access control (RBAC) system, not a simple ACL, and it cannot be projected onto `shareWith` without losing the role hierarchy, multi-role membership, and per-channel override dimensions. The Space permission model is therefore not expressed using {{RFC9670}}. In deployments that also implement {{RFC9670}}, server implementations may choose to align `Principal.id` values with `ChatContact.id` values (both ultimately derived from the same authentication identity), but this alignment is implementation-defined and not required by either specification.
+Note: {{RFC9670}} defines a general JMAP sharing framework (`shareWith`, `myRights`) designed for binary resource sharing — "can this principal read/write/admin this object." That model maps a single principal to a flat rights set on a single resource. Space permissions are structurally different: a member holds multiple named roles, each role carries a set of named permissions, roles are ordered by hierarchy position, and individual channels within the Space can override the role-derived permissions on a per-role or per-member basis. This is a full role-based access control (RBAC) system, not a simple ACL, and it cannot be projected onto `shareWith` without losing the role hierarchy, multi-role membership, and per-channel override dimensions. The Space permission model is therefore not expressed using {{RFC9670}}. In deployments that also implement {{RFC9670}}, server implementations may choose to align `Principal.id` values with `ChatContact.id` values (for example, by assigning both for the same `identity`), but this alignment is implementation-defined and not required by either specification.
 
 Note: {{JMAP-FILENODE}} defines a hierarchical file-storage extension for JMAP. {{JMAP-CHAT-FILENODE}} defines Space-scoped file storage by associating a FileNode namespace with each Space, analogous to how server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
 
@@ -950,7 +953,7 @@ Note: Implementations SHOULD support the `urn:ietf:params:jmap:refplus` capabili
 
 ## ChatContact Methods
 
-ChatContacts are created automatically when a peer delivers a message or a group update names a new participant. Owner clients may not create or destroy ChatContacts directly.
+ChatContacts are created automatically when a peer delivers a message or a group update names a new participant, and by the owner through `ChatContact/set` create. Owner clients may not destroy ChatContacts.
 
 ### ChatContact/get
 
@@ -964,7 +967,9 @@ Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
-`create` and `destroy` are not supported; both MUST return `forbidden`.
+`create` accepts only `identity`, which is required; the server assigns `id` and sets the other server-set properties. If a ChatContact with that `identity` already exists, the server MUST reject the create with a SetError of type `alreadyExists`, including the existing ChatContact's id in the `existingId` field ({{RFC8620}} Section 5.3). If `identity` equals the owner's identity (the `ownerUserId` Session field), the server MUST reject the create with an `invalidProperties` SetError naming `identity`: the owner has no ChatContact, and clients refer to the owner by the accountId.
+
+`destroy` is not supported and MUST return `forbidden`.
 
 `update` supports: `blocked`, `displayName`.
 
@@ -972,7 +977,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
-Filter properties: `blocked` (Boolean), `presence` (String).
+Filter properties: `blocked` (Boolean), `presence` (String), `identity` (String; matches the ChatContact whose `identity` equals the value octet for octet).
 Sort properties: `lastSeenAt`, `login`, `lastActiveAt`. When sorting by `lastActiveAt`, ChatContacts for which the field is absent sort last.
 
 ### ChatContact/queryChanges
@@ -1032,7 +1037,7 @@ Member list changes use the following patch keys (all require admin role, except
 `removeMembers` (String[]):
 : ChatContact.ids to remove. The server MUST send `Peer/groupUpdate` to all remaining members and to the removed members.
 
-  The owner MAY leave the group by including only their own id in `removeMembers`; the server MUST permit this whether or not the owner holds the admin role, and MUST notify the other members with a `Peer/groupUpdate` of action `"leave"` ({{JMAP-CHAT-FED}}). If the owner is the last admin and other members remain, leaving closes the group: the server MUST set `closedAt` ({{chat}}) in the same operation and MUST notify the other members with a `Peer/groupUpdate` of action `"close"` in place of `"leave"`. Clients SHOULD ask the user to confirm before the last admin leaves, stating that the group will close.
+  The owner MAY leave the group by including only the accountId in `removeMembers`; the server MUST permit this whether or not the owner holds the admin role, and MUST notify the other members with a `Peer/groupUpdate` of action `"leave"` ({{JMAP-CHAT-FED}}). If the owner is the last admin and other members remain, leaving closes the group: the server MUST set `closedAt` ({{chat}}) in the same operation and MUST notify the other members with a `Peer/groupUpdate` of action `"close"` in place of `"leave"`. Clients SHOULD ask the user to confirm before the last admin leaves, stating that the group will close.
 
 `updateMemberRoles` (Object[]):
 : Each entry: `id` (String) and `role` (String). The server MUST send `Peer/groupUpdate` to all members.
@@ -1128,7 +1133,7 @@ A create request with a non-empty `broadcastMentions` array MUST be rejected wit
 
 #### Editing a Message
 
-`update` with changed `body`, `bodyType`, `mentions`, and/or `broadcastMentions`, on a message where `senderId` is `"self"` and `deletedAt` is absent. The server MUST reject an edit of any other message with a `forbidden` SetError. The same `"mention_broadcast"` permission check applied at create time applies to updates that add or retain a broadcast mention.
+`update` with changed `body`, `bodyType`, `mentions`, and/or `broadcastMentions`, on a message where `senderId` is the accountId and `deletedAt` is absent. The server MUST reject an edit of any other message with a `forbidden` SetError. The same `"mention_broadcast"` permission check applied at create time applies to updates that add or retain a broadcast mention.
 
 The server MUST:
 
@@ -1150,7 +1155,7 @@ To **add** a reaction, the client SHOULD supply a ULID as the `senderReactionId`
 }
 ~~~
 
-The server MUST set `senderId` to `"self"` and MUST propagate the reaction to all recipients via `Peer/deliver` `reactionUpdate` payload, carrying the `senderReactionId` as the map key.
+The server MUST set `senderId` to the accountId and MUST propagate the reaction to all recipients via `Peer/deliver` `reactionUpdate` payload, carrying the `senderReactionId` as the map key.
 
 To **remove** a reaction, the client patches:
 
@@ -1160,13 +1165,13 @@ To **remove** a reaction, the client patches:
 
 The server MUST remove the entry and MUST propagate the removal via `Peer/deliver` `reactionUpdate` payload using the same `senderReactionId`.
 
-Clients SHOULD only add or remove reactions where `senderId` is `"self"`. Servers MUST reject attempts to add or remove reactions for other senders with `forbidden`.
+Clients SHOULD only add or remove reactions where `senderId` is the accountId. Servers MUST reject attempts to add or remove reactions for other senders with `forbidden`.
 
 #### Deleting a Message
 
 `update` with `deletedAt: <timestamp>`.
 
-- If `deletedForAll: true` is also set, the deletion applies to all participants. Servers MUST reject `deletedForAll: true` for messages where `senderId` is not `"self"` with a `forbidden` SetError. A server that supports {{JMAP-CHAT-FED}} propagates the deletion to other servers as that document specifies.
+- If `deletedForAll: true` is also set, the deletion applies to all participants. Servers MUST reject `deletedForAll: true` for messages where `senderId` is not the accountId with a `forbidden` SetError. A server that supports {{JMAP-CHAT-FED}} propagates the deletion to other servers as that document specifies.
 - Otherwise, deletion is local only: `body` and `attachments` are cleared on this mailbox with no peer notification.
 
 #### Marking as Read
@@ -1199,7 +1204,7 @@ Filter properties:
 : Filter to messages with or without attachments.
 
 `hasMention` (Boolean, optional):
-: Filter to messages that mention the owner: the owner's ChatContact.id appears in `mentions`, OR `broadcastMentions` contains a scope whose resolved recipient set includes the owner.
+: Filter to messages that mention the owner: the accountId appears in `mentions`, OR `broadcastMentions` contains a scope whose resolved recipient set includes the owner.
 
 For channel Chats, the server MUST verify the caller holds the `"view"` permission before returning messages in `Message/get` or `Message/query` responses; messages in channels the caller cannot view MUST be omitted.
 
@@ -1266,10 +1271,10 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 `removeMembers` (String[]):
 : ChatContact.ids to remove. Requires `"manage_members"`. Servers SHOULD refuse to remove another member when doing so would leave the Space without any member holding `"manage_members"` or `"manage_space"`; the specific last-administrator protection policy is server-defined. Servers MUST return an `invalidProperties` SetError ({{RFC8620}} §5.3) naming `removeMembers` when refusing on this basis.
 
-  A member who does not hold `"manage_members"` permission MAY remove themselves from the Space by including only their own account's member id in `removeMembers`. The server MUST permit self-removal regardless of the caller's permission set. Last-administrator protection does not apply to self-removal. If the member removing themselves is the last member holding `"manage_space"` and other members remain, leaving closes the Space: the server MUST set `closedAt` ({{space}}) in the same operation. Clients SHOULD ask the user to confirm before the last administrator leaves, stating that the Space will close.
+  A member who does not hold `"manage_members"` permission MAY remove themselves from the Space by including only the accountId in `removeMembers`. The server MUST permit self-removal regardless of the caller's permission set. Last-administrator protection does not apply to self-removal. If the member removing themselves is the last member holding `"manage_space"` and other members remain, leaving closes the Space: the server MUST set `closedAt` ({{space}}) in the same operation. Clients SHOULD ask the user to confirm before the last administrator leaves, stating that the Space will close.
 
 `updateMembers` (Object[]):
-: Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`. Changing another member's `nick` requires `"manage_members"`. A member MAY set their own `nick` by submitting `updateMembers` with a single entry whose `id` is their own and which contains only `nick`; the server MUST permit this regardless of the caller's permission set.
+: Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`. Changing another member's `nick` requires `"manage_members"`. A member MAY set their own `nick` by submitting `updateMembers` with a single entry whose `id` is the accountId and which contains only `nick`; the server MUST permit this regardless of the caller's permission set.
 
 `addChannels` (Object[]):
 : Each entry: `name` (String, required), optional `categoryId` (String), `position` (UnsignedInt), and `topic` (String). The server creates a Chat record of `kind: "channel"` with `spaceId` set to this Space's id and assigns a ULID as the chatId. Requires `"manage_channels"`. If the resulting channel count would exceed a server-defined limit on the number of channels per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
@@ -1421,7 +1426,7 @@ Standard JMAP `/set`.
 
 ### SpaceBan/get
 
-Standard JMAP `/get`. Members with `"ban"` permission in the Space see all SpaceBan records for that Space. A banned user fetching their own account sees only SpaceBan records where `userId` matches their own identity.
+Standard JMAP `/get`. Members with `"ban"` permission in the Space see all SpaceBan records for that Space. A banned user fetching their own account sees only SpaceBan records where `userId` is the accountId.
 
 ### SpaceBan/changes
 
@@ -1441,7 +1446,7 @@ Standard JMAP `/set`.
 
 This section defines the `application/jmap-chat-rich` body type for structured inline formatting.
 
-When `bodyType` is `"application/jmap-chat-rich"`, `body` MUST contain a JSON-encoded string whose top-level parsed value is an object conforming to this section. Spans are presentation only: servers MUST NOT make any authorization, notification, push, query, or delivery decision from span content. A client composing a rich body MUST list each user it marks with a `"mention"` span in `mentions` ({{mention}}) and each scope it marks with a `"broadcast"` span in `broadcastMentions` ({{broadcast-mention}}); only those arrays take effect.
+When `bodyType` is `"application/jmap-chat-rich"`, `body` MUST contain a JSON-encoded string whose top-level parsed value is an object conforming to this section. Spans are presentation only: servers MUST NOT map, validate, or rewrite a span's `userId` or any other part of `body`, including when a Message passes between servers ({{JMAP-CHAT-FED}}), and MUST NOT make any authorization, notification, push, query, or delivery decision from span content. A client composing a rich body MUST list each user it marks with a `"mention"` span in `mentions` ({{mention}}) and each scope it marks with a `"broadcast"` span in `broadcastMentions` ({{broadcast-mention}}); only those arrays take effect.
 
 ## Span Object
 
@@ -1469,7 +1474,7 @@ Additional fields are type-specific:
 | `"code"` | none | Inline code |
 | `"codeblock"` | `lang` (String, optional) | Fenced code block; `lang` is a language hint for syntax highlighting |
 | `"blockquote"` | none | Quoted text |
-| `"mention"` | `userId` (String) | Per-user @mention, for display; `userId` is the ChatContact.id of the mentioned user |
+| `"mention"` | `userId` (String) | Per-user @mention, for display; `userId` is display data written by the composing client, with no server meaning, and need not be an id on the receiving server |
 | `"broadcast"` | `scope` (String) | Broadcast-scope @mention, for display; `scope` is one of `"everyone"`, `"here"`, or `"admins"` (see {{broadcast-mention}}) |
 | `"link"` | `uri` (String) | Hyperlink; `uri` MUST be treated as untrusted |
 
@@ -1481,7 +1486,7 @@ Servers MUST NOT reject messages solely because they contain unrecognized span t
 {
   "spans": [
     {"type": "text", "text": "Hello "},
-    {"type": "mention", "text": "@alice", "userId": "user:alice@example.com"},
+    {"type": "mention", "text": "@alice", "userId": "contact-alice"},
     {"type": "text", "text": " and "},
     {"type": "broadcast", "text": "@here", "scope": "here"},
     {"type": "text", "text": ", see this code: "},
@@ -1492,7 +1497,7 @@ Servers MUST NOT reject messages solely because they contain unrecognized span t
 }
 ~~~
 
-A Message carrying this body lists `{"id": "user:alice@example.com"}` in `mentions` and `{"scope": "here"}` in `broadcastMentions`.
+A Message carrying this body lists `{"id": "contact-alice"}` in `mentions` and `{"scope": "here"}` in `broadcastMentions`.
 
 # Thread Model {#threads}
 
@@ -1598,9 +1603,9 @@ Outbound delivery mechanics for the mailbox-per-user federation topology are def
 
 # Authorization {#authorization}
 
-Authentication is handled at the transport layer as described in {{introduction}}. The protocol derives access control from the stable, opaque id provided per connection:
+Authentication is handled at the transport layer as described in {{introduction}}. The protocol derives access control from the stable, opaque identity provided per connection:
 
-- **Owner** (identity equals the mailbox owner's id): all methods.
+- **Owner** (identity equals the mailbox owner's identity): all methods.
 - **Other**: HTTP 401.
 
 Beyond this transport-level distinction, all Space-internal authorization — the "Requires `X`" clauses on `Space/set`, `Chat/set`, and related methods, and the "Mutable by members with `X` permission" clauses on object fields — is enforced server-side. Clients MUST NOT be trusted to enforce their own access; servers MUST evaluate authorization independently on every request and return `forbidden` to unauthorized callers (see {{space-permissions}}).
@@ -1652,7 +1657,7 @@ Clients SHOULD NOT assume a specific governance model. Where the UI needs to sur
 All peer-supplied fields are attacker-controlled. Servers MUST validate:
 
 - `body`: validate UTF-8 for plaintext body types; enforce `maxBodyBytes`.
-- `bodyType`: validate against `supportedBodyTypes`.
+- `bodyType`: reject a value not listed in `supportedBodyTypes` ({{capability}}); in `Message/set` create, also reject a type that a companion specification reserves for server-created Messages.
 - `filename`: reject values containing `/`, `\`, or null bytes.
 - `contentType`: reject syntactically invalid MIME values.
 - `size`: verify against actual blob byte count after fetch.
@@ -1668,7 +1673,7 @@ When a `Message/set` create or update fails one of these checks and this documen
 
 ## Denial of Service
 
-Enforce `maxBodyBytes` and `maxAttachmentBytes` at parse time, before any fetch or storage. Enforce `maxAttachmentsPerMessage` at creation and update time. Servers MUST also enforce implementation-defined per-aggregate caps on group Chat membership, Space membership, roles, channels, and categories at `Chat/set` and `Space/set` time, returning `overQuota` SetErrors ({{RFC8620}} §5.3) as specified in those methods. Rate-limit `Peer/typing` per peer.
+Enforce `maxBodyBytes` and `maxAttachmentBytes` at parse time, before any fetch or storage. Enforce `maxAttachmentsPerMessage` at creation and update time. Servers MUST also enforce implementation-defined per-aggregate caps on group Chat membership, Space membership, roles, channels, and categories at `Chat/set` and `Space/set` time, returning `overQuota` SetErrors ({{RFC8620}} §5.3) as specified in those methods. Rate-limit `Peer/typing` per peer. For limits on placeholder ChatContacts created by peers, see {{JMAP-CHAT-FED}}.
 
 ## Chat ID Integrity
 
@@ -1732,7 +1737,7 @@ In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are t
 
 ### Sender Authentication and Relay Enforcement {#e2ee-enforcement}
 
-The sender's identity MAY be authenticated inside the end-to-end encryption layer instead of by the relay (for example, MLS {{RFC9420}} authenticates every sender through its group credential). In that case the relay needs only a recipient or group routing handle (`accountId` or `chatId`) to route the message, and `senderUserId` MAY be an opaque value bound to the sender's transport credential rather than the sender's user id. The relay still compares `senderUserId` with the authenticated transport credential before accepting the call. Receiving clients MUST authenticate the sender from the end-to-end encryption layer and MUST NOT rely on a relay-supplied `senderId` for that purpose.
+The sender's identity MAY be authenticated inside the end-to-end encryption layer instead of by the relay (for example, MLS {{RFC9420}} authenticates every sender through its group credential). In that case the relay needs only a recipient or group routing handle (`accountId` or `chatId`) to route the message, and `senderUserId` MAY be an opaque value bound to the sender's transport credential rather than the sender's identity. A receiving server maps such a value to a ChatContact like any other identity. The relay still compares `senderUserId` with the authenticated transport credential before accepting the call. Receiving clients MUST authenticate the sender from the end-to-end encryption layer and MUST NOT rely on a relay-supplied `senderId` for that purpose.
 
 Relay-side enforcement of SpaceBan and slow mode (steps 4 and 6 of new-message validation in {{JMAP-CHAT-FED}}) is OPTIONAL. A relay that sees only an opaque sender value also cannot evaluate `"send"` permission or block state (steps 5 and 7). Receiving clients MUST perform each of these checks that the relay does not perform, and the `"mention_broadcast"` check for broadcast mentions carried inside the ciphertext (that is, the inner `broadcastMentions`; spans remain display-only), against signed group state (for example, the MLS group context, or Space state signed by the Space's authority), and MUST discard messages that fail them.
 

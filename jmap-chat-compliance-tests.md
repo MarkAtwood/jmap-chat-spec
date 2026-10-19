@@ -19,24 +19,24 @@ Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and th
 ## 1. Data Types — Field Names and Types
 
 ### 1.1 ChatContact identity model
-**Spec:** draft-atwood-jmap-chat-00 Section 4.7, lines 399-402
+**Spec:** draft-atwood-jmap-chat-00 §ChatContact
 **Severity:** MUST | **Round:** 1
 
-> ChatContact.id MUST be the userId from the authentication layer. Servers MUST NOT assign a different value.
+> ChatContact.id is a server-assigned Id (RFC 8620 Section 1.2), local to the server. ChatContact.identity is the identity string the authentication layer provides for the user; within a server, at most one ChatContact has a given identity.
 
-**Test:** Call `ChatContact/get` with `ids: null`. Verify that each returned object's `id` field equals the userId of the contact (not a server-generated ULID or other surrogate).
+**Test:** Call `ChatContact/get` with `ids: null`. Verify that each returned object's `id` matches `^[A-Za-z0-9_-]{1,255}$`, that its `identity` equals the identity string the authentication layer provided for that contact, that no two objects share an `identity`, and that no object's `id` equals the account's accountId. Receive messages from a contact whose identity is a `user@host` string or a URI and verify the same.
 
-**Common failure:** Implementation uses a separate server-generated id and exposes the real userId as a different field (e.g., `contactUserId`).
+**Common failure:** Implementation uses the identity string as `id`, producing ids outside the Id character set (`@`, `:`, `.`), or omits `identity`.
 
 ### 1.2 ChatContact required fields
 **Spec:** draft-atwood-jmap-chat-00 Section 4.7
 **Severity:** MUST | **Round:** 1
 
-> ChatContact MUST include: id, login, displayName, blocked, firstSeenAt, lastSeenAt, presence, lastActiveAt, statusText, statusEmoji, endpoints.
+> ChatContact MUST include: id, identity, login, displayName, blocked, firstSeenAt, lastSeenAt, presence, lastActiveAt, statusText, statusEmoji, endpoints.
 
 **Test:** Call `ChatContact/get` with `ids: null`. Verify every returned object contains all listed fields (some may be null).
 
-**Common failure:** Missing `login`, `firstSeenAt`, `lastSeenAt`, `presence`, `lastActiveAt`, `statusText`, `statusEmoji`, `endpoints`.
+**Common failure:** Missing `identity`, `login`, `firstSeenAt`, `lastSeenAt`, `presence`, `lastActiveAt`, `statusText`, `statusEmoji`, `endpoints`.
 
 ### 1.3 ChatContact federation fields
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 5
@@ -110,13 +110,13 @@ Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and th
 ```
 Verify this succeeds. If the server expects `body` to be a nested object `{"content": "...", "mediaType": "..."}`, it violates the spec.
 
-### 2.2 senderId is "self" for owner-composed messages
-**Spec:** draft-atwood-jmap-chat-00 Section 4.11, line 577
+### 2.2 senderId is the accountId for owner-composed messages
+**Spec:** draft-atwood-jmap-chat-00 §Message
 **Severity:** MUST | **Round:** 8
 
-**Test:** Create a message. Call `Message/get` as the sender. Verify `senderId` is the string `"self"`, not the account's actual id.
+**Test:** Create a message. Call `Message/get` as the sender. Verify `senderId` equals the accountId of the account. Add a reaction to it and verify the Reaction's `senderId` is also the accountId.
 
-**Common failure:** Returns the raw account id instead of "self".
+**Common failure:** Returns the literal `"self"` or the owner's identity (`ownerUserId`) instead of the accountId.
 
 ### 2.3 Chat/set create direct uses contactId
 **Spec:** draft-atwood-jmap-chat-00 Section 4.10, line 957
@@ -124,7 +124,7 @@ Verify this succeeds. If the server expects `body` to be a nested object `{"cont
 
 **Test:** Create a direct chat:
 ```json
-{"kind": "direct", "contactId": "<other-user-id>"}
+{"kind": "direct", "contactId": "<other-user-chatcontact-id>"}
 ```
 Verify this works. If the server expects `memberIds` for direct chats, it violates the spec.
 
@@ -204,6 +204,12 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Send `Message/set` create with `bodyType: "video/mp4"`. Verify server rejects with `invalidProperties`.
 
+**Test:** For each type in `supportedBodyTypes`, send `Message/set` create with that `bodyType` and a body valid for it. Verify acceptance, except for a type that a companion specification reserves for server-created Messages (for example, `"application/mimi-fanout"`, which draft-atwood-jmap-chat-mimi-00 requires rejecting with `invalidArguments`).
+
+**Test:** Verify `supportedBodyTypes` includes `"text/plain"`, unless the server accepts only end-to-end encrypted body types.
+
+**Common failure:** Advertising a type the server rejects in `Message/set` create without a companion specification reserving it, or omitting `"text/plain"` on a server that accepts plaintext.
+
 ### 4.3 Attachment filename path traversal rejection
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** MUST | **Round:** 3
@@ -220,7 +226,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00 §Mention
 **Severity:** MUST | **Round:** 3
 
-**Test:** Send a `text/plain` message whose body contains `@u1` with an empty `mentions` array. Verify `Message/query` with `hasMention: true` as `u1` does not match it. Send it again with `mentions: [{"id": "u1"}]`. Verify it matches.
+**Test:** Send a `text/plain` message whose body contains `@` followed by the owner's login, with an empty `mentions` array. Verify `Message/query` with `hasMention: true` does not match it. Send it again with `mentions: [{"id": "<accountId>"}]`. Verify it matches.
 
 **Common failure:** Scanning the body text for `@` forms.
 
@@ -360,9 +366,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
 **Severity:** MUST | **Round:** 12
 
-**Test:** Send a message with `bodyType: "application/jmap-chat-rich"` and `mentions: [{"id": "<owner-id>"}]`. Verify `hasMention: true` in push.
+**Test:** Send a message with `bodyType: "application/jmap-chat-rich"` and `mentions: [{"id": "<accountId>"}]`, where `<accountId>` is the receiving account's accountId. Verify `hasMention: true` in push.
 
-**Test:** Send a rich body with a `{"type": "mention", "userId": "<owner-id>"}` span and an empty `mentions` array. Verify `hasMention: false`.
+**Test:** Send a rich body with a `{"type": "mention", "userId": "<accountId>"}` span and an empty `mentions` array. Verify `hasMention: false`.
 
 **Common failure:** Parsing spans for mentions instead of reading `Message.mentions`.
 
@@ -370,7 +376,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
 **Severity:** MUST | **Round:** 1
 
-**Test:** For a channel chat, verify resolution order: SpaceMember.nick -> ChatContact.displayName -> login -> senderId. For direct/group: ChatContact.displayName -> login -> senderId.
+**Test:** For a channel chat, verify resolution order: SpaceMember.nick -> ChatContact.displayName -> login -> identity. For direct/group: ChatContact.displayName -> login -> identity.
 
 ### 6.9 muteUntil expiry check
 **Spec:** draft-atwood-jmap-chat-push-00
@@ -458,13 +464,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Send a `Peer/deliver` where the peer's `.well-known/jmap` is unreachable. Verify 403 rejection (not silent pass-through).
 
-### 7.9 Direct chat contactId auto-creates placeholder
-**Spec:** draft-atwood-jmap-chat-00
+### 7.9 Direct chat with a federated user by identity
+**Spec:** draft-atwood-jmap-chat-00 §ChatContact Methods, §Chat/set
 **Severity:** MUST | **Round:** 16
 
-**Test:** Create a direct chat with `contactId` of a user that has no local account (federated user). Verify success (placeholder account auto-created).
+**Test:** For an identity of a user with no local account and no ChatContact (federated user), call `ChatContact/set` create with `{"identity": "<identity>"}`. Verify the server creates the ChatContact, assigns its `id`, and returns it with that `identity`. Then call `Chat/set` create with `{"kind": "direct", "contactId": "<that id>"}`. Verify success.
 
-**Common failure:** Rejects with "account does not exist".
+**Common failure:** Rejects `ChatContact/set` create with `forbidden`, or rejects the Chat create with "account does not exist".
 
 ### 7.10 Peer rate limiter integrated
 **Spec:** draft-atwood-jmap-chat-federation-00
@@ -613,12 +619,12 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Common failure:** Copying the properties into both session-level and account-level. Session-level must be empty.
 
 ### 13.2 Direct chat contactId accepts remote/federated users
-**Spec:** draft-atwood-jmap-chat-00 Section 4.10
+**Spec:** draft-atwood-jmap-chat-00 §ChatContact Methods, §Chat/set
 **Severity:** MUST | **Round:** 16
 
-**Test:** Call `Chat/set` create with `{"kind": "direct", "contactId": "remote.peer.example"}` where that userId has no local account. Verify success — the server should auto-create a placeholder account for the remote user.
+**Test:** Call `ChatContact/set` create with `{"identity": "remote.peer.example"}`, an identity with no local account. Verify success and note the assigned `id`. Call it again with the same `identity`. Verify the error is `alreadyExists` with `existingId` equal to that `id`. Call `ChatContact/query` with filter `{"identity": "remote.peer.example"}`. Verify it returns exactly that `id`. Call `Chat/set` create with `{"kind": "direct", "contactId": "<that id>"}`. Verify success. Call `ChatContact/set` create with `{"identity": "<ownerUserId>"}`, the owner's identity from the Session. Verify the error is `invalidProperties` naming `identity`, and that no ChatContact with that `identity` exists afterwards.
 
-**Common failure:** Server validates contactId against local accounts table and rejects with "account does not exist".
+**Common failure:** Server validates contactId against local accounts table and rejects with "account does not exist"; or a repeated ChatContact create makes a second ChatContact for the same identity instead of returning `alreadyExists`; or a create with the owner's identity succeeds and makes a ChatContact for the owner.
 
 ### 13.3 CustomEmoji name uniqueness within scope
 **Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 791
@@ -674,7 +680,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
 **Severity:** MUST | **Round:** 12
 
-**Test:** Send a message with `bodyType: "application/jmap-chat-rich"`, body `{"spans": [{"type": "mention", "userId": "<owner-id>"}, {"type": "broadcast", "scope": "everyone"}]}`, and empty `mentions` and `broadcastMentions`. Verify `hasMention: false` and `mentionScopes: []` in the push notification.
+**Test:** Send a message with `bodyType: "application/jmap-chat-rich"`, body `{"spans": [{"type": "mention", "userId": "<accountId>"}, {"type": "broadcast", "scope": "everyone"}]}`, and empty `mentions` and `broadcastMentions`. Verify `hasMention: false` and `mentionScopes: []` in the push notification.
 
 **Common failure:** Parsing the body JSON for spans; spans are display-only.
 
@@ -682,7 +688,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Spec:** draft-atwood-jmap-chat-00 §Mention, §BroadcastMention
 **Severity:** MUST | **Round:** 11
 
-**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]` and `broadcastMentions: [{"scope": "here"}]`. Query the message back. Verify both arrays are preserved.
+**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]` and `broadcastMentions: [{"scope": "here"}]`, where `u1` is an identity string. Query the message back. Verify `mentions` holds the `id` of the local ChatContact whose `identity` is `u1`, and that `broadcastMentions` is preserved. Repeat with the receiving server's `ownerUserId` as the mention id. Verify `mentions` holds the accountId.
 
 **Common failure:** Storing `mentions` but dropping `broadcastMentions`.
 
@@ -752,7 +758,7 @@ These are implementation-quality issues found via code review rather than spec a
 ### 14.8 Peer/groupUpdate partial write on validation failure
 **Severity:** P1 | **Round:** Code Review 3
 
-**Test:** Send `Peer/groupUpdate` create with 3 members: two valid, one with an invalid ULID-format ID that doesn't exist locally. Verify the chat row is NOT left in the database with only the first two members.
+**Test:** Send `Peer/groupUpdate` create with 3 members: two valid, one that fails validation (for example, a member entry with no `id`). Verify the chat row is NOT left in the database with only the first two members.
 
 **Common failure:** The chat INSERT commits before member validation completes. A validation error mid-loop leaves an orphaned chat row with partial membership.
 

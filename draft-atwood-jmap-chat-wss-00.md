@@ -229,7 +229,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 : The `id` of the Chat in which the typing event occurred.
 
 `senderId` (String):
-: The ChatContact.id of the typing user. MUST NOT be `"self"`.
+: The ChatContact.id of the typing user. MUST NOT be the accountId.
 
 `typing` (Boolean):
 : `true` if the user is typing; `false` if typing has stopped.
@@ -238,7 +238,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 {
   "@type": "ChatTypingEvent",
   "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
-  "senderId": "user:alice@example.com",
+  "senderId": "c8xq2m",
   "typing": true
 }
 ~~~
@@ -278,7 +278,7 @@ When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST del
 ~~~json
 {
   "@type": "ChatPresenceEvent",
-  "contactId": "user:alice@example.com",
+  "contactId": "c8xq2m",
   "presence": "away",
   "lastActiveAt": "2026-04-26T12:00:00Z",
   "statusText": "In a meeting",
@@ -288,7 +288,7 @@ When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST del
 
 Servers SHOULD rate-limit outbound `ChatPresenceEvent` messages per contact: no more than one `ChatPresenceEvent` per contact per 30 seconds SHOULD be delivered; events above this rate MAY be silently dropped. This rate limit is consistent with the `Peer/subscribePresence` delivery rate defined in {{JMAP-CHAT-FED}}.
 
-Servers MUST NOT deliver `ChatPresenceEvent` for a contact whose `blocked` field is `true` on the owner's ChatContact record.
+Servers MUST NOT deliver `ChatPresenceEvent` for a contact whose `blocked` field is `true` on the owner's ChatContact record for that contact.
 
 # Handling Unknown Message Types {#unknown-types}
 
@@ -360,7 +360,7 @@ WS_DATA
                                   {
                                     "@type": "ChatTypingEvent",
                                     "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
-                                    "senderId": "user:alice@example.com",
+                                    "senderId": "c8xq2m",
                                     "typing": true
                                   }
 

@@ -195,7 +195,7 @@ The `jmap:` URI scheme is defined in {{JMAP-CHAT-CALENDARS}}.
 
   - `status` (String) — the Task's current status (e.g., `"needs-action"`, `"in-process"`, `"completed"`, `"cancelled"`).
   - `due` (UTCDate, optional) — the Task's due date.
-  - `assigneeIds` (String[], optional) — ChatContact.ids of assigned users.
+  - `assigneeIds` (String[], optional) — the assigned users: each entry is a ChatContact.id, or the accountId for the account owner ({{JMAP-CHAT}}). Between servers, entries carry identities ({{federation}}).
   - `priority` (Integer, optional) — priority value per {{JMAP-TASKS}}.
   Servers MAY include other type-specific keys; clients MUST ignore unknown keys.
 
@@ -246,6 +246,8 @@ Cross-server federation of TaskList binding is **not in scope** for this revisio
 Cross-server federation of Task-Chat back-references is similarly out of scope. A Task's `chatId` MUST reference a Chat on the same server.
 
 Cross-server federation of `urn:jmap:chat:cap:task` MessageActions works in the limited sense described in {{task-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts. A `jmap:` URI may resolve only on the originating account; an external `https://` URL may resolve anywhere.
+
+The `assigneeIds` metadata key is a user-reference field. Between servers it carries identity strings, not local ids, per User References in Peer Methods in {{JMAP-CHAT-FED}}: the sending server maps each local id to the user's identity, and the receiving server maps each identity to its local id. A receiving server that does not recognise the field passes it through unmapped.
 
 # Security Considerations {#security}
 

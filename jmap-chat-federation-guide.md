@@ -84,7 +84,7 @@ credentials (Tailscale node identity, etc.) — but does not pick one.
   join).
 - Rotation and revocation procedures for each supported mechanism.
 - How the local authentication layer derives the stable identity string
-  used as the peer's `ChatContact.id` (the federation draft requires
+  used as the `identity` of the peer's ChatContact (the federation draft requires
   this binding; the mechanism by which the auth layer surfaces the
   string is internal).
 - Whether peers must support a specific mechanism (mandatory-to-implement
@@ -521,6 +521,13 @@ to coordinate abuse signals across multiple local accounts and Spaces.
   authenticated identity does not match their advertised `ownerUserId`
   is either misconfigured or attempting forgery. A burst of these
   failures from one peer should escalate immediately.
+- *Placeholder ChatContact growth*: every unknown identity a peer
+  names (a sender, a group member, a mention) creates a placeholder
+  ChatContact on the receiving server. The federation draft lets
+  servers cap how many placeholders one peer can cause (§Placeholder
+  ChatContact Creation); requests over the cap are rejected with
+  `rateLimited`. Set a per-peer cap and treat a peer that keeps hitting
+  it as hostile.
 - *SSRF attempts*: blob-fetch URLs that target loopback, link-local,
   or private-network addresses (federation draft, §SSRF Prevention). A peer
   consistently supplying such URLs is hostile; log and escalate.
@@ -849,7 +856,7 @@ ongoing operational visibility is essential.
 | Receipt-sharing in federated contexts | `jmap-chat-implementer-guide.md` §6.2 |
 | Blocked-sender ephemeral-event suppression | `jmap-chat-implementer-guide.md` §6.3 |
 | Identifier scheme (incl. `ChatContact.id` format) | `jmap-chat-implementer-guide.md` §3.1 |
-| DID URI handling in `ChatContact.id` | `jmap-chat-implementer-guide.md` §3.2 |
+| DID URI handling in `ChatContact.identity` | `jmap-chat-implementer-guide.md` §3.2 |
 | Federated mention textual form parsing | `jmap-chat-implementer-guide.md` §3.3 |
 | WebSocket transport for ephemeral events | `jmap-chat-wss-guide.md` |
 | Inline push payloads | `jmap-chat-push-platform-guide.md` |
