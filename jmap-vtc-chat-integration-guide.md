@@ -473,8 +473,8 @@ from user messages. A plain-text representation is the most interoperable choice
 inspect the `actions` array for the VTC MessageAction and render a card.
 
 There is no dedicated system-message type in `draft-atwood-jmap-chat-00`. Use a
-server-assigned `senderId` that identifies your system account (for example, a
-well-known userId like `"system@example.com"` or a bot account). Clients can
+server-assigned `senderId` that identifies your system account: the `id` of a
+ChatContact that represents the system or a bot account. Clients can
 distinguish system messages from user messages by the `senderId`.
 
 ### Call duration

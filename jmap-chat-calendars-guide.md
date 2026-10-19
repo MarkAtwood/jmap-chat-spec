@@ -486,8 +486,8 @@ how this bridging works.
   have native Calendars, others use Outlook via Exchange. The chat layer
   treats them uniformly via JMAP Calendars; the adapter handles the
   diversity.
-- *Identity matching* is the hard part. JMAP Chat `ChatContact.id` is one
-  identifier; the external calendar account is another. Linking them
+- *Identity matching* is the hard part. JMAP Chat `ChatContact.identity` is
+  one identifier; the external calendar account is another. Linking them
   requires either user self-service ("connect your Google account") or
   enterprise SSO with deterministic mapping.
 - *RSVP round-trip latency and failure*: an external provider may be slow

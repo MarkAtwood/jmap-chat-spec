@@ -133,7 +133,7 @@ When `urn:ietf:params:jmap:calendars` ({{JMAP-CALENDARS}}) is also advertised, V
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear in all capitals, as shown here.
 
-Terminology from {{RFC8620}} is used throughout. The term "userId" refers to the authenticated user identity string provided by the transport layer, equivalent to `ChatContact.id` when {{JMAP-CHAT}} is present.
+Terminology from {{RFC8620}} is used throughout. The term "userId" refers to the authenticated user identity string provided by the transport layer, equivalent to `ChatContact.identity` when {{JMAP-CHAT}} is present. It is not a `ChatContact.id`, which is a server-assigned identifier local to the JMAP Chat server.
 
 # Capability {#capability}
 

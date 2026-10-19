@@ -167,16 +167,16 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 : For `"channel"` chats, the display name of the containing Space. Absent for other kinds.
 
 `senderId` (String):
-: The ChatContact.id of the message sender. This is the authoritative sender identity.
+: The accountId for owner-composed messages; otherwise the ChatContact.id of the message sender. This is the authoritative sender identity.
 
 `senderDisplayName` (String, optional):
-: The sender's display name at push-generation time. For `chatKind: "channel"`, derived from the sender's `SpaceMember.nick` in the containing Space if present, otherwise `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. For `"direct"` and `"group"` chats, derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `senderId`. The `senderId` fallback occurs when the ChatContact record has not yet been fully resolved — for example, when a message arrives from a previously unknown peer in a federated deployment. This value is a snapshot and may become stale; clients MUST NOT treat it as an authoritative identity signal.
+: The sender's display name at push-generation time. For `chatKind: "channel"`, derived from the sender's `SpaceMember.nick` in the containing Space if present, otherwise `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `ChatContact.identity`. For `"direct"` and `"group"` chats, derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `ChatContact.identity`. The `identity` fallback occurs when the ChatContact record has not yet been fully resolved — for example, when a message arrives from a previously unknown peer in a federated deployment and the server holds only a placeholder ChatContact for that peer. This value is a snapshot and may become stale; clients MUST NOT treat it as an authoritative identity signal.
 
 `sentAt` (UTCDate):
 : The sender's claimed composition time, as stored in the message. Included for display purposes, such as showing the send time in the notification preview. This is a client-supplied value and MUST NOT be used for ordering.
 
 `hasMention` (Boolean, optional):
-: `true` if the account owner is directly @-mentioned in the message; `false` otherwise. MUST be absent when `encrypted` is `true` (see {{e2ee}}). The server MUST set this to `true` when the account owner's ChatContact.id appears in the message's `Message.mentions` array, for every `bodyType`. The server MUST NOT derive mentions from the message body, including a rich body's spans ({{JMAP-CHAT}}). Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
+: `true` if the account owner is directly @-mentioned in the message; `false` otherwise. MUST be absent when `encrypted` is `true` (see {{e2ee}}). The server MUST set this to `true` when the accountId, which identifies the account owner ({{JMAP-CHAT}}), appears as a Mention `id` in the message's `Message.mentions` array, for every `bodyType`. The server MUST NOT derive mentions from the message body, including a rich body's spans ({{JMAP-CHAT}}). Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
 
 `mentionScopes` (String[], optional):
 : The broadcast-mention scopes by which the account owner was targeted in this message. MUST be absent when `encrypted` is `true` (see {{e2ee}}). Each element is one of `"everyone"`, `"here"`, or `"admins"` as defined by the `BroadcastMention` type in {{JMAP-CHAT}}. The server MUST compute the candidate scopes as the deduplicated `scope` values appearing in `Message.broadcastMentions[]`, for every `bodyType`; a rich body's `"broadcast"` spans are display-only and are not consulted ({{JMAP-CHAT}}). The server MUST then filter this candidate set to those scopes for which the receiving account owner is in the locally-resolved recipient set: `"everyone"` is included whenever the owner is a member of the Chat; `"here"` is included only when the owner satisfies the deployment-defined "active" predicate at delivery time; `"admins"` is included only when the owner satisfies the deployment-defined "administrative authority" predicate at delivery time. The empty array means either that no broadcast scopes were used or that the owner was not targeted by any of them. A message MAY have both `hasMention: true` and a non-empty `mentionScopes`. Order within the array is not significant; clients SHOULD treat it as a set. Send-side authorization for any non-empty broadcast mention is gated by the `"mention_broadcast"` permission in {{JMAP-CHAT}}; per-recipient resolution is described in Broadcast Mention Resolution in {{JMAP-CHAT-FED}}.
@@ -247,7 +247,7 @@ Servers SHOULD rate-limit `ChatMessagePush` delivery per `PushSubscription`. Whe
       "chatName": "general",
       "spaceId": "01J2WKZQM3LVST7OOBDHSI2GW",
       "spaceName": "ACME Corp",
-      "senderId": "user:alice@example.com",
+      "senderId": "c8xq2m",
       "senderDisplayName": "Alice",
       "sentAt": "2026-04-26T14:32:00Z",
       "hasMention": true,
@@ -276,7 +276,7 @@ The following variant shows the payload when the same channel message also tags 
       "chatName": "general",
       "spaceId": "01J2WKZQM3LVST7OOBDHSI2GW",
       "spaceName": "ACME Corp",
-      "senderId": "user:alice@example.com",
+      "senderId": "c8xq2m",
       "senderDisplayName": "Alice",
       "sentAt": "2026-04-26T14:32:00Z",
       "hasMention": true,
@@ -310,7 +310,7 @@ Body snippets are rendered by OS notification systems outside the application sa
 
 ## Display Name Freshness
 
-`senderDisplayName` is a snapshot taken at push-generation time and is for display purposes only. Clients MUST NOT use it as an authoritative identity signal. The authoritative sender identity is `senderId` (the verified ChatContact.id).
+`senderDisplayName` is a snapshot taken at push-generation time and is for display purposes only. Clients MUST NOT use it as an authoritative identity signal. The authoritative sender identity is `senderId` (the accountId for owner-composed messages, otherwise the verified ChatContact.id of the sender).
 
 ## Rate Limiting
 

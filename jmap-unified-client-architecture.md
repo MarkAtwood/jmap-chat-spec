@@ -1490,7 +1490,7 @@ interact in the client UI.
 |---|---|
 | Scene viewport in Space | SceneRegion with `spaceId` set renders a viewport tab or panel within the Space navigation |
 | Chat overlay in Scene | When in a SceneRegion with `chatId`, the chat for that region is rendered as a semi-transparent overlay on the scene viewport |
-| Avatar display name | SceneAvatar.displayName falls back to ChatContact.displayName for the same userId |
+| Avatar display name | SceneAvatar.displayName falls back to the displayName of the ChatContact whose `identity` equals SceneAvatar.userId |
 | Presence in Scene | ChatContact.presence is displayed on SceneAvatar nametags |
 | Proximity chat | Messages in the region-bound Chat appear as speech bubbles above avatars in 2D views, or as floating text in 3D views |
 

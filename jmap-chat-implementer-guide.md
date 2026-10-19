@@ -176,7 +176,7 @@ not the initial-seat policy.
 - Matrix: power level system from rooms; creator default PL 100.
 
 **What the spec settles.** Any member, admin or not, leaves a group by
-sending `Chat/set` update with `removeMembers` listing only their own id; the
+sending `Chat/set` update with `removeMembers` listing only the accountId; the
 server must permit it and tells the other members' servers with a
 `Peer/groupUpdate` of action `"leave"`. If the leaving member is the last
 admin and other members remain, the group *closes*: the server sets the
@@ -550,8 +550,14 @@ format is fixed.
 
 ## 3. Identity and federation
 
-The spec treats `ChatContact.id` as an opaque string from the authentication
-layer. Common forms include `user@host`-style identifiers, DID URIs, and
+The spec gives each ChatContact two identifiers. `ChatContact.id` is a JMAP
+Id that the server assigns; it is local to that server, and clients use it in
+every user reference they send or receive. `ChatContact.identity` is the
+opaque string from the authentication layer; federation carries it between
+servers, and each server maps it to its own ChatContact. The owner has no
+ChatContact: client-facing references to the owner carry the JMAP accountId,
+and federation carries the owner's `ownerUserId`. Common identity
+forms include `user@host`-style identifiers, DID URIs, and
 deployment-specific schemes. Federated mention textual forms add a parsing and
 resolution layer that the spec leaves to deployment.
 
@@ -563,8 +569,9 @@ resolution layer that the spec leaves to deployment.
 identifier" — no required encoding scheme. `Chat.id`,
 `Message.id`, and `senderMsgId` retain explicit ULID requirements because the
 spec relies on their lexicographic time-ordering for message retrieval and
-unreadCount derivation. `ChatContact.id` is whatever the authentication layer
-returns; the spec doesn't constrain its form.
+unreadCount derivation. `ChatContact.id` is an Id (RFC 8620 Section 1.2)
+whose scheme is implementation-defined. `ChatContact.identity` is whatever
+the authentication layer returns; the spec doesn't constrain its form.
 
 **What you must decide.**
 
@@ -572,7 +579,8 @@ returns; the spec doesn't constrain its form.
   Snowflake, opaque random / UUIDv4, prefixed type-tag IDs).
 - For `Chat.id` / `Message.id` / `senderMsgId`: still ULID, but you choose
   the implementation.
-- For `ChatContact.id`: whatever your auth layer returns; document the
+- For `ChatContact.id`: which Id scheme. The id never leaves your server.
+- For `ChatContact.identity`: whatever your auth layer returns; document the
   format so peer servers and clients know what to expect.
 
 **Considerations.**
@@ -607,7 +615,11 @@ returns; the spec doesn't constrain its form.
   time-ordered IDs and ecosystem familiarity. A different scheme MAY be
   used if there is a concrete reason (e.g., integrating with an existing
   ID issuer that already produces KSUIDs).
-- `ChatContact.id`: whatever the auth layer returns. Deployments SHOULD
+- `ChatContact.id`: the same scheme as the other non-time-ordered IDs. An
+  identity string is usually not a valid Id, and the identity-binding check
+  compares `identity`, not `id`. The scheme must never produce the
+  account's accountId, which is the owner's id.
+- `ChatContact.identity`: whatever the auth layer returns. Deployments SHOULD
   document the format (regex or example) in their API reference. Peer
   servers MUST validate against this format when checking the
   identity-binding constraint described in the federation draft's Peer
@@ -616,14 +628,15 @@ returns; the spec doesn't constrain its form.
 ### 3.2 DID URI handling
 
 **What the spec leaves open.** The main draft acknowledges that
-`ChatContact.id` may take any URI form, including a Decentralized Identifier
+`ChatContact.identity` may take any URI form, including a Decentralized Identifier
 URI per W3C DID-Core. The core spec stops there: no DID resolution, no auth
 integration, no new capability. A future companion draft would define wire
 mechanics for DID-based federation auth, resolution, and method support.
 
 **What you must decide.**
 
-- Whether your deployment accepts DID-shaped identifiers in `ChatContact.id`.
+- Whether your deployment accepts DID-shaped identifiers in
+  `ChatContact.identity`.
 - If accepted: what (if anything) you do with them beyond treating them as
   opaque strings.
 - Whether to implement DID resolution (DNS-based `did:web`, blockchain-based
@@ -634,7 +647,7 @@ mechanics for DID-based federation auth, resolution, and method support.
 **Considerations.**
 
 - *Treat as opaque* (the spec's baseline): no special handling. DID URIs
-  appear in `ChatContact.id` as long strings; the rest of the protocol
+  appear in `ChatContact.identity` as long strings; the rest of the protocol
   works unchanged. Lowest implementation cost; no portability benefit.
 - *Adding resolution*: lets your server fetch DID Document metadata, verify
   endpoint claims, support identity portability across server moves.
@@ -657,7 +670,7 @@ mechanics for DID-based federation auth, resolution, and method support.
 
 **Recommended starting point.**
 
-Deployments SHOULD treat DID URIs as opaque `ChatContact.id` values. No
+Deployments SHOULD treat DID URIs as opaque `ChatContact.identity` values. No
 special handling is required. This keeps the deployment spec-conformant
 without committing to DID infrastructure.
 
@@ -672,7 +685,7 @@ opaquely, and which are rejected.
 
 **What the spec leaves open.** The main draft's §Mention section notes that
 common composer-side textual forms include `@user@host` (Mastodon style) and
-DID URI forms (e.g., `@did:web:alice.example`). Parsing the textual form into a candidate id, and
+DID URI forms (e.g., `@did:web:alice.example`). Parsing the textual form into a candidate identity, and
 resolving that candidate to a known ChatContact, are deployment-defined.
 
 **What you must decide.**
@@ -682,8 +695,8 @@ resolving that candidate to a known ChatContact, are deployment-defined.
 - Parser rules: what counts as the host part, how to handle subdomains,
   whether to accept Unicode in the user-part (IRI-style) or restrict to
   ASCII (IDN punycode).
-- How a textual form resolves to a candidate `ChatContact.id`: local lookup
-  first, `/.well-known/jmap` probe, organizational directory, etc.
+- How a textual form resolves to a candidate identity, and from there to a
+  ChatContact: local lookup first, `/.well-known/jmap` probe, organizational directory, etc.
 - Whether to auto-create a `ChatContact` record on a successful resolution
   to a previously-unknown peer user.
 
@@ -697,12 +710,13 @@ resolving that candidate to a known ChatContact, are deployment-defined.
   (peer unreachable, no such user), the client should let the user send
   anyway or downgrade the mention to plaintext.
 - *Auto-creation*: a mention to a previously-unknown user implies the
-  sender wants to communicate with that user. Auto-creating a `ChatContact`
-  record (the main draft's §ChatContact Methods permits automatic creation)
-  lets the mention land as a real mention rather than a broken reference. Be defensive: rate-limit
+  sender wants to communicate with that user. Creating a `ChatContact`
+  record (the client sends `ChatContact/set` create with only the resolved
+  `identity`; if one already exists, the server answers `alreadyExists` with
+  its `existingId`) lets the mention land as a real mention rather than a broken reference. Be defensive: rate-limit
   auto-creation per sender to prevent enumeration attacks.
 - *IDN / IRI*: international domain names should be normalized to punycode
-  (`xn--...`) for `ChatContact.id`; the displayed textual form can keep
+  (`xn--...`) for `ChatContact.identity`; the displayed textual form can keep
   Unicode. Treat user-part Unicode carefully; the auth layer's normalization
   rules apply.
 - *Anti-abuse*: a malicious sender that mentions hundreds of random users
@@ -725,8 +739,8 @@ Implementations SHOULD tolerate Unicode in the user-part and normalize IDN
 hosts to punycode. Malformed textual forms SHOULD be treated as plaintext
 rather than failed mentions (less UX friction).
 
-Resolution SHOULD try local `ChatContact` lookup first (by exact match on
-the resolved candidate id). On miss, the implementation SHOULD probe
+Resolution SHOULD try local `ChatContact` lookup first (`ChatContact/query`
+with an `identity` filter on the resolved candidate identity). On miss, the implementation SHOULD probe
 `/.well-known/jmap` at the host to discover the peer's `ownerUserId` and
 validate the resolution. Successful resolutions SHOULD be cached for the
 session.

@@ -67,13 +67,13 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat DID, a companion specification to JMAP Chat ({{JMAP-CHAT}}) that specifies how Decentralized Identifiers ({{DID-CORE}}) are used as JMAP Chat ChatContact identifiers and as authentication principals between federated peers. The integration is intentionally minimal: it specifies which DID methods MUST be supported, how DID URIs interact with the existing ChatContact opaque-id model in {{JMAP-CHAT}}, and the high-level requirement for DID-based federation authentication. The concrete signature mechanism, resolution caching strategy, DID-document conventions, and DID-provisioning workflow are all deployment-defined. The integration is optional: deployments that do not advertise this capability remain fully functional and interoperable with the rest of the JMAP Chat corpus.
+This document defines JMAP Chat DID, a companion specification to JMAP Chat ({{JMAP-CHAT}}) that specifies how Decentralized Identifiers ({{DID-CORE}}) are used as JMAP Chat ChatContact identities and as authentication principals between federated peers. The integration is intentionally minimal: it specifies which DID methods MUST be supported, how DID URIs interact with the opaque ChatContact `identity` property in {{JMAP-CHAT}}, and the high-level requirement for DID-based federation authentication. The concrete signature mechanism, resolution caching strategy, DID-document conventions, and DID-provisioning workflow are all deployment-defined. The integration is optional: deployments that do not advertise this capability remain fully functional and interoperable with the rest of the JMAP Chat corpus.
 
 --- middle
 
 # Introduction
 
-{{JMAP-CHAT}} defines the ChatContact data type as the JMAP Chat representation of a participant identity. {{JMAP-CHAT}} treats `ChatContact.id` as an opaque string supplied by the authentication layer and explicitly accommodates Decentralized Identifier ({{DID-CORE}}) URIs as a permissible form of that identifier without prescribing DID resolution, DID-based authentication, or any DID-specific capability. This document fills that gap for deployments that want real DID interop: it defines a JMAP capability that signals DID support, names the DID methods a conforming server must resolve and verify, specifies the optional ChatContact extensions for explicit DID binding, and requires DID-based federation authentication for peers that present DID-form identities.
+{{JMAP-CHAT}} defines the ChatContact data type as the JMAP Chat representation of a participant identity. {{JMAP-CHAT}} carries the identity string supplied by the authentication layer in the ChatContact `identity` property, treats it as opaque, and explicitly accommodates Decentralized Identifier ({{DID-CORE}}) URIs as a permissible form of that string without prescribing DID resolution, DID-based authentication, or any DID-specific capability. This document fills that gap for deployments that want real DID interop: it defines a JMAP capability that signals DID support, names the DID methods a conforming server must resolve and verify, specifies the optional ChatContact extensions for explicit DID binding, and requires DID-based federation authentication for peers that present DID-form identities.
 
 ## Design philosophy
 
@@ -89,7 +89,7 @@ This document does not redefine ChatContact, does not introduce new JMAP methods
 
 - A new JMAP capability `urn:ietf:params:jmap:chat:did` and its session-level and account-level capability objects.
 - A non-foreclosing list of mandatory-to-implement DID methods.
-- An optional `did` field on the ChatContact data type for the pseudonymous case (opaque id with a separately bound DID).
+- An optional `did` field on the ChatContact data type for the pseudonymous case (an `identity` that is not a DID, with a separately bound DID).
 - A normative authentication requirement for federated peers that present DID-form identities, layered onto the {{JMAP-CHAT-FED}} authentication model.
 - A reaffirmation of the textual mention form for DID URIs already noted in {{JMAP-CHAT}}.
 
@@ -147,26 +147,26 @@ This specification does not foreclose any DID method. Future companion specifica
 
 # ChatContact Extensions {#contact-extensions}
 
-## DID URIs as ChatContact.id {#did-as-id}
+## DID URIs as ChatContact identity {#did-as-identity}
 
-{{JMAP-CHAT}} establishes that `ChatContact.id` is the stable, opaque identity string supplied by the authentication layer, and that DID URIs are a permissible form of that identifier. This specification reaffirms that:
+{{JMAP-CHAT}} establishes that the ChatContact `identity` property holds the stable, opaque identity string supplied by the authentication layer, and that DID URIs are a permissible form of that string. `ChatContact.id` is a server-assigned Id local to each server and is not a DID. This specification reaffirms that:
 
-- A server advertising `urn:ietf:params:jmap:chat:did` MAY return ChatContact records whose `id` field is itself a DID URI.
-- A server receiving a request that references a ChatContact by a DID-form `id` MUST treat the id as opaque per {{JMAP-CHAT}}; the wire-level semantics of ChatContact are unchanged.
-- A ChatContact whose `id` is a DID URI imposes no special handling on JMAP Chat methods beyond what is specified elsewhere in this document for federation authentication and resolution.
+- A server advertising `urn:ietf:params:jmap:chat:did` MAY return ChatContact records whose `identity` property is a DID URI.
+- A server MUST treat a DID-form `identity` as opaque per {{JMAP-CHAT}}; the wire-level semantics of ChatContact are unchanged.
+- A ChatContact whose `identity` is a DID URI imposes no special handling on JMAP Chat methods beyond what is specified elsewhere in this document for federation authentication and resolution.
 
 ## Optional `did` field {#did-field}
 
-ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable opaque `ChatContact.id` is preserved (for example, to keep MLS group membership stable across DID migrations ({{JMAP-DID}}) in a relay deployment) while a separately bound DID provides the cryptographic identity used for federation authentication and key resolution.
+ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable `identity` that is not a DID is preserved (for example, to keep MLS group membership stable across DID migrations ({{JMAP-DID}}) in a relay deployment) while a separately bound DID provides the cryptographic identity used for federation authentication and key resolution.
 
 `did` (String, optional):
 : A DID URI ({{DID-CORE}}) bound to this ChatContact for cryptographic purposes. When present, the DID's verification methods are the authoritative source of public-key material for verifying signatures attributed to this ChatContact. When absent, no DID is bound to this ChatContact; cryptographic identity is derived from the authentication layer as defined in {{JMAP-CHAT}}.
 
-If both `id` and `did` are present AND `id` parses as a DID URI, the two MUST refer to the same DID. A server detecting a mismatch (the parsed DID from `id` differs from the DID in `did`) MUST treat the ChatContact record as invalid and MUST NOT use either DID for authentication.
+If `did` is present AND `identity` parses as a DID URI, the two MUST refer to the same DID. A server detecting a mismatch (the parsed DID from `identity` differs from the DID in `did`) MUST treat the ChatContact record as invalid and MUST NOT use either DID for authentication.
 
-This document defines no client-visible indication that a server has verified a ChatContact's DID. A client MUST NOT present a ChatContact as verified solely because `did` is present or `id` is DID-form; a client that displays such an indication MUST base it on its own resolution and verification of the DID, the procedure for which is outside the scope of this document.
+This document defines no client-visible indication that a server has verified a ChatContact's DID. A client MUST NOT present a ChatContact as verified solely because `did` is present or `identity` is DID-form; a client that displays such an indication MUST base it on its own resolution and verification of the DID, the procedure for which is outside the scope of this document.
 
-The `did` field is OPTIONAL. Implementations MAY ignore it entirely if their deployment topology does not require pseudonymous DID binding; in that case, deployments SHOULD use the `id`-as-DID form ({{did-as-id}}) instead.
+The `did` field is OPTIONAL. Implementations MAY ignore it entirely if their deployment topology does not require pseudonymous DID binding; in that case, deployments SHOULD use the `identity`-as-DID form ({{did-as-identity}}) instead.
 
 # Federation Authentication {#federation-auth}
 
@@ -210,11 +210,11 @@ When a server attempts to resolve a DID and resolution fails (transient or perma
 
 # Mention Textual Form {#mentions}
 
-{{JMAP-CHAT}} notes that a DID URI prefixed with `@` (for example, `@did:web:alice.example`) is a recognized composer-side textual form for a Mention whose `id` is a DID. This document reaffirms that:
+{{JMAP-CHAT}} notes that a DID URI prefixed with `@` (for example, `@did:web:alice.example`) is a recognized composer-side textual form for mentioning a user whose `identity` is a DID. This document reaffirms that:
 
 - The textual form for a DID-form mention is `@` followed by the DID URI verbatim.
-- The wire form is unchanged: the resulting Mention object has `id` set to the DID URI; no separate field carries the textual rendering.
-- Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined per {{JMAP-CHAT}}.
+- The wire form is unchanged: the resulting Mention object has `id` set to the `id` of the mentioned user's ChatContact, or to the accountId when the mentioned user is the account owner, and between servers the mention carries the DID URI as that user's identity ({{JMAP-CHAT-FED}}); no separate field carries the textual rendering.
+- Parsing the textual form into a candidate identity, and resolving that candidate to a known ChatContact, are deployment-defined per {{JMAP-CHAT}}.
 
 No additional bracketed or otherwise-delimited textual form is defined. Clients SHOULD render DID-form mentions in a manner visually distinct from local-handle mentions, but the specific rendering is a client UX decision and is not constrained by this specification.
 
@@ -223,7 +223,7 @@ No additional bracketed or otherwise-delimited textual form is defined. Clients 
 DID-based identity interacts with {{JMAP-CHAT-FED}} federation in the following ways:
 
 - When a federated peer presents a DID-form principal, the receiving server MUST verify the DID-bound signature ({{federation-auth}}) before accepting the peer's request as authenticated.
-- A ChatContact returned by a peer MAY have a DID-form `id`; cross-server references to such ChatContacts use the DID URI verbatim and are resolved by the receiving server per {{methods}}.
+- A user's `identity` MAY be a DID URI; cross-server references to such a user carry the DID URI verbatim, and the receiving server maps it to its own ChatContact for that user and resolves the DID per {{methods}}.
 - The federation method set defined in {{JMAP-CHAT-FED}} is unchanged. This specification adds the authentication layer; it does not add new federation methods.
 - Cross-server DID resolution is independently performed by each server. There is no protocol for one server to delegate resolution to another. A server that cannot resolve a peer's DID MUST treat that peer as unauthenticated.
 
@@ -261,7 +261,7 @@ When a DID's signing key is compromised, the DID's controller is expected to pub
 
 ## Cross-method consistency
 
-A ChatContact MAY carry both an `id` and a `did` field ({{did-field}}). The consistency rule (if `id` parses as a DID URI, both MUST refer to the same DID) defends against impersonation in which an attacker submits a ChatContact with an `id` they control and a `did` belonging to a different principal. Implementations MUST enforce the consistency rule; failure to do so is a security bug.
+A ChatContact MAY carry both a DID-form `identity` and a `did` field ({{did-field}}). The consistency rule (if `identity` parses as a DID URI, both MUST refer to the same DID) defends against impersonation in which an attacker submits a ChatContact with an `identity` they control and a `did` belonging to a different principal. Implementations MUST enforce the consistency rule; failure to do so is a security bug.
 
 # IANA Considerations {#iana}
 

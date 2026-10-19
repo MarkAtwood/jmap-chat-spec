@@ -78,15 +78,17 @@ call's context:
 
 - **Ring calls (1:1):** Create a `kind: "direct"` Chat between the two
   participants. This is a Chat-layer operation: the server looks up whether a
-  `kind: "direct"` Chat already exists with `contactId` matching the target
-  participant's userId, and if so MUST reuse it (the Chat spec requires
+  `kind: "direct"` Chat already exists with `contactId` equal to the `id` of
+  the ChatContact whose `identity` is the target participant's userId, and if
+  so MUST reuse it (the Chat spec requires
   deduplication of direct chats). The call's messages appear alongside the
   existing conversation history.
 
 - **Ring calls (group) and room calls without a Space context:** Create a
   `kind: "group"` Chat with initial `memberIds` matching the VTCParticipant
-  list. Give the group chat a `name` derived from the call `subject` if one is
-  set.
+  list: for each participant, the `id` of the ChatContact whose `identity` is
+  that participant's userId, or the accountId for the account owner. Give
+  the group chat a `name` derived from the call `subject` if one is set.
 
 - **Room calls and scheduled calls inside a Space:** Use the existing channel
   Chat (`kind: "channel"`) for the Space. Set `channelId` on the VTCCall to
@@ -105,8 +107,10 @@ the initial VTCParticipant list. Ongoing, the server SHOULD keep membership in
 sync as participants join and leave:
 
 - When a VTCParticipant with a `userId` joins the call (i.e., `joinedAt` is
-  set), add that userId via the `addMembers` patch key on `Chat/set` update
-  if they are not already a member.
+  set), add the `id` of the ChatContact whose `identity` is that userId (or
+  the accountId, when that userId is the account owner's `ownerUserId`) via
+  the `addMembers` patch key on `Chat/set` update if they are not already a
+  member.
 - When a VTCParticipant leaves and will not rejoin (i.e., `leftAt` is set and
   the call has ended), the server MAY leave them as a member so they can
   read the post-call chat history, or remove them immediately depending on
@@ -264,9 +268,11 @@ as a Message in the bound Chat.
 
 ### Speaker attribution
 
-`senderId` maps to a `VTCParticipant.userId`, which maps to a
-`ChatContact.id`. Use the ChatContact's `displayName` or `login` field to label
-the speaker in the caption UI.
+`senderId` carries a `VTCParticipant.userId`, the authenticated identity
+string. It is not a `ChatContact.id`: look up the ChatContact whose `identity`
+equals it, and use that ChatContact's `displayName` or `login` field to label
+the speaker in the caption UI. When it equals the account's `ownerUserId`, the
+speaker is the account owner, who has no ChatContact.
 
 For speakers who joined via gateway (no `userId`), use the
 `VTCParticipant.displayName` field instead.
@@ -283,6 +289,9 @@ afterthought. Recommendations:
   decide whether to render them. Server-side suppression removes the option.
 - Final caption segments SHOULD be stored as Messages in the bound Chat after
   the call ends, attributed to the speaker, to provide a searchable transcript.
+  Message `senderId` is a local id: the `id` of the ChatContact whose
+  `identity` is the speaker's userId, or the accountId when the speaker is the
+  account owner.
   Mark them clearly (e.g., with a `bodyType` or metadata field indicating
   "transcript") so they are distinguishable from participant-typed messages.
 - Rate-limit caption delivery to avoid flooding the WebSocket. Coalesce rapid
@@ -415,8 +424,9 @@ appropriate tool for time-sensitive broadcast messages to waiting participants.
 When a moderator admits a waiting participant (`lobbyState` transitions from
 `"waiting"` to `"admitted"`):
 
-1. Add the participant's userId to the main call Chat's `members` list via
-   `Chat/set`.
+1. Add the `id` of the ChatContact whose `identity` is the participant's
+   userId (or the accountId, when the participant is the account owner) to
+   the main call Chat's `members` list via `Chat/set`.
 2. Optionally remove them from the lobby Chat, or leave them in both.
 3. The client should switch the UI focus from the lobby chat panel to the main
    call chat panel.
