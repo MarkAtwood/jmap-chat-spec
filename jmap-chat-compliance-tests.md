@@ -216,21 +216,23 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Send `Message/set` create with `broadcastMentions: [{"scope": "invalid"}]`. Verify rejection.
 
-### 4.5 Mention offset+length bounds check
-**Spec:** draft-atwood-jmap-chat-00 Section 4.4
+### 4.5 Mentions come only from the mentions array
+**Spec:** draft-atwood-jmap-chat-00 §Mention
 **Severity:** MUST | **Round:** 3
 
-**Test:** Send a 5-byte body with `mentions: [{"id": "u1", "offset": 10, "length": 5}]`. Verify rejection (offset+length > body bytes).
+**Test:** Send a `text/plain` message whose body contains `@u1` with an empty `mentions` array. Verify `Message/query` with `hasMention: true` as `u1` does not match it. Send it again with `mentions: [{"id": "u1"}]`. Verify it matches.
 
-### 4.6 Rich body mentions/broadcastMentions must be empty
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 1390
+**Common failure:** Scanning the body text for `@` forms.
+
+### 4.6 Rich body mentions use the arrays
+**Spec:** draft-atwood-jmap-chat-00 §Rich Body Format
 **Severity:** MUST | **Round:** 8
 
-**Test:** Send `Message/set` create with `bodyType: "application/jmap-chat-rich"` and non-empty `mentions` array. Verify rejection.
+**Test:** Send `Message/set` create with `bodyType: "application/jmap-chat-rich"`, a `"mention"` span for `u1`, and `mentions: [{"id": "u1"}]`. Verify acceptance and that the mention takes effect.
 
-**Test:** Same for `Message/set` update and `Peer/deliver` edit paths. Verify all three paths reject.
+**Test:** Send a rich body with a `"broadcast"` span and an empty `broadcastMentions` array to a channel where the sender lacks `"mention_broadcast"`. Verify acceptance and that no broadcast mention takes effect (spans are display-only).
 
-**Common failure:** Validation only on create, missing on update and federation edit (Round 9).
+**Common failure:** Rejecting non-empty arrays on rich bodies (the old rule), or gating on spans, on any of the create, update, or federation edit paths.
 
 ### 4.7 Broadcast mention permission check
 **Spec:** draft-atwood-jmap-chat-00 Section 4.5, lines 350-351
@@ -354,13 +356,15 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Common failure:** Only "everyone" and "here" bypass mute; "admins" incorrectly suppressed.
 
-### 6.7 Rich body inline span mention detection
+### 6.7 Rich body push mentions come from the arrays
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
 **Severity:** MUST | **Round:** 12
 
-**Test:** Send a message with `bodyType: "application/jmap-chat-rich"` containing inline `{"type": "mention", "userId": "<owner-id>"}` span. Verify `hasMention: true` in push.
+**Test:** Send a message with `bodyType: "application/jmap-chat-rich"` and `mentions: [{"id": "<owner-id>"}]`. Verify `hasMention: true` in push.
 
-**Common failure:** Only checks `Message.mentions` array (which is mandated empty for rich bodies).
+**Test:** Send a rich body with a `{"type": "mention", "userId": "<owner-id>"}` span and an empty `mentions` array. Verify `hasMention: false`.
+
+**Common failure:** Parsing spans for mentions instead of reading `Message.mentions`.
 
 ### 6.8 senderDisplayName resolution chain
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
@@ -426,11 +430,11 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Send a `Peer/deliver` edit from a blocked sender. Verify silent drop. Send edit to a channel where sender lacks `send` permission. Verify rejection.
 
-### 7.5 Peer/deliver stores mention offset/length
-**Spec:** draft-atwood-jmap-chat-00 Section 4.4
+### 7.5 Peer/deliver stores mentions
+**Spec:** draft-atwood-jmap-chat-00 §Mention
 **Severity:** MUST | **Round:** 11
 
-**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1", "offset": 5, "length": 3}]`. Query the DB. Verify offset and length are stored (not just the user id).
+**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]`. Query the DB. Verify the mention is stored.
 
 ### 7.6 Peer/receipt preserves existing fields
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
@@ -474,7 +478,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Deliver a message via `Peer/deliver` with `bodyType: "application/mls-ciphertext"` and a non-empty `mentions` array. Verify `invalidArguments`. Repeat with non-empty `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` in turn; verify each is rejected. Repeat each case with `Message/set` create (omitting `lastSeenSenderMsgId`, which is federation-only). Then deliver an encrypted message with all of those fields empty or absent. Verify it is accepted and that no attachment fetch is attempted.
 
-**Common failure:** Server runs mention-offset and attachment-hash validation against ciphertext, or accepts plaintext mention, attachment, or topic metadata alongside an encrypted body.
+**Common failure:** Server runs broadcast-scope and attachment-hash validation against ciphertext, or accepts plaintext mention, attachment, or topic metadata alongside an encrypted body.
 
 ---
 
@@ -658,31 +662,29 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Only suppressing `deviceDeliveredAt` when `readAt` is also present. The spec says: "The server MUST NOT record deviceDeliveredAt when the effective preference is false" — regardless of what other fields are present.
 
-### 13.8 Rich body mention guard in update AND federation edit paths
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 1390
+### 13.8 Broadcast gate on update uses broadcastMentions
+**Spec:** draft-atwood-jmap-chat-00 §Editing a Message
 **Severity:** MUST | **Round:** 9
 
-**Test:** Send `Message/set` update with `bodyType: "application/jmap-chat-rich"` and non-empty `mentions`. Verify rejection. Send `Peer/deliver` edit with same. Verify rejection.
+**Test:** In a channel where the sender lacks `"mention_broadcast"`, send `Message/set` update on a rich-body message adding `broadcastMentions: [{"scope": "everyone"}]`. Verify `forbidden`. Send an update that only adds a `"broadcast"` span. Verify acceptance.
 
-**Common failure:** Validation only on create path; update and federation edit paths allow mentions on rich bodies.
+**Common failure:** Gate only on the create path, or gating on spans.
 
-### 13.9 Rich body inline span parsing for push mentions
+### 13.9 Push ignores rich body spans
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
 **Severity:** MUST | **Round:** 12
 
-**Test:** Send a message with `bodyType: "application/jmap-chat-rich"` and body containing `{"spans": [{"type": "mention", "userId": "<owner-id>"}]}`. Verify `hasMention: true` in the push notification.
+**Test:** Send a message with `bodyType: "application/jmap-chat-rich"`, body `{"spans": [{"type": "mention", "userId": "<owner-id>"}, {"type": "broadcast", "scope": "everyone"}]}`, and empty `mentions` and `broadcastMentions`. Verify `hasMention: false` and `mentionScopes: []` in the push notification.
 
-**Test:** Same with `{"type": "broadcast", "scope": "everyone"}` span. Verify it appears in `mentionScopes`.
+**Common failure:** Parsing the body JSON for spans; spans are display-only.
 
-**Common failure:** Only checking `Message.mentions` array (mandated empty for rich bodies) and never parsing the body JSON for inline spans.
-
-### 13.10 Peer/deliver mention offset/length must be stored
-**Spec:** draft-atwood-jmap-chat-00 Section 4.4
+### 13.10 Peer/deliver mention arrays round-trip
+**Spec:** draft-atwood-jmap-chat-00 §Mention, §BroadcastMention
 **Severity:** MUST | **Round:** 11
 
-**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1", "offset": 5, "length": 3}]`. Query the message back. Verify offset and length are preserved (not just the user id).
+**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]` and `broadcastMentions: [{"scope": "here"}]`. Query the message back. Verify both arrays are preserved.
 
-**Common failure:** INSERT INTO mentions only stores (message_id, account_id), dropping the offset/length columns.
+**Common failure:** Storing `mentions` but dropping `broadcastMentions`.
 
 ### 13.11 Slow mode must use received_at, not sent_at
 **Spec:** draft-atwood-jmap-chat-00 §4.11 lines 612-615, federation §6.1.2 step 6

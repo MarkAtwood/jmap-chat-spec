@@ -483,8 +483,8 @@ predicate definitions deployment-defined:
   server-defined.
 
 The main draft now defines the `BroadcastMention` type, the `broadcastMentions`
-field on `Message`, the `"broadcast"` rich-body span, and the
-`"mention_broadcast"` permission that gates all three scopes. The predicate
+field on `Message`, and the `"mention_broadcast"` permission that gates all
+three scopes. A rich body's `"broadcast"` span is display-only. The predicate
 definitions for `@here` and `@admins` remain deployment-defined; the wire
 format is fixed.
 
@@ -674,8 +674,6 @@ opaquely, and which are rejected.
 common composer-side textual forms include `@user@host` (Mastodon style) and
 DID URI forms (e.g., `@did:web:alice.example`). Parsing the textual form into a candidate id, and
 resolving that candidate to a known ChatContact, are deployment-defined.
-Server-side validation of the resulting Mention (offset/length, ChatContact
-existence) is unchanged.
 
 **What you must decide.**
 
@@ -692,7 +690,7 @@ existence) is unchanged.
 **Considerations.**
 
 - Composer-side parsing is purely UX. The wire format is structured Mention
-  entries (offset/length + id) regardless of textual form. The receiver
+  entries (an id, no position) regardless of textual form. The receiver
   reads the structured Mention; it does not re-parse the body text.
 - *Resolution latency*: typing `@alice@example.com` should ideally show a
   pending state and resolve before the user hits send. If resolution fails

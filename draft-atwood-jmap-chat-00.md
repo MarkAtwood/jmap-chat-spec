@@ -343,24 +343,20 @@ A MessageAction is a per-message out-of-band action invitation carried in a Mess
 
 ## Mention {#mention}
 
-A Mention identifies a user referenced within a message body.
+A Mention names a user that a message mentions.
 
 `id` (String):
 : The ChatContact.id (userId) of the mentioned participant.
 
-`offset` (UnsignedInt):
-: Byte offset into `body` where the mention text begins.
+A Mention carries no position in `body`. Where the mention appears, and how it is rendered, is presentation: a rich body marks it with a `"mention"` span ({{rich-body}}), and for other body types clients locate the textual form themselves. The `mentions` array is authoritative for every `bodyType`: servers MUST take mentions only from it, for mention-based push, notification, and query behavior, and MUST NOT derive mentions from `body`.
 
-`length` (UnsignedInt):
-: Byte length of the mention text. Servers MUST reject a mention where `offset + length` exceeds the byte length of `body`.
-
-The `id` field carries the full identifier of the mentioned user as known to the authoritative server, regardless of textual form. Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined; server-side validation of the resulting Mention (offset/length checks above, ChatContact existence) applies unchanged. The same principle applies to the `userId` field on rich-body `"mention"` spans ({{rich-body}}).
+The `id` field carries the full identifier of the mentioned user as known to the authoritative server, regardless of textual form. Common composer-side textual forms include the Mastodon-style `@user@host` for federated users and DID URI forms (for example, `@did:web:alice.example` per {{W3C-DID-CORE}}) when DID-based identity is in use; the wire format is unaffected by which textual form the sender's client recognized. Parsing the textual form into a candidate id, and resolving that candidate to a known ChatContact, are deployment-defined. The same principle applies to the `userId` field on rich-body `"mention"` spans ({{rich-body}}).
 
 The Mention type carries per-user mentions only. Broadcast-scope mentions (such as `@everyone`, `@here`, and `@admins`) are carried in the separate `broadcastMentions` array on Message; see {{broadcast-mention}}.
 
 ## BroadcastMention {#broadcast-mention}
 
-A BroadcastMention identifies a broadcast-scope reference within a message body. Unlike Mention, a BroadcastMention does not name a specific participant; it names a member set whose composition is resolved at delivery time by each receiving server.
+A BroadcastMention names a broadcast-scope mention in a message. Unlike Mention, a BroadcastMention does not name a specific participant; it names a member set whose composition is resolved at delivery time by each receiving server.
 
 `scope` (String):
 : One of:
@@ -370,17 +366,13 @@ A BroadcastMention identifies a broadcast-scope reference within a message body.
 
   Servers MUST reject a BroadcastMention with an unrecognized `scope` value with `invalidArguments`.
 
-`offset` (UnsignedInt):
-: Byte offset into `body` where the broadcast-mention text begins.
-
-`length` (UnsignedInt):
-: Byte length of the broadcast-mention text. Servers MUST reject a BroadcastMention where `offset + length` exceeds the byte length of `body`.
+Like Mention, a BroadcastMention carries no position in `body`. The `broadcastMentions` array is authoritative for every `bodyType`: servers MUST take broadcast mentions only from it and MUST NOT derive them from `body`.
 
 The canonical textual forms presented by composers are `@everyone`, `@here`, and `@admins` respectively. Deployments MAY recognize additional aliases (for example, `@all` as a synonym for `@everyone`) in their composer UI; alias-to-scope resolution is a client-side or deployment-side concern and is not part of the wire contract. The wire `scope` value is fixed to one of the three enumerations above.
 
 The set of recipients targeted by a BroadcastMention is computed at delivery time on each receiving server, against that server's local view of membership, presence, and administrative permissions. The sending server MAY compute its own set at send time for sender-side UX (for example, displaying "you mentioned N people") but its send-time set is informational only; the receiving server's delivery-time set is authoritative for push urgency, notification routing, and badging. Where the sending and receiving servers reside on different deployments and disagree on which members qualify for `"here"` or `"admins"`, each receiving server's view governs delivery on its own owners' accounts.
 
-Sending a Message with a non-empty `broadcastMentions` array, or with any rich-body `"broadcast"` span ({{rich-body}}), requires the `"mention_broadcast"` Space permission. Servers MUST reject `Message/set` create or update requests that would write a broadcast mention from a sender lacking this permission with `forbidden`. For group chats that are not part of any Space (and thus have no SpaceRole permission graph), broadcast mentions are unrestricted; the `"mention_broadcast"` permission check applies only to channel chats within a Space.
+Sending a Message with a non-empty `broadcastMentions` array requires the `"mention_broadcast"` Space permission. Servers MUST reject `Message/set` create or update requests that would write a broadcast mention from a sender lacking this permission with `forbidden`. For group chats that are not part of any Space (and thus have no SpaceRole permission graph), broadcast mentions are unrestricted; the `"mention_broadcast"` permission check applies only to channel chats within a Space.
 
 ## MessageRevision {#message-revision}
 
@@ -623,10 +615,10 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 : File attachments. Cleared to empty array when deleted.
 
 `mentions` (Mention[]):
-: Structured per-user @mention annotations. Empty by default.
+: Structured per-user @mention annotations. Empty by default. Authoritative for every `bodyType`; see {{mention}}.
 
 `broadcastMentions` (BroadcastMention[]):
-: Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). Empty by default. See {{broadcast-mention}}. When `bodyType` is `"application/jmap-chat-rich"`, this array MUST be empty; broadcast-scope mentions are carried inline as `"broadcast"` spans ({{rich-body}}).
+: Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). Empty by default. Authoritative for every `bodyType`; see {{broadcast-mention}}.
 
 `actions` (MessageAction[]):
 : Out-of-band action invitations associated with this message. Empty by default. Servers MUST store and forward these without inspection.
@@ -1132,7 +1124,7 @@ For channel Chats, the server MUST verify the sender holds the `"send"` permissi
 
 The server sets `id`, `senderMsgId`, `senderId`, `receivedAt`, `deliveryState`, and delivery timestamp fields, then enqueues the message for outbound delivery.
 
-A create request that includes any broadcast mention — a non-empty `broadcastMentions` array, or a rich-body `body` containing one or more `"broadcast"` spans ({{rich-body}}) — MUST be rejected with `forbidden` when the target is a channel Chat and the sender lacks the `"mention_broadcast"` permission in its Space. Group chats outside any Space are not subject to this check ({{broadcast-mention}}).
+A create request with a non-empty `broadcastMentions` array MUST be rejected with `forbidden` when the target is a channel Chat and the sender lacks the `"mention_broadcast"` permission in its Space. Group chats outside any Space are not subject to this check ({{broadcast-mention}}).
 
 #### Editing a Message
 
@@ -1195,7 +1187,7 @@ Filter properties:
 : Restrict results to a single Chat. Required unless `hasMention: true` is also present.
 
 `text` (String, optional):
-: Full-text search over `body`. Servers that do not support full-text search MUST return `unsupportedFilter`.
+: Full-text search over `body`. For a `bodyType` of `"application/jmap-chat-rich"`, the filter matches only the spans' `text` values. Servers that do not support full-text search MUST return `unsupportedFilter`.
 
 `threadRootId` (String, optional):
 : Return only messages in this thread. Valid only when `supportsThreads` is `true`; otherwise servers MUST return `unsupportedFilter`.
@@ -1207,7 +1199,7 @@ Filter properties:
 : Filter to messages with or without attachments.
 
 `hasMention` (Boolean, optional):
-: Filter to messages that mention the owner: the owner's ChatContact.id appears in `mentions` (for plain/markdown bodies) or in a `"mention"` span with matching `userId` (for rich bodies), OR the message contains a broadcast mention whose resolved recipient set includes the owner.
+: Filter to messages that mention the owner: the owner's ChatContact.id appears in `mentions`, OR `broadcastMentions` contains a scope whose resolved recipient set includes the owner.
 
 For channel Chats, the server MUST verify the caller holds the `"view"` permission before returning messages in `Message/get` or `Message/query` responses; messages in channels the caller cannot view MUST be omitted.
 
@@ -1449,7 +1441,7 @@ Standard JMAP `/set`.
 
 This section defines the `application/jmap-chat-rich` body type for structured inline formatting.
 
-When `bodyType` is `"application/jmap-chat-rich"`, `body` MUST contain a JSON-encoded string whose top-level parsed value is an object conforming to this section. Both the `mentions` and `broadcastMentions` arrays on the Message MUST be empty; all mention information (user and broadcast) is carried inline within the spans.
+When `bodyType` is `"application/jmap-chat-rich"`, `body` MUST contain a JSON-encoded string whose top-level parsed value is an object conforming to this section. Spans are presentation only: servers MUST NOT make any authorization, notification, push, query, or delivery decision from span content. A client composing a rich body MUST list each user it marks with a `"mention"` span in `mentions` ({{mention}}) and each scope it marks with a `"broadcast"` span in `broadcastMentions` ({{broadcast-mention}}); only those arrays take effect.
 
 ## Span Object
 
@@ -1477,8 +1469,8 @@ Additional fields are type-specific:
 | `"code"` | none | Inline code |
 | `"codeblock"` | `lang` (String, optional) | Fenced code block; `lang` is a language hint for syntax highlighting |
 | `"blockquote"` | none | Quoted text |
-| `"mention"` | `userId` (String) | Per-user @mention; `userId` is the ChatContact.id of the mentioned user |
-| `"broadcast"` | `scope` (String) | Broadcast-scope @mention; `scope` is one of `"everyone"`, `"here"`, or `"admins"` (see {{broadcast-mention}}). Servers MUST reject a `"broadcast"` span with an unrecognized `scope` value with `invalidArguments`. |
+| `"mention"` | `userId` (String) | Per-user @mention, for display; `userId` is the ChatContact.id of the mentioned user |
+| `"broadcast"` | `scope` (String) | Broadcast-scope @mention, for display; `scope` is one of `"everyone"`, `"here"`, or `"admins"` (see {{broadcast-mention}}) |
 | `"link"` | `uri` (String) | Hyperlink; `uri` MUST be treated as untrusted |
 
 Servers MUST NOT reject messages solely because they contain unrecognized span types; this allows protocol evolution. Clients MUST silently ignore unknown span types and render the `text` field as plaintext, preserving forward compatibility.
@@ -1499,6 +1491,8 @@ Servers MUST NOT reject messages solely because they contain unrecognized span t
   ]
 }
 ~~~
+
+A Message carrying this body lists `{"id": "user:alice@example.com"}` in `mentions` and `{"scope": "here"}` in `broadcastMentions`.
 
 # Thread Model {#threads}
 
@@ -1666,10 +1660,9 @@ All peer-supplied fields are attacker-controlled. Servers MUST validate:
 - `sentAt`, `editedAt`: store as-is; never use for ordering or expiry.
 - `chatId`: verify per {{chat-id}} — confirm match with stored id or verify membership; reject mismatches.
 - `emoji`: validate as a non-empty string; enforce an implementation-defined maximum byte length to prevent denial of service.
-- `mentions`: reject any entry where `offset + length` exceeds body byte length.
 - `topicId`: reject an empty value or a value exceeding 255 bytes.
 - `subject`: validate UTF-8; enforce an implementation-defined maximum byte length; reject when `topicId` is absent.
-- `broadcastMentions`: reject any entry whose `scope` is not one of `"everyone"`, `"here"`, `"admins"`, and any entry where `offset + length` exceeds body byte length. Additionally enforce the `"mention_broadcast"` permission check defined in {{broadcast-mention}}.
+- `broadcastMentions`: reject any entry whose `scope` is not one of `"everyone"`, `"here"`, `"admins"`. Additionally enforce the `"mention_broadcast"` permission check defined in {{broadcast-mention}}.
 
 When a `Message/set` create or update fails one of these checks and this document names no other error for that check, the server MUST reject the entry with an `invalidProperties` SetError ({{RFC8620}} §5.3) whose `properties` names the offending property.
 
@@ -1690,6 +1683,8 @@ The `"mention_broadcast"` permission is the spec's primary control: only members
 The `Chat.muted` bypass for targeted recipients is a deliberate UX choice for the common case (a moderator paging the on-call set during an incident). It is also the most abusable property of the feature. Deployments SHOULD provide owners a way to override the bypass — for example, a "respect mute regardless of broadcast scope" account preference, or a per-Chat preference that disables broadcast elevation for that Chat — and SHOULD make that preference discoverable to owners who report ongoing abuse. Such preferences are deployment-defined; this specification does not assign a wire field for them, and federated peers SHOULD NOT be told whether a remote owner has chosen to suppress broadcast elevation, since that information would let a sender confirm which recipients are silently filtering them.
 
 The send-time recipient set computed by the sending server (the informational list described in {{broadcast-mention}}) MUST NOT be used by a receiving server for authorization or for deciding whether to elevate push: trusting it would let a hostile or buggy sending server force elevation against recipients who would not otherwise qualify under the receiving server's own predicate. Each receiving server resolves its own set and acts on its own resolution.
+
+Because rich-body spans are display-only ({{rich-body}}) and servers do not compare them with `mentions` or `broadcastMentions`, a span can display a mention that has no effect, and the arrays can name users or scopes that no span displays. A rendering client SHOULD style a `"mention"` or `"broadcast"` span as a mention only when the corresponding entry is present in `mentions` or `broadcastMentions`, and otherwise SHOULD render its `text` as plain text. Clients SHOULD make array mentions that no span displays discoverable to the recipient.
 
 ## Blocked Contacts
 
@@ -1731,7 +1726,7 @@ In relay deployments, the relay routes Peer/* messages but MUST NOT have access 
 
 When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, and `subject` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update, or a `Peer/deliver` payload, that has an encrypted `bodyType` and any of these fields non-empty, with `invalidArguments`.
 
-As a consequence, the server cannot validate mention offsets, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. Likewise, the `topicId` filter of `Message/query` matches only messages with a non-encrypted `bodyType`; clients group encrypted messages into topics after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
+As a consequence, the server cannot validate mentions, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. Likewise, the `topicId` filter of `Message/query` matches only messages with a non-encrypted `bodyType`; clients group encrypted messages into topics after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
 
 In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are therefore limited to the routing arguments `accountId`, `chatId`, `chatKind`, and `senderUserId`, and the `message` fields `senderMsgId`, `bodyType`, `body` (as ciphertext), `sentAt`, `senderExpiresAt`, `burnOnRead`, and `expiresAfterReadSeconds`. For `edit` payloads they are `senderMsgId`, `bodyType`, `body` (as ciphertext), and `editedAt`.
 
@@ -1739,7 +1734,7 @@ In a relay deployment, the `Peer/deliver` arguments outside the ciphertext are t
 
 The sender's identity MAY be authenticated inside the end-to-end encryption layer instead of by the relay (for example, MLS {{RFC9420}} authenticates every sender through its group credential). In that case the relay needs only a recipient or group routing handle (`accountId` or `chatId`) to route the message, and `senderUserId` MAY be an opaque value bound to the sender's transport credential rather than the sender's user id. The relay still compares `senderUserId` with the authenticated transport credential before accepting the call. Receiving clients MUST authenticate the sender from the end-to-end encryption layer and MUST NOT rely on a relay-supplied `senderId` for that purpose.
 
-Relay-side enforcement of SpaceBan and slow mode (steps 4 and 6 of new-message validation in {{JMAP-CHAT-FED}}) is OPTIONAL. A relay that sees only an opaque sender value also cannot evaluate `"send"` permission or block state (steps 5 and 7). Receiving clients MUST perform each of these checks that the relay does not perform, and the `"mention_broadcast"` check for broadcast mentions carried inside the ciphertext, against signed group state (for example, the MLS group context, or Space state signed by the Space's authority), and MUST discard messages that fail them.
+Relay-side enforcement of SpaceBan and slow mode (steps 4 and 6 of new-message validation in {{JMAP-CHAT-FED}}) is OPTIONAL. A relay that sees only an opaque sender value also cannot evaluate `"send"` permission or block state (steps 5 and 7). Receiving clients MUST perform each of these checks that the relay does not perform, and the `"mention_broadcast"` check for broadcast mentions carried inside the ciphertext (that is, the inner `broadcastMentions`; spans remain display-only), against signed group state (for example, the MLS group context, or Space state signed by the Space's authority), and MUST discard messages that fail them.
 
 ## Federation Security
 
