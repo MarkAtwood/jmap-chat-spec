@@ -459,10 +459,10 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Only suppresses read_at when receiptSharing=false; forgets deviceDeliveredAt.
 
 ### 7.8 Peer auth rejects on discovery failure
-**Spec:** draft-atwood-jmap-chat-federation-00
+**Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
 **Severity:** MUST | **Round:** 3
 
-**Test:** Send a `Peer/deliver` where the peer's `.well-known/jmap` is unreachable. Verify 403 rejection (not silent pass-through).
+**Test:** Send a correctly signed `Peer/deliver` whose `keyid` names a peer domain whose `.well-known/jmap` is unreachable, so its signing keys cannot be fetched. Verify 403 rejection (not silent pass-through).
 
 ### 7.9 Direct chat with a federated user by identity
 **Spec:** draft-atwood-jmap-chat-00 §ChatContact Methods, §Chat/set
@@ -485,6 +485,70 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Deliver a message via `Peer/deliver` with `bodyType: "application/mls-ciphertext"` and a non-empty `mentions` array. Verify `invalidArguments`. Repeat with non-empty `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` in turn; verify each is rejected. Repeat each case with `Message/set` create (omitting `lastSeenSenderMsgId`, which is federation-only). Then deliver an encrypted message with all of those fields empty or absent. Verify it is accepted and that no attachment fetch is attempted.
 
 **Common failure:** Server runs broadcast-scope and attachment-hash validation against ciphertext, or accepts plaintext mention, attachment, or topic metadata alongside an encrypted body.
+
+### 7.12 Unsigned or wrongly signed peer request rejected
+**Spec:** draft-atwood-jmap-chat-federation-00 §Request Signing
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** Send `Peer/deliver` with no `Signature` header. Verify 403 and that no message is stored. Repeat with: a signature whose `tag` is not `"jmap-chat-peer"`; `alg` other than `ed25519`; a signature that omits `@target-uri` from the covered components; a valid signature made with a key not listed in the sender's `peerSigningKeys`; a `peerSigningKeys` entry whose `kid` is not its RFC 7638 thumbprint. Verify 403 for each. Use the RFC 8037 Appendix A key (thumbprint `kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k`, from RFC 8037 Appendix A.3) as the published key so the thumbprint oracle is external.
+
+**Common failure:** Accepts a request when signature verification throws instead of returning false, or trusts the `kid` string without recomputing the thumbprint.
+
+### 7.13 Peer request replay and validity window
+**Spec:** draft-atwood-jmap-chat-federation-00 §Request Signing
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** Send a correctly signed `Peer/typing`. Verify success. Resend the identical request (same `nonce`). Verify 403. Send requests with `created` 120 seconds in the future, with `expires` 120 seconds in the past, and with `expires - created` of 301 seconds. Verify 403 for each. Send one with `created` 30 seconds in the future. Verify success.
+
+**Common failure:** No nonce cache, or a nonce cache keyed per receiver instance so the replay succeeds on another instance.
+
+### 7.14 Content-Digest covered and checked
+**Spec:** draft-atwood-jmap-chat-federation-00 §Request Signing
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** Send a signed `Peer/deliver` whose `Content-Digest` is correct but not among the covered components. Verify 403. Send one that covers `content-digest` but whose body has been altered after signing. Verify 403.
+
+**Common failure:** Verifies the signature over the `Content-Digest` header but never recomputes the digest of the body.
+
+### 7.15 Unknown kid triggers one refetch
+**Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** Let the receiver cache the sender's keys. Add a new key to the sender's `peerSigningKeys` and sign a request with it. Verify success (the receiver refetched). Within 60 seconds, sign a request with a second new, not yet published key, then publish it. Verify 403 and that the receiver made no second fetch in that interval.
+
+**Common failure:** Rejects new keys until the cache expires, or refetches on every unknown `kid`, letting any client drive unbounded outbound fetches.
+
+### 7.16 ownerUserId host must equal peer domain
+**Spec:** draft-atwood-jmap-chat-federation-00 §Identity Binding
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** From peer domain `a.example`, publish a Session whose `ownerUserId` is `bob@b.example` and send a correctly signed `Peer/deliver` with `senderUserId: "bob@b.example"`. Verify rejection and no placeholder ChatContact. Repeat with `ownerUserId` `did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK` and no DID companion support. Verify rejection. Repeat with `ownerUserId` `alice@A.Example` from `a.example`. Verify success.
+
+**Common failure:** Checks only `senderUserId == ownerUserId`, letting any domain claim any identity.
+
+### 7.17 DNSSEC key binding takes precedence
+**Spec:** draft-atwood-jmap-chat-federation-00 §DNSSEC Key Binding
+**Severity:** SHOULD | **Round:** spec change (peer request signatures)
+
+**Test:** With a validating resolver, sign the sender's zone and publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>`. Publish keys K1 and K2 in `peerSigningKeys`. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a request signed with K1 succeeds and one signed with K2 is rejected. Break the zone's DNSSEC signatures so answers are bogus. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a K1-signed request is rejected. Restore the signatures and make the `_jmap-peer` lookup time out. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a K2-signed request succeeds (fallback to the HTTPS keys).
+
+**Common failure:** Treats a bogus answer as "no record" and falls back to the HTTPS keys, or rejects every request when the lookup merely times out.
+
+### 7.18 Key discovery is unsigned and public
+**Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** Send `GET /.well-known/jmap` with no `Signature` and no `Authorization` header. Verify 200 and that the Session contains `ownerUserId` and a non-empty `peerSigningKeys`. Then have the server under test receive a signed `Peer/deliver` from a test peer whose `/.well-known/jmap` answers 403 to any signed request. Verify the server under test fetches the peer's keys with an unsigned GET and accepts the delivery.
+
+**Common failure:** Requires authentication on `/.well-known/jmap` as for an ordinary RFC 8620 Session, or signs its own key fetches, so two such servers can never verify each other.
+
+### 7.19 Unknown kid re-queries the DNSSEC binding
+**Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication, §DNSSEC Key Binding
+**Severity:** MUST | **Round:** spec change (peer request signatures)
+
+**Test:** Applies to a receiver that uses the DNSSEC binding. Sign the sender's zone, publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>` with a TTL of 3600 seconds, and publish K1 in `peerSigningKeys`. Send a K1-signed request and verify success, so the receiver has cached both the keys and the DNS answer. Add K2 to `peerSigningKeys` and a `_jmap-peer` record for K2. Then, more than 60 seconds after the receiver's last fetch of the sender's keys but while the cached DNS answer is still within its 3600-second TTL, send a K2-signed request. Verify success and that the receiver issued a new `_jmap-peer` query rather than answering from its DNS cache (observe at the zone's authoritative server or in the receiver's resolver log). Within 60 seconds, add K3 to both `peerSigningKeys` and DNS and send a K3-signed request. Verify 403 and that the receiver made no further key fetch or `_jmap-peer` query in that interval. More than 60 seconds after the K2 lookup, resend the K3-signed request. Verify success.
+
+**Common failure:** Refetches the HTTPS keys but answers the `_jmap-peer` query from its DNS cache, so a key added during rotation stays unusable until the old TTL expires; or re-queries DNS on every unknown `kid`, letting any client drive unbounded lookups.
 
 ---
 
@@ -709,9 +773,9 @@ These are implementation-quality issues found via code review rather than spec a
 ### 14.1 Peer authentication header bypass
 **Severity:** P0 Security | **Round:** Code Review 1
 
-**Test:** Send a `Peer/deliver` request without a TLS client certificate, but with an `X-Peer-Hostname: victim.example` header. Verify the server rejects with 403 (not proceeds as if authenticated).
+**Test:** Send a `Peer/deliver` request without a request signature, but with an `X-Peer-Hostname: victim.example` header. Verify the server rejects with 403 (not proceeds as if authenticated).
 
-**Common failure:** Accepting an HTTP header as peer identity without requiring it to be gated behind an explicit test-mode flag. Combined with CERT_OPTIONAL, this allows any HTTP client to impersonate any peer.
+**Common failure:** Accepting an HTTP header as peer identity without requiring it to be gated behind an explicit test-mode flag. This allows any HTTP client to impersonate any peer.
 
 ### 14.2 Transaction atomicity for multi-step writes
 **Severity:** P1 Correctness | **Round:** Code Review 1

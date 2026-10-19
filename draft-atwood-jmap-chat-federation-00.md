@@ -21,6 +21,16 @@ normative:
   RFC8174:
   RFC8620:
   RFC8615:
+  RFC9421:
+  RFC9530:
+  RFC7517:
+  RFC7638:
+  RFC8037:
+  RFC9110:
+  RFC9525:
+  RFC4033:
+  RFC6698:
+  RFC7671:
   JMAP-CHAT:
     title: JMAP for Chat
     author:
@@ -31,6 +41,22 @@ normative:
 
 informative:
   RFC9420:
+  RFC8552:
+  DANCE-CLIENT-AUTH:
+    title: "TLS Client Authentication via DANE TLSA records"
+    author:
+      - fullname: S. Huque
+      - fullname: V. Dukhovni
+    seriesinfo:
+      Internet-Draft: draft-ietf-dance-client-auth-14
+    date: 2026
+  JMAP-CHAT-DID:
+    title: JMAP Chat DID
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-did-00
+    date: 2026
   MIMI-PROTOCOL:
     title: "More Instant Messaging Interoperability (MIMI) using HTTPS and MLS"
     author:
@@ -118,8 +144,11 @@ Local server:
 Remote server / peer server:
 : A JMAP Chat mailbox server initiating a federation connection to the local server.
 
+Peer domain:
+: The DNS domain name that identifies a mailbox server for federation: the host at which the server publishes its `/.well-known/jmap` Session object ({{peer-discovery}}). A peer domain is compared in lowercase A-label form, without a trailing dot or port.
+
 Peer identity:
-: The stable, opaque identity string assigned by the local server's authentication layer to a successfully authenticated remote server. This string MUST equal the `ownerUserId` advertised in the remote server's own JMAP Session object.
+: The `ownerUserId` advertised in the Session object published at a peer domain whose request signature the local server has verified ({{peer-authentication}}).
 
 # Peer Discovery {#peer-discovery}
 
@@ -146,30 +175,82 @@ The Session object MAY include an `ownerDirectAddress` field (see {{session-exte
 
 ## Overview
 
-Before a remote server can invoke any Peer/* method on a local server, it MUST authenticate and obtain a JMAP session at the local server. The local server MUST provide a JMAP account in the resulting session that carries the `urn:ietf:params:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
+A peer is a domain. A server authenticates to a peer by signing each HTTP request with a key that its peer domain publishes; the receiving server verifies the signature and so learns which peer domain sent the request. Every server MUST support the baseline mechanism ({{request-signing}} through {{key-publication}}). Publishing the signing keys in DNSSEC-signed DNS ({{dnssec-keys}}) is RECOMMENDED where DNSSEC is available, and mutual TLS with a DANE-verified client certificate ({{mutual-tls}}) is OPTIONAL. Neither replaces the request signature.
 
-The local server MUST verify that the remote server's authenticated identity — the stable identity string assigned by the local server's authentication layer — equals the `ownerUserId` advertised in the remote server's own `/.well-known/jmap` Session object. The local server MUST perform this correspondence check before granting peer-role access. If the authenticated identity does not match the discovered `ownerUserId`, the local server MUST reject the connection.
+Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide a JMAP account in the resulting session that carries the `urn:ietf:params:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
 
-## Authentication Mechanism
+The local server MUST verify that the `ownerUserId` advertised at the authenticated peer domain is bound to that domain ({{identity-binding}}) before granting peer-role access. If the binding does not hold, the local server MUST reject the request.
 
-The specific authentication mechanism is deployment-defined. Acceptable mechanisms include, but are not limited to:
+## Request Signing {#request-signing}
 
-- Mutual TLS, where the peer's certificate identity corresponds to its `ownerUserId`.
-- OAuth 2.0 client credentials grant, where the `client_id` or an associated claim corresponds to the peer's `ownerUserId`.
-- Bearer tokens issued through a prior out-of-band enrollment process.
-- Overlay network membership credentials (e.g., a Tailscale node identity).
+A server MUST sign every HTTP request it sends to a peer to obtain a peer-role session or to invoke a Peer/* method, using HTTP Message Signatures {{RFC9421}}. Each such request carries exactly one signature whose `tag` parameter is `"jmap-chat-peer"`; the signature label is chosen by the signer. The signature:
 
-Regardless of mechanism, the local server MUST obtain a stable, opaque identity string for the authenticated peer from its own authentication layer. This string is the `identity` of the peer's ChatContact on the local server (see ChatContact in {{JMAP-CHAT}}) and is the identity against which all Peer/* method arguments are validated. The ChatContact's `id` is assigned by the local server and is unrelated to this string.
+- MUST use the `ed25519` algorithm ({{RFC9421}} Section 3.3.6), and MUST include the `alg` parameter with that value.
+- MUST include the `keyid` parameter, whose value is the signer's peer domain, the character `#`, and the `kid` of the signing key ({{key-publication}}); for example, `alice.example#kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k`.
+- MUST include the `created` and `expires` parameters. `expires` MUST NOT be more than 300 seconds after `created`.
+- MUST include the `nonce` parameter, carrying at least 128 bits of output from a cryptographically secure random number generator, base64url-encoded. A signer MUST NOT reuse a nonce.
+- MUST cover the `@method` and `@target-uri` derived components ({{RFC9421}} Section 2.2). Covering `@target-uri` binds the signature to the receiving server, so a signature made for one peer cannot be replayed to another.
+- MUST, when the request has content, cover the `content-digest` field {{RFC9530}}, which the signer MUST include and which MUST contain a `sha-256` digest of the content.
 
-## Identity Binding
+A receiving server MUST reject, without processing any method call, a request that lacks such a signature or whose signature does not verify. Verification succeeds only if all of the following hold:
 
-The peer's stable identity string on the local server MUST equal the `ownerUserId` in the peer's own JMAP Session object, as discovered via `/.well-known/jmap`. This binding ensures that:
+1. The request carries exactly one signature tagged `"jmap-chat-peer"`, its `alg` is `ed25519`, and it covers the components listed above.
+2. The `keyid` parses as a peer domain and a `kid`, and the `kid` names a usable key for that peer domain ({{key-publication}}, {{dnssec-keys}}).
+3. The signature verifies under that key ({{RFC9421}} Section 3.2).
+4. `created` is no more than 60 seconds later than the receiver's current time, `expires` is no more than 300 seconds after `created`, and the receiver's current time is no more than 60 seconds after `expires`.
+5. The receiver has not accepted a request carrying the same peer domain and `nonce` before. The receiver MUST remember each accepted (peer domain, `nonce`) pair at least until 60 seconds after that signature's `expires`.
+6. For a request with content, the `content-digest` field contains a `sha-256` digest and that digest matches the content.
+
+The receiving server rejects a request that fails any of these checks with HTTP status 403 (Forbidden). The peer domain named in a verified `keyid` is the request's authenticated peer domain.
+
+## Key Publication {#key-publication}
+
+A server publishes its signing public keys in the `peerSigningKeys` field of its Session object ({{session-extensions}}). Each key is a JSON Web Key {{RFC7517}} with `kty` `"OKP"` and `crv` `"Ed25519"` {{RFC8037}}, and its `kid` member MUST be the base64url-encoded SHA-256 JWK Thumbprint {{RFC7638}} of the key. A JWK in `peerSigningKeys` MUST NOT contain private key members.
+
+To find the keys of a peer domain, the receiving server fetches `https://<peer-domain>/.well-known/jmap` ({{peer-discovery}}) over HTTPS, validating the server certificate against the peer domain as {{RFC9110}} Section 4.3.4 and {{RFC9525}} describe. The receiving server MAY follow redirects, provided each one is to an `https` URI whose certificate it validates the same way; the fetch is subject to {{ssrf}}. A key is usable only if its `kty` and `crv` are as above and the receiving server, recomputing the thumbprint, obtains the key's `kid`. The receiving server MUST ignore any other entry.
+
+This key fetch, like every discovery fetch of `/.well-known/jmap` ({{peer-discovery}}), is an unsigned GET: the fetching server MUST NOT sign it. A server MUST answer an unsigned GET of its `/.well-known/jmap` with a Session object that includes `ownerUserId` and `peerSigningKeys`, and MUST NOT require any authentication for that response; in it, `accounts` and `primaryAccounts` MAY be empty objects and `username` MAY be the empty string. Only the request that obtains a peer-role session and Peer/* method calls are signed ({{request-signing}}). Verifying a signature therefore never requires a signed request back to the signer, so two servers that verify each other's requests cannot wait on each other.
+
+The receiving server MAY cache the keys of a peer domain for the HTTP freshness lifetime of the response, but for no longer than one hour. When a request names a `kid` that is not among the usable keys of its peer domain (the cached keys that are usable under the precedence rule of {{dnssec-keys}}), the receiving server MUST fetch the keys again, bypassing its cache, before rejecting the request; if it uses the DNSSEC binding ({{dnssec-keys}}), it also queries the `_jmap-peer` name again, bypassing any DNS answer it has cached. It MUST NOT refetch the keys of one peer domain, or repeat that query, more often than once every 60 seconds; a request that arrives within that interval and names a `kid` that is not among the usable keys is rejected.
+
+A server rotates its signing key by publishing the new key alongside the old one. It SHOULD publish a new key at least one hour before first signing with it, and SHOULD keep a retired key published for at least 10 minutes after last signing with it, so that signatures still within their validity window verify. A server whose private key is compromised SHOULD remove the key at once (see {{key-compromise}}).
+
+## DNSSEC Key Binding {#dnssec-keys}
+
+Where its zone is signed with DNSSEC {{RFC4033}}, a server SHOULD also publish each signing key's `kid` in DNS, as a TXT record at the name `_jmap-peer.<peer-domain>` whose value is `v=jmappeer1; kid=<kid>`, one record per key. Because the `kid` is the key's thumbprint, the record commits to the key itself.
+
+A receiving server that has a DNSSEC-validating resolver SHOULD query this name when it fetches a peer domain's keys. The DNSSEC binding takes precedence over the HTTPS-published keys:
+
+- If the answer is secure ({{RFC4033}} Section 5) and contains at least one record of this form, a key from `peerSigningKeys` is usable only if its recomputed thumbprint equals the `kid` of one of those records.
+- If the answer is a secure denial of existence, is insecure, or contains no record of this form, the HTTPS-published keys are used alone.
+- If the validation result is indeterminate ({{RFC4033}} Section 5), or the lookup fails (for example, SERVFAIL or a timeout), the HTTPS-published keys are used alone, as for an insecure answer.
+- If the answer is bogus, the receiving server MUST NOT fall back to the HTTPS-published keys and MUST reject the request.
+
+A receiving server that uses this binding MUST perform DNSSEC validation itself, or obtain validation results from a resolver over a trusted channel, such as a resolver on the same host or one reached over a channel that authenticates the resolver and protects the integrity of its answers. A receiving server that can do neither MUST treat every zone as unsigned and use the HTTPS-published keys alone.
+
+A receiving server MUST NOT cache the DNS answer for longer than its TTL.
+
+## Mutual TLS with DANE {#mutual-tls}
+
+A server MAY additionally authenticate the TLS connection it uses to send peer requests by presenting a client certificate, which MAY be self-signed. The certificate is verified against a DNSSEC-signed TLSA record {{RFC6698}} {{RFC7671}} at `_jmap-peer.<peer-domain>`, using the client identity procedure of {{DANCE-CLIENT-AUTH}}, a work in progress. A self-signed certificate requires certificate usage DANE-EE(3).
+
+A receiving server that verifies such a certificate MUST check that the TLS-authenticated domain equals the authenticated peer domain of every request on that connection, and MUST reject a request where it does not. A receiving server that does not verify client certificates, or a connection without one, relies on the request signature alone.
+
+## Identity Binding {#identity-binding}
+
+Peer authentication establishes a peer domain, while Peer/* arguments name users by identity string ({{identity-mapping}}). The local server binds the two as follows:
+
+1. The peer identity of an authenticated request is the `ownerUserId` in the Session object published at its authenticated peer domain, obtained by the fetch that supplied the signing keys ({{key-publication}}).
+2. If the peer identity has a host, that host MUST equal the authenticated peer domain. The host of an identity is: for a URI with an authority component, its host; for a `did:web` DID, the domain name it encodes; for a string of the form `local@domain` without a URI scheme, the part after the last `@`; for a bare DNS name, the name itself. Hosts are compared as peer domains are.
+3. If the peer identity has no host (for example, a `did:key` DID), the peer domain does not vouch for it. The local server MUST NOT accept such an identity on the strength of peer authentication alone. A DID-form identity is accepted only after the DID-bound verification of {{JMAP-CHAT-DID}} succeeds; any other host-less identity MUST be rejected.
+
+If the binding does not hold, the local server MUST reject the request. This binding ensures that:
 
 1. The ChatContact record created or updated for a peer on the local server has, as its `identity`, the same string that the peer itself advertises.
-2. The `senderUserId` argument in Peer/* methods can be validated against the peer's authenticated identity.
-3. Cross-server identity forgery is not possible through mismatched identity namespaces.
+2. The `senderUserId` argument in Peer/* methods can be validated against the peer identity of the authenticated domain.
+3. A peer domain cannot claim an identity whose host is another domain.
 
-The local server MUST discover the remote server's `ownerUserId` (via {{peer-discovery}}) and verify it matches the authenticated identity before processing any Peer/* request from that server.
+The peer identity is the `identity` of the peer's ChatContact on the local server (see ChatContact in {{JMAP-CHAT}}) and is the identity against which all Peer/* method arguments are validated. The ChatContact's `id` is assigned by the local server and is unrelated to this string.
 
 # Account-Level Capability {#account-capability}
 
@@ -197,6 +278,20 @@ Servers implementing this specification MUST include the following fields in the
 `ownerUserId` (String):
 : The identity string of the mailbox owner. This value equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact; the `id` of that ChatContact is assigned by the peer server. Servers MUST advertise this field. Peer servers use this value as the authoritative identity for the mailbox owner when performing the identity binding check described in {{peer-authentication}}. On the advertising server itself, the owner's local id is the `accountId` of the owner's account ({{JMAP-CHAT}}); in Peer/* arguments that `accountId` maps to `ownerUserId` and back ({{identity-mapping}}).
 
+`peerSigningKeys` (JWK[]):
+: The public keys with which this server signs peer requests ({{key-publication}}). Each entry is a JSON Web Key {{RFC7517}} with `kty` `"OKP"`, `crv` `"Ed25519"` {{RFC8037}}, `x`, and `kid` equal to the key's base64url-encoded SHA-256 JWK Thumbprint {{RFC7638}}. Servers MUST advertise this field with at least one key. For example:
+
+~~~ json
+"peerSigningKeys": [
+  {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+    "kid": "kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k"
+  }
+]
+~~~
+
 Servers MAY include the following additional field:
 
 `ownerDirectAddress` (String, optional):
@@ -206,7 +301,7 @@ Servers MAY include the following additional field:
 
 The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
 
-All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the authenticated identity of the calling server's user. Servers MUST validate all such fields identically against the authenticated peer identity.
+All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the peer identity of the calling server. Servers MUST validate all such fields identically against the peer identity.
 
 ## User References in Peer Methods {#identity-mapping}
 
@@ -235,7 +330,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
 : The Chat ID. For direct chats, if the receiving server already has a direct Chat whose `contactId` is the id of the sender's ChatContact, it MUST verify that `chatId` matches the stored chatId. For group and channel chats, the receiver MUST verify this value matches the chatId of a known chat of which the sender is a current member.
 
 `senderUserId` (String):
-: The sender's identity string ({{identity-mapping}}). MUST match the identity provided by the authentication layer. The receiver MUST compare these and MUST reject the request if they differ.
+: The sender's identity string ({{identity-mapping}}). MUST match the peer identity of the request's authenticated peer domain ({{identity-binding}}). The receiver MUST compare these and MUST reject the request if they differ.
 
 `chatKind` (String):
 : `"direct"`, `"group"`, or `"channel"`. Informs which chatId verification procedure applies.
@@ -304,8 +399,8 @@ Before populating the `message` fields of an outbound `Peer/deliver` call, the s
 
 Before storing a new message, the server MUST perform the following steps in order:
 
-1. Verify caller identity via the authentication layer.
-2. Confirm `senderUserId` matches the verified identity. Reject immediately if they differ. Resolve `senderUserId` to the sender's local ChatContact per {{identity-mapping}}; the remaining steps refer to that ChatContact as the sender.
+1. Verify the request signature and the identity binding ({{peer-authentication}}).
+2. Confirm `senderUserId` matches the peer identity. Reject immediately if they differ. Resolve `senderUserId` to the sender's local ChatContact per {{identity-mapping}}; the remaining steps refer to that ChatContact as the sender.
 3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id; otherwise create a new Chat record with this chatId and set `contactId` to the sender's ChatContact `id` (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat. If the group chat's `closedAt` is set, or the channel's Space has `closedAt` set ({{JMAP-CHAT}}), reject with `forbidden`.
 4. For channel chats: verify that no active SpaceBan exists for the sender in the Space containing the identified channel. If a SpaceBan exists, silently drop the message and return success.
 5. For channel chats: verify that the sender holds the `"send"` permission in the identified channel per the Space permission resolution defined in {{JMAP-CHAT}}. If the sender lacks `"send"`, reject with `forbidden`.
@@ -370,7 +465,7 @@ Method name: `Peer/receipt`
 : The ReadDisposition value indicating why the message was acknowledged. SHOULD be present when `readAt` is present. If `readAt` is present and `readDisposition` is absent, the receiving server MUST store `"displayed"`. See ReadDisposition in {{JMAP-CHAT}}. Unrecognized values MUST be stored as-is.
 
 `readerUserId` (String):
-: The identity string of the acknowledging user ({{identity-mapping}}). For group chats, the receiver updates the per-recipient delivery receipt in `deliveryReceipts` under that user's local ChatContact `id`. The `readerUserId` MUST match the authenticated identity of the calling server; the receiver MUST reject the request with `forbidden` if they differ.
+: The identity string of the acknowledging user ({{identity-mapping}}). For group chats, the receiver updates the per-recipient delivery receipt in `deliveryReceipts` under that user's local ChatContact `id`. The `readerUserId` MUST match the peer identity of the calling server; the receiver MUST reject the request with `forbidden` if they differ.
 
 ### Sender Behavior
 
@@ -420,7 +515,7 @@ Method name: `Peer/typing`
 : The Chat ID of the conversation in which typing is occurring.
 
 `senderUserId` (String):
-: The identity string of the typing user ({{identity-mapping}}). MUST match the authenticated identity; the receiver MUST reject the request if they differ.
+: The identity string of the typing user ({{identity-mapping}}). MUST match the peer identity; the receiver MUST reject the request if they differ.
 
 `typing` (Boolean):
 : `true` if the user is typing; `false` if typing has stopped.
@@ -480,7 +575,7 @@ Method name: `Peer/retract`
 : The Chat ID containing the message to be retracted.
 
 `senderUserId` (String):
-: The identity string of the user requesting retraction ({{identity-mapping}}). MUST match the authenticated identity.
+: The identity string of the user requesting retraction ({{identity-mapping}}). MUST match the peer identity.
 
 `senderMsgId` (String):
 : The sender-assigned ULID of the message to retract.
@@ -518,7 +613,7 @@ Method name: `Peer/groupUpdate`
 : The group chat ULID.
 
 `senderUserId` (String):
-: The identity string of the user making the change ({{identity-mapping}}). MUST match the authenticated identity. The sending server SHOULD also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
+: The identity string of the user making the change ({{identity-mapping}}). MUST match the peer identity. The sending server SHOULD also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
 
 `action` (String):
 : One of the following values:
@@ -581,7 +676,7 @@ Method name: `Peer/subscribePresence`
 : Account ID on the remote server whose owner's presence is being subscribed to.
 
 `subscriberId` (String):
-: The `ownerUserId` of the calling server. MUST match the authenticated identity; the remote server MUST reject the request if they differ.
+: The `ownerUserId` of the calling server. MUST match the peer identity; the remote server MUST reject the request if they differ.
 
 `ttl` (UnsignedInt, optional):
 : Requested subscription lifetime in seconds. Servers MAY cap or adjust this value. If absent, the server assigns an implementation-defined default TTL. Subscriptions that are not renewed before expiry SHOULD be silently dropped by the server.
@@ -624,7 +719,7 @@ Method name: `Peer/unsubscribePresence`
 : Account ID on the remote server.
 
 `subscriberId` (String):
-: The `ownerUserId` of the calling server. MUST match the authenticated identity.
+: The `ownerUserId` of the calling server. MUST match the peer identity.
 
 ### Response
 
@@ -643,7 +738,7 @@ Method name: `Peer/presence`
 : Account ID on the receiving server.
 
 `identity` (String):
-: The `ownerUserId` of the pushing server, an identity string ({{identity-mapping}}). MUST match the authenticated identity; the receiver MUST reject the request if they differ.
+: The `ownerUserId` of the pushing server, an identity string ({{identity-mapping}}). MUST match the peer identity; the receiver MUST reject the request if they differ.
 
 `presence` (String):
 : The updated presence state of the remote owner. One of `"online"`, `"away"`, `"busy"`, `"invisible"`, or `"offline"`.
@@ -711,7 +806,19 @@ Errors in Peer/* methods follow the standard JMAP method-level error format ({{R
 
 ## Identity Verification {#identity-verification}
 
-The `senderUserId` argument in all Peer/* methods is caller-supplied and MUST be treated as untrusted. The local server MUST obtain the verified identity from its own authentication layer independently and MUST compare it to `senderUserId` before any storage, state change, or side effect. This comparison MUST precede all effects of the method. If the values differ, the request MUST be rejected immediately.
+The `senderUserId` argument in all Peer/* methods is caller-supplied and MUST be treated as untrusted. The local server MUST obtain the peer identity independently, as the identity bound to the request's authenticated peer domain ({{identity-binding}}), and MUST compare it to `senderUserId` before any storage, state change, or side effect. This comparison MUST precede all effects of the method. If the values differ, the request MUST be rejected immediately.
+
+## Signing Key Compromise {#key-compromise}
+
+Anyone holding a server's signing private key can act as that peer domain toward every other server until the key stops being usable. Removing the key from `peerSigningKeys` (and from DNS, if published there) ends its use, but receiving servers may keep accepting it for up to the one-hour key cache limit ({{key-publication}}), or the DNS TTL when a DNSSEC binding is in use. Servers SHOULD keep signing keys out of the process that handles untrusted input, for example in a hardware security module or a separate signing service.
+
+## Replay {#replay}
+
+The `nonce`, `created`, and `expires` checks ({{request-signing}}) bound replay: a captured request is rejected after its validity window, and within it the nonce cache rejects a second use. Covering `@target-uri` prevents a request from being replayed to a different server or endpoint, and covering `content-digest` prevents the content from being altered. A receiving server whose nonce cache is lost, for example on restart, SHOULD reject requests whose `created` precedes the restart, since it can no longer detect their replay.
+
+## DNS and Certificate Authority Trust {#dns-ca-trust}
+
+The baseline mechanism trusts the WebPKI: anyone who can obtain a certificate for a peer domain from a certificate authority the receiving server trusts, or who controls the domain's DNS, can publish keys for that domain. The DNSSEC binding ({{dnssec-keys}}) moves that trust to the DNSSEC chain of the peer domain's zone, so a misissued certificate alone no longer suffices; it does not help a domain whose zone is unsigned. A bogus DNSSEC answer is rejected, not treated as absent, so that an attacker who forges DNS answers cannot strip the binding. A lookup that fails or whose result is indeterminate falls back to the HTTPS-published keys ({{dnssec-keys}}), so an attacker who can block the receiving server's DNS lookups can strip the binding and leave only the baseline WebPKI trust. Mutual TLS with DANE ({{mutual-tls}}) adds a DNSSEC-anchored check at the TLS layer but rests on the same DNSSEC trust.
 
 ## Blob Fetch and SSRF {#ssrf}
 
@@ -755,7 +862,7 @@ Messages from a contact whose `blocked` field is `true` MUST be silently dropped
 
 ## Cross-Server Message Injection
 
-A malicious peer could attempt to inject messages into chats it is not a party to by forging `chatId` or `senderUserId` values. The validation steps in {{new-message-validation}} — particularly the authenticated identity check in step 2, the chat membership check in step 3, and the chatId correspondence check for direct chats — collectively prevent this attack. Implementations MUST perform all of these steps and MUST NOT skip any of them.
+A malicious peer could attempt to inject messages into chats it is not a party to by forging `chatId` or `senderUserId` values. The validation steps in {{new-message-validation}} — particularly the peer identity check in step 2, the chat membership check in step 3, and the chatId correspondence check for direct chats — collectively prevent this attack. Implementations MUST perform all of these steps and MUST NOT skip any of them.
 
 ## Broadcast Mention Resolution Trust
 
@@ -775,13 +882,20 @@ Servers implementing `Peer/subscribePresence` MUST authenticate the subscriber b
 
 When the federation protocol is used in conjunction with end-to-end encrypted deployments (as described in {{JMAP-CHAT}}), the relay or forwarding server routes Peer/* messages but MUST NOT have access to plaintext message content. Servers operating in an encrypted deployment MUST ensure that `body` carries only ciphertext when `bodyType` indicates an encrypted payload type (e.g., `"application/mls-ciphertext"`). The encryption key schedule MUST exclude the relay (e.g., by using MLS {{RFC9420}} or a similar protocol that does not involve the relay in key agreement).
 
-The End-to-End Encrypted Deployments section of {{JMAP-CHAT}} defines which `Peer/deliver` fields are outside the ciphertext. When `bodyType` is encrypted, `mentions`, `broadcastMentions`, attachment metadata, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` are carried inside the ciphertext or omitted, and steps 11 through 13 of {{new-message-validation}} are skipped. The sender MAY be authenticated inside the end-to-end encryption layer, in which case a relay needs only a recipient or group routing handle and `senderUserId` MAY be an opaque value bound to the transport credential. That opaque value is an identity string like any other and is mapped per {{identity-mapping}}; it is not exempt. Relay-side enforcement of SpaceBan and slow mode is OPTIONAL; receiving clients enforce any check the relay does not perform against signed group state.
+The End-to-End Encrypted Deployments section of {{JMAP-CHAT}} defines which `Peer/deliver` fields are outside the ciphertext. When `bodyType` is encrypted, `mentions`, `broadcastMentions`, attachment metadata, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` are carried inside the ciphertext or omitted, and steps 11 through 13 of {{new-message-validation}} are skipped. The sender MAY be authenticated inside the end-to-end encryption layer, in which case a relay needs only a recipient or group routing handle, and the sending server's `ownerUserId`, which `senderUserId` carries, MAY be an opaque value that does not reveal the sender's address, provided its host is the sending server's peer domain (for example, `k3x9q7@relay.example`). That opaque value is an identity string like any other: it is bound to the authenticated peer domain per {{identity-binding}} and mapped per {{identity-mapping}}; it is not exempt. A host-less opaque value fails {{identity-binding}} and is rejected. Relay-side enforcement of SpaceBan and slow mode is OPTIONAL; receiving clients enforce any check the relay does not perform against signed group state.
 
 Metadata visible to relay servers (including the routing fields, timestamp, body size, and `reactionUpdate` and `Peer/retract` arguments) remains an information-leakage surface even in encrypted deployments. Deployments with strong metadata-privacy requirements SHOULD apply message padding and cover traffic at the transport layer; those techniques are outside the scope of this document.
 
 # IANA Considerations
 
-This document does not request any new IANA registrations. The `urn:ietf:params:jmap:chat` capability URI is registered by {{JMAP-CHAT}}. This document extends the semantics of that capability by defining the `role: "peer"` account capability value and the Peer/* server-to-server methods; no additional capability URI is required.
+IANA is requested to add the following entries to the "Underscored and Globally Scoped DNS Node Names" registry {{RFC8552}}:
+
+| RR Type | _NODE NAME | Reference |
+|---|---|---|
+| TXT | _jmap-peer | This document, {{dnssec-keys}} |
+| TLSA | _jmap-peer | This document, {{mutual-tls}} |
+
+This document requests no other IANA registrations. The `urn:ietf:params:jmap:chat` capability URI is registered by {{JMAP-CHAT}}. This document extends the semantics of that capability by defining the `role: "peer"` account capability value and the Peer/* server-to-server methods; no additional capability URI is required.
 
 Servers that implement this document MUST advertise the `urn:ietf:params:jmap:chat` capability in peer-role accounts as specified in {{account-capability}}.
 

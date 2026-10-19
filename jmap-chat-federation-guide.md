@@ -41,8 +41,8 @@ specification:
 
 `draft-atwood-jmap-chat-federation-00` deliberately specifies a minimal
 wire contract (the `Peer/*` method set, discovery via `/.well-known/jmap`,
-identity binding, outbox durability outcomes) and defers authentication
-mechanism choice, peer-acceptance policy, abuse mitigation, moderation
+peer authentication, identity binding, outbox durability outcomes) and
+defers key custody, peer-acceptance policy, abuse mitigation, moderation
 escalation, and observability to operators. Federation deployment models
 range from "open public network, peer-with-anyone" (Mastodon-style
 ActivityPub) to "tightly curated allowlist between known organizations"
@@ -61,104 +61,94 @@ Each section follows the same shape as the broader
 
 ---
 
-## 1. Peer authentication mechanism choice
+## 1. Peer authentication operations
 
 ### What the spec leaves open
 
 The federation draft (`draft-atwood-jmap-chat-federation-00.md`,
-§Peer Authentication) requires that a remote server authenticate before
-invoking any `Peer/*` method, and requires the local server to verify
-that the authenticated identity equals the `ownerUserId` advertised in
-the remote's own `/.well-known/jmap` Session object. The specific
-authentication *mechanism* is deployment-defined. The draft enumerates
-acceptable choices — mutual TLS, OAuth 2.0 client credentials, bearer
-tokens from out-of-band enrollment, overlay-network membership
-credentials (Tailscale node identity, etc.) — but does not pick one.
+§Peer Authentication Model) fixes the mechanism: a peer is a domain,
+every peer request is signed with HTTP Message Signatures (RFC 9421,
+Ed25519), and the signing keys are published as JWKs in the
+`peerSigningKeys` field of the server's `/.well-known/jmap` Session.
+The draft also fixes the covered components, the validity window,
+clock skew, nonce handling, key cache limits, and the identity-binding
+rule. It leaves open how operators hold and rotate keys, whether they
+publish the DNSSEC binding, and whether they add mutual TLS with DANE.
 
 ### What you must decide
 
-- Which authentication mechanism your deployment supports (one, or
-  several with peer-specific choice at enrollment).
-- How peer credentials are provisioned (mTLS certificate enrollment,
-  OAuth client registration, bearer-token issuance, overlay-network
-  join).
-- Rotation and revocation procedures for each supported mechanism.
-- How the local authentication layer derives the stable identity string
-  used as the `identity` of the peer's ChatContact (the federation draft requires
-  this binding; the mechanism by which the auth layer surfaces the
-  string is internal).
-- Whether peers must support a specific mechanism (mandatory-to-implement
-  in your deployment) or whether you negotiate per-peer.
+- Where the signing private key lives (process memory, a separate
+  signing service, an HSM or cloud KMS).
+- Rotation cadence and the compromise procedure.
+- Whether your zone is DNSSEC-signed, and so whether you publish the
+  `_jmap-peer` TXT records (the draft makes this a SHOULD where DNSSEC
+  is available).
+- Whether your receiver validates DNSSEC itself or gets validation
+  results from a resolver over a trusted channel (for example, one on
+  the same host). It needs one or the other to honor peers' DNSSEC
+  bindings; a receiver with neither must treat every zone as unsigned
+  and use the HTTPS-published keys alone.
+- Whether to present and verify DANE client certificates (OPTIONAL in
+  the draft).
+- How to store the nonce replay cache, and what happens to it on
+  restart.
 
 ### Considerations
 
-- *Mutual TLS* is the strongest mechanism for inter-server authentication
-  and the easiest to scale to many peers, but operationally heavy:
-  certificate issuance, expiry monitoring, and revocation infrastructure
-  (CRL or OCSP, or a private CA) are non-trivial. Best fit when peers
-  are organizations that already operate a PKI.
-- *OAuth 2.0 client credentials* is well-understood, library support is
-  ubiquitous, and rotation is straightforward (issue new client secret,
-  retire old). Adds a dependency on an authorization server. Best fit
-  when the deployment already runs an OAuth AS for end users.
-- *Bearer tokens (out-of-band enrollment)* is the lowest-friction mechanism
-  for small deployments: an admin issues a token, the peer presents it,
-  done. Rotation is manual; revocation requires server-side token-state
-  tracking. Acceptable for small, stable peer sets; does not scale to
-  open federation.
-- *Overlay-network membership* (Tailscale, WireGuard with mesh
-  management, Nebula, ZeroTier, etc.) delegates authentication to the
-  overlay. The peer's network identity *is* the credential; the overlay
-  enforces it. Operationally simple; ties the deployment to the overlay
-  provider's trust model and availability. Best fit when peers are
-  organizational siblings already sharing infrastructure.
-- *Multiple mechanisms* allow peer-specific choice: an enterprise peer
-  uses mTLS, a small partner uses OAuth, an internal lab uses Tailscale.
-  Increases code complexity in the auth layer; offers operational
-  flexibility.
-- *Identity binding* (federation draft, §Peer Authentication) is the
-  same requirement regardless of mechanism: whatever stable identity
-  string the auth layer returns MUST equal the peer's advertised
-  `ownerUserId`. The mechanism affects how the identity is verified, not
-  what the binding rule is.
+- *Key custody* matters more than the algorithm. A stolen key lets the
+  thief act as your domain toward every peer for as long as peers
+  cache it (at most one hour per the draft). Keep the private key out
+  of the process that parses peer input.
+- *Rotation* is cheap because receivers refetch on an unknown `kid`,
+  re-querying the DNSSEC binding too.
+  The draft asks for the new key to be published an hour before first
+  use and the old key kept ten minutes after last use; both waits exist
+  for DNS caches and in-flight signatures, not for HTTP caches.
+- *DNSSEC binding* protects against a misissued certificate for your
+  domain. Once published, the TXT records are authoritative: a key in
+  `peerSigningKeys` without a matching record is unusable. Update DNS
+  first when rotating, and remove the old record last.
+- *Bogus DNSSEC answers fail closed.* A broken DNSSEC chain for your
+  zone stops every peer that validates from accepting your requests.
+  Monitor your zone's validation status. A lookup that only fails
+  (SERVFAIL, timeout) falls back to the HTTPS-published keys, so an
+  attacker who can block a receiver's DNS can strip the binding.
+- *Clock discipline*: receivers allow 60 seconds of skew. Run NTP on
+  every signing host.
+- *Nonce cache*: entries live about seven minutes (300-second window
+  plus 60-second skew). A shared store (Redis or the database) is
+  needed when several receiver instances serve one domain; otherwise a
+  replay can land on a different instance.
+- *Identity forms*: your `ownerUserId` must carry your peer domain as
+  its host (`alice@alice.example`, `did:web:alice.example`, a URI on
+  that host). A host-less form such as `did:key` is accepted only via
+  the DID companion's verification; plan for that before choosing
+  one.
 
 ### Common patterns
 
 | System | Authentication mechanism |
 |---|---|
 | ActivityPub (Mastodon, etc.) | HTTP Signatures over Linked Data; per-actor key pairs |
-| Matrix federation | Mutual TLS at the transport layer; server keys at the protocol layer |
+| Matrix federation | Signed JSON requests with server keys published at a well-known endpoint |
 | XMPP server-to-server | TLS with SASL EXTERNAL or DIALBACK |
 | Email (SMTP) | Variable: opportunistic TLS, DKIM at the message layer, SPF/DMARC at the policy layer |
-| Tailscale-meshed services | Network-layer identity; service-layer trust derived from node identity |
 
 ### Recommended starting point
 
-For most deployments: **OAuth 2.0 client credentials** with a per-peer
-client registration flow. Library support is broad, rotation is
-straightforward, and the authorization-server dependency is usually
-already present for end-user authentication. The federation draft's
-§Peer Authentication examples list OAuth 2.0 first for this reason.
-
-The bearer token presented by the peer SHOULD carry (or be associated
-with, server-side) a `client_id` or claim that maps to a stable identity
-string. The local server's auth layer surfaces that string to the JMAP
-Chat layer; the JMAP Chat layer compares it against the peer's
-advertised `ownerUserId` before granting peer-role access.
-
-For deployments with strong corporate trust-domain models (between
-named organizations with existing PKI): **mutual TLS** with a private CA
-or a federated CA. The peer's certificate Subject (CN or SAN) maps to
-the stable identity string; the local server's auth layer validates the
-certificate chain.
-
-For very small deployments (under 10 peers, all known): **bearer tokens
-issued out-of-band** are acceptable. Track each token's binding to a
-peer identity in a server-side table. Rotate annually at minimum.
-
-Document the supported mechanisms, the enrollment procedure, the
-rotation schedule, and the revocation procedure in deployment operator
-documentation. Federation peers need this information to integrate.
+- One Ed25519 key per domain, held by a signing service or KMS rather
+  than the JMAP server process.
+- Rotate yearly and on any suspected exposure. On compromise, remove
+  the key from the Session and DNS at once and expect up to an hour of
+  residual acceptance.
+- Publish `_jmap-peer` TXT records if your zone is already
+  DNSSEC-signed; do not sign a zone solely for this.
+- Run a validating resolver on each receiver host, or reach one over a
+  trusted channel; an answer marked validated by an untrusted network
+  resolver does not count.
+- Skip mutual TLS unless a peer relationship requires it; signatures
+  already authenticate every request.
+- Keep the nonce cache in the same shared store as the outbox.
 
 ---
 
@@ -391,21 +381,20 @@ each other's capabilities (which `Peer/*` methods, which extensions).
 
 ### Considerations
 
-- *Out-of-band agreement* is necessary regardless of mechanism: the two
-  operators must agree on which authentication mechanism to use, what
+- *Out-of-band agreement*: the two operators must agree on what
   identity strings to expect, and what scope of federation is intended
   (all users, named accounts only, etc.). This is a business and
   operational conversation, not a protocol step.
-- *Credential exchange* depends on mechanism: mTLS certificate (or CA
-  chain) exchange, OAuth client registration, bearer token issuance,
-  or overlay-network mutual enrollment.
+- *No credential exchange* is needed: each side publishes its signing
+  keys in its own Session, and the other side fetches them. Operators
+  may still compare key thumbprints out of band as a sanity check.
 - *Discovery probe* validates that the peer's `/.well-known/jmap` is
   reachable and well-formed. This SHOULD happen before declaring
   federation active.
 - *Identity binding verification* is the federation draft's
   §Peer Authentication correspondence check, applied at first contact:
-  authenticate the peer, fetch their `/.well-known/jmap`, confirm the
-  authenticated identity equals the discovered `ownerUserId`. If this
+  verify the peer's signature, fetch their `/.well-known/jmap`, confirm
+  the discovered `ownerUserId` is bound to the peer domain. If this
   check fails at onboarding time, the federation cannot proceed; the
   peer's configuration is broken.
 - *Capability negotiation* is reading the peer's Session object and
@@ -420,7 +409,7 @@ each other's capabilities (which `Peer/*` methods, which extensions).
   including outbox, retry, and read-receipt round-trip. This is
   operational practice, not protocol.
 - *Documentation*: peer operators should publish at minimum: their
-  supported authentication mechanisms; the format of their
+  whether they publish the DNSSEC key binding; the format of their
   `ownerUserId` (regex or example); their `serverUrl` and discovery
   endpoint; which `urn:ietf:params:jmap:chat:*` companion capabilities
   they implement; their rate-limit policies; their abuse-report contact.
@@ -446,11 +435,10 @@ For allowlist-mode deployments (recommended in §2 for most new
 operators): implement a five-step onboarding procedure documented in
 the operator handbook.
 
-1. **Out-of-band agreement** between operators. Agree on
-   authentication mechanism, scope of federation, and abuse-reporting
-   contacts.
-2. **Credential exchange**. Each operator provisions the credentials
-   their auth layer requires for the chosen mechanism.
+1. **Out-of-band agreement** between operators. Agree on scope of
+   federation and abuse-reporting contacts.
+2. **Key check**. Each operator confirms the other's
+   `peerSigningKeys` thumbprints out of band.
 3. **Discovery probe** from each side: each operator fetches the
    other's `/.well-known/jmap` and validates that it returns a
    well-formed Session object with the expected `ownerUserId`.
@@ -463,7 +451,7 @@ the operator handbook.
    active for end-user traffic.
 
 Record each onboarded peer in a federation registry (peer identity, the
-authenticated `ownerUserId`, the agreed authentication mechanism, the
+authenticated `ownerUserId`, the key thumbprints seen, the
 contact for abuse reports, the onboarding date, the last successful
 discovery refresh). This registry is the source of truth for the
 operator's view of who they federate with.
@@ -518,7 +506,7 @@ to coordinate abuse signals across multiple local accounts and Spaces.
   federation draft, §Blocked Contacts), identity-binding failure rate, malformed-payload
   rate.
 - *Identity-binding failures* are a strong signal: a peer whose
-  authenticated identity does not match their advertised `ownerUserId`
+  advertised `ownerUserId` does not bind to its verified peer domain
   is either misconfigured or attempting forgery. A burst of these
   failures from one peer should escalate immediately.
 - *Placeholder ChatContact growth*: every unknown identity a peer
@@ -598,10 +586,10 @@ to coordinate abuse signals across multiple local accounts and Spaces.
 - **User notification**: deployments SHOULD inform affected users that
   the peer is no longer reachable, without disclosing the reason if the
   reason is sensitive (active abuse investigation, legal hold, etc.).
-- **Credential handling post-defederation**: revoke the peer's
-  authentication credentials immediately on permanent defederation
-  (mTLS certificate revocation, OAuth client deletion, bearer token
-  revocation, overlay-network removal).
+- **Access after defederation**: add the peer domain to the denylist
+  immediately on permanent defederation; there are no per-peer
+  credentials to revoke, since peers authenticate with their own
+  published keys.
 
 Document the abuse-handling procedure in the operator handbook and the
 deployment's privacy notice. Users need to understand that federation
