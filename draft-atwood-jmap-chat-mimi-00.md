@@ -49,6 +49,20 @@ normative:
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-protocol-06
     date: 2026
+  MIMI-ROOM-POLICY:
+    title: "Room Policy for the More Instant Messaging Interoperability (MIMI) Protocol"
+    author:
+      fullname: R. Mahy
+    seriesinfo:
+      Internet-Draft: draft-ietf-mimi-room-policy-04
+    date: 2026
+  MLS-EXTENSIONS:
+    title: The Messaging Layer Security (MLS) Extensions
+    author:
+      fullname: R. Robert
+    seriesinfo:
+      Internet-Draft: draft-ietf-mls-extensions-10
+    date: 2026
   ULID:
     title: Universally Unique Lexicographically Sortable Identifier
     target: https://github.com/ulid/spec
@@ -68,7 +82,7 @@ informative:
 
 --- abstract
 
-This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format ({{MIMI-CONTENT}}) and JMAP Chat ({{JMAP-CHAT}}). It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider ({{MIMI-PROTOCOL}}): it publishes KeyPackages, fetches key material, creates and updates rooms, fetches GroupInfo, and carries end-to-end encrypted MIMI messages without decrypting them.
+This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format ({{MIMI-CONTENT}}) and JMAP Chat ({{JMAP-CHAT}}). It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider ({{MIMI-PROTOCOL}}): it publishes KeyPackages, fetches key material, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
 
 --- middle
 
@@ -139,7 +153,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `maxKeyPackages` (UnsignedInt):
 : The maximum number of KeyPackage records, last-resort KeyPackages included, the server stores for this account.
 
-A server that advertises this capability MUST include `"message/mls"` and `"application/mimi-fanout"` in `supportedBodyTypes` ({{JMAP-CHAT}}).
+A server that advertises this capability MUST include `"application/mimi-fanout"` in `supportedBodyTypes` ({{JMAP-CHAT}}).
 
 # KeyPackages {#keypackage}
 
@@ -157,7 +171,7 @@ A KeyPackage record holds one MLS KeyPackage that the server publishes for one o
 : The KeyPackageRef of `keyPackage` ({{RFC9420, Section 5.2}}).
 
 `lastResort` (Boolean, immutable):
-: When `true`, this is the client's last-resort KeyPackage ({{RFC9420, Section 16.8}}). Default: `false`.
+: `true` when `keyPackage` is the client's last-resort KeyPackage ({{RFC9420, Section 16.8}}), which its `app_data_dictionary` extension ({{MLS-EXTENSIONS, Section 4.6}}) marks with a `last_resort_key_package` component ({{MLS-EXTENSIONS, Section 6.4}}); `false` otherwise. The server sets it from `keyPackage`. A create MAY include it; the server MUST reject a create whose `lastResort` differs from the value derived from `keyPackage` with `invalidProperties` naming `lastResort`.
 
 ## KeyPackage/get
 
@@ -219,11 +233,11 @@ When this capability is present, the Chat object ({{JMAP-CHAT}}) has one more fi
 `roomId` (String, immutable, server-set, optional):
 : The MIMI room ID of the room this Chat is bound to. Absent for Chats not bound to a MIMI room.
 
-A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and metadata are MLS group state, changed only through `Room/update` ({{room-update}}). The server MUST reject, with `forbidden`, a `Chat/set` update on such a Chat that sets `name`, `description`, or `avatarBlobId` or that uses the `addMembers`, `removeMembers`, or `updateMemberRoles` patch key ({{JMAP-CHAT}}), and clients MUST take the room's name and participants from the MLS group state rather than from these fields. The server sets `name` to the `room_name` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) when it knows it and to the empty string otherwise.
+A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and metadata are MLS group state, changed only through `Room/update` ({{room-update}}), and its messages are sent with `Room/send` ({{room-send}}). The server MUST reject, with `forbidden`, a `Chat/set` update on such a Chat that sets `name`, `description`, or `avatarBlobId` or that uses the `addMembers`, `removeMembers`, or `updateMemberRoles` patch key ({{JMAP-CHAT}}), and clients MUST take the room's name and participants from the MLS group state rather than from these fields. The server sets `name` to the `room_name` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) when it knows it and to the empty string otherwise.
 
-The server does not mirror the participant list into ChatMember records: `members` of a Chat with a `roomId` is the empty list, whether `Room/create` ({{room-create}}) or a Welcome ({{fanout-messages}}) created it. The {{JMAP-CHAT}} requirement that the sender of a `Message/set` create in a group Chat have a ChatMember record does not apply to such a Chat. Instead, the server MUST reject the create with `forbidden` unless the Chat is bound to its room.
+The server does not mirror the participant list into ChatMember records: `members` of a Chat with a `roomId` is the empty list, whether `Room/create` ({{room-create}}) or a Welcome ({{fanout-messages}}) created it.
 
-A Chat is bound to its room from its creation until the server stores a commit that removes from the MLS group every client whose client URI is bound to the account ({{keypackage}}). The server stores that commit ({{fanout-messages}}) and then unbinds the Chat. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}). A server learns of a removal from commits it can read; a commit sent as a SemiPrivateMessage ({{MIMI-PROTOCOL, Section 5.3}}) is readable only by the hub. A client that processes a commit removing the last of its account's clients, which the server could not read, destroys the Chat with `Chat/set` so that the server stops storing FanoutMessages for the account.
+A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every client whose client URI is bound to the account ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients MUST then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/send`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}).
 
 ## Room/create {#room-create}
 
@@ -235,16 +249,20 @@ The request arguments are:
 : The account to use.
 
 `groupInfo` (String):
-: An MLSMessage ({{RFC9420, Section 6}}) of wire format `mls_group_info` carrying the group's GroupInfo, which MUST contain the `ratchet_tree` extension.
+: An MLSMessage ({{RFC9420, Section 6}}) of wire format `mls_group_info` carrying the group's GroupInfo, which MUST NOT contain the `ratchet_tree` extension ({{MIMI-PROTOCOL, Section 5.6}}).
+
+`ratchetTree` (String):
+: The group's ratchet tree, a RatchetTree ({{RFC9420, Section 12.4.3.3}}).
 
 The server MUST reject the call with `invalidArguments` unless all of the following hold:
 
 1. The GroupInfo signature verifies, and its cipher suite is in `cipherSuites`.
-2. The ratchet tree contains exactly one leaf, whose credential identity is a client URI bound to the account ({{keypackage}}).
-3. The `external_senders` extension contains `hubSender`.
+2. The `ratchetTree` matches the tree hash in the GroupInfo's GroupContext and contains exactly one leaf, whose credential identity is a client URI bound to the account ({{keypackage}}).
+3. The `external_senders` extension contains exactly one ExternalSender, equal to `hubSender`.
 4. The participant list ({{MIMI-PROTOCOL, Section 7.5}}) contains exactly one participant, `userUri`.
 5. The `room_uri` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) is `roomIdPrefix` followed by the unpadded lowercase base32 encoding ({{RFC4648, Section 6}}) of 16 octets, and no room this server hosts has that room ID.
 6. The group ID is 16 octets and no room this server hosts uses it.
+7. The group's `app_data_dictionary` extension ({{MLS-EXTENSIONS, Section 4.6}}) contains a `franking_agent` component ({{MIMI-PROTOCOL, Section 5.4.1}}) whose `franking_signature_key` and `credential` are those of `hubSender`, and a `base_room_policy` component ({{MIMI-ROOM-POLICY, Section 5}}) that parses.
 
 Clients MUST generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and MUST use a fresh group ID for every MLS group of a room.
 
@@ -298,7 +316,57 @@ The response has the following arguments, decoded from the hub's response:
 `invalidProposals` (String[]):
 : When `responseCode` is `"invalidProposal"`: the ProposalRefs of the invalid proposals.
 
-On success the server MUST store, in the owner's Chat for the room, a Message ({{fanout-messages}}) whose body is the FanoutMessage with `timestamp` set to `accepted_timestamp`, `message` set to `proposalOrCommit`, and `moreProposals` copied from the request (or an empty `externalProposals` for a commit), so that the owner's other clients receive the handshake.
+On success the server MUST store, in every Chat of a local account bound to the room, a Message ({{fanout-messages}}) whose body is the FanoutMessage with `timestamp` set to `accepted_timestamp`, `message` set to `proposalOrCommit`, and `moreProposals` copied from the request (or an empty `externalProposals` for a commit), unless {{fanout-messages}} forbids storing it. The hub does not forward the owner's own handshake to the owner's provider ({{MIMI-PROTOCOL, Section 5.5}}), so this is how the owner's other clients and the room's other local participants receive it. When the hub staples `externalProposals` to the owner's external commit, the owner's other clients and the room's other local participants do not receive them.
+
+## Room/send {#room-send}
+
+Room/send submits an application message to a room's hub ({{MIMI-PROTOCOL, Section 5.4}}).
+
+The request arguments are:
+
+`accountId` (Id):
+: The account to use.
+
+`roomId` (String):
+: The `roomId` of a Chat in this account.
+
+`message` (String):
+: An MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, whose plaintext is MIMI content {{MIMI-CONTENT}}.
+
+The server MUST reject the call with `invalidArguments` if `message` does not parse as such an MLSMessage or if no Chat in the account is bound to `roomId`. Otherwise it submits the message to the hub as a SubmitMessageRequest with `sendingUri` set to `userUri` ({{MIMI-PROTOCOL, Section 5.4}}), or processes it as hub, and returns `serverUnavailable` if the hub cannot be reached.
+
+The response has the following arguments, decoded from the SubmitMessageResponse:
+
+`accountId` (Id):
+: The account used.
+
+`responseCode` (String):
+: The `statusCode`, written as its name in {{MIMI-PROTOCOL, Section 5.4}} (`"accepted"`, `"notAllowed"`, or `"epochTooOld"`).
+
+`acceptedAt` (UTCDate):
+: When `responseCode` is `"accepted"`: the hub's `accepted_timestamp`.
+
+`currentEpoch` (UnsignedInt):
+: When `responseCode` is `"epochTooOld"`: the hub's current epoch.
+
+When the hub accepts the message, the server MUST store, in every Chat of a local account bound to the room, a Message ({{fanout-messages}}) whose body is the FanoutMessage with `timestamp` set to `accepted_timestamp`, `message` set to `message`, and `frank` copied from the response when present, unless {{fanout-messages}} forbids storing it. The hub does not forward the owner's own message to the owner's provider ({{MIMI-PROTOCOL, Section 5.5}}), so this is how the owner's clients and the room's other local participants receive it.
+
+## Room/unbind {#room-unbind}
+
+Room/unbind tells the server that the account has left a room's MLS group ({{chat-roomid}}).
+
+The request arguments are:
+
+`accountId` (Id):
+: The account to use.
+
+`roomId` (String):
+: The `roomId` of a Chat in this account.
+
+The server MUST reject the call with `invalidArguments` if no Chat in the account has that `roomId`. Otherwise it unbinds the Chat, if it is bound, and returns:
+
+`accountId` (Id):
+: The account used.
 
 ## GroupInfo/fetch {#groupinfo-fetch}
 
@@ -334,13 +402,11 @@ A local user added to the participant list without being added to the MLS group 
 
 # MLS Messages {#mls-messages}
 
-In a Chat with a `roomId`, two body types carry MLS messages. Both are encrypted body types for the purposes of {{JMAP-CHAT}}, including its rules on fields inside the ciphertext. Neither is `application/mimi-content`, which {{MIMI-CONTENT, Section 8.1}} registers for unencrypted MIMI content.
+In a Chat with a `roomId`, every Message has `bodyType` `"application/mimi-fanout"`. It is an encrypted body type for the purposes of {{JMAP-CHAT}}, including its rules on fields inside the ciphertext. Neither it nor `message/mls` is `application/mimi-content`, which {{MIMI-CONTENT, Section 8.1}} registers for unencrypted MIMI content.
 
 ## message/mls {#private-messages}
 
-A Message with `bodyType` `"message/mls"` ({{RFC9420, Section 17.10}}) in a Chat with a `roomId` has as `body` an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, whose plaintext is MIMI content {{MIMI-CONTENT}}. In such a Chat, `Message/set` create MUST use this body type; the server MUST reject any other `bodyType` with `invalidArguments`.
-
-On create, the server submits the PrivateMessage to the hub as a SubmitMessageRequest with `sendingUri` set to `userUri` ({{MIMI-PROTOCOL, Section 5.4}}) and waits for the response before answering. When the hub accepts the message, the server stores the Message with `sentAt` set to `accepted_timestamp`, replacing the client's `sentAt`. Otherwise it rejects the create with a SetError of type `notAllowed`, or of type `epochTooOld` with a `currentEpoch` (UnsignedInt) property holding the hub's current epoch.
+A client sends an application message as an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, the content that {{RFC9420, Section 17.10}} registers as `message/mls`, with `Room/send` ({{room-send}}). The server MUST reject a `Message/set` create in a Chat with a `roomId` with `invalidArguments`.
 
 MIMI edits, reactions, and retractions are MIMI content in new messages. The server MUST reject a `Message/set` update that changes `body`, `bodyType`, or `reactions` of a Message in a Chat with a `roomId` with `invalidArguments`.
 
@@ -348,14 +414,14 @@ MIMI edits, reactions, and retractions are MIMI content in new messages. The ser
 
 A Message with `bodyType` `"application/mimi-fanout"` has as `body` one FanoutMessage ({{MIMI-PROTOCOL, Section 5.5}}). Only servers create such Messages; the server MUST reject a `Message/set` create with this body type with `invalidArguments`.
 
-The server stores each FanoutMessage it receives or originates for a room as one Message, in the order received, in every Chat of a local account bound to that room ({{chat-roomid}}). A FanoutMessage carrying a Welcome is stored only in the account owning a KeyPackageRef named in the Welcome; if that account has no Chat bound to the room, the server first binds the account's unbound Chat for the room again or, if it has none, creates a Chat bound to the room. The server stores a FanoutMessage that carries a commit removing the owner's clients like any other, so that those clients learn of their removal, and then unbinds the Chat if the commit removed the last of them ({{chat-roomid}}).
+The server stores each FanoutMessage it receives or originates for a room as one Message, in the order received, in every Chat of a local account bound to that room ({{chat-roomid}}). A FanoutMessage carrying a Welcome is stored only in the account owning a KeyPackageRef named in the Welcome; if that account has no Chat bound to the room, the server first binds the account's unbound Chat for the room again or, if it has none, creates a Chat bound to the room. The server stores a FanoutMessage that carries a commit removing the owner's clients like any other, so that those clients learn of their removal ({{chat-roomid}}).
 
 For such a Message:
 
 - `senderMsgId` is the ULID {{ULID}} whose 48-bit time component is the FanoutMessage `timestamp` and whose 80-bit random component is the first 10 octets of the SHA-256 hash of the FanoutMessage octets. The server MUST NOT store a FanoutMessage whose `senderMsgId` it has already stored in the Chat, so a repeated `/notify` yields one Message.
-- The server MUST NOT store a FanoutMessage whose `message` is byte-identical to the body of a `message/mls` Message already stored in the Chat; that is the hub returning the owner's own message.
+- The server MUST NOT store a FanoutMessage whose `message` is byte-identical to the `message` of a FanoutMessage already stored in the Chat. A hub may return the owner's own message, for example after failover ({{MIMI-PROTOCOL, Section 5.5}}).
 - `sentAt` is the FanoutMessage `timestamp`.
-- `senderId` is the id of the ChatContact ({{JMAP-CHAT}}) that represents the room's hub, whose `id` and `login` are the hub's provider URI as authenticated by the MIMI transport ({{MIMI-PROTOCOL}}); the server creates that ChatContact if it does not exist. This holds also for the Message that `Room/update` stores ({{room-update}}), which is not owner-composed in the sense of {{JMAP-CHAT}}. The `blocked` field of that ChatContact applies as {{JMAP-CHAT}} defines it, so blocking the hub drops every FanoutMessage of the rooms it hosts. Clients authenticate the MLS sender as {{JMAP-CHAT}} requires for encrypted deployments.
+- `senderId` is the id of the ChatContact ({{JMAP-CHAT}}) that represents the room's hub, whose `id` and `login` are the hub's provider URI as authenticated by the MIMI transport ({{MIMI-PROTOCOL}}); the server creates that ChatContact if it does not exist. This holds also for the Messages that `Room/send` and `Room/update` store ({{room-send}}, {{room-update}}), which are not owner-composed in the sense of {{JMAP-CHAT}}. The `blocked` field of that ChatContact applies as {{JMAP-CHAT}} defines it, so blocking the hub drops every FanoutMessage of the rooms it hosts. Clients authenticate the MLS sender as {{JMAP-CHAT}} requires for encrypted deployments.
 
 # Examples {#examples}
 
@@ -417,7 +483,8 @@ Alice's client creates a room:
 ~~~json
 ["Room/create", {
   "accountId": "u1",
-  "groupInfo": "AAEABEAAEJr1..."
+  "groupInfo": "AAEABEAAEJr1...",
+  "ratchetTree": "QAABAQ..."
 }, "c3"]
 ~~~
 
@@ -475,30 +542,30 @@ Response:
 A client sends a message in a stale epoch:
 
 ~~~json
-["Message/set", {
+["Room/send", {
   "accountId": "u1",
-  "create": {
-    "m1": {
-      "chatId": "01JA8Z3K6V2Q4R5S7T9W0XYZAB",
-      "bodyType": "message/mls",
-      "body": "AAEAAgAQmvVK...",
-      "sentAt": "2026-10-18T17:05:00Z"
-    }
-  }
+  "roomId": "mimi://a.example/r/k5qwmzlqmfsgk3tbnvsxi2lf4a",
+  "message": "AAEAAgAQmvVK..."
 }, "c6"]
 ~~~
 
 Response:
 
 ~~~json
-["Message/set", {
+["Room/send", {
   "accountId": "u1",
-  "oldState": "m90",
-  "newState": "m90",
-  "notCreated": {
-    "m1": { "type": "epochTooOld", "currentEpoch": 4 }
-  }
+  "responseCode": "epochTooOld",
+  "currentEpoch": 4
 }, "c6"]
+~~~
+
+Bob's client processes a commit that removes Bob's last client from the room, and tells Bob's server:
+
+~~~json
+["Room/unbind", {
+  "accountId": "u2",
+  "roomId": "mimi://a.example/r/k5qwmzlqmfsgk3tbnvsxi2lf4a"
+}, "c7"]
 ~~~
 
 # Security Considerations {#security}
@@ -514,6 +581,8 @@ A MIMI provider is not a member of any MLS group and never holds message keys. I
 As hub, a MIMI provider's `hubSender` is an external sender of every room it hosts and can propose removals. Clients that create a room through `Room/create` grant it that role.
 
 Every request that consumes a KeyPackage brings the owner's clients closer to their last-resort KeyPackages, whose reuse weakens the protection that single-use KeyPackages give ({{RFC9420, Section 16.8}}). Servers SHOULD rate-limit key material requests per requester.
+
+`Room/unbind` is not checked against the MLS group. A client that calls it while other clients of the account remain in the group cuts those clients off from the room: the server stores no further FanoutMessage for them, and they cannot use `GroupInfo/fetch` to rejoin by external join. Only a later Welcome binds the Chat again.
 
 A Welcome is stored in the owner's account, so all of the owner's clients receive it, and each can open only the part encrypted to its own KeyPackage. This exposes the Welcome's existence and size to the owner's other clients only.
 
@@ -557,25 +626,9 @@ Capability:
 Reference:
 : This document
 
-## JMAP Error Types Registration
-
-IANA is requested to register the following entry in the "JMAP Error Types" registry ({{RFC8620, Section 9.5}}):
-
-Error Type:
-: `epochTooOld`
-
-Description:
-: The hub rejected a message because it was sent in an MLS epoch older than the room's current epoch. Returned as a SetError on `Message/set` create in a Chat with a `roomId`, with a `currentEpoch` property holding the hub's current epoch ({{private-messages}}).
-
-Capability:
-: `urn:ietf:params:jmap:chat:mimi`
-
-Reference:
-: This document
-
 ## Media Type Registration
 
-The media type `message/mls` is registered by {{RFC9420, Section 17.10}}; this document uses it as {{mls-messages}} describes and does not register it.
+The media type `message/mls` is registered by {{RFC9420, Section 17.10}}; this document refers to it in {{mls-messages}} and does not register it.
 
 IANA is requested to register the following media type in the "Media Types" registry ({{RFC6838}}):
 
