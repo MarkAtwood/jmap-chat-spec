@@ -54,7 +54,7 @@ Both topologies use the same client-facing API.
 **Messages**
 - Plain text, Markdown, and a structured rich-text body format (`application/jmap-chat-rich`)
 - File attachments with SHA-256 integrity verification
-- @mentions with byte-offset annotations
+- @mentions as structured id lists, separate from body formatting
 - Message editing with full revision history
 - Soft deletion (tombstone) and hard deletion (sender-controlled expiry, burn-on-read)
 - Reactions (emoji, including Space-scoped custom emoji)
