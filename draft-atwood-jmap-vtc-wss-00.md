@@ -196,10 +196,20 @@ A subsequent `VTCStreamEnable` message replaces the previous
 ephemeral subscription in its entirety.  There is no partial-update
 mechanism; the client re-sends the full desired subscription state.
 
+In this document, a user is a current participant of a call when
+the user's VTCParticipant record in that call has a non-null
+`joinedAt` and a null `leftAt` ({{JMAP-VTC}}).  A callee who has been
+rung but has not joined is not a current participant.
+
 If a `callIds` entry refers to a call in which the authenticated
-user is not a current participant, that entry is silently ignored.
-If all entries are ignored (or `callIds` is an empty array), the
-subscription is effectively empty: no events will be delivered.
+user is not a current participant, that entry produces no events
+but is retained in the subscription record.  If the user later
+joins (or rejoins) that call, per-call events begin without a new
+`VTCStreamEnable`, so a client may subscribe before joining without
+missing the first in-call events.  If no entry refers to a call in
+which the user is a current participant (or `callIds` is an empty
+array), no per-call events are delivered; per-user events are
+unaffected ({{event-types}}).
 
 VTCCall ids are unique only within an account.  An id listed in
 `callIds` matches that id in every account the authenticated user
@@ -295,10 +305,11 @@ through `VTCStreamEnable` or through `ChatStreamEnable`
 ({{chat-wss-interop}}).
 
 Per-user events (`VTCRingEvent`, `VTCCallEndEvent`) are delivered
-based on the authenticated user's identity and are not scoped to
-`callIds` in the subscription.  A `VTCStreamEnable` with any
-non-empty subscription — regardless of `callIds` — implicitly
-enables delivery of per-user events.
+based on the authenticated user's identity and are not filtered by
+`callIds`.  While a VTC subscription is active, a per-user event is
+delivered if `eventTypes` is `null` or includes that event type,
+including when `callIds` is an empty array or names only calls in
+which the user is not a current participant.
 
 Per-call events are delivered only for calls that match the active
 subscription's `callIds` filter (or all calls if `callIds` is
