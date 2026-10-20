@@ -194,11 +194,14 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 `contactIds` (String[]|null):
 : Applicable when `"presence"` is in `dataTypes`. An explicit list of ChatContact ids for which presence events are requested, or `null` to receive presence events for all known ChatContacts. Ignored if `"presence"` is not in `dataTypes`.
 
+`id` (String, optional):
+: A client-specified identifier for this message. A `RequestError` caused by this message carries this value as its `requestId` ({{RFC8887}} Section 4.3.4).
+
 An absent `chatIds` or `contactIds` is equivalent to `null`, following the {{RFC8620}} and {{RFC8887}} convention for `PushEnable` and `WebSocketPushEnable`.
 
 A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscription in its entirety. There is no partial-update mechanism; the client re-sends the full desired subscription state.
 
-The server does not send an explicit acknowledgment for `ChatStreamEnable`. Clients SHOULD NOT assume the subscription is active until they have received at least one server-originated frame (of any type) after sending `ChatStreamEnable`.
+The server does not send an explicit acknowledgment for `ChatStreamEnable`. As with `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure produces a `RequestError`. A client that sends several control messages in succession SHOULD give each an `id` so that it can attribute any `RequestError` to the message that caused it.
 
 If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"` or `"presence"`), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
 

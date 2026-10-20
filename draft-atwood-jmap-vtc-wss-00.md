@@ -175,6 +175,10 @@ ephemeral VTC event subscription on the current WebSocket connection.
   `"VTCActiveSpeakerEvent"`, `"VTCUnmuteRequestEvent"`, and
   `"VTCRecordingStateEvent"`.  Default: `null`.
 
+- **`id`** (String, optional): A client-specified identifier for
+  this message.  A `RequestError` caused by this message carries
+  this value as its `requestId` ({{RFC8887}} Section 4.3.4).
+
 ### Example
 
 ~~~json
@@ -196,6 +200,12 @@ If a `callIds` entry refers to a call in which the authenticated
 user is not a current participant, that entry is silently ignored.
 If all entries are ignored (or `callIds` is an empty array), the
 subscription is effectively empty: no events will be delivered.
+
+The server does not acknowledge `VTCStreamEnable`.  As with
+`WebSocketPushEnable` ({{RFC8887}}), success is silent and failure
+produces a `RequestError`.  A client that sends several control
+messages in succession SHOULD give each an `id` so that it can
+attribute any `RequestError` to the message that caused it.
 
 Unrecognized values in `eventTypes` that appear alongside recognized
 values MUST be silently ignored; only the recognized values take
