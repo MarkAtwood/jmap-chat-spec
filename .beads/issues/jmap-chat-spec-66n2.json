@@ -1,12 +1,12 @@
 {
   "id": "jmap-chat-spec-66n2",
-  "title": "Future: JMAP Photo/Album companion spec",
-  "description": "FileNode provides a generic file tree with thumbnails but no photo-specific semantics. A photo library needs: Album type (named collection with ordering and cover image), photo metadata (EXIF, GPS, camera model, date taken), gallery views, shared album permissions, and face/object tagging. Could be a companion spec (draft-atwood-jmap-photo-00) layered on top of FileNode blobs. Not urgent — note for future exploration.",
-  "status": "open",
+  "title": "Future: photo album profile over jmap-graph + FileNode",
+  "description": "Re-scoped 2026-10-20 (Mark). No standalone photo spec: albums are Graphs (nodes link to FileNodes via uri = jmap:filenode:..., order via sort-key annotation, cover via annotation), sharing via RFC 9670 shareWith, tags as annotations; EXIF reading, gallery UI and face/object detection are implementation. The only interop gap is a shared annotation-key vocabulary so different photo apps agree (cover, order, date taken, location, tags) - i.e. a jmap-graph profile. Blocked on the 'no profiles yet' decision; revisit when profiles are allowed. Open question then: whether servers extract EXIF into annotations for graph-search, or leave it to FileNode metadata upstream.",
+  "status": "deferred",
   "priority": 4,
   "issue_type": "feature",
   "owner": "mark@wolfssl.com",
   "created_at": "2026-06-13T06:49:09Z",
   "created_by": "Mark Atwood",
-  "updated_at": "2026-06-13T06:49:09Z"
+  "updated_at": "2026-10-20T22:10:34.364021546Z"
 }
