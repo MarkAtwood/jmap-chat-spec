@@ -175,13 +175,14 @@ unhold, re-INVITE). It does not define how SIP INVITE maps to participant
 creation, how BYE maps to participant departure, or how SDP offer/answer flows
 through `gatewayData`. Those mappings are your gateway's job.
 
-The spec also defines no dial-in path for creating a VTCParticipant. A
-client `VTCParticipant/set` create leaves `userId` and `joinedAt` to the
-server (both are server-set), and the only gateway create it defines is
-moderator dial-out (§Gateway Dial-Out). How an inbound call becomes a
-participant record is deployment-defined. The SIP, PSTN, and H.323 dial-in
-steps in this guide assume the gateway is server-side infrastructure that
-writes participant records inside the server, not a JMAP client.
+For dial-in, the spec treats protocol gateways as server-side
+infrastructure, not JMAP clients: on an inbound gateway call the server
+creates a VTCParticipant in the call identified by the caller's
+`gatewayPin` or dial-in address, with `joinMethod` set to the gateway
+protocol, `userId` set to `null`, and `displayName` derived from the
+caller's identity (§Gateway Dial-In). The interface between the gateway
+and the server is deployment-defined. The SIP, PSTN, and H.323 dial-in
+steps in this guide follow that model.
 
 ### What you must decide
 
@@ -308,8 +309,9 @@ verification works, and how to handle DTMF relay are not prescribed.
      recurring meetings).
    - Scheduled calls use a per-meeting PIN valid only during the meeting window.
 
-2. **Dial-in flow.** The spec defines no dial-in creation path (see Section
-   2), so this flow is deployment-defined. A typical PSTN dial-in flow is:
+2. **Dial-in flow.** The spec makes the server create the dial-in
+   participant (see Section 2); the gateway-to-server steps are
+   deployment-defined. A typical PSTN dial-in flow is:
    a. Caller dials the advertised `dialInNumbers` address.
    b. IVR prompts for a conference PIN.
    c. Gateway matches the PIN to a VTCCall via `gatewayPin`.
