@@ -131,7 +131,8 @@ Example session response:
           "maxRegionsPerAccount": 10,
           "maxObjectsPerRegion": 500,
           "maxAvatarsPerRegion": 50,
-          "maxAssetSizeBytes": 52428800
+          "maxAssetSizeBytes": 52428800,
+          "supportsSceneAsset": true
         }
       }
     }
@@ -178,16 +179,16 @@ impose on `worldState`.
 
 ### Considerations
 
-**Access policy: `"invite"`.** The spec says only explicitly granted users
-may enter, but does not define the invitation mechanism. Common approaches:
+**Access policy: `"invite"`.** The spec admits the users listed in the
+region's `invitedUserIds` (String[]), which the region owner manages with
+`SceneRegion/set`. Servers MAY also admit users by other mechanisms; these
+are expected to be standardized separately. Common additions:
 
-- An invite list stored as a server-side ACL (a set of userIds). The region
-  owner manages the list via a deployment-defined API or via `worldState`
-  on the region.
 - An invitation token: the region owner generates a single-use or multi-use
   URL that grants access. The server records the grant when the token is
-  redeemed.
-- Integration with an external identity provider or group membership system.
+  redeemed (a shared-secret mechanism).
+- Integration with an external identity provider, group membership system,
+  or authorization oracle.
 
 Whichever mechanism you choose, the server must be able to answer "does this
 userId have access to this regionId?" in the `SceneAvatar/set create` handler
@@ -256,9 +257,8 @@ disconnect all clients before destroying the JMAP records.
 
 ### Recommended starting point
 
-For `"invite"` access: store an invite list as a server-side ACL (a Set of
-userIds on the region). Expose add/remove operations as a deployment-defined
-extension or through the region's `worldState`. For `"space"` access:
+For `"invite"` access: enforce `invitedUserIds` and index it for the
+access check. For `"space"` access:
 resolve Space membership via the Chat layer's permission resolver. For
 `simulationUri`: start with creator-supplied URIs; add on-demand provisioning
 when you have a simulation orchestration layer. For `environment`: define a
@@ -418,7 +418,7 @@ Example response:
   "newState": "state-002",
   "created": {
     "o0": {
-      "id": "01J5OBJ0000000000000000042",
+      "id": "01J5QBJ0000000000000000042",
       "ownerId": "user:bob@example.com",
       "createdAt": "2026-06-06T10:00:00Z",
       "updatedAt": "2026-06-06T10:00:00Z"
@@ -435,7 +435,7 @@ Example object update (reposition and change physics mode):
   "accountId": "account-xyz",
   "ifInState": "state-002",
   "update": {
-    "01J5OBJ0000000000000000042": {
+    "01J5QBJ0000000000000000042": {
       "position": [5.0, 0, 3.0],
       "physicsMode": "kinematic"
     }
@@ -461,10 +461,6 @@ and how the simulation layer is coordinated with the JMAP avatar lifecycle.
 
 - **Silent disconnection detection**: how the server knows a user has left
   without explicitly setting `leftAt`.
-- **Avatar record retention**: how long records with non-null `leftAt` are
-  kept before cleanup.
-- **Reconnect window**: how long after departure a returning user gets their
-  existing record back vs. a fresh one.
 - **Position update frequency**: how often the server reconciles the
   simulation layer's avatar positions with SceneAvatar records.
 - **`displayName` source**: where the display name comes from (user profile,
@@ -475,11 +471,12 @@ and how the simulation layer is coordinated with the JMAP avatar lifecycle.
 **One avatar per region, one region at a time.** The spec enforces two
 constraints:
 
-1. If a user already has an active avatar (`leftAt: null`) in the target
-   region, the server rejects the create with an `alreadyExists` SetError
-   whose `existingId` is that avatar's id, rather than creating a duplicate.
-   A reconnecting client treats this as "already entered" and uses
-   `existingId`.
+1. If a user already has an avatar record in the target region, present
+   or departed, the server rejects the create with an `alreadyExists`
+   SetError whose `existingId` is that record's id, rather than creating a
+   duplicate. A reconnecting client fetches that record: if its `leftAt` is
+   `null` the user is already present; otherwise the client re-enters by
+   updating it.
 2. If a user has an active avatar in a *different* region, the server sets
    `leftAt` on that avatar before creating the new one.
 
@@ -490,8 +487,8 @@ lock or serializable transaction for avatar creation.
 
 **Silent disconnection.** Like VTC participants, avatars can vanish without
 calling `SceneAvatar/set` to set `leftAt` (browser crash, network loss, app
-kill). The server SHOULD detect this and set `leftAt` automatically. Two
-approaches:
+kill). The server MAY detect this and set `leftAt` itself; detection is
+deployment-defined. Two approaches:
 
 - *Simulation layer callback*: the simulation server notifies the JMAP server
   when a client disconnects from `simulationUri`. This is the most reliable
@@ -504,14 +501,12 @@ approaches:
 For regions with no simulation layer (`simulationUri: null`), the heartbeat
 approach is the only option.
 
-**Reconnect window.** The spec says that when a user who has left re-enters
-the same region, the server updates the existing record rather than creating
-a new one: clears `leftAt`, updates `joinedAt`, resets position to
-`spawnPosition`. This preserves identity continuity. Define a reconnect
-window: if the user returns within N minutes, update the existing record.
-Beyond that, the existing record may have been cleaned up or the server may
-create a fresh one. A 30-minute window is reasonable; align it with your
-avatar record retention policy.
+**Re-entry.** A user who has left re-enters the same region by updating
+their existing record to set `leftAt` to `null`; the server sets `joinedAt`,
+`position` (`spawnPosition`), and `orientation` (`spawnOrientation`), and
+applies the same access checks as entry. This preserves identity
+continuity. The server keeps SceneAvatar records until it destroys their
+region, so there is no reconnect window or departed-record purge to tune.
 
 **Position reconciliation frequency.** The spec recommends updating
 SceneAvatar positions from the simulation layer every 5-30 seconds. These
@@ -525,11 +520,11 @@ more database writes. For most deployments, 15 seconds is a good balance.
 1. Client calls `SceneAvatar/set create` with `regionId`.
 2. Server checks access policy (public/invite/space).
 3. Server checks `maxAvatarsPerRegion` quota.
-4. Server checks for existing active avatar in the same region (reject
-   with `alreadyExists` and `existingId`) or different region (eject from
-   previous).
-5. Server creates (or reconnects) the SceneAvatar record with
-   `spawnPosition`, `spawnOrientation`, `joinedAt`, `leftAt: null`.
+4. Server checks for an existing record in the same region (reject with
+   `alreadyExists` and `existingId`; the client re-enters by update) or an
+   active avatar in a different region (eject from previous).
+5. Server creates the SceneAvatar record with `spawnPosition`,
+   `spawnOrientation`, `joinedAt`, `leftAt: null`.
 6. Server increments `activeAvatarCount` on the SceneRegion.
 7. Server returns the created record.
 8. Client reads `simulationUri` from the region and connects to the
@@ -543,9 +538,10 @@ to the simulation layer first and create the JMAP avatar record after.
 
 **Leaving a region — the full sequence:**
 
-1. Client calls `SceneAvatar/set update` with `leftAt` set to current time.
+1. Client calls `SceneAvatar/set update` with a non-null `leftAt` (this
+   signals intent; the value is not stored).
 2. Server verifies the caller owns this avatar record.
-3. Server sets `leftAt`.
+3. Server sets `leftAt` to its own current time.
 4. Server decrements `activeAvatarCount` on the SceneRegion.
 5. Client disconnects from the simulation layer independently.
 
@@ -559,16 +555,14 @@ for the full cross-capability departure sequence.
 | Concern | Pattern |
 |---|---|
 | Silent disconnect detection | Simulation layer callback (preferred) or JMAP heartbeat timeout (fallback). |
-| Reconnect window | 5-30 minutes; same record reused with cleared `leftAt`. |
+| Re-entry | Same record reused: client updates `leftAt` to `null`. |
 | Position reconciliation | Every 10-30 seconds; simulation layer pushes batch updates. |
-| Avatar record retention | Keep departed records for 24 hours for query/history; purge after. |
 
 ### Recommended starting point
 
-Detect silent disconnections via simulation layer callbacks. Set a 30-minute
-reconnect window. Reconcile avatar positions every 10-15 seconds (the
-simulation guide recommends 10 seconds as a starting point). Retain
-departed avatar records for 24 hours. Serialize avatar creation per user
+Detect silent disconnections via simulation layer callbacks. Reconcile
+avatar positions every 10-15 seconds (the simulation guide recommends 10
+seconds as a starting point). Serialize avatar creation per user
 to prevent race conditions. Source `displayName` from the user profile or
 ChatContact when JMAP Chat is co-deployed (spec section 6.4: "the server
 sets `displayName` from the user profile or ChatContact when
@@ -604,7 +598,7 @@ Example response:
   "newState": "state-011",
   "created": {
     "av0": {
-      "id": "user:alice@example.com",
+      "id": "01J5AV00000000000000000001",
       "regionId": "01J5ABC0000000000000000001",
       "userId": "user:alice@example.com",
       "displayName": "Alice Chen",
@@ -618,13 +612,14 @@ Example response:
 }, "0"]]
 ```
 
-Example — leaving a region:
+Example — leaving a region (the server stores its own time, not the
+supplied value):
 
 ```json
 [["SceneAvatar/set", {
   "accountId": "account-xyz",
   "update": {
-    "user:alice@example.com": {
+    "01J5AV00000000000000000001": {
       "leftAt": "2026-06-06T11:30:00Z"
     }
   }
@@ -754,8 +749,9 @@ both. Returning `unsupportedFilter` for either is a spec violation. These
 are the primary mechanism clients use to load objects near the avatar and
 implement level-of-detail loading.
 
-**`withinRadius` semantics.** The filter matches objects whose *position*
-(a single point) falls within the sphere. It does not consider the object's
+**`withinRadius` semantics.** The filter matches objects whose stored
+*position* (a single point; parent-relative for objects with a non-null
+`parentId`) falls within the sphere. It does not consider the object's
 bounding box or visual extent. A large object whose origin is outside the
 radius will not match, even if part of its visual representation is inside.
 This is a deliberate simplification; bounding-box intersection is expensive
@@ -794,7 +790,7 @@ Do not silently truncate without honoring the JMAP pagination contract.
 **Visibility filtering interaction.** The visibility contract (spec section
 7.3) says the server SHOULD apply visibility filtering. If your deployment
 implements visibility filtering, apply it as an additional filter on query
-results. The order is: access control check (MUST), then spatial filter,
+results. The order is: access control check (SHOULD), then spatial filter,
 then visibility filter (SHOULD), then non-spatial filters.
 
 Example — query objects within 20 meters of the avatar:
@@ -1002,19 +998,20 @@ discovering whether a region exists by observing the error type. Apply this
 consistently across all code paths, including query results (unauthorized
 regions simply do not appear in results).
 
-The exception is `SceneAvatar/set create` (entering a region): the spec
-returns `notFound` when the region does not exist or the caller does not have
-access, and `forbidden` when the access policy specifically rejects the user
-(e.g., `"invite"` without an invitation). This is a deliberate distinction:
-the user already knows the region exists (they have the regionId) and the
-error helps them understand why entry failed.
+The same applies to `SceneAvatar/set create` (entering a region): the spec
+returns `notFound` when the region does not exist, and SHOULD return
+`notFound` when the access policy does not admit the caller (e.g., an
+`"invite"` region whose `invitedUserIds` omits them, or a `"space"` region
+whose Space they are not in). `forbidden` is reserved for a deployment ban
+or an active post-eject cooldown, where the user already knows the region
+exists.
 
 **Object permissions are a three-tier model:**
 
 1. **Owner** (`ownerId`): the user who created the object. Can always update
    or destroy it.
-2. **Region owner**: the user whose account owns the region. Can update or
-   destroy any object in their region.
+2. **Region owner**: the user named by the region's server-set `ownerId`
+   (its creator). Can update or destroy any object in their region.
 3. **Admin**: deployment-defined. Can update or destroy any object.
 
 For a simple deployment, "admin" can be a boolean flag on the account. For
@@ -1022,7 +1019,8 @@ a complex deployment, consider role-based access control with region-specific
 roles (e.g., "editor" for a specific region, "global admin" for all regions).
 
 **Avatar ejection.** The spec says region owners and admins may eject avatars
-by setting `leftAt` on another user's SceneAvatar. Implement a cooldown
+by setting `leftAt` on another user's SceneAvatar; an eject update patches
+only `leftAt`, and the server stores its own time. Implement a cooldown
 after ejection: if a user is ejected, prevent them from re-entering the same
 region for a deployment-defined period (RECOMMENDED: 5 minutes). Without a
 cooldown, an ejected user can immediately re-enter, making ejection useless.
@@ -1037,8 +1035,7 @@ does not leak cross-account data through shared spatial indexes.
 ### Recommended starting point
 
 Define "admin" as a boolean flag on the account capability or user profile.
-For `"invite"` regions, maintain a server-side ACL (Set of userIds) per
-region. Implement a 5-minute re-entry cooldown after ejection. Audit every
+For `"invite"` regions, enforce `invitedUserIds`. Implement a 5-minute re-entry cooldown after ejection. Audit every
 get/query code path to ensure `notFound` masking is applied. For
 `SceneObject/set`, check permissions in order: is caller the owner? Is
 caller the region owner? Is caller an admin? If none, return `forbidden`.
@@ -1052,10 +1049,11 @@ defines how blocking affects spatial queries:
 **What the spec requires:**
 
 - SceneAvatar records belonging to a blocked ChatContact SHOULD be excluded
-  from `SceneAvatar/get`, `SceneAvatar/query`, and
-  `SceneAvatar/queryChanges` responses delivered to the blocking user. The
+  from `SceneAvatar/get` responses and `SceneAvatar/query` results
+  delivered to the blocking user (`/changes` follows the visibility
+  contract; see "Per-user visibility filtering" below). The
   blocked avatar still exists; it is simply invisible to the blocker's client.
-- The blocked user MUST NOT learn they have been blocked. No error, no
+- The blocked user SHOULD NOT be able to learn they have been blocked. No error, no
   filtered-result indicator, no signal that distinguishes "filtered because
   blocked" from "not present." From the blocked user's perspective, the
   blocker's query behavior looks normal.
@@ -1078,6 +1076,63 @@ all observers and does not leak per-user blocking decisions.
   capability alone has no concept of blocked users.
 - Test that blocking is symmetric in its invisibility: the blocked user
   sees no difference in their own query results.
+
+### Per-user visibility filtering and change tracking
+
+The spec makes per-user filtering (visibility radius, occlusion, blocked
+contacts, deferred moderation) a server choice and says it does not change
+the JMAP state model: one state string per data type per account, `/changes`
+and `/queryChanges` report the account's changes, and a hidden object MAY be
+reported in `notFound` from `/get` (spec section 7.3). How a client learns
+that an object entered or left its view is up to you. Three workable
+approaches:
+
+**A. Filter only in `/get` and `/query`.** State strings and `/changes` stay
+account-wide; `/get` reports hidden ids in `notFound`.
+
+- Pros: matches the spec's state model as written; one change log per
+  account; cheap.
+- Cons: `/changes` reveals the ids and change timing of hidden objects. A
+  client cannot tell "hidden" from "destroyed" in `notFound`. An object that
+  comes into view without itself changing produces no change, so clients
+  must re-run `/query` (for example after their own avatar moves).
+
+**B. Per-user state strings.** Track each user's view; `/changes` reports an
+object as `created` when it enters the user's view and `destroyed` when it
+leaves, and a `StateChange` goes out when the view changes.
+
+- Pros: clients sync exactly what they may see with standard JMAP sync
+  code; no existence leak through `/changes`; suits hidden-information
+  games and fog of war.
+- Cons: a per-user change log and view recomputation as avatars and objects
+  move (worst case users x objects); recompute on reconciliation writes,
+  not at simulation rate. `destroyed` then means "left your view", so clients
+  must not treat it as deletion. State strings now differ per user of the
+  same account, which goes beyond the spec's description of the state
+  model; document it and keep `/changes`, `/queryChanges`, and push
+  consistent. (The spec already asks for this for one case: E2EE-bound
+  regions exclude hidden SceneAvatar records from `SceneAvatar/changes`.)
+
+**C. Cull in the simulation layer; one JMAP view per region.** Every user
+with region access gets the same `/get`, `/query`, and `/changes` results;
+interest management and occlusion live in the simulation layer and in
+ephemeral event delivery.
+
+- Pros: simplest JMAP server; no per-user state; responses cacheable
+  across users; easy to debug.
+- Cons: JMAP hides nothing from region members, so any client can read
+  every object regardless of the simulation layer. Unsuitable when hiding is
+  a security property (card hands, fog of war). Large regions cost more
+  bandwidth; clients bound it with `withinRadius` / `withinBounds` queries.
+
+**Recommendation.** Start with C when region contents are not secret from
+members. Use B, scoped to the regions that need it, when hiding is a
+security property and you can afford the per-user cost. A suits coarse,
+slowly changing filters (moderation deferral, blocks) where revealing an
+id's existence is acceptable. C covers spatial culling only: blocked-contact
+and E2EE filtering still need A or B. Whatever you choose, apply the same
+filter to `/get`, `/query`, `SceneObject/interact` (`notFound`), and
+ephemeral events, and use one approach per data type per account.
 
 ---
 
@@ -1128,9 +1183,11 @@ per minute per region).
 **Interaction event rate limits.** When the Scene WebSocket capability is
 deployed, the server SHOULD enforce a rate limit of 5 `SceneInteractionEvent`
 events per user per region per second, and 2 `SceneObjectEvent` updates per
-object per second. These limits are defined in draft-atwood-jmap-scene-wss-00 and apply
-to outbound event delivery. Events that exceed the limit are silently dropped;
-the most recent state is delivered when the rate window reopens.
+object per second. These limits are defined in draft-atwood-jmap-scene-wss-00.
+Events or frames that exceed the limit MAY be silently dropped; for object
+updates, the most recent state SHOULD be delivered when the rate window
+reopens. An interaction over the limit submitted with `SceneObject/interact`
+is reported in `notAccepted` with a `rateLimit` SetError.
 
 **`null` means no server-imposed limit, not infinite.** Even when quota fields
 are `null`, physical limits exist (database size, memory, file descriptors).
@@ -1192,13 +1249,15 @@ some fail).
 | Modifying another user's avatar | `forbidden` | Avatar update with mismatched userId. |
 | `mayCreateRegion` is `false` | `forbidden` | Region create by unauthorized user. |
 | `mayCreateObject` is `false` | `forbidden` | Object create by unauthorized user. |
-| Access policy denies entry | `forbidden` | Avatar create in invite-only region without invitation. |
+| Access policy does not admit the user | `notFound` | Avatar create in invite-only region without invitation. |
+| User banned or in post-eject cooldown | `forbidden` | Avatar create or re-entry update. |
+| User already has a record in the region | `alreadyExists` (`existingId`) | Avatar create; re-enter by updating that record. |
 | `maxRegionsPerAccount` exceeded | `overQuota` | Region create. |
 | `maxObjectsPerRegion` exceeded | `overQuota` | Object create. |
 | `maxAvatarsPerRegion` exceeded | `overQuota` | Avatar create (entering a full region). |
 | `maxAssetSizeBytes` exceeded | `overQuota` | Asset create with oversized blob. |
 | Concurrent modification | `stateMismatch` | Set with stale `ifInState`. |
-| Visual asset or text field violates content policy | `contentPolicy` | SceneObject/set create or update (spec section 9.9). |
+| Visual asset or text field violates content policy | `contentPolicy` | Synchronous rejection of SceneObject/set create or update (spec section 9.9). |
 | Per-user create rate limit exceeded | `rateLimit` | SceneObject/set create (spec section 9.9). Include `retryAfter` (seconds). |
 | SceneAvatar/set destroy attempted | `forbidden` | Destroy on any SceneAvatar record. Departure is modeled as an update setting `leftAt`; destroy is always forbidden (spec section 6.4). |
 
@@ -1229,9 +1288,12 @@ set:
 
 - `contentPolicy`: returned when a visual asset (`visualRef`) or text field
   (`name`, `worldState`) violates a deployment-defined content
-  moderation policy. Servers MAY defer visibility of newly created objects
-  until asset scanning completes; if the asset fails the content policy, the
-  server SHOULD destroy the object and notify the creator via `contentPolicy`.
+  moderation policy, when the server rejects the `/set` synchronously.
+  Servers MAY instead defer visibility of newly created objects until asset
+  scanning completes; if the asset then fails the content policy, the server
+  destroys the object, and the creator sees the destruction through
+  `SceneObject/changes` (no SetError; optionally an out-of-band moderation
+  notice).
 - `rateLimit`: returned when per-user `SceneObject/set create` rate limits
   are exceeded. The error SHOULD include a `retryAfter` property (integer,
   seconds until the client may retry). This is independent of the
@@ -1260,8 +1322,8 @@ The spec defines `simulationUri` as an opaque, deployment-supplied URI on
 SceneRegion that points to the real-time simulation layer (section 5.3,
 section 7). The spec explicitly states that the JMAP server is a spatial
 state database, not a rendering engine, and that the simulation protocol is
-deployment-defined. It calls out security requirements: clients MUST NOT
-auto-connect, and servers MUST NOT probe the URI.
+deployment-defined. It calls out security requirements: clients SHOULD NOT
+auto-connect, and servers SHOULD NOT probe the URI.
 
 ### What you must decide
 
@@ -1337,12 +1399,12 @@ unreachable:
   but the state database is intact.
 - Clients SHOULD inform the user that real-time features are unavailable.
 
-**Security recap.** Two non-negotiable rules from the spec:
+**Security recap.** Two security rules from the spec:
 
-1. **Clients MUST NOT auto-connect to `simulationUri`.** The user must
+1. **Clients SHOULD NOT auto-connect to `simulationUri`.** The user must
    initiate the connection (e.g., by clicking "Enter Region"). Auto-connecting
    on region load exposes the client to malicious simulation servers.
-2. **Servers MUST NOT fetch or probe `simulationUri`.** This prevents SSRF.
+2. **Servers SHOULD NOT fetch or probe `simulationUri`.** This prevents SSRF.
    The server stores the URI as an opaque string and never dereferences it.
 
 ### Recommended starting point
@@ -1421,7 +1483,7 @@ mutate frequently (avatar enter/leave, periodic position reconciliation,
 object creation/destruction). The spec recommends coalescing rapid
 mutations within a 1-5 second window before emitting a `StateChange`, to
 avoid overwhelming subscribers. Real-time position updates at simulation
-rates (10+ Hz) MUST NOT generate `StateChange` events at that frequency;
+rates (10+ Hz) SHOULD NOT generate `StateChange` events at that frequency;
 only periodic reconciliation writes (every 5-30 seconds) produce state
 changes.
 
@@ -1434,7 +1496,7 @@ changes.
 | `low` | Object destruction by admin (informational to the owner). |
 | `very-low` | SceneAsset changes; position reconciliation updates. |
 
-Servers MUST NOT assign `high` urgency to routine position reconciliation.
+Servers SHOULD NOT assign `high` urgency to routine position reconciliation.
 When a single `StateChange` covers multiple types with different urgencies,
 use the highest applicable urgency.
 
@@ -1542,11 +1604,11 @@ render any region in any mode they support.
 
 - Which AR frameworks to target (ARKit, ARCore, WebXR, OpenXR).
 - How to handle `geoAnchor` when the client has no location capability (desktop
-  browser, VR headset without GPS). The spec says clients SHOULD fall back to
-  rendering the region as a standalone virtual environment.
+  browser, VR headset without GPS). The spec's fallback for an unusable
+  anchor is rendering the region as a standalone virtual environment.
 - How to handle `referenceFrame` values the client does not recognize. The spec
-  says clients MUST NOT attempt AR rendering for unrecognized frames and SHOULD
-  fall back to standalone rendering.
+  says clients SHOULD NOT attempt AR rendering for unrecognized frames and can
+  instead fall back to standalone rendering.
 - Whether to support multiple anchored regions simultaneously (multiple AR
   layers from different servers in the same physical space).
 
@@ -1578,7 +1640,8 @@ made and documented each of the following decisions:
 - [ ] `mayCreateRegion` and `mayCreateObject` permission logic implemented
 
 **SceneRegion lifecycle (section 2)**
-- [ ] `"invite"` access policy: invitation mechanism implemented
+- [ ] `"invite"` access policy: `invitedUserIds` enforced (plus any other
+  admission mechanisms)
 - [ ] `"space"` access policy: Space membership resolution implemented (if
   JMAP Chat is co-deployed)
 - [ ] `simulationUri` provisioning strategy chosen
@@ -1598,7 +1661,8 @@ made and documented each of the following decisions:
 - [ ] Auto-eject from previous region on enter implemented
 - [ ] Silent disconnection detection implemented (simulation callback or
   heartbeat)
-- [ ] Reconnect window defined
+- [ ] Re-entry by updating the existing record (`leftAt: null`); create
+  returns `alreadyExists`
 - [ ] `activeAvatarCount` incremented/decremented atomically
 
 **Coordinate system (section 5)**

@@ -223,7 +223,7 @@ Then, using the `activeCallId` from the response:
 ]
 ```
 
-Do not open `joinUri` automatically. The VTC spec is explicit: clients MUST NOT connect
+Do not open `joinUri` automatically. The VTC spec says clients SHOULD NOT connect
 to `joinUri` without explicit user initiation. The "Enter Room" button is the user
 initiation — the client should make clear that entering the room means joining voice.
 
@@ -267,8 +267,11 @@ server automatically creates or removes a SceneAvatar for that participant.
 When the server observes a `VTCParticipant/set create` for a call that has a region
 binding:
 
-1. Check whether the participant already has a SceneAvatar in the bound region.
-2. If not, create a SceneAvatar for the participant at the region's `spawnPosition`.
+1. Check whether the participant's user already has a SceneAvatar in the bound
+   region (`SceneAvatar/query` with `regionId` and `userId`).
+2. If not, create a SceneAvatar for the participant; the server places it at the
+   region's `spawnPosition`. If a departed record exists, update it to set `leftAt`
+   to `null`.
 3. When the VTCParticipant leaves (sets `leftAt`), set `leftAt` on the corresponding
    SceneAvatar.
 
@@ -289,29 +292,22 @@ production deployments.
 
 ### Correlating avatars with participants
 
-Both the Scene spec and the VTC spec say the server SHOULD (not MUST) use the userId as
-the id within a given context. When the server follows this recommendation, the same
-userId appears as both `SceneAvatar.userId` and `VTCParticipant.userId`, providing a
-natural join key. The client can correlate avatars with participants by matching on userId.
-
-Because this is a SHOULD, not a MUST, servers are permitted to assign opaque ids that
-differ from userId — for example, when a single user has multiple avatars in the same
-region or multiple VTC participants in the same call (multi-device). When the id does not
-equal userId, the client must fall back to matching on the `userId` field directly rather
-than assuming `id == userId`. Clients should always use the `userId` field for correlation,
-not the `id` field, to be robust against servers that assign non-userId ids:
+SceneAvatar and VTCParticipant ids are ordinary server-assigned ids, not the userId.
+The same userId appears as both `SceneAvatar.userId` and `VTCParticipant.userId`,
+providing a natural join key. Clients correlate avatars with participants by matching
+on the `userId` field, never on `id`:
 
 ```json
 {
   "sceneAvatar": {
-    "id": "user:alice@example.com",
+    "id": "01J5AV00000000000000000001",
     "regionId": "01J5ABC0000000000000000001",
     "userId": "user:alice@example.com",
     "position": [5.2, 0, -1.8],
     "displayName": "Alice Chen"
   },
   "vtcParticipant": {
-    "id": "user:alice@example.com",
+    "id": "01J4XMVQK7NRYS9PPCEHTK4CD0",
     "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "userId": "user:alice@example.com",
     "displayName": "Alice Chen",
@@ -546,7 +542,7 @@ when the avatar enters a zone and switches the user's VTC call.
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000010",
+  "id": "01J5QBJ0000000000000000010",
   "regionId": "01J5ABC0000000000000000001",
   "name": "Meeting Room A",
   "position": [20, 0, 15],
@@ -613,7 +609,7 @@ server creates a SceneObject representing the shared screen:
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000020",
+  "id": "01J5QBJ0000000000000000020",
   "regionId": "01J5ABC0000000000000000001",
   "parentId": null,
   "name": "Screen share: Alice Chen",
@@ -759,29 +755,30 @@ and network traffic.
 
 ### Blocked-sender suppression asymmetry
 
-The Scene WSS spec and VTC WSS spec apply blocked-sender suppression at different
-scopes. The Scene WSS spec suppresses all event types — `SceneAvatarEvent`,
-`SceneObjectEvent`, and `SceneInteractionEvent` — when the originating user is blocked.
-The VTC WSS spec suppresses only `VTCRingEvent` and `VTCCallEndEvent` (per-user events)
-when the initiator is blocked. Per-call events — `VTCParticipantEvent`,
-`VTCMediaStateEvent`, `VTCActiveSpeakerEvent`, `VTCUnmuteRequestEvent`,
-`VTCRecordingStateEvent`, and `VTCGatewaySignal` — are not subject to blocked-sender
-filtering. They are delivered to any current participant of the call.
+The Scene WSS spec suppresses `SceneAvatarEvent`, `SceneObjectEvent`, and
+`SceneInteractionEvent` when the originating user is blocked. The VTC WSS spec suppresses
+`VTCRingEvent` and `VTCCallEndEvent` when the initiator is blocked, and SHOULD also
+suppress the in-call events `VTCParticipantEvent`, `VTCMediaStateEvent`,
+`VTCActiveSpeakerEvent`, and `VTCUnmuteRequestEvent` that originate from a blocked
+participant. Two per-call events are exempt: `VTCRecordingStateEvent` (the recording
+consent signal, delivered to all participants regardless of block status) and
+`VTCGatewaySignal` (moderator-only).
 
-This means a user who has blocked another user will not see that user's avatar appear
-(SceneAvatarEvent is suppressed) but will still receive VTCParticipantEvent when the
-blocked user joins the same call, and will still receive VTCMediaStateEvent and
-VTCActiveSpeakerEvent for the blocked user's media activity. The client must handle this
-gap: if the deployment wants full blocked-user hiding in a Scene+VTC context, the client
-should filter VTC per-call events client-side by checking the participant's userId against
-the local block list. The server does not do this filtering for per-call VTC events because
-the VTC WSS spec scopes block filtering to per-user ring events only.
+A user who has blocked another user therefore sees neither that user's avatar nor their
+call join, media-state, or active-speaker events, but still receives recording-state
+changes for the call. Because the in-call rule is a SHOULD, a client that needs full
+blocked-user hiding should also filter VTC per-call events locally, resolving each
+event's `participantId` to `VTCParticipant.userId` and checking it against the local
+block list.
 
 ### Correlating Scene and VTC events
 
 When a `SceneAvatarEvent` with `event: "entered"` arrives, and the region has an
 `activeCallId`, the client may soon receive a `VTCParticipantEvent` with
-`event: "joined"` for the same userId. The two events arrive independently — they are
+`event: "joined"` for the same user. A `VTCParticipantEvent` carries no `userId`: the
+client resolves its `participantId` to the VTCParticipant record (via `VTCParticipant/get`
+or its cached copy) and matches that record's `userId` against `SceneAvatar.userId`.
+The two events arrive independently — they are
 not guaranteed to arrive in any particular order. The client should handle both
 gracefully:
 
@@ -942,8 +939,9 @@ The client receives:
 ```json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "acct1",
   "regionId": "01J5ABC0000000000000000001",
-  "avatarId": "user:bob@example.com",
+  "avatarId": "01J5AV00000000000000000002",
   "event": "entered",
   "userId": "user:bob@example.com",
   "displayName": "Bob Martinez"
@@ -955,8 +953,9 @@ Shortly after:
 ```json
 {
   "@type": "VTCParticipantEvent",
+  "accountId": "acct1",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
-  "participantId": "user:bob@example.com",
+  "participantId": "01J4XNZRM8QWVT0RRDFJVS5EF0",
   "event": "joined",
   "role": "participant",
   "displayName": "Bob Martinez"
@@ -965,7 +964,9 @@ Shortly after:
 
 The client:
 
-1. Renders Bob's avatar at the spawn position.
+1. Renders Bob's avatar at the spawn position, and resolves participant
+   `01J4XNZRM8QWVT0RRDFJVS5EF0` to `userId` `user:bob@example.com` via
+   `VTCParticipant/get` to link the audio track to that avatar.
 2. Creates a `PannerNode` for Bob's audio, positioned at the spawn point.
 3. As Bob's avatar moves (via the simulation layer), updates the `PannerNode` position.
 4. Bob's voice is now spatialized — Alice hears him from the direction of his avatar.
@@ -986,8 +987,9 @@ a screen-share SceneObject:
 ```json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "acct1",
   "regionId": "01J5ABC0000000000000000001",
-  "objectId": "01J5OBJ0000000000000000020",
+  "objectId": "01J5QBJ0000000000000000020",
   "event": "created",
   "updatedBy": "user:alice@example.com",
   "position": [0, 2.5, -10]
@@ -1008,8 +1010,9 @@ Other clients receive:
 ```json
 {
   "@type": "VTCParticipantEvent",
+  "accountId": "acct1",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
-  "participantId": "user:alice@example.com",
+  "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "event": "left",
   "role": "participant",
   "displayName": "Alice Chen"
@@ -1019,8 +1022,9 @@ Other clients receive:
 ```json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "acct1",
   "regionId": "01J5ABC0000000000000000001",
-  "avatarId": "user:alice@example.com",
+  "avatarId": "01J5AV00000000000000000001",
   "event": "left",
   "userId": "user:alice@example.com",
   "displayName": "Alice Chen"
@@ -1057,7 +1061,8 @@ When implementing on the client side, your client must:
 - Only open `joinUri` after explicit user action — never automatically.
 - Subscribe to both `SceneStreamEnable` and `VTCStreamEnable` for the active region
   and call.
-- Correlate SceneAvatar and VTCParticipant records by userId for spatial audio.
+- Correlate SceneAvatar and VTCParticipant records by userId for spatial audio
+  (resolve a VTC event's `participantId` to `VTCParticipant.userId` first).
 - Apply spatial audio using avatar positions and the region's `environment` config.
 - Handle Scene and VTC events arriving in any order for the same userId.
 - Apply hysteresis to proximity and zone boundaries to avoid rapid audio toggling or

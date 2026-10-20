@@ -161,11 +161,15 @@ back to its prior position.
 ### Hidden Information
 
 For games where players cannot see each other's pieces (Battleship,
-Stratego), the server uses visibility filtering. When a piece has
-`ownerId` set to one player, the server returns a face-down or
+Stratego), the server uses visibility filtering. When a piece belongs
+to one player, the server returns a face-down or
 generic visual (`visualRef` pointing to a card-back blob) to the
 other player. The true `worldState` are omitted or redacted in
-the response sent to non-owners.
+the response sent to non-owners. A piece's player is either the
+player who created it (`ownerId` is server-set to the creator) or,
+for pieces the game server creates or moves between players (dealt
+cards), a deployment-defined `worldState` field such as
+`handOwner`; `ownerId` cannot be reassigned.
 
 ### Chat Integration
 
@@ -378,9 +382,11 @@ Two consecutive passes end the game and trigger scoring.
 **Scoring:** Territory counting is complex. The simulation layer
 computes territory after both players pass, updates the game state
 with final scores (territory + prisoners + komi for white), and sets
-`phase: "scoring"`. Players confirm dead stones via `"activate"`
-interactions on disputed groups, then the simulation finalizes the
-result.
+`phase: "scoring"`. Stones are `interactable: false`, and the server
+rejects or discards interactions with non-interactable objects, so
+for scoring the simulation sets `interactable: true` on the stones.
+Players confirm dead stones via `"activate"` interactions on disputed
+groups, then the simulation finalizes the result.
 
 ### Hidden Information
 
@@ -1709,8 +1715,10 @@ server or the opponent. The server receives only the committed
 ## Part II: Card Games
 
 Card games use `viewHint: "2d-topdown"` with per-player visibility
-filtering for hidden hands. Cards are SceneObjects with `ownerId`
-controlling who can see the face. The server returns `visualRef`
+filtering for hidden hands. Cards are SceneObjects whose
+`worldState.handOwner` controls who can see the face (`ownerId` is
+server-set to the card's creator and does not change when a card
+changes hands). The server returns `visualRef`
 pointing to a card-back blob for cards the requesting player is not
 authorized to see.
 
@@ -1800,8 +1808,9 @@ On a player's turn, they draw one card from the next player's hand.
 The opponent's cards are displayed face-down in a fan; the active
 player clicks one to draw it. The simulation:
 
-1. Transfers the card to the active player's hand (changes `ownerId`
-   and `handOwner`, updates `position` to the player's hand fan).
+1. Transfers the card to the active player's hand (changes
+   `handOwner`, updates `position` to the player's hand fan;
+   `ownerId` stays the card's creator).
 2. Checks for a new pair. If the drawn card matches a card in the
    player's hand, both are removed and added to the discard pile.
 3. Advances the turn.
@@ -4479,9 +4488,15 @@ Static clue objects use `interactable: false` and `physicsMode:
 
 3. Server checks the answer. On success it patches the puzzle state
    to `"solved"` and, if `unlocksObjectId` is set, patches the linked
-   object as a side-effect in the same `SceneObject/set` call. On
-   failure the server returns an error action; the client displays
-   a shake animation.
+   object as a side-effect in the same `SceneObject/set` call. A
+   wrong code is not a protocol error: the interaction is accepted
+   but the puzzle stays `"locked"`, and the server records the failed
+   attempt in the puzzle's `worldState` (e.g., a deployment-defined
+   `lastAttemptFailed: true`); the client displays a shake animation.
+   Protocol-level failures (no active avatar, non-interactable
+   object) are reported only when the client submits the interaction
+   with `SceneObject/interact`; a WebSocket interaction frame is
+   discarded silently.
 
 **Item pickup:**
 
@@ -4514,8 +4529,12 @@ When the door's state is `"unlocked"`, a player can open it:
 }
 ```
 
-If the door is still `"locked"` the server rejects the interaction
-with an error and the client displays the transition hint text.
+If the door is still `"locked"` the interaction has no effect: the
+server leaves the door's state unchanged, and the client, seeing
+`worldState.state` still `"locked"`, displays the transition hint
+text. A game rule produces no error; `SceneObject/interact` returns
+SetErrors only for protocol-level failures, and the WebSocket frame
+path never returns one.
 
 **Using an inventory item on a locked object:**
 
@@ -4617,8 +4636,11 @@ secrets are puzzle solutions.
 
 **Multi-room:** Use multiple SceneRegions linked by `environment.exitTo`
 (a custom field pointing to the next region's id). When the team
-escapes one room the server updates SceneAvatar positions to move
-everyone to the next region.
+escapes one room, each client leaves the current region (sets
+`leftAt` on its SceneAvatar) and enters the next region (creates a
+SceneAvatar there, or sets `leftAt` to `null` on its existing one).
+A SceneAvatar's `regionId` is immutable, so an avatar cannot be
+moved between regions by updating it.
 
 **3D first-person:** Replace `viewHint: "2d-topdown"` with
 `viewHint: "3d"` and `environment.renderMode: "3d"`. Objects get
@@ -4756,7 +4778,7 @@ the raise in the classroom state object (see Game State below).
   "physicsMode": "none",
   "interactable": true,
   "visible": true,
-  "ownerId": "user:alice@example.com",
+  "ownerId": "user:teacher@example.com",
   "worldState": {
     "objectKind": "hand-raise-button",
     "forStudent": "user:alice@example.com"
@@ -4930,8 +4952,9 @@ visibility filtering — withholding teacher-only objects from student
 | Classroom state    | Full object         | Not returned by server    |
 
 The server enforces visibility by filtering `SceneObject/get` and
-`SceneObject/query` results based on `ownerId` and the `visible`
-flag. No client-side trust is required.
+`SceneObject/query` results based on the requester's role,
+`worldState.forStudent`, and the `visible` flag. No client-side
+trust is required.
 
 ### What Makes This Interesting for the Spec
 

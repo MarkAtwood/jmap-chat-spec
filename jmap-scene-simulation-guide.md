@@ -14,9 +14,12 @@ decide before shipping.
 
 The JMAP Scene draft defines spatial state at rest: what objects exist, where
 they are, who is present. Everything that moves at interactive rates -- avatar
-position synchronization, physics, interaction events, spatial audio -- lives
-behind the `simulationUri` field on SceneRegion and is explicitly out of scope
-for the spec.
+position synchronization, physics, spatial audio -- lives behind the
+`simulationUri` field on SceneRegion and is explicitly out of scope for the
+spec. Object interactions are the exception: the Scene draft defines the
+`SceneObject/interact` method, and the Scene WebSocket draft defines the
+`SceneInteractionEvent` client frame and its fan-out to region subscribers.
+A simulation layer may also carry its own interaction messages.
 
 This is not a free pass. An implementation that ships `simulationUri` as a bare
 WebSocket echo server will deliver a broken product: avatars that teleport,
@@ -167,7 +170,9 @@ optimize each independently.
    avatar positions, begin sending own position.
 5. If `inputUri` is non-null and the client has high-frequency input devices,
    connect to `inputUri` for bidirectional I/O (control axes, force feedback).
-6. `SceneAvatar/set create` -- register presence in the region. This may
+6. `SceneAvatar/set create` -- register presence in the region (a user
+   re-entering a region updates their existing SceneAvatar to set `leftAt` to
+   `null`; a create returns `alreadyExists`). This may
    happen before or after step 4, depending on whether the deployment wants
    presence to track JMAP state or simulation-layer connection.
 
@@ -197,8 +202,8 @@ and simulation server share a database or message bus for state reconciliation
 The spec defines `simulationUri` as "the real-time simulation layer endpoint
 for this region. Opaque to the JMAP server. May be a WebSocket URL, a WebRTC
 signaling endpoint, a custom UDP endpoint, or any other simulation entry point"
-(SceneRegion Object Fields, `simulationUri`). The spec requires that clients
-MUST NOT connect without explicit user initiation and that servers MUST NOT
+(SceneRegion Object Fields, `simulationUri`). The spec says that clients
+SHOULD NOT connect without explicit user initiation and that servers SHOULD NOT
 fetch or probe the URI (Security Considerations, simulationUri Is Untrusted).
 Beyond that, the spec is silent on URI format, authentication, protocol
 negotiation, and connection lifecycle.
@@ -238,7 +243,8 @@ is the user they claim to be and has access to the region. Options:
 
 - *Token in query parameter*: `wss://sim.example.com/regions/{regionId}?token={jwt}`.
   The JMAP server generates a short-lived JWT at region entry time and includes
-  it in `simulationUri` or returns it alongside the SceneAvatar create response.
+  it in `simulationUri` or returns it through a deployment-defined extension
+  (the `SceneAvatar/set` response defines no token field).
   Simple, widely compatible.
 - *Token in first message*: the client connects to `simulationUri` and sends an
   authentication message as the first frame. The simulation server validates the
@@ -807,8 +813,8 @@ through `simulationUri` is sufficient.
 ### What the spec leaves open
 
 The spec defines a two-tier visibility contract (Real-Time Simulation
-Layer, Visibility Contract): first, a MUST-level access-control rule ("The
-server MUST NOT include a SceneObject in a `SceneObject/get` response or
+Layer, Visibility Contract): first, a SHOULD-level access-control rule ("The
+server SHOULD NOT include a SceneObject in a `SceneObject/get` response or
 `SceneObject/query` result if the authenticated user does not have access to
 the object's containing SceneRegion"), and second, a SHOULD-level filtering
 rule ("The server SHOULD apply visibility filtering to limit the objects
@@ -976,9 +982,11 @@ gracefully:
    `SceneObject/get` are available; render a static scene. Avatar positions
    from `SceneAvatar/get` are stale but present; render other avatars at their
    last known positions.
-2. *Disable real-time features.* No avatar movement updates, no interaction
-   events, no physics. The user can view the scene but not participate in
-   real-time.
+2. *Disable real-time features.* No avatar movement updates, no
+   simulation-layer interaction events, no physics. The user can view the
+   scene but not participate in real-time. Interactions defined by the Scene
+   draft (`SceneObject/interact`, the JMAP WebSocket `SceneInteractionEvent`)
+   do not depend on `simulationUri`.
 3. *Display connection status.* Show the user that the simulation layer is
    unavailable and that the scene is in "view only" mode. Do not silently
    degrade.
@@ -1447,10 +1455,12 @@ region-local, so regions can be any size -- but practical regions are typically
 must:
 
 1. Set `leftAt` on the SceneAvatar in Region A (or the server does this
-   automatically per the spec: "the server MUST set `leftAt` on the previous
+   automatically per the spec: "the server SHOULD set `leftAt` on the previous
    avatar before creating the new one" when a user enters a new region,
    SceneAvatar/set, Entering a Region).
-2. Create a new SceneAvatar in Region B via `SceneAvatar/set create`.
+2. Create a new SceneAvatar in Region B via `SceneAvatar/set create`, or, if
+   the user already has a record in Region B from an earlier visit, update it
+   to set `leftAt` to `null` (a create returns `alreadyExists`).
 3. Disconnect from Region A's `simulationUri`.
 4. Connect to Region B's `simulationUri`.
 5. Begin receiving simulation updates for Region B.

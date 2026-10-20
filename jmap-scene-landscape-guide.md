@@ -88,7 +88,7 @@ It is a real-time control protocol, not a state management protocol.
 similar role to VRChat's OSC parameters: extensible key-value state attached
 to an avatar that the spec does not interpret. The difference is structural:
 `worldState` is persistent JMAP state with standard get/set/changes
-semantics, access control, and queryability. Real-time avatar parameter
+semantics and access control (it is not a `SceneAvatar/query` filter). Real-time avatar parameter
 synchronization (the 10+ Hz updates that OSC handles) is the simulation layer's
 job, not JMAP's. Scene provides the state database; the simulation layer
 provides the real-time control channel.
@@ -641,8 +641,8 @@ for real-time spatial state synchronization. ActivityPub's eventual consistency
 model and its focus on content distribution rather than session state make it
 a poor fit for spatial presence.
 
-**How Scene relates.** Scene achieves what Mozilla Social aspired to — federated
-spatial presence — through JMAP's existing architecture rather than ActivityPub.
+**How Scene relates.** Scene does not define federation. It builds spatial
+presence on JMAP's existing architecture rather than ActivityPub.
 JMAP already has account-level capability negotiation, authentication,
 authorization, and state synchronization. Scene adds spatial data types to this
 existing infrastructure. Federation between JMAP servers is a JMAP-level
@@ -1498,7 +1498,7 @@ inform Scene's design. Scene's responses to Snow Crash's architecture:
 | Single Street, single geometry | Many SceneRegions on many servers; no universal geography |
 | Avatar quality = wealth | Avatar visuals are `visualRef` blobs; quality is a client/asset concern, not a protocol concern |
 | Land scarcity drives economics | No land model; SceneRegion creation is a server policy decision |
-| Monolithic instance | Federated by design; each server is independent |
+| Monolithic instance | Many independent servers; Scene itself defines no cross-server federation |
 
 Snow Crash correctly identified that a metaverse is an economic and political
 system, not just a rendering engine. Scene takes that insight and removes the
@@ -1790,7 +1790,7 @@ The nine systems above reveal consistent patterns:
 | Infrastructure operator is a threat model | True Names | Protocol separates identity from spatial state; no single operator |
 | A metaverse is an economic and political system | Snow Crash, T'Rain, Halting State | Economics are deployment concerns, not protocol prescriptions |
 | Monolithic design is a single point of failure | OASIS, Snow Crash | Open protocol, composable capabilities, distributed deployment |
-| Servers cost money; governance follows funding | Bitworld, T'Rain, Halting State | Out of scope (deployment concern), but `simulationUri` and federation make the cost distributable |
+| Servers cost money; governance follows funding | Bitworld, T'Rain, Halting State | Out of scope (deployment concern), but `simulationUri` and independent servers make the cost distributable |
 | Cross-server identity is essential | All nine | JMAP DID |
 | Asset portability prevents platform death | Data Earth | JMAP CID + glTF |
 | AR anchoring to the physical world | Darknet, Rainbows End | `geoAnchor` with `referenceFrame` |
@@ -1804,7 +1804,7 @@ The nine systems above reveal consistent patterns:
 The most important lesson: every fictional metaverse that survives the
 "real economics" filter treats infrastructure cost as a structural force, not a
 detail. The spec cannot prescribe who pays for servers, but the architecture —
-federation, open protocol, deployment-agnostic simulation layer — ensures that
+independent servers, open protocol, deployment-agnostic simulation layer — ensures that
 the cost can be distributed across operators rather than concentrated in one.
 
 ---
