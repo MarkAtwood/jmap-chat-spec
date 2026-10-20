@@ -75,18 +75,26 @@ method (draft §Capability (Session-Level)).
 |---|---|---|---|---|
 | `did:key` | Self-resolving (no network) | None (key loss = identity loss) | Complete (no external dependency) | Minimal |
 | `did:web` | HTTPS fetch from domain | Key rotation via document update | DNS/HTTP dependent | Moderate |
+| `did:webvh` | HTTPS fetch of DID log, then full log verification | Key rotation via signed log entry; optional pre-rotation | DNS/HTTP dependent; portable DIDs can change domain | Moderate |
 | `did:pkh` | Blockchain address derivation | Wallet recovery mechanisms | Chain-dependent | Moderate |
 | `did:ion` | Bitcoin-anchored (via Sidetree) | Key rotation via DID operations | Bitcoin-resilient | High |
 | `did:peer` | Peer-to-peer exchange | N/A (ephemeral by design) | Complete | Minimal |
 
-**Recommended starting point.** Support `did:key` and `did:web`.
+**Recommended starting point.** Support `did:webvh`, `did:key`, and `did:web`,
+each for its own kind of principal.
 
-- `did:key` for consumer/self-sovereign deployments: zero infrastructure, the
-  DID is the public key. Users who lose their key lose their identity — this is
-  acceptable for non-enterprise use cases and is the honest tradeoff.
-- `did:web` for enterprise deployments: the organization hosts DID documents
-  under its domain, can rotate keys, and can revoke DIDs when employees leave.
-  Requires HTTPS hosting but no blockchain infrastructure.
+- `did:webvh` as the default for user identities that the user controls and
+  must be able to rotate. The user holds the update keys; the host serving
+  the log cannot add a key. Keys rotate without changing the DID, and a
+  portable DID survives a domain move. Requires HTTPS hosting of a log file
+  but no blockchain infrastructure.
+- `did:key` for zero-infrastructure use: the DID is the public key. Users who
+  lose their key lose their identity, and a key change is a DID migration —
+  acceptable where nothing can be hosted, and the honest tradeoff.
+- `did:web` only for infrastructure principals (servers, relays, services),
+  where the operator of the domain is the principal and trusting the host is
+  not a weakness. Do not use it for user identities: the host can silently
+  replace the keys.
 
 Add other methods when your deployment has a concrete need. Do not support
 methods speculatively.
@@ -123,7 +131,7 @@ A `did:web` DID resolves to a DID document hosted at a well-known HTTPS URL.
 
 ```
 did:web:example.com       → https://example.com/.well-known/did.json
-did:web:example.com:users:alice → https://example.com/users/alice/did.json
+did:web:example.com:services:relay → https://example.com/services/relay/did.json
 ```
 
 The DID document is a JSON-LD document with at minimum an `authentication`
@@ -132,11 +140,11 @@ verification method:
 ```json
 {
   "@context": "https://www.w3.org/ns/did/v1",
-  "id": "did:web:example.com:users:alice",
+  "id": "did:web:example.com:services:relay",
   "authentication": [{
-    "id": "did:web:example.com:users:alice#key-1",
+    "id": "did:web:example.com:services:relay#key-1",
     "type": "Ed25519VerificationKey2020",
-    "controller": "did:web:example.com:users:alice",
+    "controller": "did:web:example.com:services:relay",
     "publicKeyMultibase": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
   }]
 }
@@ -153,6 +161,82 @@ verification method:
   `application/did+ld+json`.
 - Host DID documents on infrastructure you control. A CDN is fine for
   performance, but the origin must be under your administrative control.
+
+### 2.4 `did:webvh` implementation notes
+
+A `did:webvh` DID (DIF did:webvh v1.0) names a self-certifying identifier
+(SCID) and a web location. It resolves to a hash-chained DID log, one JSON
+entry per line; the DID document is the state in the latest verified entry.
+The SCID is not part of the URL.
+
+```
+did:webvh:{SCID}:example.com             → https://example.com/.well-known/did.jsonl
+did:webvh:{SCID}:example.com:users:alice → https://example.com/users/alice/did.jsonl
+did:webvh:{SCID}:example.com%3A3000:dids → https://example.com:3000/dids/did.jsonl
+```
+
+A log that declares witnesses also has `did-witness.json` next to
+`did.jsonl`. Fetch it from the method-derived URL even when the log itself
+came from `didDocumentUri` or a watcher.
+
+**What the spec defines.** The draft defers `did:webvh` resolution to DIF
+did:webvh v1.0 and adds no resolver requirements of its own. It says parties
+SHOULD record the `versionId` in effect when they accept an object, because
+without it they cannot re-verify history after a key rotation (draft
+§Resolving `did:webvh`).
+
+**What DIF requires.** DIF requires the resolver to verify every log entry
+(SCID, entry hash, version numbering, `versionTime` ordering, update-key
+authorization including pre-rotation) and, when the log declares witnesses,
+the witness threshold. Resolution fails on an invalid log. DIF allows treating
+the first invalid entry and everything after it as invalid; earlier versions
+stay usable for checking stored objects. DIF also warns that a parallel
+`did:web` document carries none of the log's guarantees.
+
+**Where verification lives.** Split resolution into two parts:
+
+- A pure verifier: input is the DID string plus the `did.jsonl` bytes (and
+  the `did-witness.json` bytes, when the log declares witnesses); output is
+  the verified sequence of versions, or an error. No I/O. It checks the
+  SCID, the entry hash chain, `versionTime` ordering, update-key authorization (pre-rotation via
+  `nextKeyHashes` when active), and witness thresholds. This is the part to
+  test exhaustively, against the DIF test vectors and logs produced by an
+  independent implementation.
+- A fetcher: the DID-to-HTTPS transform and the HTTPS GET. It returns bytes
+  and nothing else. It is untrusted by construction — a log fetched from a
+  watcher, a cache, or the `didDocumentUri` hint goes through the same
+  verifier as one fetched from the method-derived URL.
+
+**Caching by `versionId`.**
+
+- A verified version is immutable: cache it keyed by `(DID, versionId)`
+  indefinitely. Stored objects need the version they were accepted under, and
+  a key removed by a later entry must not make them fail verification.
+- Record the `versionId` alongside each accepted DID-bearing or signed object.
+  When verifying it later, look up that version, not the latest.
+- Cache only the pointer to the latest version with a TTL (same 5-15 minute
+  range as `did:web`). Refresh it on signature-verification failure.
+- Remember the latest `versionId` you have seen for each DID (a DIF SHOULD).
+  A freshly fetched log that ends before that version is truncated: warn or
+  fail resolution, as DIF recommends, and keep the newer cached versions for
+  stored objects. Without watchers, this is the only rollback check, and it
+  protects only DIDs you have resolved before.
+- Never cache a log that fails verification.
+
+**Witnesses.** A verified log proves only that each entry you received was
+authorized. It does not show that you received the latest entry, or the same
+log other resolvers received. Witnesses mitigate split view: under DIF a
+witness must not sign two children of one parent. They do not catch rollback.
+DIF catches rollback only against a newer `versionId` you have already seen,
+or by comparing watchers. A first-time resolver with no witnesses or watchers
+has no protection against either. When a log declares witnesses, DIF requires
+the verifier to enforce the threshold.
+
+**Parallel `did:web`.** A holder may also publish `did.json` at the same
+location, with `alsoKnownAs` naming the `did:webvh` DID. Do not take keys from
+it unless they appear in the verified log's current document.
+
+Libraries: `didwebvh-py` (Python), `didwebvh-ts` (TypeScript).
 
 ---
 
@@ -236,10 +320,17 @@ An external process watches IdP lifecycle events and maintains DID documents.
 
 ```
 IdP fires user.create event
-  → Sidecar generates keypair and DID document
-  → Sidecar publishes did:web document
+  → Sidecar generates update keys, signing keys, and genesis log entry
+  → Sidecar publishes did:webvh log (did.jsonl)
   → JMAP server queries sidecar for accountId → DID mapping
 ```
+
+The sidecar holds the update keys, so the organization controls the log.
+Witnesses are optional, a deployment choice. Without them, the organization
+can show different valid logs to different resolvers (split view). Witnesses
+mitigate split view only; rollback to an old prefix is caught only by a
+resolver that has already seen a newer `versionId`, or by comparing watchers
+(Section 2.4). Enable portability at creation if the organization may change domain.
 
 **When to use:** Enterprise deployments where the IdP cannot be extended to
 issue DIDs directly. The sidecar sits between the IdP and the JMAP server,
@@ -249,10 +340,10 @@ translating identity lifecycle events into DID lifecycle events.
 
 | IdP event | DID lifecycle | JMAP effect |
 |---|---|---|
-| User created | DID document published (ACTIVE) | Account binding established |
-| User suspended | DID document deactivated | Session creation blocked (draft §Suspension) |
-| User deleted | DID document tombstoned | Sessions terminated (draft §Revocation) |
-| User reactivated | DID document re-activated | Account restored |
+| User created | Genesis log entry published (ACTIVE) | Account binding established |
+| User suspended | Log entry removes verification methods | Session creation blocked (draft §Suspension) |
+| User deleted | Log entry sets `deactivated: true` (permanent) | Sessions terminated (draft §Revocation) |
+| User reactivated | Log entry restores verification methods | Account restored |
 
 **Tradeoff:** Additional infrastructure (the sidecar process). But it
 decouples DID management from both the IdP and the JMAP server, which is
@@ -385,6 +476,21 @@ For `did:web`:
    JWS-signed session token) can be validated against the DID document's
    authentication key.
 
+For `did:webvh`:
+
+1. Derive the `did.jsonl` URL from the DID, or use `didDocumentUri`, and
+   fetch the log. If the log declares witnesses, fetch `did-witness.json`
+   from the method-derived URL, even when the log came from `didDocumentUri`
+   or a watcher.
+2. Run the pure verifier over the bytes (see Section 2.4). On failure, treat
+   the DID as unverified; do not fall back to a parallel `did:web` document.
+3. Take the `authentication` verification method from the current verified
+   document (or, for a stored object, from the version recorded at
+   acceptance).
+4. Require a signed assertion from the server. Unlike `did:web`, a TLS fetch
+   from the server's own domain proves nothing here: the host need not hold
+   any key in the log.
+
 **Failure handling:**
 
 - DID document fetch fails (network error, HTTP 404, TLS error): treat the
@@ -437,7 +543,13 @@ existing objects keep the DID recorded at creation, and the server SHOULD set
 **Recommended starting point.**
 
 - Key rotation: do nothing in the JMAP layer. Invalidate any cached DID
-  document for the DID so the next verification picks up the new keys.
+  document for the DID so the next verification picks up the new keys. For
+  `did:webvh`, invalidate only the latest-version pointer; keep the cached
+  versions that stored objects reference (Section 2.4).
+- `did:webvh` domain move: a portable DID that moves gets a new DID string
+  with the same SCID. Handle it as a DID migration. Before setting
+  `previousDid`, confirm the new log continues the old one and lists the
+  old DID in `alsoKnownAs`.
 - DID migration: update the account table, set `previousDid`, and let the
   Session `state` change. No per-type StateChange is needed, because no
   existing object changes.
@@ -678,20 +790,21 @@ for verification when the user explicitly requests it.
 
 ## 9. DID method tradeoffs at a glance
 
-| Concern | `did:key` | `did:web` |
-|---|---|---|
-| Setup cost | None (generate keypair) | Moderate (host DID document over HTTPS) |
-| Key rotation | Impossible (new key = new DID, a DID migration) | Supported (update document) |
-| Key recovery | None | Organization controls the document |
-| Resolution speed | Instant (no network) | HTTPS fetch + TLS handshake |
-| Censorship risk | None | Domain seizure disables the DID |
-| Phishing risk | None (opaque key hash) | Domain confusion attacks |
-| Auditability | Low (no trail of key changes) | High (document versioning, access logs) |
-| Enterprise fit | Poor (no key management) | Good (organization controls lifecycle) |
-| Consumer fit | Good (zero infrastructure) | Poor (requires HTTPS hosting) |
+| Concern | `did:key` | `did:web` | `did:webvh` |
+|---|---|---|---|
+| Setup cost | None (generate keypair) | Moderate (host DID document over HTTPS) | Moderate (host DID log over HTTPS) |
+| Key rotation | Impossible (new key = new DID, a DID migration) | Supported (update document) | Supported (signed log entry; optional pre-rotation) |
+| Key recovery | None | Organization controls the document | Update-key holder controls the log |
+| Resolution speed | Instant (no network) | HTTPS fetch + TLS handshake | HTTPS fetch + full log verification |
+| Censorship risk | None | Domain seizure disables the DID | Domain seizure disables the location; a portable DID can move |
+| Phishing risk | None (opaque key hash) | Domain confusion attacks | Domain confusion attacks |
+| Auditability | Low (no trail of key changes) | High (document versioning, access logs) | High (verifiable log of every change) |
+| Host can replace keys | Not applicable | Yes | No (needs an update key) |
+| Enterprise fit | Poor (no key management) | Infrastructure principals only | Good (organization holds update keys; witnesses optional) |
+| Consumer fit | Good (zero infrastructure) | Poor (requires HTTPS hosting) | Good (default for user-controlled rotating identities) |
 
-Most deployments will support both and let the binding strategy determine which
-method is used for each account.
+Most deployments will support all three and let the binding strategy
+determine which method is used for each account.
 
 ---
 
@@ -710,6 +823,7 @@ Before enabling `urn:ietf:params:jmap:did` in production:
 - [ ] Suspension handling implemented: session rejection + presence termination (Section 6.2)
 - [ ] Revocation handling implemented: session termination + object retention (Section 6.3)
 - [ ] `did:web` document hosting validated (if applicable): HTTPS, correct Content-Type, Cache-Control (Section 2.3)
+- [ ] `did:webvh` log verifier tested against independent vectors, `versionId` recorded on accepted objects, version cache in place (if applicable) (Section 2.4)
 - [ ] Privacy documentation updated: correlation properties, DID visibility (Section 8)
 
 ---
@@ -728,6 +842,7 @@ Before enabling `urn:ietf:params:jmap:did` in production:
 | JMAP VTC (calls, participants) | `jmap-vtc-implementer-guide.md` |
 | JMAP Scene (regions, objects, avatars) | `jmap-scene-implementer-guide.md` |
 | W3C DID Core | https://www.w3.org/TR/did-core/ |
+| DIF did:webvh v1.0 | https://identity.foundation/didwebvh/v1.0/ |
 | W3C Verifiable Credentials | https://www.w3.org/TR/vc-data-model-2.0/ |
 
 This guide focuses on the DID capability and its integration points. Transport,
