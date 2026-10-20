@@ -47,13 +47,6 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-wss-00
     date: 2026
-  JMAP-SCENE-WSS:
-    title: JMAP Scene over WebSocket
-    author:
-      fullname: Mark Atwood
-    seriesinfo:
-      Internet-Draft: draft-atwood-jmap-scene-wss-00
-    date: 2026
 
 --- abstract
 
@@ -76,9 +69,10 @@ call state: `VTCRingEvent`, `VTCCallEndEvent`, `VTCGatewaySignal`,
 are fire-and-forget signals — not persisted as JMAP objects — that
 drive in-call user interfaces.
 
-When {{JMAP-CHAT-WSS}} is present, clients can subscribe to VTC
-events by including `"vtc"` in the `dataTypes` array of a
-`ChatStreamEnable` message.  However, a deployment MAY offer JMAP
+When the server advertises both `urn:ietf:params:jmap:chat:websocket`
+({{JMAP-CHAT-WSS}}) and the capability defined here, clients can
+subscribe to VTC events by including `"vtc"` in the `dataTypes`
+array of a `ChatStreamEnable` message.  However, a deployment can offer JMAP
 VTC without JMAP Chat.  This document provides a standalone
 subscription mechanism for that case and a finer-grained,
 call-scoped alternative for deployments that have both.
@@ -128,9 +122,6 @@ by {{JMAP-VTC}} over the WebSocket connection and accepts
 `VTCStreamEnable` and `VTCStreamDisable` control messages from
 the client.
 
-Servers that do not support ephemeral VTC event push MUST NOT
-advertise this capability.
-
 This capability is distinct from `urn:ietf:params:jmap:websocket`
 ({{RFC8887}}), which advertises the WebSocket transport itself, and
 from `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}), which advertises
@@ -174,6 +165,9 @@ ephemeral VTC event subscription on the current WebSocket connection.
   `"VTCParticipantEvent"`, `"VTCMediaStateEvent"`,
   `"VTCActiveSpeakerEvent"`, `"VTCUnmuteRequestEvent"`, and
   `"VTCRecordingStateEvent"`.  Default: `null`.
+  `VTCRecordingStateEvent` is the recording consent signal
+  ({{JMAP-VTC}}), so the server delivers it for every call the
+  subscription covers whether or not `eventTypes` lists it.
 
 - **`id`** (String, optional): A client-specified identifier for
   this message.  A `RequestError` caused by this message carries
@@ -199,7 +193,9 @@ mechanism; the client re-sends the full desired subscription state.
 In this document, a user is a current participant of a call when
 the user's VTCParticipant record in that call has a non-null
 `joinedAt` and a null `leftAt` ({{JMAP-VTC}}).  A callee who has been
-rung but has not joined is not a current participant.
+rung but has not joined is not a current participant, and neither
+is a participant waiting in the lobby, whose `joinedAt` stays
+`null` until a moderator admits them.
 
 If a `callIds` entry refers to a call in which the authenticated
 user is not a current participant, that entry produces no events
@@ -299,8 +295,10 @@ ephemeral event types defined by {{JMAP-VTC}}:
 
 When delivered over the WebSocket, every event in this table
 carries an `accountId` (String) property in addition to the
-properties defined in {{JMAP-VTC}}: the id of the account that
-contains the VTCCall.  This applies whether the event is delivered
+properties defined in {{JMAP-VTC}}: the id of the call's hosting
+account, the account that contains the VTCCall and its
+VTCParticipant records ({{JMAP-VTC}}).  This is usually not the
+recipient's personal account.  This applies whether the event is delivered
 through `VTCStreamEnable` or through `ChatStreamEnable`
 ({{chat-wss-interop}}).
 
@@ -336,14 +334,14 @@ Servers MAY apply additional rate limits to other event types.
 ## Event Ordering
 
 Events are delivered in best-effort order.  The server SHOULD
-deliver events in the order they were generated, but clients MUST
-NOT assume strict ordering.  Each event is self-contained; clients
+deliver events in the order they were generated, but ordering is
+not guaranteed.  Each event is self-contained; clients
 SHOULD use the event's `callId` and `participantId` fields to
 correlate events with local state.
 
 ## Blocked-Sender Suppression {#blocked-sender}
 
-The server MUST NOT deliver a `VTCRingEvent` or `VTCCallEndEvent`
+The server SHOULD NOT deliver a `VTCRingEvent` or `VTCCallEndEvent`
 (with `endReason` of `"cancelled"` or `"timeout"`) if the
 `initiatorId` corresponds to a contact whose `blocked` field is
 `true` on the recipient's contact list (when {{JMAP-CHAT}} is
@@ -356,30 +354,30 @@ suppression rule in {{JMAP-VTC}}.
 
 ### In-Call Event Suppression
 
-The server MUST extend blocked-sender suppression to in-call
+The server SHOULD extend blocked-sender suppression to in-call
 events.  If a per-call event originates from a participant whose
 corresponding contact has `blocked` set to `true` on the
 recipient's contact list (or an equivalent deployment-defined block
-list), the server MUST silently drop the event for that recipient.
+list), the server SHOULD silently drop the event for that recipient.
 The blocked participant is not informed of the suppression.
 
 The following event types are subject to this rule:
 
-- `VTCParticipantEvent` — the recipient MUST NOT receive join,
-  leave, or kick notifications for a blocked participant.
+- `VTCParticipantEvent`: join, leave, or kick notifications for a
+  blocked participant.
 
-- `VTCMediaStateEvent` — the recipient MUST NOT receive media-state
-  updates originating from a blocked participant.
+- `VTCMediaStateEvent`: media-state updates originating from a
+  blocked participant.
 
-- `VTCActiveSpeakerEvent` — the recipient MUST NOT receive
-  active-speaker indications naming a blocked participant.
+- `VTCActiveSpeakerEvent`: active-speaker indications naming a
+  blocked participant.
 
-- `VTCUnmuteRequestEvent` — the recipient MUST NOT receive unmute
-  requests sent by a blocked participant acting as moderator.
+- `VTCUnmuteRequestEvent`: unmute requests sent by a blocked
+  participant acting as moderator.
 
-This rule does NOT apply to `VTCRecordingStateEvent`, which is a
-mandatory consent signal and MUST be delivered to all participants
-regardless of block status.  It also does not apply to
+This rule does not apply to `VTCRecordingStateEvent`, the consent
+signal that {{JMAP-VTC}} delivers to all participants regardless
+of block status.  It also does not apply to
 `VTCGatewaySignal`, which is already restricted to moderators per
 {{security}}.
 
@@ -390,7 +388,7 @@ When the connection closes — whether by graceful close handshake,
 network failure, or server-initiated close — the subscription is
 immediately cancelled.  No events are buffered for later delivery.
 
-On reconnect, the client MUST send a new `VTCStreamEnable` to
+A reconnecting client sends a new `VTCStreamEnable` to
 re-establish its subscription.
 
 # Interoperability with JMAP Chat WebSocket {#chat-wss-interop}
@@ -401,9 +399,10 @@ When a server advertises both `urn:ietf:params:jmap:chat:websocket`
 events:
 
 1. **`ChatStreamEnable` with `"vtc"` in `dataTypes`**:  Subscribes
-   to all VTC event types for all calls in which the user
-   participates.  This is the coarse-grained path and requires no
-   additional control messages.
+   to all VTC event types: per-user events for the user, and
+   per-call events for all calls in which the user is a current
+   participant ({{event-types}}).  This is the coarse-grained path
+   and requires no additional control messages.
 
 2. **`VTCStreamEnable`**:  Provides call-scoped and event-type-scoped
    filtering.  This is the fine-grained path.
@@ -502,7 +501,7 @@ Server delivers a participant-join event:
 ~~~json
 {
   "@type": "VTCParticipantEvent",
-  "accountId": "abc123",
+  "accountId": "bob-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "event": "joined",
@@ -518,7 +517,7 @@ A participant mutes their microphone:
 ~~~json
 {
   "@type": "VTCMediaStateEvent",
-  "accountId": "abc123",
+  "accountId": "bob-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "mediaState": {
@@ -537,7 +536,7 @@ The active speaker changes:
 ~~~json
 {
   "@type": "VTCActiveSpeakerEvent",
-  "accountId": "abc123",
+  "accountId": "bob-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "01J4XNZRM8QWVT0RRDFJVS5EF0"
 }
@@ -550,7 +549,7 @@ A moderator starts recording:
 ~~~json
 {
   "@type": "VTCRecordingStateEvent",
-  "accountId": "abc123",
+  "accountId": "bob-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
@@ -566,7 +565,7 @@ A JMAP state-change notification arrives on the same connection:
 {
   "@type": "StateChange",
   "changed": {
-    "abc123": {
+    "bob-account": {
       "VTCParticipant": "t101"
     }
   }
@@ -598,29 +597,27 @@ All security considerations for WebSocket ({{RFC6455}} Section 10),
 JMAP ({{RFC8620}} Section 8), and JMAP VTC ({{JMAP-VTC}} Security
 Considerations) apply without modification.
 
-The TLS requirements of {{RFC8887}} Section 5.1 apply: the WebSocket
-connection MUST use TLS 1.2 or later, following the recommendations
-in BCP 195 {{?RFC9325}}.  Servers SHOULD support TLS 1.3 or later.
+The TLS requirements of {{RFC8887}} Section 5.1 apply.  BCP 195
+{{?RFC9325}} gives current TLS recommendations.
 
 ## Event Authorization
 
-Servers MUST verify authorization at the time of each ephemeral
+Servers SHOULD verify authorization at the time of each ephemeral
 event delivery, not only at the time `VTCStreamEnable` is received,
 since participation, permissions, and block status can change while
 the connection is open:
 
 - Per-call events (`VTCParticipantEvent`, `VTCMediaStateEvent`,
   `VTCActiveSpeakerEvent`, `VTCUnmuteRequestEvent`,
-  `VTCRecordingStateEvent`, `VTCGatewaySignal`) MUST only be
-  delivered for calls in which the authenticated user is a current
-  participant at delivery time.
+  `VTCRecordingStateEvent`, `VTCGatewaySignal`) go only to current
+  participants of the call at delivery time ({{event-types}}).
 
 - `VTCRingEvent`, `VTCCallEndEvent`, and the in-call events listed
-  in {{blocked-sender}} MUST NOT be delivered when the originating
-  user corresponds to a blocked contact at delivery time, as
-  specified there.
+  in {{blocked-sender}} are suppressed when the originating user
+  corresponds to a blocked contact at delivery time, as specified
+  there.
 
-- `VTCGatewaySignal` MUST only be delivered to participants with
+- `VTCGatewaySignal` SHOULD only be delivered to participants with
   `moderator` role unless the deployment explicitly permits broader
   delivery.
 
@@ -631,12 +628,12 @@ the server closes the connection when credentials expire, it SHOULD
 use Close frame status code 1008 (Policy Violation).  Ephemeral
 events are pushed, not requested, so treating subsequent requests
 as unauthenticated does not by itself stop them: a server that does
-not close the connection MUST NOT deliver further VTC ephemeral
+not close the connection SHOULD NOT deliver further VTC ephemeral
 events on that connection.
 
 ## Rate Limiting {#security-rate-limiting}
 
-The rate limits defined in {{rate-limiting}} SHOULD be enforced
+The rate limits defined in {{rate-limiting}} are enforced
 server-side.  Without these limits, a high-frequency media-state or
 active-speaker update stream could exhaust server fan-out resources
 or flood client connections.
@@ -644,10 +641,10 @@ or flood client connections.
 ## Event Data Exposure
 
 VTC ephemeral events reveal real-time call participation and media
-state.  Servers MUST ensure that events for one user's subscription
-are never delivered to another user's WebSocket connection.  Each
-WebSocket connection has exactly one authenticated identity, and all
-event filtering and delivery MUST be scoped to that identity.
+state.  Servers SHOULD ensure that events for one user's
+subscription are never delivered to another user's WebSocket
+connection.  Each WebSocket connection has exactly one authenticated
+identity.
 
 `VTCMediaStateEvent` is client-reported and server-relayed.  Clients
 SHOULD NOT rely on `VTCMediaStateEvent` for security-critical
@@ -681,7 +678,7 @@ announcements.
 ## JMAP Capability Registration
 
 IANA is requested to register the following entry in the "JMAP
-Capabilities" registry defined in {{RFC8620}} Section 9.3:
+Capabilities" registry defined in {{RFC8620}} Section 9.4:
 
 - **Capability Name:** `urn:ietf:params:jmap:vtc:websocket`
 - **Intended Use:** common
