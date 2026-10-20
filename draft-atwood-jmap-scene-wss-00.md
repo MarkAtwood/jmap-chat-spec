@@ -184,6 +184,11 @@ and the server validates and relays it to subscribers (see
 {{scene-interaction-event}}).  Events are not persisted as JMAP objects
 and carry no state token.
 
+Every event carries an `accountId` (String) property: the id of the
+account that contains the SceneRegion.  SceneRegion and SceneObject
+ids are unique only within an account, so `regionId` alone does not
+identify a region.
+
 ## SceneAvatarEvent {#scene-avatar-event}
 
 Delivered when an avatar enters, leaves, or is ejected from a
@@ -212,6 +217,7 @@ Example — avatar enters a region:
 ~~~json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "avatarId": "user:alice@example.com",
   "event": "entered",
@@ -253,6 +259,7 @@ Example — object placed:
 ~~~json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000042",
   "event": "created",
@@ -266,6 +273,7 @@ Example — object destroyed:
 ~~~json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000042",
   "event": "destroyed",
@@ -311,6 +319,7 @@ Example — user clicks a sculpture:
 ~~~json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000001",
   "userId": "user:alice@example.com",
@@ -324,6 +333,7 @@ Example — deployment-specific puzzle interaction:
 ~~~json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000007",
   "userId": "user:alice@example.com",
@@ -350,6 +360,7 @@ Server delivers to subscribers:
 ~~~json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000077",
   "userId": "user:alice@example.com",
@@ -427,6 +438,10 @@ connection.
 - **`id`** (String, optional): A client-specified identifier for
   this message.  A `RequestError` caused by this message carries
   this value as its `requestId` ({{RFC8887}} Section 4.3.4).
+
+An id listed in `regionIds` matches that id in every account the
+authenticated user can access; clients use the `accountId` of each
+event to tell the accounts apart.
 
 ### Example
 
@@ -696,6 +711,7 @@ The server delivers the first update at T=0.0s:
 ~~~json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000050",
   "event": "updated",
@@ -710,6 +726,7 @@ latest position at that moment, not the next sequential position:
 ~~~json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000050",
   "event": "updated",
@@ -826,6 +843,7 @@ indicating the suppression.
 ~~~json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "avatarId": "user:mallory@example.com",
   "event": "entered",
@@ -1026,6 +1044,7 @@ Server delivers an avatar-enter event:
 ~~~json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "avatarId": "user:bob@example.com",
   "event": "entered",
@@ -1041,6 +1060,7 @@ Bob places an object; server delivers an object-create event:
 ~~~json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000042",
   "event": "created",
@@ -1065,6 +1085,7 @@ Alice clicks an interactable object:
 ~~~json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "objectId": "01J5OBJ0000000000000000001",
   "userId": "user:alice@example.com",
@@ -1095,6 +1116,7 @@ Server delivers an avatar-leave event:
 ~~~json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
   "avatarId": "user:bob@example.com",
   "event": "left",

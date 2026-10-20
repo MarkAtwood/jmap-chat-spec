@@ -2927,6 +2927,7 @@ Alice walks up to an interactable sculpture and clicks on it. Her client sends a
 ~~~json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "alice-account",
   "regionId": "01JXKR5M0G3QVTA8N2BWFP7Y01",
   "objectId": "01JXKR6P4HNTQW29DCEAGM8V05",
   "userId": "user:alice@example.com",

@@ -199,7 +199,7 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 `id` (String, optional):
 : A client-specified identifier for this message. A `RequestError` caused by this message carries this value as its `requestId` ({{RFC8887}} Section 4.3.4).
 
-An absent `chatIds` or `contactIds` is equivalent to `null`, following the {{RFC8620}} and {{RFC8887}} convention for `PushEnable` and `WebSocketPushEnable`.
+An absent `chatIds` or `contactIds` is equivalent to `null`, following the {{RFC8620}} and {{RFC8887}} convention for `PushEnable` and `WebSocketPushEnable`. Chat and ChatContact ids are unique only within an account; an id listed in `chatIds` or `contactIds` matches that id in every account the authenticated user can access, and clients use the `accountId` of each event to tell the accounts apart.
 
 A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscription in its entirety. There is no partial-update mechanism; the client re-sends the full desired subscription state.
 
@@ -240,6 +240,9 @@ Delivered to the client when another participant begins or stops typing in a Cha
 `@type` (String):
 : MUST be `"ChatTypingEvent"`.
 
+`accountId` (String):
+: The id of the account that contains the Chat.
+
 `chatId` (String):
 : The `id` of the Chat in which the typing event occurred.
 
@@ -252,6 +255,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 ~~~json
 {
   "@type": "ChatTypingEvent",
+  "accountId": "u1",
   "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
   "senderId": "c8xq2m",
   "typing": true
@@ -273,6 +277,9 @@ Delivered to the client when a ChatContact's presence state changes and that con
 `@type` (String):
 : MUST be `"ChatPresenceEvent"`.
 
+`accountId` (String):
+: The id of the account that contains the ChatContact.
+
 `contactId` (String):
 : The ChatContact.id whose presence state changed.
 
@@ -293,6 +300,7 @@ When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST del
 ~~~json
 {
   "@type": "ChatPresenceEvent",
+  "accountId": "u1",
   "contactId": "c8xq2m",
   "presence": "away",
   "lastActiveAt": "2026-04-26T12:00:00Z",
@@ -374,6 +382,7 @@ WS_DATA
                                   WS_DATA
                                   {
                                     "@type": "ChatTypingEvent",
+                                    "accountId": "u1",
                                     "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
                                     "senderId": "c8xq2m",
                                     "typing": true
