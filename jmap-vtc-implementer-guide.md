@@ -243,8 +243,9 @@ participants visible in the UI.
 
 **Reconnect identity.** A participant who has left re-joins by updating their
 existing VTCParticipant record to set `leftAt` to `null`; the server sets
-`joinedAt`, clears `kickedBy`, and keeps `role` and `speakerTimeMs`
-(§Reconnecting). A `create` for a user who already has a record in the call
+`joinedAt` and keeps `role` and `speakerTimeMs` (§Reconnecting). Rejoin does
+not clear `kickedBy`: while it is non-null the rejoin is rejected with
+`forbidden`, until a moderator clears `kickedBy` to `null`. A `create` for a user who already has a record in the call
 fails with `alreadyExists`, naming the record in `existingId`. This is
 unconditional — the spec defines no time window, so a re-join MUST reuse the
 existing record regardless of how long ago `leftAt` was set.
@@ -621,8 +622,10 @@ The spec defines the breakout room structure: a child VTCCall with
 `parentCallId` set, and the parent's `breakoutRoomIds` list (§VTCCall Object
 Fields). It defines the mechanism for creating and closing breakout rooms
 (moderator actions via `VTCCall/set`, §Moderator Actions on VTCCall) and
-for moving participants between rooms (moderator patches a participant's
-`callId` via `VTCParticipant/set`, §Assign to a breakout room). The spec
+for assigning participants to rooms (moderator sets `breakoutCallId` on the
+participant's parent-call record via `VTCParticipant/set`, §Assign to a
+breakout room; the participant's client then joins the child call through
+the normal join path). The spec
 gates breakout room support behind the `supportsBreakoutRooms` capability
 flag. What the spec leaves open: the media layer implications of room
 movement, timer-based return, and the UX flow for participant-initiated
@@ -634,7 +637,7 @@ return to the main room.
   architecture (separate SFU rooms, separate WebRTC sessions, or a
   sub-conference on the same media server).
 - **Participant movement mechanics**: what happens to a participant's media
-  session when they are moved from one VTCCall to another.
+  session when its client leaves one VTCCall and joins another.
 - **Timer-based return**: whether breakout rooms have a countdown timer after
   which participants are returned to the parent call.
 - **Participant-initiated return**: whether participants can leave a breakout
@@ -645,25 +648,21 @@ return to the main room.
 
 ### Considerations
 
-**JMAP model for participant movement.** Moving a participant from the parent
-call to a breakout room requires two JMAP operations (or one if the server
-handles them atomically):
+**JMAP model for participant movement.** `callId` is immutable, so no record
+moves between calls. The moderator sets `breakoutCallId` on the participant's
+parent-call record ("Assign to a breakout room", §VTCParticipant/set); the
+server rejects a value not in the parent's `breakoutRoomIds` with
+`invalidProperties`. The participant's client then:
 
-1. Set `leftAt` on the participant's VTCParticipant record in the parent call.
-2. Create (or reconnect, per §Reconnecting) a VTCParticipant record in the
-   child call with the same `userId`.
-
-The spec describes this as a single moderator action ("Assign to a breakout
-room", §VTCParticipant/set) that patches the participant's `callId`. The
-server executes both operations atomically: it sets `leftAt` on the old
-record and creates or reconnects the participant in the new call. Implement
-this as a server-side transaction, not two independent client requests.
+1. Joins the child call through the normal join path: create a
+   VTCParticipant there, or reconnect an existing record (§Reconnecting).
+2. Sets `leftAt` on its own parent-call record.
 
 **Media layer room movement.** When a participant is moved to a breakout room,
 their media session must change. For a WebRTC SFU: the participant receives a
 new `joinUri` (the breakout room's `joinUri`) and must reconnect. The client
-observes the `callId` change on their VTCParticipant record via `StateChange`
-and reconnects to the new call's `joinUri`. Do not attempt to migrate an
+observes the `breakoutCallId` change on its parent-call VTCParticipant record
+via `StateChange`, joins the child call, and connects to its `joinUri`. Do not attempt to migrate an
 existing WebRTC session transparently; a new RTCPeerConnection for the new
 room is simpler and more reliable.
 
@@ -676,7 +675,8 @@ media layer creates a new room for each breakout VTCCall.
 deployment-defined. A common pattern: when creating a breakout room, include
 a deployment-defined `scheduledEndAt` in the `subject` or in the response
 metadata. When the timer expires, the server transitions the child VTCCall to
-`"ended"` and moves all remaining participants back to the parent call. Notify
+`"ended"`, which resets the matching `breakoutCallId` values on the parent
+call's participants; their clients then rejoin the parent call. Notify
 participants in advance (e.g., via a chat message on the bound Chat or a custom
 ephemeral event) so they are not surprised by the reconnection.
 
@@ -706,7 +706,8 @@ maximum `parentCallId` depth of one at the server level.
 ### Recommended starting point
 
 Implement breakout rooms as separate SFU rooms, each with their own `joinUri`.
-Implement participant movement as a server-side atomic operation. Set a
+Implement participant assignment through `breakoutCallId`, with clients
+moving themselves through the normal join and leave paths. Set a
 maximum of `maxBreakoutRooms` per call (advertise this in the capability
 object). Do not implement timers in the first version — use manual moderator
 close. Allow participants to self-return by leaving the breakout call and
@@ -762,7 +763,9 @@ clients that there is an active call associated with this Chat, enabling a
 "join call" banner in the chat UI. The server MUST set `activeCallId` on the
 bound Chat when the VTCCall transitions to `"active"`, and MUST clear it (set
 to `null`) when the call transitions to `"ended"` (JMAP Chat, Chat
-`activeCallId`). A `"ringing"` call does not set it. This requires a cross-type update within the same JMAP request processing path;
+`activeCallId`). Set and clear `activeCallAccountId` (the id of the account
+hosting the call) in the same state change, so clients know which account to
+join in. A `"ringing"` call sets neither. This requires a cross-type update within the same JMAP request processing path;
 implement it as an internal server-side side effect, not a client operation.
 
 **Live captions.** The spec delegates live captions to the bound Chat
@@ -815,8 +818,8 @@ A direct call into the Chat permission resolver is the right coupling.
 For ring calls: set `chatId` to the existing direct Chat between the two
 participants if one exists; create one if not. For Space/channel calls: set
 `chatId` to the channel's Chat, `spaceId` and `channelId` to the Space and
-channel. Set `activeCallId` on the bound Chat when the call becomes active;
-clear it when the call ends. Deliver captions as Messages in the bound Chat
+channel. Set `activeCallId` and `activeCallAccountId` on the bound Chat when
+the call becomes active; clear both when the call ends. Deliver captions as Messages in the bound Chat
 and floating reactions as Message reactions. For standalone calls, leave
 `chatId` `null` when the caller omits it; auto-create for Space-bound calls.
 
@@ -904,8 +907,7 @@ polling. For ring calls that time out, also deliver `VTCCallEndEvent` with
 (§Ring Timeout, §VTCCallEndEvent).
 
 **Breakout room cleanup.** The spec does not say what happens to child
-breakout-room VTCCalls when a parent call ends, and the breakout mechanism is
-not yet settled. Leaving breakout rooms `"active"` after the parent has ended
+breakout-room VTCCalls when a parent call ends. Leaving breakout rooms `"active"` after the parent has ended
 would produce inconsistent state, so when a parent call ends, its child
 breakout-room VTCCalls MUST also be ended: implement parent-call end as a
 cascade that ends all child calls first, then the parent.
@@ -986,7 +988,7 @@ made and documented each of the following decisions:
 
 **Chat integration (section 7)**
 - [ ] `chatId` binding strategy documented (auto-create vs. left `null` when omitted)
-- [ ] `activeCallId` set and cleared on call state transitions
+- [ ] `activeCallId` and `activeCallAccountId` set and cleared together on call state transitions
 - [ ] Caption Message format chosen
 - [ ] Access control inheritance implemented for Chat-bound calls
 

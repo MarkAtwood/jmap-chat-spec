@@ -281,8 +281,10 @@ When `e2eeEnabled` is `true` on a call:
   rejected with `forbidden` (draft-atwood-jmap-vtc-00, Gateway Dial-Out and
   Key-Holding Media Participants). Include a description explaining why.
 
-- **Reject gateway dial-in on the same terms.** The draft does not define
-  the gateway dial-in path, so this is deployment-defined. A deployment that
+- **Reject gateway dial-in on the same terms.** The draft treats gateways as
+  server-side infrastructure: on an inbound gateway call the server creates
+  the VTCParticipant, and the gateway-to-server interface is
+  deployment-defined. A deployment that
   admits a dial-in to a call with `e2eeEnabled: true` can only do so through
   a gateway that joins as a disclosed key-holding participant; otherwise it
   SHOULD refuse the connection with a protocol-appropriate error (e.g., SIP 488
@@ -390,8 +392,10 @@ from the parent call to a breakout room:
 
 1. **Remove** the participant from the parent call's MLS group (Commit).
 2. **Add** the participant to the breakout room's MLS group (Welcome + Commit).
-3. The participant's `callId` is updated (VTCParticipant/set) to the breakout
-   room's VTCCall id.
+3. The participant's client, assigned by a moderator through `breakoutCallId`
+   on its parent-call record, joins the breakout room's VTCCall through the
+   normal join path and sets `leftAt` on its parent-call record. `callId` is
+   immutable; no record changes calls.
 
 When the breakout room closes and participants return to the parent call,
 reverse the process.
@@ -601,7 +605,7 @@ implements.
 
 ## 11. Relationship to JMAP Chat E2EE
 
-When both `urn:ietf:params:jmap:vtc` and `urn:ietf:params:jmap:chat` are
+When both `urn:jmap:vtc` and `urn:jmap:chat` are
 deployed, there are two independent E2EE domains:
 
 1. **Media E2EE** (this guide): encrypted audio/video frames via WebRTC

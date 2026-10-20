@@ -28,7 +28,7 @@ join, and the call history ends up searchable in the message thread.
 
 ### When to advertise both
 
-Advertise `urn:ietf:params:jmap:vtc` alongside `urn:ietf:params:jmap:chat` when your
+Advertise `urn:jmap:vtc` alongside `urn:jmap:chat` when your
 deployment includes both a call-state manager and a chat server on the same account.
 The two capabilities are independent — a deployment can run either without the other —
 but the integration features described in this guide only activate when both are present
@@ -42,16 +42,16 @@ A session advertising both capabilities looks like this:
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": { ... },
-    "urn:ietf:params:jmap:chat": {},
-    "urn:ietf:params:jmap:vtc": {}
+    "urn:jmap:chat": {},
+    "urn:jmap:vtc": {}
   },
   "accounts": {
     "acct1": {
       "name": "alice@example.com",
       "isPersonal": true,
       "accountCapabilities": {
-        "urn:ietf:params:jmap:chat": { ... },
-        "urn:ietf:params:jmap:vtc": {
+        "urn:jmap:chat": { ... },
+        "urn:jmap:vtc": {
           "mayCreateCall": true,
           "supportsRingCalls": true,
           "supportsRoomCalls": true,
@@ -70,7 +70,7 @@ A session advertising both capabilities looks like this:
 }
 ```
 
-The session-level capability value for `urn:ietf:params:jmap:vtc` is always an empty
+The session-level capability value for `urn:jmap:vtc` is always an empty
 object `{}`. The substantive per-account fields live under `accountCapabilities`.
 
 ### Account-level capability fields your Chat UI needs
@@ -88,7 +88,7 @@ offering calling features:
 ### Feature detection
 
 Do not assume VTC is present because you know your own deployment. Clients MUST check
-for `urn:ietf:params:jmap:vtc` in `accountCapabilities` before rendering any calling
+for `urn:jmap:vtc` in `accountCapabilities` before rendering any calling
 UI. This ensures the same client code works against deployments that have not yet
 deployed calling, and against accounts on multi-tenant servers where calling is not
 enabled for every account.
@@ -102,10 +102,10 @@ enabled for every account.
 When a user initiates a call from a chat UI, the client calls `VTCCall/set` create. The
 server creates the VTCCall, assigns a ULID as its id, generates a `joinUri` pointing to
 the deployment's media stack, and returns the new VTCCall. The Chat's `activeCallId`
-field is set server-side when the call enters the active state (see section 3).
+and `activeCallAccountId` fields are set server-side when the call enters the active state (see section 3).
 
-The client never sets `activeCallId` on the Chat. That field is server-set and is not
-a `Chat/set` patch key, so the client can neither set it to a new call id nor clear it.
+The client never sets `activeCallId` or `activeCallAccountId` on the Chat. Both fields
+are server-set and are not `Chat/set` patch keys, so the client can neither set it to a new call id nor clear it.
 A client that sees a stale `activeCallId` (one that references an ended or nonexistent
 VTCCall) treats it as `null` in the UI and leaves the repair to the server, which clears
 it on next read.
@@ -125,7 +125,7 @@ transitions the call to `"ringing"`.
 
 ```json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:vtc"],
+  "using": ["urn:ietf:params:jmap:core", "urn:jmap:vtc"],
   "methodCalls": [
     ["VTCCall/set", {
       "accountId": "acct1",
@@ -154,7 +154,7 @@ there is no ringing phase. Members join when they choose to.
 
 ```json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:vtc"],
+  "using": ["urn:ietf:params:jmap:core", "urn:jmap:vtc"],
   "methodCalls": [
     ["VTCCall/set", {
       "accountId": "acct1",
@@ -202,7 +202,7 @@ clients can neither set nor clear it. A client that sees a stale value (referenc
 ended or nonexistent call) treats it as `null` for UI purposes; the server repairs it on
 next read. The spec says:
 
-> When `urn:ietf:params:jmap:vtc` is present: the id of a VTCCall that is currently
+> When `urn:jmap:vtc` is present: the id of a VTCCall that is currently
 > active and bound to this Chat via the VTCCall's `chatId` field. The server sets this
 > when a bound VTCCall enters the `"active"` state and clears it to `null` when the
 > call ends. `null` when no call is active or VTC is not available.
@@ -210,16 +210,22 @@ next read. The spec says:
 The field exists solely to drive the "call in progress — click to join" banner. It is
 not a list of all calls ever associated with this Chat; it is the currently active one.
 
+Its companion `Chat.activeCallAccountId` (`Id|null`, server-set) is the id of the
+account hosting that VTCCall, which may be a shared account rather than the user's
+own. The server sets and clears it together with `activeCallId`, in the same state
+change, so it is non-null exactly when `activeCallId` is non-null.
+
 ### Server responsibilities
 
 Your server must implement both sides:
 
 **When a VTCCall with a `chatId` binding enters `"active"` state:**
-Set `Chat.activeCallId` to the VTCCall's id. This triggers a Chat `StateChange`
+Set `Chat.activeCallId` to the VTCCall's id and `Chat.activeCallAccountId` to the id
+of the account hosting it. This triggers a Chat `StateChange`
 notification, which the client picks up via the standard JMAP push or WebSocket path.
 
 **When that VTCCall transitions to `"ended"` state:**
-Clear `Chat.activeCallId` to `null`. Again, this triggers a Chat `StateChange`.
+Clear `Chat.activeCallId` and `Chat.activeCallAccountId` to `null`. Again, this triggers a Chat `StateChange`.
 
 The server must do this atomically with the VTCCall state transition. A VTCCall that
 has ended but whose Chat still shows `activeCallId` set is a data integrity bug.
@@ -248,9 +254,9 @@ When the user clicks the join banner:
 
 1. Fetch the VTCCall via `VTCCall/get` using `Chat.activeCallId` to retrieve the
    `joinUri` field. (The `joinUri` is on VTCCall, not on VTCParticipant.) Send
-   this and the requests below to the call's hosting account, which may be a
-   shared account rather than the user's own (`draft-atwood-jmap-vtc-00`,
-   Hosting Account).
+   this and the requests below to the account named by `Chat.activeCallAccountId`,
+   the call's hosting account, which may be a shared account rather than the
+   user's own (`draft-atwood-jmap-vtc-00`, Hosting Account).
 2. Create a VTCParticipant on the call via `VTCParticipant/set create` with
    `callId` set to `Chat.activeCallId` and `joinMethod` set to the client's connection
    type (typically `"webrtc"`). If the user already has a record in the call (they
@@ -525,8 +531,9 @@ filter. This queries the VTC object store directly rather than the message histo
 
 When implementing the Chat-VTC integration, your server must:
 
-- Set `Chat.activeCallId` when a bound VTCCall enters `"active"` state.
-- Clear `Chat.activeCallId` to `null` when the bound VTCCall enters `"ended"` state.
+- Set `Chat.activeCallId` and `Chat.activeCallAccountId` when a bound VTCCall enters
+  `"active"` state.
+- Clear both to `null` when the bound VTCCall enters `"ended"` state.
 - Enforce `"start_call"` permission on `VTCCall/set create` for Space-bound calls.
 - Allow `VTCParticipant/set create` (join) for Space channel members with at least
   `"view"` permission, regardless of `"start_call"`.
@@ -534,12 +541,12 @@ When implementing the Chat-VTC integration, your server must:
   members of the bound Chat or Space.
 - Create system Messages in the bound Chat for call-started, call-ended, and missed-call
   events.
-- Advertise both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:vtc` under
+- Advertise both `urn:jmap:chat` and `urn:jmap:vtc` under
   `accountCapabilities` for accounts that have both capabilities.
 
 When implementing on the client side, your client must:
 
-- Check `urn:ietf:params:jmap:vtc` in `accountCapabilities` before showing calling UI.
+- Check `urn:jmap:vtc` in `accountCapabilities` before showing calling UI.
 - Check `mayCreateCall` before enabling the call button.
 - Respond to Chat `StateChange` notifications to show or hide the join banner based
   on `activeCallId`.
