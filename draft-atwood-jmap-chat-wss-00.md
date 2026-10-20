@@ -30,6 +30,9 @@ normative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
+
+informative:
+  RFC9325:
   JMAP-CHAT-FED:
     title: JMAP Chat Federation
     author:
@@ -37,9 +40,6 @@ normative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
-
-informative:
-  RFC9325:
   JMAP-VTC:
     title: JMAP for Video/Voice Teleconferencing
     author:
@@ -284,7 +284,7 @@ Delivered to the client when a ChatContact's presence state changes and that con
 : The ChatContact.id whose presence state changed.
 
 `presence` (String):
-: The updated presence state: `"online"`, `"away"`, `"busy"`, `"invisible"`, or `"offline"`.
+: The updated presence state: `"online"`, `"away"`, `"busy"`, or `"offline"`.
 
 When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST deliver `"offline"` in outbound `ChatPresenceEvent` frames. The `"invisible"` value MUST NOT appear in events delivered to other users; it is an internal state that controls suppression only.
 
