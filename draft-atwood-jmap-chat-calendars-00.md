@@ -18,29 +18,35 @@ author:
 
 normative:
   RFC2119:
+  RFC5234:
   RFC8174:
   RFC8620:
   RFC5545:
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
   JMAP-CALENDARS:
-    title: JMAP for Calendars
+    title: "JSON Meta Application Protocol (JMAP) for Calendars"
     author:
-      fullname: Neil Jenkins
+      - fullname: Neil Jenkins
+      - fullname: Michael Douglass
     seriesinfo:
       Internet-Draft: draft-ietf-jmap-calendars-33
-    date: 2026
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-calendars/
+    date: 2026-10-13
 
 informative:
   JMAP-CHAT-FED:
-    title: JMAP Chat Federation
-    target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
+    title: "JMAP Chat Federation"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-federation-00
+    date: 2026
+  RFC8126:
   RFC9073:
 
 --- abstract
@@ -82,6 +88,27 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{JMAP-CALENDARS}} is used throughout.
 
+# JMAP Object URNs {#object-urn}
+
+A JMAP object URN identifies one JMAP object by type, account, and id. It is a URN in the "jmap" sub-namespace of "urn:ietf:params" ({{RFC8620, Section 9.3}}), with the following syntax ({{RFC5234}}):
+
+~~~abnf
+jmap-object-urn = "urn:ietf:params:jmap:" type-name ":"
+                  account-id ":" object-id
+type-name       = 1*( %x61-7A / DIGIT )
+                  ; registered in "JMAP Object URN Types"
+account-id      = 1*255id-char
+object-id       = 1*255id-char
+id-char         = ALPHA / DIGIT / "-" / "_"
+                  ; the Id character set of RFC 8620, Section 1.2
+~~~
+
+`type-name` is the lowercased name of a JMAP data type, as registered in the "JMAP Object URN Types" registry ({{iana-urn-types}}). `account-id` is the JMAP accountId of the account holding the object, and `object-id` is the object's `id`. For example, `urn:ietf:params:jmap:calendarevent:A13824:E6B2` identifies the CalendarEvent with id `E6B2` in account `A13824`.
+
+Type names come from the "JMAP Object URN Types" registry, which is separate from the "JMAP Capabilities" registry. A type name never equals the segment that follows `urn:ietf:params:jmap:` in a registered JMAP capability URN (such as `calendars` in `urn:ietf:params:jmap:calendars`), so a JMAP object URN cannot be mistaken for a capability URN.
+
+JMAP object URNs are for object references within JMAP method calls. Servers SHOULD NOT expose these URNs to non-JMAP systems without transformation; carrying them in JMAP method calls, including {{JMAP-CHAT-FED}} `Peer/deliver`, is within the JMAP method-call context.
+
 # Capability {#capability}
 
 Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:chat:calendars` capability in the JMAP Session object. This capability is meaningful only when both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:calendars` are also advertised on the same account.
@@ -95,13 +122,14 @@ The value of `capabilities["urn:ietf:params:jmap:chat:calendars"]` at the sessio
 The value of `accountCapabilities["urn:ietf:params:jmap:chat:calendars"]` is a JSON object with the following fields:
 
 `mayBindCalendar` (Boolean):
-: `true` if accounts on this server may associate a Calendar with a Space, `false` otherwise. Deployments that prohibit Space-Calendar binding (for example, multi-tenant deployments where the chat and calendar accounts are administratively separate) MUST set this to `false`.
+: `true` if accounts on this server may associate a Calendar with a Space, `false` otherwise. For example, multi-tenant deployments where the chat and calendar accounts are administratively separate set this to `false`.
 
 `supportsIcsParsing` (Boolean):
 : `true` if the server parses `.ics` ({{RFC5545}}) attachments to surface structured CalendarEvent representations; `false` otherwise. See {{ics-parsing}}.
 
 `supportsAvailabilityLookup` (Boolean):
 : `true` if the server exposes `Principal/getAvailability` ({{JMAP-CALENDARS}}) in the in-chat context defined here; `false` otherwise. See {{availability}}.
+
 # Space Extension: Calendar Binding {#calendar-binding}
 
 The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:ietf:params:jmap:chat:calendars` capability is active.
@@ -127,10 +155,10 @@ Authorization for operations on a bound Calendar — who may read events, who ma
 
 The wire contract this specification establishes is:
 
-- The {{JMAP-CALENDARS}} permission model is the authoritative authorization layer for Calendar operations. Servers MUST evaluate JMAP Calendars authorization on every Calendar operation, regardless of how the operation was initiated (directly via JMAP Calendars or indirectly via chat-layer wiring).
-- Unauthorized operations MUST receive the appropriate JMAP Calendars error response (typically `forbidden`).
+- The {{JMAP-CALENDARS}} permission model is the authoritative authorization layer for Calendar operations. Servers SHOULD evaluate JMAP Calendars authorization on every Calendar operation, regardless of how the operation was initiated (directly via JMAP Calendars or indirectly via chat-layer wiring).
+- Unauthorized operations receive the appropriate JMAP Calendars error response (typically `forbidden`), as defined by {{JMAP-CALENDARS}}.
 - Servers MAY use {{JMAP-CHAT}} Space membership and the closed Space-permission vocabulary as inputs to that authorization decision (per §Space Permission Resolution of {{JMAP-CHAT}}, which makes such mappings deployment-defined).
-- Deployments MUST document the actual authorization model in user-facing API documentation; the wire protocol does not advertise it.
+- The wire protocol does not advertise the authorization model, so clients and users learn it only from the deployment's own documentation.
 
 The chat-layer wiring (binding a Calendar to a Space, surfacing CalendarEvents in messages) does not bypass JMAP Calendars authorization. A user lacking JMAP Calendars permission to RSVP to an event cannot RSVP regardless of any chat-side affordance; the underlying `CalendarEvent/set` returns `forbidden`.
 
@@ -150,10 +178,8 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
 `uri` (String):
 : A URI identifying the referenced CalendarEvent. Two URI forms are recognized:
 
-  - A `jmap:` URI in the form `jmap:calendarevent:<accountId>:<calendarEventId>`, referencing a CalendarEvent on the named account. This form requires the receiving client to have JMAP Calendars access to the named account.
+  - A JMAP object URN ({{object-urn}}) of type `calendarevent`, in the form `urn:ietf:params:jmap:calendarevent:<accountId>:<eventId>`, referencing a CalendarEvent on the named account. This form requires the receiving client to have JMAP Calendars access to the named account.
   - A standard `webcal://` or `https://` URL pointing to an iCalendar object retrievable out-of-band.
-
-The `jmap:` URI scheme used in this document is a private-use scheme for intra-system object references within a JMAP deployment. It is not intended for use outside the JMAP method-call context. The syntax is: `jmap:<type>:<accountId>:<objectId>` where `<type>` is a registered JMAP data type name (lowercased), `<accountId>` is a valid JMAP account identifier, and `<objectId>` is the object's `id` value. Servers MUST NOT expose these URIs to external systems without transformation. A formal IANA registration is deferred pending broader adoption.
 
 `label` (String, optional):
 : Display label (for example, the event's summary). Servers SHOULD set this to the event's `title` when constructing MessageActions from CalendarEvent records they have access to.
@@ -164,21 +190,21 @@ The `jmap:` URI scheme used in this document is a private-use scheme for intra-s
   - `endsAt` (UTCDate) — event end time.
   - `location` (String) — event location.
   - `participantCount` (UnsignedInt) — count of participants on the underlying CalendarEvent.
-  Servers MAY include other type-specific metadata keys; clients MUST ignore unknown keys.
+  Servers MAY include other type-specific metadata keys; clients ignore unknown keys per the MessageAction definition in {{JMAP-CHAT}}.
 
   (Note: the main Chat spec's illustrative example for `calendar-event` metadata uses the key names defined in this section.)
 
-Servers MUST treat the `uri` and `metadata` values as peer-supplied and untrusted; clients MUST validate any URI they intend to dereference per the standard MessageAction handling rules in {{JMAP-CHAT}}.
+The `uri` and `metadata` values are peer-supplied and untrusted, and clients validate any URI they intend to dereference, per the standard MessageAction handling rules in {{JMAP-CHAT}}.
 
 ## Rendering hints
 
-Clients receiving a MessageAction of this type SHOULD render it as a structured event card showing the event title, time, and (when present) location, with an action affordance to RSVP (see {{rsvp}}) and an action affordance to open the event in a calendar client. Clients that do not support structured rendering MAY fall back to displaying the `label` as a hyperlink.
+Clients receiving a MessageAction of this type typically render it as a structured event card showing the event title, time, and (when present) location, with an action affordance to RSVP (see {{rsvp}}) and an action affordance to open the event in a calendar client. Clients that do not support structured rendering MAY fall back to displaying the `label` as a hyperlink.
 
 When the referenced CalendarEvent is on the same account and JMAP Calendars is available, clients SHOULD fetch the current CalendarEvent record via `CalendarEvent/get` rather than relying solely on the MessageAction metadata, which is a snapshot at the time of message composition and may be stale.
 
 ## Updates after the message is sent
 
-If the underlying CalendarEvent is modified or destroyed after the chat message is sent, the message itself is not automatically updated. Clients SHOULD treat the MessageAction metadata as a hint and revalidate against the live CalendarEvent at display time. Servers MAY define deployment-specific mechanisms to update or invalidate messages whose referenced CalendarEvent has changed; this is out of scope for the wire protocol.
+If the underlying CalendarEvent is modified or destroyed after the chat message is sent, the message itself is not automatically updated. Servers MAY define deployment-specific mechanisms to update or invalidate messages whose referenced CalendarEvent has changed; this is out of scope for the wire protocol.
 
 # RSVP Handling {#rsvp}
 
@@ -189,9 +215,9 @@ This specification does not define a new method for RSVPing to events. RSVPs are
 A client receiving a chat message with a calendar-event MessageAction and wishing to expose an RSVP UI SHOULD:
 
 1. Identify the recipient user's `Principal.id` on the relevant account.
-2. Compose a `CalendarEvent/set` request patching the `participants/{participantKey}/participationStatus` field on the referenced CalendarEvent to one of `"accepted"`, `"declined"`, `"tentative"`, or `"delegated"` per {{JMAP-CALENDARS}} (where `{participantKey}` is the map key of the current user's participant entry, which the client MUST look up by matching its own identity within the participants map).
+2. Compose a `CalendarEvent/set` request patching the `participants/{participantKey}/participationStatus` field on the referenced CalendarEvent to one of `"accepted"`, `"declined"`, `"tentative"`, or `"delegated"` per {{JMAP-CALENDARS}} (where `{participantKey}` is the map key of the current user's participant entry, which the client looks up by matching its own identity within the participants map).
 3. Submit the request via the standard JMAP transport.
-4. On success, the chat client SHOULD update its local view of the message (re-fetch the CalendarEvent or update the cached participant state).
+4. On success, the chat client updates its local view of the message (re-fetch the CalendarEvent or update the cached participant state).
 
 The chat server is not involved in the RSVP transaction beyond having delivered the original message. The RSVP is a JMAP Calendars transaction; the chat layer is a launchpad.
 
@@ -217,15 +243,15 @@ When a Message is created with an attachment whose `contentType` is `text/calend
 - Synthesize a MessageAction of type `urn:jmap:chat:cap:calendar-event` referencing the newly created or matched CalendarEvent.
 - Decline to parse (return the message with the raw attachment intact), in which case the client may parse client-side or render the attachment as a generic file.
 
-The specific behavior is deployment-defined. Deployments MUST NOT auto-RSVP on the recipient's behalf as a result of `.ics` parsing; RSVPs require explicit user action.
+The specific behavior is deployment-defined. Deployments SHOULD NOT auto-RSVP on the recipient's behalf as a result of `.ics` parsing; RSVPs require explicit user action.
 
 ## Auto-creation safety
 
-When server-side parsing creates a new CalendarEvent on a recipient's calendar, the server SHOULD store the event as a tentative state (`participationStatus: "needs-action"` for the recipient) and SHOULD NOT mark it as accepted. The recipient retains the choice of whether to RSVP.
+When server-side parsing creates a new CalendarEvent on a recipient's calendar, the server SHOULD store the event as a tentative state (`participationStatus: "needs-action"` for the recipient) rather than accepted ({{ics-parsing}}). The recipient retains the choice of whether to RSVP.
 
 Servers SHOULD rate-limit auto-creation of CalendarEvents from `.ics` attachments to prevent a malicious sender from flooding a recipient's calendar. A reasonable default is no more than 10 new CalendarEvents auto-created per sender per hour; deployments tune this.
 
-Servers MUST reject `.ics` attachments that exceed a deployment-defined size limit (a few hundred kilobytes is typical); large iCalendar objects can be denial-of-service vectors.
+Servers SHOULD reject `.ics` attachments that exceed a deployment-defined size limit (a few hundred kilobytes is typical); large iCalendar objects can be denial-of-service vectors.
 
 ## Client-side parsing alternative
 
@@ -242,7 +268,7 @@ When `type` is `urn:jmap:chat:cap:availability`:
 `uri` (String):
 : A URI identifying the Principal. Two forms are recognized:
 
-  - A `jmap:` URI in the form `jmap:principal:<accountId>:<principalId>`.
+  - A JMAP object URN ({{object-urn}}) of type `principal`, in the form `urn:ietf:params:jmap:principal:<accountId>:<principalId>`.
   - A standard scheduling URL.
 
 `label` (String, optional):
@@ -260,8 +286,8 @@ Real-world deployments choose along axes including: same-Space membership; same-
 The wire contract this specification establishes is:
 
 - Servers MAY expose `Principal/getAvailability` in response to chat-context queries.
-- Servers MUST reject (with the appropriate JMAP Calendars error) any query that violates their configured policy.
-- Deployments MUST document the policy in user-facing product documentation; users SHOULD NOT have to read source code to learn who can see their free/busy state.
+- Servers SHOULD reject (with the appropriate JMAP Calendars error) any query that violates their configured policy.
+- The protocol does not expose this policy, so users learn who can see their free/busy state only from the deployment's product documentation.
 
 ## Granularity
 
@@ -269,11 +295,11 @@ Implementations SHOULD expose availability in slot-based form (busy / free for e
 
 # Federation {#federation}
 
-Cross-server federation of calendar binding is **not in scope** for this revision. A Space's `calendarId` MUST reference a Calendar on the same server. Calendar federation across JMAP servers (where two servers' Calendars are synchronized or one references the other) is a separate problem that may be addressed in a future revision of this or a different specification.
+Cross-server federation of calendar binding is **not in scope** for this revision. A Space's `calendarId` references a Calendar on the same account, and so on the same server ({{calendar-id}}). Calendar federation across JMAP servers (where two servers' Calendars are synchronized or one references the other) is a separate problem that may be addressed in a future revision of this or a different specification.
 
 Cross-server federation of calendar-event MessageActions and ICS attachments works in the limited sense described in {{event-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts.
 
-Cross-server availability lookup is out of scope for this specification. Deployments wishing to enable it MUST do so via mechanisms outside this specification; the wire contract here does not extend across the federation boundary.
+Cross-server availability lookup is out of scope for this specification; the wire contract here does not extend across the federation boundary.
 
 # Security Considerations {#security}
 
@@ -283,25 +309,25 @@ RSVPs are performed via {{JMAP-CALENDARS}} `CalendarEvent/set`, which has its ow
 
 ## Availability privacy
 
-`Principal/getAvailability` exposes occupancy patterns. Even without event details, occupancy data can reveal behavioral patterns (work hours, lunch routines, periodic meetings). Deployments MUST treat availability data as privacy-sensitive and apply access controls per {{availability}}. Implementations MUST NOT expose availability data to clients that lack the corresponding JMAP Calendars privileges, even when the JMAP Chat layer would otherwise allow the query.
+`Principal/getAvailability` exposes occupancy patterns. Even without event details, occupancy data can reveal behavioral patterns (work hours, lunch routines, periodic meetings). Deployments need to treat availability data as privacy-sensitive and apply access controls per {{availability}}. JMAP Calendars authorization ({{calendar-binding}}) governs availability queries even when the JMAP Chat layer would otherwise allow the query.
 
 ## ICS parsing safety
 
-iCalendar parsers have historically been a source of denial-of-service and injection vulnerabilities. Implementations of optional `.ics` parsing MUST:
+iCalendar parsers have historically been a source of denial-of-service and injection vulnerabilities. Implementations of optional `.ics` parsing SHOULD:
 
-- Enforce a strict size limit on iCalendar object bytes.
 - Limit recursion depth in parsed `VCALENDAR`, `VEVENT`, `VTODO`, etc. structures.
 - Reject calendar objects whose effective recurrence patterns would produce an unreasonable number of expanded instances (a calendar event recurring every second for ten years).
 - Sanitize text fields (`SUMMARY`, `DESCRIPTION`, `LOCATION`) for control characters and URL injection before surfacing them in chat UI.
-- Never auto-accept invitations on the recipient's behalf (per {{ics-parsing}}).
+
+The size limit and the auto-RSVP rule in {{ics-parsing}} also apply.
 
 ## Calendar binding integrity
 
-A Space's `calendarId` is set by members holding the `"manage_space"` permission. A compromised admin account could bind a malicious Calendar to a Space or unbind the legitimate one. Deployments SHOULD audit `Space/set` patches that change `calendarId` to a separate log; users of the affected Space SHOULD be notified when the binding changes. The chat wire protocol does not require this notification; it is a deployment-side UX choice.
+A Space's `calendarId` is set by members holding the `"manage_space"` permission. A compromised admin account could bind a malicious Calendar to a Space or unbind the legitimate one. Deployments SHOULD audit `Space/set` patches that change `calendarId` to a separate log; deployments can notify users of the affected Space when the binding changes. The chat wire protocol does not require this notification; it is a deployment-side UX choice.
 
 ## Federation surface
 
-This document explicitly excludes cross-server calendar binding and availability lookup. Implementations MUST NOT extend the wire protocol to support cross-server queries without explicit user consent flows. A future revision MAY define federated calendar mechanics; until then, the conservative default is "calendar binding is server-local".
+This document explicitly excludes cross-server calendar binding and availability lookup. Cross-server queries are out of scope; an extension that adds them needs explicit user consent flows. A future revision MAY define federated calendar mechanics; until then, the conservative default is "calendar binding is server-local".
 
 # IANA Considerations {#iana}
 
@@ -323,6 +349,27 @@ Specification document:
 
 Security and privacy considerations:
 : See {{security}} of this document.
+
+## JMAP Object URN Types Registry {#iana-urn-types}
+
+IANA is requested to create the "JMAP Object URN Types" registry in the "JSON Meta Application Protocol (JMAP)" registry group. It lists the type names used in JMAP object URNs ({{object-urn}}). The registration policy is Specification Required ({{RFC8126, Section 4.6}}).
+
+The designated expert checks that a type name matches the `type-name` rule in {{object-urn}}, is the lowercased name of the JMAP data type it identifies, and does not equal the segment that follows `urn:ietf:params:jmap:` in any URN registered in the "JMAP Capabilities" registry. IANA is also requested to add a note to the "JMAP Capabilities" registry: a capability URN whose segment following `urn:ietf:params:jmap:` equals a registered JMAP object URN type name is not registered.
+
+Each registration has the following fields:
+
+Type Name:
+: The type name, matching the `type-name` rule.
+
+Reference:
+: The document that defines the type's use in JMAP object URNs.
+
+Initial registrations:
+
+| Type Name | Reference |
+|---|---|
+| calendarevent | This document |
+| principal | This document |
 
 ## MessageAction Type URI
 

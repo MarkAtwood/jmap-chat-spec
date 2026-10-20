@@ -23,7 +23,7 @@ normative:
   RFC8030:
   RFC8291:
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
@@ -32,17 +32,19 @@ normative:
 
 informative:
   JMAP-EMAILPUSH:
-    title: >
-      JSON Meta Application Protocol (JMAP) Email Delivery Push
-      Notifications
+    title: "JSON Meta Application Protocol (JMAP) Email Delivery Push Notifications"
     author:
-      fullname: Neil Jenkins
+      - fullname: Neil Jenkins
     seriesinfo:
       Internet-Draft: draft-ietf-jmap-emailpush-03
-    date: 2026
+    date: 2026-05-03
   JMAP-CHAT-FED:
-    title: JMAP Chat Federation
-    target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
+    title: "JMAP Chat Federation"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-federation-00
+    date: 2026
   RFC9420:
 
 --- abstract
@@ -139,7 +141,7 @@ A `ChatMessagePush` object is the push payload delivered directly to the registe
 : The account id for which this payload was generated.
 
 `state` (String):
-: The `Message` state string for this account after all messages in the `messages` array have been applied, equivalent to the value that would appear in `StateChange.changed[accountId]["Message"]` following those deliveries. The server MUST set this field to the post-delivery state, so that a client using it as `sinceState` in a subsequent `Message/changes` call will not re-receive any message already present in this payload. Clients SHOULD update their locally cached `Message` state on receipt. If a client receives push notifications out of order (e.g., two pushes generated in quick succession delivered in reverse order), the client SHOULD use the lexicographically greatest `state` value as `sinceState` in subsequent `Message/changes` calls, discarding any `state` from a push whose `state` is less than the client's current known state.
+: The `Message` state string for this account after all messages in the `messages` array have been applied, equivalent to the value that would appear in `StateChange.changed[accountId]["Message"]` following those deliveries. The server MUST set this field to the post-delivery state. This state also covers Message changes that the payload does not carry, such as the owner's own messages and messages excluded by `ChatPushConfig`, mute, or block (see {{delivery}}), so clients SHOULD NOT replace their cached `Message` state with it. As with `StateChange` ({{RFC8620}} Section 7.1), state strings are opaque and are compared only for equality: if `state` differs from the client's cached `Message` state, the client calls `Message/changes` with its cached state as `sinceState`. This also handles pushes delivered out of order, whose relative age `state` cannot show.
 
 `messages` (ChatMessageEntry[]):
 : MUST be a non-empty array of message entries that triggered this push. Contains exactly one entry for a single new message, or multiple entries when the server batches messages that arrived in quick succession (see {{delivery}}).
@@ -158,7 +160,7 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 : The `kind` of the Chat: `"direct"`, `"group"`, or `"channel"`.
 
 `chatName` (String, optional):
-: The display name of the Chat. Present for `"group"` and `"channel"` kinds. Absent for `"direct"` chats; clients SHOULD use `senderDisplayName` as the notification title instead.
+: The display name of the Chat. Present for `"group"` and `"channel"` kinds. Absent for `"direct"` chats; clients can use `senderDisplayName` as the notification title instead.
 
 `spaceId` (String, optional):
 : For `"channel"` chats, the id of the containing Space. Absent for other kinds.
@@ -170,10 +172,10 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 : The accountId for owner-composed messages; otherwise the ChatContact.id of the message sender. This is the authoritative sender identity.
 
 `senderDisplayName` (String, optional):
-: The sender's display name at push-generation time. For `chatKind: "channel"`, derived from the sender's `SpaceMember.nick` in the containing Space if present, otherwise `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `ChatContact.identity`. For `"direct"` and `"group"` chats, derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `ChatContact.identity`. The `identity` fallback occurs when the ChatContact record has not yet been fully resolved — for example, when a message arrives from a previously unknown peer in a federated deployment and the server holds only a placeholder ChatContact for that peer. This value is a snapshot and may become stale; clients MUST NOT treat it as an authoritative identity signal.
+: The sender's display name at push-generation time. For `chatKind: "channel"`, derived from the sender's `SpaceMember.nick` in the containing Space if present, otherwise `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `ChatContact.identity`. For `"direct"` and `"group"` chats, derived from `ChatContact.displayName` if present, otherwise `ChatContact.login`, otherwise `ChatContact.identity`. The `identity` fallback occurs when the ChatContact record has not yet been fully resolved — for example, when a message arrives from a previously unknown peer in a federated deployment and the server holds only a placeholder ChatContact for that peer. This value is a snapshot and may become stale; clients SHOULD NOT treat it as an authoritative identity signal.
 
 `sentAt` (UTCDate):
-: The sender's claimed composition time, as stored in the message. Included for display purposes, such as showing the send time in the notification preview. This is a client-supplied value and MUST NOT be used for ordering.
+: The sender's claimed composition time, as stored in the message. Included for display purposes, such as showing the send time in the notification preview. This is a client-supplied value and, as in {{JMAP-CHAT}}, is not used for ordering.
 
 `hasMention` (Boolean, optional):
 : `true` if the account owner is directly @-mentioned in the message; `false` otherwise. MUST be absent when `encrypted` is `true` (see {{e2ee}}). The server MUST set this to `true` when the accountId, which identifies the account owner ({{JMAP-CHAT}}), appears as a Mention `id` in the message's `Message.mentions` array, for every `bodyType`. The server MUST NOT derive mentions from the message body, including a rich body's spans ({{JMAP-CHAT}}). Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
@@ -185,20 +187,20 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 : `true` if the message body is end-to-end encrypted and the server cannot produce a plaintext snippet; `false` otherwise. See {{e2ee}} for how servers determine this value. When `true`, `bodySnippet` MUST be absent.
 
 `bodySnippet` (String, optional):
-: A truncated plaintext rendering of the message body, suitable for display in a notification preview. At most `maxSnippetBytes` bytes, truncated on a UTF-8 character boundary. MUST be absent when `encrypted` is `true`. When the message's `bodyType` is `"text/markdown"` or `"application/jmap-chat-rich"`, the server SHOULD generate a plaintext approximation rather than including raw markup syntax.
+: A truncated plaintext rendering of the message body, suitable for display in a notification preview. At most `maxSnippetBytes` bytes, truncated on a UTF-8 character boundary. When the message's `bodyType` is `"text/markdown"` or `"application/jmap-chat-rich"`, the server SHOULD generate a plaintext approximation rather than including raw markup syntax.
 
 `unreadCount` (UnsignedInt|null, optional):
-: The account owner's total unread message count across all non-muted Chats at the time this push was generated. Servers SHOULD include this for platforms that support atomic badge updates (e.g., APNs `aps.badge`). When absent, the client MUST derive the badge count via a subsequent `Chat/get` request.
+: The account owner's total unread message count across all non-muted Chats at the time this push was generated. Servers SHOULD include this for platforms that support atomic badge updates (e.g., APNs `aps.badge`). When absent, the client can derive the badge count via a subsequent `Chat/get` request.
 
 # End-to-End Encrypted Deployments {#e2ee}
 
 In relay deployments using end-to-end encryption (see {{JMAP-CHAT}} Security Considerations and {{RFC9420}}), the message body is ciphertext and the server cannot generate a meaningful plaintext snippet.
 
-The server determines the `encrypted` field value from the message's `bodyType`. For the plaintext body types defined by {{JMAP-CHAT}} — `"text/plain"`, `"text/markdown"`, and `"application/jmap-chat-rich"` — the server MUST set `encrypted` to `false`. For all other `bodyType` values, the server MUST set `encrypted` to `true` unless it has explicit knowledge that the type represents a plaintext format. The server MUST omit `bodySnippet` when `encrypted` is `true` and MUST NOT include ciphertext in `bodySnippet`.
+The server determines the `encrypted` field value from the message's `bodyType`. For the plaintext body types defined by {{JMAP-CHAT}} — `"text/plain"`, `"text/markdown"`, and `"application/jmap-chat-rich"` — the server MUST set `encrypted` to `false`. For all other `bodyType` values, the server MUST set `encrypted` to `true` unless it has explicit knowledge that the type represents a plaintext format. When `encrypted` is `true`, `bodySnippet` is absent ({{chat-message-entry}}).
 
-For an encrypted message, mentions and broadcast mentions are carried inside the ciphertext (see Fields Inside the Ciphertext in {{JMAP-CHAT}}), so the server cannot compute `hasMention` or `mentionScopes`. The server MUST omit both fields from the entry when `encrypted` is `true`. Such a message never triggers `mentionUrgency` and never bypasses mute suppression (see {{delivery}}); clients determine mentions after decryption.
+For an encrypted message, mentions and broadcast mentions are carried inside the ciphertext (see Fields Inside the Ciphertext in {{JMAP-CHAT}}), so the server cannot compute `hasMention` or `mentionScopes`. Both fields are therefore absent when `encrypted` is `true` ({{chat-message-entry}}). Such a message never triggers `mentionUrgency` and never bypasses mute suppression (see {{delivery}}); clients determine mentions after decryption.
 
-The remaining fields (`messageId`, `chatId`, `chatKind`, `chatName`, `senderId`, `senderDisplayName`, `sentAt`, and `encrypted`) carry enough context for clients to display a useful notification such as "New message from Alice" without exposing message content. Servers MUST NOT decrypt message content to generate a snippet.
+The remaining fields (`messageId`, `chatId`, `chatKind`, `chatName`, `senderId`, `senderDisplayName`, `sentAt`, and `encrypted`) carry enough context for clients to display a useful notification such as "New message from Alice" without exposing message content.
 
 These fields still reveal who sent a message to whom, in which named Chat and Space, and when, to any party that can read the push payload. On push platforms other than Web Push with {{RFC8291}} encryption, that includes the platform operator (see {{platform-visibility}}).
 
@@ -213,7 +215,7 @@ The server MUST NOT deliver a `ChatMessagePush` in any of the following cases:
 - The message was stored before the `PushSubscription` was created.
 - The sender is the account owner (push is for inbound messages from other participants only).
 - At the time of delivery, the account is no longer a member of the Chat containing the message.
-- The Chat is muted (`Chat.muted: true` or within an active `muteUntil` period), UNLESS the message contains a broadcast mention whose resolved recipient set includes the account owner (per {{JMAP-CHAT}} Section on broadcast-mention mute bypass).
+- The Chat is muted (`Chat.muted: true` or within an active `muteUntil` period), UNLESS the message contains a broadcast mention whose resolved recipient set includes the account owner (per the Chat `muted` field, {{JMAP-CHAT}} Section 4.11).
 - The message sender's ChatContact record has `blocked: true` on the account owner's contact list.
 
 For clarity: a direct `@user` mention (`hasMention: true` with empty `mentionScopes`) in a muted Chat does NOT bypass the mute suppression. Only broadcast mentions with non-empty `mentionScopes` targeting the account owner bypass mute, per {{JMAP-CHAT}}.
@@ -224,9 +226,9 @@ The server uses `urgency` as the Web Push urgency for the delivery. If the `Chat
 
 ## Batching and Retry
 
-Servers SHOULD deliver at most one `ChatMessagePush` per message per `PushSubscription`. If delivery fails and the server retries, the payload MUST NOT be altered between attempts. When a single account has multiple `PushSubscription` objects with `chatPush` configurations, each subscription is evaluated and delivered to independently.
+Servers SHOULD deliver at most one `ChatMessagePush` per message per `PushSubscription`. If delivery fails and the server retries, the payload SHOULD NOT be altered between attempts. When a single account has multiple `PushSubscription` objects with `chatPush` configurations, each subscription is evaluated and delivered to independently.
 
-If multiple new messages arrive in quick succession, servers MAY include multiple `ChatMessageEntry` objects in the `messages` array of a single `ChatMessagePush` rather than delivering a separate payload per message. When `maxMessagesPerPush` is advertised, the server MUST NOT exceed it; if more matching messages are pending than the limit allows, the server MUST deliver additional `ChatMessagePush` payloads to cover the remainder.
+If multiple new messages arrive in quick succession, servers MAY include multiple `ChatMessageEntry` objects in the `messages` array of a single `ChatMessagePush` rather than delivering a separate payload per message. The `maxMessagesPerPush` bound ({{capability}}) applies; if more matching messages are pending than the limit allows, the server MUST deliver additional `ChatMessagePush` payloads to cover the remainder.
 
 ## Rate Limiting and Fallback
 
@@ -310,11 +312,11 @@ Body snippets are rendered by OS notification systems outside the application sa
 
 ## Display Name Freshness
 
-`senderDisplayName` is a snapshot taken at push-generation time and is for display purposes only. Clients MUST NOT use it as an authoritative identity signal. The authoritative sender identity is `senderId` (the accountId for owner-composed messages, otherwise the verified ChatContact.id of the sender).
+`senderDisplayName` is a snapshot taken at push-generation time and is for display purposes only and is not an authoritative identity signal ({{chat-message-entry}}). The authoritative sender identity is `senderId` (the accountId for owner-composed messages, otherwise the verified ChatContact.id of the sender).
 
 ## Rate Limiting
 
-Without rate limiting, a flood of incoming messages could drive unbounded push delivery and exhaust push infrastructure. The rate-limiting and fallback behavior described in {{delivery}} SHOULD be enforced server-side.
+Without rate limiting, a flood of incoming messages could drive unbounded push delivery and exhaust push infrastructure. The rate-limiting and fallback behavior described in {{delivery}} addresses this.
 
 ## Federation
 

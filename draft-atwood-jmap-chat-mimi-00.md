@@ -24,7 +24,7 @@ normative:
   RFC8620:
   RFC9420:
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
@@ -33,38 +33,38 @@ normative:
   MIMI-CONTENT:
     title: "More Instant Messaging Interoperability (MIMI) message content"
     author:
-      fullname: R. Mahy
+      - fullname: Rohan Mahy
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-content-09
-    date: 2026
+    date: 2026-07-04
   MIMI-PROTOCOL:
     title: "More Instant Messaging Interoperability (MIMI) using HTTPS and MLS"
     author:
-      - fullname: R. L. Barnes
-      - fullname: M. Hodgson
-      - fullname: K. Kohbrok
-      - fullname: R. Mahy
-      - fullname: T. Ralston
-      - fullname: R. Robert
+      - fullname: Richard Barnes
+      - fullname: Matthew Hodgson
+      - fullname: Konrad Kohbrok
+      - fullname: Rohan Mahy
+      - fullname: Travis Ralston
+      - fullname: Raphael Robert
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-protocol-06
-    date: 2026
+    date: 2026-04-25
   MIMI-ROOM-POLICY:
     title: "Room Policy for the More Instant Messaging Interoperability (MIMI) Protocol"
     author:
-      fullname: R. Mahy
+      - fullname: Rohan Mahy
     seriesinfo:
       Internet-Draft: draft-ietf-mimi-room-policy-04
-    date: 2026
+    date: 2026-07-06
   MLS-EXTENSIONS:
-    title: The Messaging Layer Security (MLS) Extensions
+    title: "The Messaging Layer Security (MLS) Extensions"
     author:
-      fullname: R. Robert
+      - fullname: Raphael Robert
     seriesinfo:
       Internet-Draft: draft-ietf-mls-extensions-10
-    date: 2026
+    date: 2026-07-06
   ULID:
-    title: Universally Unique Lexicographically Sortable Identifier
+    title: "Universally Unique Lexicographically Sortable Identifier"
     target: https://github.com/ulid/spec
 
 informative:
@@ -72,13 +72,18 @@ informative:
   MIMI-MESSAGE-STATUS:
     title: "A Message Status format for the More Instant Messaging Interoperability (MIMI) content format"
     author:
-      fullname: R. Mahy
+      - fullname: Rohan Mahy
     seriesinfo:
       Internet-Draft: draft-mahy-mimi-message-status-01
-    date: 2026
+    date: 2026-03-02
+    annotation: "Work in progress; this individual draft expired on 2026-09-03."
   JMAP-CHAT-FED:
-    title: JMAP Chat Federation
-    target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
+    title: "JMAP Chat Federation"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-federation-00
+    date: 2026
 
 --- abstract
 
@@ -194,7 +199,7 @@ Standard JMAP `/get` ({{RFC8620, Section 5.1}}).
 
 Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that `update` is not supported: the server MUST reject every update with a SetError of type `forbidden`.
 
-On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account. The server MUST reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
+On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account. The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
 
 The server MUST reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`.
 
@@ -248,11 +253,11 @@ When this capability is present, the Chat object ({{JMAP-CHAT}}) has one more fi
 `roomId` (String, immutable, server-set, optional):
 : The MIMI room ID of the room this Chat is bound to. Absent for Chats not bound to a MIMI room.
 
-A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and metadata are MLS group state, changed only through `Room/update` ({{room-update}}), and its messages are sent with `Room/send` ({{room-send}}). The server MUST reject, with `forbidden`, a `Chat/set` update on such a Chat that sets `name`, `description`, or `avatarBlobId` or that uses the `addMembers`, `removeMembers`, or `updateMemberRoles` patch key ({{JMAP-CHAT}}), and clients MUST take the room's name and participants from the MLS group state rather than from these fields. The server sets `name` to the `room_name` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) when it knows it and to the empty string otherwise.
+A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and metadata are MLS group state, changed only through `Room/update` ({{room-update}}), and its messages are sent with `Room/send` ({{room-send}}). The server MUST reject, with `forbidden`, a `Chat/set` update on such a Chat that sets `name`, `description`, or `avatarBlobId` or that uses the `addMembers`, `removeMembers`, or `updateMemberRoles` patch key ({{JMAP-CHAT}}), and clients take the room's name and participants from the MLS group state rather than from these fields. The server sets `name` to the `room_name` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) when it knows it and to the empty string otherwise.
 
 The server does not mirror the participant list into ChatMember records: `members` of a Chat with a `roomId` is the empty list, whether `Room/create` ({{room-create}}) or a Welcome ({{fanout-messages}}) created it.
 
-A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every leaf whose credential identity is the account's `userUri` ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients MUST then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/send`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}).
+A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every leaf whose credential identity is the account's `userUri` ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients SHOULD then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/send`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}).
 
 ## Room/create {#room-create}
 
@@ -267,7 +272,7 @@ The request arguments are:
 : An MLSMessage ({{RFC9420, Section 6}}) of wire format `mls_group_info` carrying the group's GroupInfo, which MUST NOT contain the `ratchet_tree` extension ({{MIMI-PROTOCOL, Section 5.6}}).
 
 `ratchetTree` (String):
-: The group's ratchet tree, a RatchetTree ({{RFC9420, Section 12.4.3.3}}).
+: The group's ratchet tree, a `ratchet_tree` vector of `optional<Node>` entries ({{RFC9420, Section 12.4.3.3}}).
 
 The server MUST reject the call with `invalidArguments` unless all of the following hold:
 
@@ -279,7 +284,7 @@ The server MUST reject the call with `invalidArguments` unless all of the follow
 6. The group ID is 16 octets and no room this server hosts uses it.
 7. The group's `app_data_dictionary` extension ({{MLS-EXTENSIONS, Section 4.6}}) contains a `franking_agent` component ({{MIMI-PROTOCOL, Section 5.4.1}}) whose `franking_signature_key` and `credential` are those of `hubSender`, and a `base_room_policy` component ({{MIMI-ROOM-POLICY, Section 5}}) that parses.
 
-Clients MUST generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and MUST use a fresh group ID for every MLS group of a room.
+Clients SHOULD generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and SHOULD use a fresh group ID for every MLS group of a room.
 
 On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), and returns:
 
@@ -411,7 +416,7 @@ The response arguments are:
 `response` (String):
 : The whole GroupInfoResponse, unchanged.
 
-The GroupInfo and ratchet tree are encrypted to the client's `groupInfoPublicKey`, so the server passes them through. The client MUST verify the response signature with `hub_sender`, and MUST verify that the decrypted GroupInfo's `external_senders` extension contains that `hub_sender`, before it joins.
+The GroupInfo and ratchet tree are encrypted to the client's `groupInfoPublicKey`, so the server passes them through. The client SHOULD verify the response signature with `hub_sender`, and SHOULD verify that the decrypted GroupInfo's `external_senders` extension contains that `hub_sender`, before it joins.
 
 A local user added to the participant list without being added to the MLS group ({{MIMI-PROTOCOL, Section 5.6}}) has no Chat for the room, and so cannot use GroupInfo/fetch. This document does not define how such a user learns of the room.
 
@@ -589,7 +594,7 @@ A converting party that relays end-to-end encrypted MIMI messages ({{RFC9420}}) 
 
 A derived `senderMsgId` keeps 80 bits of the MIMI message ID it comes from, and references resolve on those 80 bits alone ({{message-ids}}). A converting party MUST NOT accept a MIMI message whose octets 1 through 10 equal the `senderMsgId` random component or an alias of a different message already stored in the same Chat; it rejects the message rather than overwriting or merging the stored one, so that every reference resolves to at most one message.
 
-Alias records ({{edits}}) let a MIMI reply, reaction, or edit that names a later version reach the original message. A converting party MUST verify that the sender of an edit is the sender of the original message before recording its alias, so that a third party cannot attach an alias to, and thereby edit or retract, someone else's message.
+Alias records ({{edits}}) let a MIMI reply, reaction, or edit that names a later version reach the original message. A converting party SHOULD verify that the sender of an edit is the sender of the original message before recording its alias, so that a third party cannot attach an alias to, and thereby edit or retract, someone else's message.
 
 A MIMI provider is not a member of any MLS group and never holds message keys. It does see room metadata in GroupInfo and in handshake messages sent as PublicMessage, the participant list, message sizes, and timing, as any MIMI hub or follower does ({{MIMI-PROTOCOL}}).
 

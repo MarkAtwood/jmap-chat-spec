@@ -21,32 +21,38 @@ normative:
   RFC8174:
   RFC8620:
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
-  JMAP-TASKS:
-    title: JMAP for Tasks
-    author:
-      fullname: Neil Jenkins
-    seriesinfo:
-      Internet-Draft: draft-ietf-jmap-tasks-06
-    date: 2026
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-tasks/
-
-informative:
-  JMAP-CHAT-FED:
-    title: JMAP Chat Federation
-    target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
   JMAP-CHAT-CALENDARS:
-    title: JMAP Chat Calendars
+    title: "JMAP Chat Calendars"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-calendars-00
     date: 2026
+  JMAP-TASKS:
+    title: "JMAP for Tasks"
+    author:
+      - fullname: Joris Baum
+      - fullname: Hans-Jörg Happel
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-tasks-06
+    date: 2023-03-10
+    annotation: "Work in progress; this draft expired on 2023-09-11 and has no successor."
+
+informative:
+  JMAP-CHAT-FED:
+    title: "JMAP Chat Federation"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-federation-00
+    date: 2026
+  RFC8984:
 
 --- abstract
 
@@ -100,7 +106,7 @@ The value of `capabilities["urn:ietf:params:jmap:chat:tasks"]` at the session le
 The value of `accountCapabilities["urn:ietf:params:jmap:chat:tasks"]` is a JSON object with the following fields:
 
 `mayBindTaskList` (Boolean):
-: `true` if accounts on this server may associate a TaskList with a Space, `false` otherwise. Deployments that prohibit Space-TaskList binding (for example, multi-tenant deployments where the chat and task accounts are administratively separate) MUST set this to `false`.
+: `true` if accounts on this server may associate a TaskList with a Space, `false` otherwise. For example, multi-tenant deployments where the chat and task accounts are administratively separate set this to `false`.
 
 `mayBackReferenceChat` (Boolean):
 : `true` if tasks may carry a `chatId` back-reference to a discussion Chat (see {{task-chatid}}), `false` otherwise. A deployment MAY support TaskList binding (`mayBindTaskList: true`) without supporting Task-Chat back-references; for example, a deployment that treats Tasks as fire-and-forget items without discussion threads.
@@ -116,7 +122,7 @@ The Space data type defined in {{JMAP-CHAT}} is extended with one optional field
 
 The bound TaskList MUST belong to the same account that owns the Space. Cross-account TaskList references are not supported in this revision; deployments wishing to support cross-account or cross-server TaskList binding will require future spec work.
 
-When a TaskList referenced by `Space.taskListId` is destroyed, the server MUST clear the field (set to null) as part of the destroy operation, and MUST reflect this change in subsequent `Space/changes` responses.
+When a TaskList referenced by `Space.taskListId` is destroyed, the server MUST clear the field (so that it is absent) as part of the destroy operation.
 
 A Space MAY have at most one bound TaskList in this revision. Deployments wishing to expose multiple TaskLists per Space — for example, separate "open" and "archived" lists, or multiple work-stream lists — may achieve this by using multiple Spaces, or by treating the single bound TaskList as the canonical work list and managing additional lists out-of-band.
 
@@ -134,10 +140,10 @@ Authorization for operations on a bound TaskList — who may read tasks, who may
 
 The wire contract this specification establishes is:
 
-- The {{JMAP-TASKS}} permission model is the authoritative authorization layer for Task operations. Servers MUST evaluate JMAP Tasks authorization on every Task operation, regardless of how the operation was initiated (directly via JMAP Tasks or indirectly via chat-layer wiring).
-- Unauthorized operations MUST receive the appropriate JMAP Tasks error response (typically `forbidden`).
+- The {{JMAP-TASKS}} permission model is the authoritative authorization layer for Task operations. Servers SHOULD evaluate JMAP Tasks authorization on every Task operation, regardless of how the operation was initiated (directly via JMAP Tasks or indirectly via chat-layer wiring).
+- Unauthorized operations receive the appropriate JMAP Tasks error response (typically `forbidden`), as defined by {{JMAP-TASKS}}.
 - Servers MAY use {{JMAP-CHAT}} Space membership and the closed Space-permission vocabulary as inputs to that authorization decision (per §Space Permission Resolution of {{JMAP-CHAT}}, which makes such mappings deployment-defined).
-- Deployments MUST document the actual authorization model in user-facing API documentation; the wire protocol does not advertise it.
+- The wire protocol does not advertise the authorization model, so clients and users learn it only from the deployment's own documentation.
 
 The chat-layer wiring (binding a TaskList to a Space, surfacing Tasks in messages, creating discussion Chats for Tasks) does not bypass JMAP Tasks authorization. A user lacking JMAP Tasks permission to create or modify a Task on the bound TaskList cannot do so regardless of any chat-side affordance.
 
@@ -162,11 +168,11 @@ A Chat MAY be back-referenced by multiple Tasks. The wire model does not constra
 
 ## Lifecycle
 
-When a Task is destroyed (via `Task/set` destroy), the referenced Chat is NOT automatically destroyed. The Chat persists independently. Deployments wishing to destroy the Chat alongside the Task MUST do so via an explicit follow-up `Chat/set` destroy operation.
+When a Task is destroyed (via `Task/set` destroy), the referenced Chat is NOT automatically destroyed. The Chat persists independently. Deployments wishing to destroy the Chat alongside the Task use an explicit follow-up `Chat/set` destroy operation.
 
 When a Chat referenced by one or more Tasks is destroyed, the affected Tasks' `chatId` fields MUST be cleared (set to absent) by the server as part of the destroy operation. Clients reading the updated Tasks observe the absent `chatId` and treat the Tasks as no longer having a discussion thread.
 
-Closing a Task (setting its status to `"completed"` or `"cancelled"` per {{JMAP-TASKS}}) does NOT affect the referenced Chat. Discussion history persists even after the Task is closed.
+Closing a Task (setting its `progress` to `"completed"` or `"cancelled"` ({{RFC8984, Section 5.2.5}})) does NOT affect the referenced Chat. Discussion history persists even after the Task is closed.
 
 # Task in Chat Context {#task-in-chat}
 
@@ -182,10 +188,8 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
 `uri` (String):
 : A URI identifying the referenced Task. Two URI forms are recognized:
 
-  - A `jmap:` URI in the form `jmap:task:<accountId>:<taskListId>:<taskId>`, referencing a Task on the named account.
+  - A JMAP object URN ({{JMAP-CHAT-CALENDARS}}) of type `task`, in the form `urn:ietf:params:jmap:task:<accountId>:<taskId>`, referencing a Task on the named account.
   - A standard `https://` URL pointing to an external task representation (for example, a link to a third-party issue tracker that bridges to JMAP Tasks).
-
-The `jmap:` URI scheme is defined in {{JMAP-CHAT-CALENDARS}}.
 
 `label` (String, optional):
 : Display label (typically the Task's title). Servers SHOULD set this to the Task's `title` when constructing MessageActions from Task records they have access to.
@@ -193,27 +197,27 @@ The `jmap:` URI scheme is defined in {{JMAP-CHAT-CALENDARS}}.
 `metadata` (Object, optional):
 : MAY include the following type-specific keys:
 
-  - `status` (String) — the Task's current status (e.g., `"needs-action"`, `"in-process"`, `"completed"`, `"cancelled"`).
+  - `status` (String) — the Task's current `progress` value ({{RFC8984, Section 5.2.5}}; e.g., `"needs-action"`, `"in-process"`, `"completed"`, `"cancelled"`), or its `workflowStatus` ({{JMAP-TASKS, Section 4}}) when `progress` is not set.
   - `due` (UTCDate, optional) — the Task's due date.
   - `assigneeIds` (String[], optional) — the assigned users: each entry is a ChatContact.id, or the accountId for the account owner ({{JMAP-CHAT}}). Between servers, entries carry identities ({{federation}}).
   - `priority` (Integer, optional) — priority value per {{JMAP-TASKS}}.
-  Servers MAY include other type-specific keys; clients MUST ignore unknown keys.
+  Servers MAY include other type-specific keys; clients ignore unknown keys per the MessageAction definition in {{JMAP-CHAT}}.
 
-Servers MUST treat the `uri` and `metadata` values as peer-supplied and untrusted; clients MUST validate any URI they intend to dereference per the standard MessageAction handling rules in {{JMAP-CHAT}}.
+The `uri` and `metadata` values are peer-supplied and untrusted, and clients validate any URI they intend to dereference, per the standard MessageAction handling rules in {{JMAP-CHAT}}.
 
 ## Rendering hints
 
-Clients receiving a MessageAction of this type SHOULD render it as a structured task card showing the task title, status, due date (when present), and assignees, with an action affordance to open the task in a task client. Clients that do not support structured rendering MAY fall back to displaying the `label` as a hyperlink.
+Clients receiving a MessageAction of this type typically render it as a structured task card showing the task title, status, due date (when present), and assignees, with an action affordance to open the task in a task client. Clients that do not support structured rendering MAY fall back to displaying the `label` as a hyperlink.
 
 When the referenced Task is on the same account and JMAP Tasks is available, clients SHOULD fetch the current Task record via `Task/get` rather than relying solely on the MessageAction metadata, which is a snapshot at the time of message composition and may be stale.
 
 ## Updates after the message is sent
 
-If the underlying Task is modified or destroyed after the chat message is sent, the message itself is not automatically updated. Clients SHOULD treat the MessageAction metadata as a hint and revalidate against the live Task at display time.
+If the underlying Task is modified or destroyed after the chat message is sent, the message itself is not automatically updated.
 
 ## Task-Chat round-trip
 
-When a Task has both a `chatId` back-reference and a chat message references the Task via MessageAction, clients and servers SHOULD treat the back-reference as the canonical discussion thread. UX flows that "open the task" from a chat message SHOULD navigate to the back-referenced Chat when one exists, falling back to the task-client view otherwise.
+When a Task has both a `chatId` back-reference and a chat message references the Task via MessageAction, clients and servers SHOULD treat the back-reference as the canonical discussion thread. UX flows that "open the task" from a chat message typically navigate to the back-referenced Chat when one exists, falling back to the task-client view otherwise.
 
 # Operations {#operations}
 
@@ -233,17 +237,17 @@ The Task creation MAY succeed even if the current Chat is not bound to the same 
 
 When a Task already exists and a user wishes to start a discussion thread for it, the recommended pattern is:
 
-1. The client calls `Chat/set` (per {{JMAP-CHAT}}) to create a new channel Chat in the Space whose TaskList contains the Task. The Chat's name SHOULD reflect the Task (the Task's title is a sensible default).
+1. The client calls `Chat/set` (per {{JMAP-CHAT}}) to create a new channel Chat in the Space whose TaskList contains the Task. The Chat's name typically reflects the Task (the Task's title is a sensible default).
 2. The client calls `Task/set` to update the Task's `chatId` to the new Chat's id.
 3. The new Chat begins normal operation; messages posted there are the Task's discussion thread.
 
-The two operations MAY be performed in either order; the server MUST tolerate transient inconsistency (a Task with `chatId` set to a Chat that does not yet exist on this server is a brief inconsistency, resolved when the Chat is created or the chatId is cleared).
+The two operations MAY be performed in either order; the server tolerates transient inconsistency ({{task-chatid-field}}) (a Task with `chatId` set to a Chat that does not yet exist on this server is a brief inconsistency, resolved when the Chat is created or the chatId is cleared).
 
 # Federation {#federation}
 
-Cross-server federation of TaskList binding is **not in scope** for this revision. A Space's `taskListId` MUST reference a TaskList on the same server. TaskList federation across JMAP servers is a separate problem that may be addressed in a future revision.
+Cross-server federation of TaskList binding is **not in scope** for this revision. A Space's `taskListId` references a TaskList on the same account, and so on the same server ({{task-list-id}}). TaskList federation across JMAP servers is a separate problem that may be addressed in a future revision.
 
-Cross-server federation of Task-Chat back-references is similarly out of scope. A Task's `chatId` MUST reference a Chat on the same server.
+Cross-server federation of Task-Chat back-references is similarly out of scope. A Task's `chatId` references a Chat on the same account, and so on the same server ({{task-chatid-field}}).
 
 Cross-server federation of `urn:jmap:chat:cap:task` MessageActions works in the limited sense described in {{task-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts. A `jmap:` URI may resolve only on the originating account; an external `https://` URL may resolve anywhere.
 
@@ -255,7 +259,7 @@ The `assigneeIds` metadata key is a user-reference field. Between servers it car
 
 The authorization model for Task operations on a bound TaskList is deployment-defined (see {{tasklist-binding}}). This specification does not prescribe who may perform which operations; that decision belongs to the deployment.
 
-What this specification does require is that the {{JMAP-TASKS}} permission model is the authoritative layer: servers MUST evaluate JMAP Tasks authorization on every Task operation, and unauthorized requests MUST receive a JMAP Tasks error response. The chat-layer wiring does not bypass JMAP Tasks authorization. A user lacking JMAP Tasks permissions on the bound TaskList cannot perform Task operations regardless of any chat-side affordance.
+What this specification does require is that the {{JMAP-TASKS}} permission model is the authoritative layer ({{tasklist-binding}}). The chat-layer wiring does not bypass JMAP Tasks authorization. A user lacking JMAP Tasks permissions on the bound TaskList cannot perform Task operations regardless of any chat-side affordance.
 
 ## Task content exposure
 
@@ -265,17 +269,17 @@ When a chat MessageAction includes Task metadata (per {{task-in-chat}}), the sen
 
 ## Chat back-reference leakage
 
-A Task's `chatId` is a reference to a Chat that may itself be private (a member-restricted channel or a closed group chat). Exposing `chatId` to users who can read the Task but not the Chat reveals only that the discussion exists, not its content. Implementations MUST NOT use the `chatId` field as a side channel to disclose Chat membership or content.
+A Task's `chatId` is a reference to a Chat that may itself be private (a member-restricted channel or a closed group chat). Exposing `chatId` to users who can read the Task but not the Chat reveals only that the discussion exists, not its content. Implementations SHOULD NOT use the `chatId` field as a side channel to disclose Chat membership or content.
 
 Deployments MAY hide the `chatId` field from Task readers who lack access to the referenced Chat. The wire contract permits this (it is equivalent to the Task not exposing the field to that reader), and it reduces information leakage in mixed-access deployments.
 
 ## Cross-account references
 
-This document explicitly excludes cross-account `taskListId` and `chatId` references. Implementations MUST validate that referenced TaskLists and Chats belong to the same account as the referencing Space or Task before persisting the binding. Cross-account references are a privilege-escalation risk: an attacker with `"manage_space"` on Space A could otherwise bind Space A to a TaskList on account B that they do not control, gaining a foothold for further attacks.
+This document explicitly excludes cross-account `taskListId` and `chatId` references. Servers reject a `taskListId` that does not reference a TaskList on the Space's account ({{tasklist-binding}}). A `chatId` is not validated at write time; its same-account rule applies once the Chat exists ({{task-chatid-field}}). Cross-account references are a privilege-escalation risk: an attacker with `"manage_space"` on Space A could otherwise bind Space A to a TaskList on account B that they do not control, gaining a foothold for further attacks.
 
 ## Federation surface
 
-Cross-server federation of TaskList binding, Task-Chat back-references, and authorization is explicitly out of scope. Implementations MUST NOT extend the wire protocol to support cross-server queries without explicit user consent flows; this would otherwise expose Task content via federation without the corresponding JMAP Tasks federation specification (which does not yet exist).
+Cross-server federation of TaskList binding, Task-Chat back-references, and authorization is explicitly out of scope. Cross-server queries are out of scope; an extension that adds them needs explicit user consent flows, since it would otherwise expose Task content via federation without the corresponding JMAP Tasks federation specification (which does not yet exist).
 
 # IANA Considerations {#iana}
 
@@ -297,6 +301,16 @@ Specification document:
 
 Security and privacy considerations:
 : See {{security}} of this document.
+
+## JMAP Object URN Type Registration
+
+IANA is requested to register the following entry in the "JMAP Object URN Types" registry defined by {{JMAP-CHAT-CALENDARS}}:
+
+Type Name:
+: `task`
+
+Reference:
+: This document.
 
 ## MessageAction Type URI
 
