@@ -596,6 +596,16 @@ the connection is open:
   `moderator` role unless the deployment explicitly permits broader
   delivery.
 
+## Credential Expiry
+
+The credential-expiry rules of {{RFC8887}} Section 4.2 apply.  If
+the server closes the connection when credentials expire, it SHOULD
+use Close frame status code 1008 (Policy Violation).  Ephemeral
+events are pushed, not requested, so treating subsequent requests
+as unauthenticated does not by itself stop them: a server that does
+not close the connection MUST NOT deliver further VTC ephemeral
+events on that connection.
+
 ## Rate Limiting {#security-rate-limiting}
 
 The rate limits defined in {{rate-limiting}} SHOULD be enforced
