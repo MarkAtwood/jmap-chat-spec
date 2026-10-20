@@ -20,6 +20,7 @@ normative:
   RFC2119:
   RFC8174:
   RFC8620:
+  RFC5234:
   RFC3629:
   RFC4648:
   RFC8292:
@@ -36,6 +37,7 @@ normative:
     date: 2026
 
 informative:
+  RFC8141:
   RFC7763:
   RFC7764:
   RFC8621:
@@ -235,7 +237,7 @@ informative:
 
 This document defines JMAP for Chat, a JMAP capability ({{RFC8620}}) for direct and group text messaging. It supports two deployment topologies: a mailbox-per-user model in which each user operates their own server, and a relay model in which a shared server routes end-to-end encrypted messages.
 
-The specification defines the `urn:ietf:params:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
+The specification defines the `urn:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
 
 The protocol covers the feature set common to contemporary messaging systems: group chat with membership roles, message reactions, editing, deletion, threading, @mentions, typing indicators, read receipts per participant, presence, pinned messages, per-chat notification settings, sender-controlled message expiry, and burn-on-read. Spaces provide a named multi-channel container with a role-based permission system, analogous to what other systems call a server, workspace, or team.
 
@@ -292,19 +294,19 @@ identity / id:
 
 ## Color Representation {#color-convention}
 
-Where this specification or companion specifications define color-valued fields, implementations SHOULD represent colors using the W3C Design Tokens Community Group color token format {{DTCG-COLOR}} (a JSON object with `"$type": "color"` and a `"$value"` string in CSS Color Level 4 syntax {{CSS-COLOR-4}}, which supports multiple color spaces). When the Design Tokens format is not practical, implementations SHOULD use CAM16 uniform color space coordinates {{CAM16}} (`[J, a, b]` or `[J, M, h]`). As a baseline fallback, implementations MAY use sRGB hex strings (e.g., `"#5865f2"`). Servers MUST accept all three representations in color-valued fields and MUST preserve the representation provided by the client. Clients MUST handle all three representations gracefully.
+Where this specification or companion specifications define color-valued fields, implementations SHOULD represent colors using the W3C Design Tokens Community Group color token format {{DTCG-COLOR}} (a JSON object with `"$type": "color"` and a `"$value"` that is a Design Tokens color object with `colorSpace` and `components` members and optional `alpha` and `hex` members, not a CSS color string; `colorSpace` names a color space defined in CSS Color Level 4 {{CSS-COLOR-4}}). For example: `{"$type": "color", "$value": {"colorSpace": "srgb", "components": [0.345, 0.396, 0.949], "hex": "#5865f2"}}`. When the Design Tokens format is not practical, implementations SHOULD use CAM16 uniform color space coordinates {{CAM16}} (`[J, a, b]` or `[J, M, h]`). As a baseline fallback, implementations MAY use sRGB hex strings (e.g., `"#5865f2"`). Servers MUST accept all three representations in color-valued fields and MUST preserve the representation provided by the client. Clients MUST handle all three representations gracefully.
 
-# The urn:ietf:params:jmap:chat Capability {#capability}
+# The urn:jmap:chat Capability {#capability}
 
-The `urn:ietf:params:jmap:chat` capability is advertised in the JMAP Session object at both the top-level `capabilities` key and within each account's `accountCapabilities` map.
+The `urn:jmap:chat` capability is advertised in the JMAP Session object at both the top-level `capabilities` key and within each account's `accountCapabilities` map.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:chat"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:jmap:chat"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:jmap:chat"]` is a JSON object with the following fields:
 
 `maxBodyBytes` (UnsignedInt):
 : Maximum UTF-8 {{RFC3629}} byte length of a Message `body`. Servers MUST reject messages exceeding this limit; in `Message/set` the rejection is a `tooLarge` SetError.
@@ -327,7 +329,7 @@ Note: {{RFC9425}} defines a `Quota` data type for exposing account-level storage
 
 ## Session Object Extensions
 
-When the `urn:ietf:params:jmap:chat` capability is present, servers MAY include the following additional fields in the Session object:
+When the `urn:jmap:chat` capability is present, servers MAY include the following additional fields in the Session object:
 
 `ownerUserId` (String):
 : The identity of the mailbox owner (equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact). Servers implementing {{JMAP-CHAT-FED}} MUST include this field; other servers MAY include it.
@@ -393,7 +395,7 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
   - `payment`: `{"network": "lightning", "currency": "BTC"}`
   - `blob`: `{"maxBytes": 10485760}`
   - `calendar-event`: `{"startsAt": "...", "endsAt": "..."}`
-  - `task`: `{"title": "...", "status": "..."}`
+  - `task`: `{"title": "...", "progress": "..."}`
   - `filenode`: `{"name": "...", "mediaType": "..."}`
 
 ## MessageAction {#message-action}
@@ -607,7 +609,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : **Channel Chats only.** Short description shown in the channel header. Mutable by members with `"manage_channels"` permission.
 
 `slowModeSeconds` (UnsignedInt):
-: **Channel Chats only.** When non-zero, the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimited` SetError on the offending `Message/set` create. Servers SHOULD exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimited` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimited`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
+: **Channel Chats only.** When non-zero, the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimit` SetError ({{RFC8620, Section 5.3}}) on the offending `Message/set` create. Servers SHOULD exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimit` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimit`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
 
 `permissionOverrides` (ChannelPermission[]):
 : **Channel Chats only.** Per-channel permission overrides for specific roles or members. Evaluated after Space-level role permissions per {{space-permissions}}. Only members with `"manage_channels"` permission may modify this list. Empty by default.
@@ -639,7 +641,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : Per-Chat override of the account-level `PresenceStatus.receiptSharing` preference (see {{presence-status}}). When present, this value takes precedence over the account-level setting for this Chat only. When absent, the account-level preference applies. Owner-side preference; not shared with peers.
 
 `activeCallId` (String|null, server-set):
-: When `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}) is present: the id of a VTCCall that is currently active and bound to this Chat via the VTCCall's `chatId` field. The server sets this when a bound VTCCall enters the `"active"` state and clears it to `null` when the call ends. `null` when no call is active or VTC is not available. Clients MAY use this to display a "join call" banner.
+: When `urn:jmap:vtc` ({{JMAP-VTC}}) is present: the id of a VTCCall that is currently active and bound to this Chat via the VTCCall's `chatId` field. The server sets this when a bound VTCCall enters the `"active"` state and clears it to `null` when the call ends. `null` when no call is active or VTC is not available. Clients MAY use this to display a "join call" banner.
 
   When a VTCCall with a `chatId` matching this Chat's `id` transitions to state `"active"`, the server MUST set this field to that VTCCall's `id` and emit a `StateChange` for the Chat type. When that VTCCall transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange`. These updates are side effects of the VTCCall state transition and MUST be applied atomically with it from the client's perspective — a client polling `/changes` after receiving the VTCCall `StateChange` MUST see the corresponding Chat `activeCallId` update.
 
@@ -650,6 +652,9 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
   Servers SHOULD coalesce rapid `activeCallId` transitions within a short window (e.g., 1-2 seconds) before emitting a Chat `StateChange`. This is particularly important for high-membership Chats where the fan-out cost of each `StateChange` is proportional to the subscriber count.
 
   When a VTCCall ends, clients subscribed to both VTCCall and Chat state changes will receive two `StateChange` notifications for the same logical event (the call ending and `activeCallId` clearing). Clients SHOULD deduplicate by correlating the VTCCall id with the Chat's previous `activeCallId` value within a 5-second window.
+
+`activeCallAccountId` (Id|null, server-set):
+: The id of the account hosting the VTCCall named by `activeCallId`, so a client can join a call held in another account. The server sets and clears this field together with `activeCallId`, in the same state change: it is non-null exactly when `activeCallId` is non-null. Like `activeCallId`, it is not a `Chat/set` patch key.
 
 `messageExpirySeconds` (UnsignedInt, optional):
 : A local expiry policy. When set and non-zero, messages in this chat older than this many seconds are deleted by this mailbox. Each mailbox enforces its own policy independently. This is a local setting, not a bilateral negotiated commitment.
@@ -1823,7 +1828,7 @@ Security considerations for server-to-server federation are defined in {{JMAP-CH
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Intended Use:
 : common
@@ -1837,6 +1842,30 @@ Reference:
 Security and Privacy Considerations:
 : See {{security}} of this document.
 
+## The urn:jmap Namespace {#iana-urn}
+
+This document and its companion specifications use the URN namespace identifier "jmap". The identifier is not registered with IANA; registration as a formal URN namespace ({{RFC8141}}) is deferred. No IANA action is requested for it at this time. Names under `urn:jmap:` are structured and allocated as follows.
+
+Syntax:
+: A URN in this namespace matches `jmap-urn` ({{RFC5234}}):
+
+  ~~~abnf
+  jmap-urn = "urn:jmap:" segment *( ":" segment )
+  segment  = 1*( ALPHA / DIGIT / "-" / "_" )
+  ~~~
+
+  The first segment is allocated as described under Assignment and determines how the rest of the name is structured. Names contain no percent-encoded characters. URN-equivalence is that of {{RFC8141, Section 3}}: the NSS is compared case-sensitively, because JMAP account and object ids are case-sensitive. No r-component or q-component semantics are defined, and f-components are not used.
+
+Assignment:
+: Each first segment is held by exactly one of the following, and the two sets are disjoint:
+
+  1. A capability: a URN registered in the "JMAP Capabilities" registry ({{RFC8620, Section 9.4}}) whose first segment is that segment. Additional capability URNs under the segment (for example, `urn:jmap:chat:calendars`) are registered the same way. Other names under the segment are assigned by the specification that defines the capability or by documents that extend it; this document assigns `urn:jmap:chat:cap:*` ({{endpoint}}).
+  2. An object URN type: a type name registered in the "JMAP Object URN Types" registry ({{JMAP-CHAT-CALENDARS}}). The rest of the name is `<accountId>:<objectId>` as that document defines.
+
+  The collision rule of {{JMAP-CHAT-CALENDARS}} keeps the two sets apart: a type name is not registered if it equals the first segment of an assigned capability URN, and a capability URN is not registered if its first segment equals a registered type name. Uniqueness of capability URNs and type names follows from the registries. A name, once assigned, is not reassigned.
+
+Uniqueness:
+: {{RFC8620}} does not make account ids globally unique, so an object URN identifies an object only relative to the JMAP server that issued the account id; equal object URNs received from two different servers can name different objects. Implementations interpret an object URN only in the context of the JMAP session or federation peer from which it was received. Names in this namespace never equal names in `urn:ietf:params:jmap:`, because the NIDs differ.
 
 ## JMAP Data Types Registration
 
@@ -1852,7 +1881,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1867,7 +1896,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1882,7 +1911,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1897,7 +1926,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1912,7 +1941,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1927,7 +1956,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1942,7 +1971,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1957,7 +1986,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1972,7 +2001,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:ietf:params:jmap:chat`
+: `urn:jmap:chat`
 
 Reference:
 : This document
@@ -1994,7 +2023,7 @@ Reference:
 : This document
 
 Description:
-: The request was rejected because the sender has exceeded the per-channel slow-mode rate limit (`slowModeSeconds`). Returned as a SetError on `Message/set` create; {{JMAP-CHAT-FED}} also returns it as a method-level error on Peer/* methods. A client that receives it waits before retrying.
+: A method-level error: the calling peer has exceeded a server-defined request rate limit. Returned by the Peer/* methods of {{JMAP-CHAT-FED}}. The caller waits before retrying. (Per-object rate limits on `/set`, including channel slow mode, use the `rateLimit` SetError of {{RFC8620, Section 5.3}}.)
 
 JMAP Error Code:
 : `notPermitted`
@@ -2009,7 +2038,7 @@ Reference:
 : This document
 
 Description:
-: The request was rejected because the caller does not have permission to perform the requested operation (for example, joining a non-public Space without a valid invite code).
+: The requested Space does not exist or is not joinable by the caller (for example, `Space/join` by `spaceId` for a Space that is not public). Distinct from `forbidden`, which means the caller is specifically refused (for example, because it is banned).
 
 --- back
 

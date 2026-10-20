@@ -95,15 +95,15 @@ Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{JMAP-TASKS}} is used througho
 
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:chat:tasks` capability in the JMAP Session object. This capability is meaningful only when both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:tasks` are also advertised on the same account.
+Servers supporting this specification MUST advertise the `urn:jmap:chat:tasks` capability in the JMAP Session object. This capability is meaningful only when both `urn:jmap:chat` and `urn:ietf:params:jmap:tasks` are also advertised on the same account.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:chat:tasks"]` at the session level is an empty JSON object `{}`.
+The value of `capabilities["urn:jmap:chat:tasks"]` at the session level is an empty JSON object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat:tasks"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:jmap:chat:tasks"]` is a JSON object with the following fields:
 
 `mayBindTaskList` (Boolean):
 : `true` if accounts on this server may associate a TaskList with a Space, `false` otherwise. For example, multi-tenant deployments where the chat and task accounts are administratively separate set this to `false`.
@@ -113,7 +113,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:tasks"]` is a JSON 
 
 # Space Extension: TaskList Binding {#tasklist-binding}
 
-The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:ietf:params:jmap:chat:tasks` capability is active.
+The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:jmap:chat:tasks` capability is active.
 
 ## taskListId {#task-list-id}
 
@@ -151,7 +151,7 @@ The chat-layer wiring (binding a TaskList to a Space, surfacing Tasks in message
 
 # Task Extension: Chat Back-Reference {#task-chatid}
 
-The Task data type defined in {{JMAP-TASKS}} is extended with one optional field when the `urn:ietf:params:jmap:chat:tasks` capability is active and the server advertises `mayBackReferenceChat: true`.
+The Task data type defined in {{JMAP-TASKS}} is extended with one optional field when the `urn:jmap:chat:tasks` capability is active and the server advertises `mayBackReferenceChat: true`.
 
 ## chatId {#task-chatid-field}
 
@@ -188,7 +188,7 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
 `uri` (String):
 : A URI identifying the referenced Task. Two URI forms are recognized:
 
-  - A JMAP object URN ({{JMAP-CHAT-CALENDARS}}) of type `task`, in the form `urn:ietf:params:jmap:task:<accountId>:<taskId>`, referencing a Task on the named account.
+  - A JMAP object URN ({{JMAP-CHAT-CALENDARS}}) of type `task`, in the form `urn:jmap:task:<accountId>:<taskId>`, referencing a Task on the named account.
   - A standard `https://` URL pointing to an external task representation (for example, a link to a third-party issue tracker that bridges to JMAP Tasks).
 
 `label` (String, optional):
@@ -197,7 +197,7 @@ The MessageAction object has the following shape when its `type` is `urn:jmap:ch
 `metadata` (Object, optional):
 : MAY include the following type-specific keys:
 
-  - `status` (String) — the Task's current `progress` value ({{RFC8984, Section 5.2.5}}; e.g., `"needs-action"`, `"in-process"`, `"completed"`, `"cancelled"`), or its `workflowStatus` ({{JMAP-TASKS, Section 4}}) when `progress` is not set.
+  - `progress` (String) — the Task's current `progress` value ({{RFC8984, Section 5.2.5}}; e.g., `"needs-action"`, `"in-process"`, `"completed"`, `"cancelled"`), or its `workflowStatus` ({{JMAP-TASKS, Section 4}}) when `progress` is not set.
   - `due` (UTCDate, optional) — the Task's due date.
   - `assigneeIds` (String[], optional) — the assigned users: each entry is a ChatContact.id, or the accountId for the account owner ({{JMAP-CHAT}}). Between servers, entries carry identities ({{federation}}).
   - `priority` (Integer, optional) — priority value per {{JMAP-TASKS}}.
@@ -288,7 +288,7 @@ Cross-server federation of TaskList binding, Task-Chat back-references, and auth
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:chat:tasks`
+: `urn:jmap:chat:tasks`
 
 Intended Use:
 : common

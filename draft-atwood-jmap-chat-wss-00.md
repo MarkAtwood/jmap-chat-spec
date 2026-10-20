@@ -57,7 +57,7 @@ informative:
 
 --- abstract
 
-This document defines how JMAP Chat ({{JMAP-CHAT}}) operates over the WebSocket transport binding defined in {{RFC8887}}. It specifies the `urn:ietf:params:jmap:chat:websocket` capability, the interaction between JMAP Chat's authentication model and the WebSocket handshake, and the server-to-client message types for delivering ephemeral chat events — typing indicators and presence updates — over a WebSocket connection.
+This document defines how JMAP Chat ({{JMAP-CHAT}}) operates over the WebSocket transport binding defined in {{RFC8887}}. It specifies the `urn:jmap:chat:websocket` capability, the interaction between JMAP Chat's authentication model and the WebSocket handshake, and the server-to-client message types for delivering ephemeral chat events — typing indicators and presence updates — over a WebSocket connection.
 
 --- middle
 
@@ -90,7 +90,7 @@ Implementations MUST support {{RFC8887}} as a prerequisite. Except as updated in
 - A JMAP capability advertised in the Session object ({{RFC8620}} Section 2) MAY define additional WebSocket message types, each identified by its `@type` value.
 - A server MUST NOT send an additional server-to-client message type unless the client has enabled it using a control message defined by the same capability.
 
-Under this rule, the `urn:ietf:params:jmap:chat:websocket` capability defines the message types in {{chat-stream-enable}}, {{chat-stream-disable}}, {{chat-typing-event}}, and {{chat-presence-event}}. Companion documents such as {{JMAP-VTC-WSS}} and {{JMAP-SCENE-WSS}} define further message types under the same rule.
+Under this rule, the `urn:jmap:chat:websocket` capability defines the message types in {{chat-stream-enable}}, {{chat-stream-disable}}, {{chat-typing-event}}, and {{chat-presence-event}}. Companion documents such as {{JMAP-VTC-WSS}} and {{JMAP-SCENE-WSS}} define further message types under the same rule.
 
 ## Relationship to JMAP Chat
 
@@ -104,7 +104,7 @@ Terminology from {{RFC8620}}, {{RFC8887}}, and {{JMAP-CHAT}} is used throughout.
 
 # Capability {#capability}
 
-Servers supporting this specification MUST add a property named `urn:ietf:params:jmap:chat:websocket` to the JMAP Session object capabilities. The value of this property is an empty JSON object `{}`. Presence of this capability indicates that the server supports ephemeral push: it delivers `ChatTypingEvent` and `ChatPresenceEvent` messages over the WebSocket connection and accepts `ChatStreamEnable` and `ChatStreamDisable` control messages from the client. Servers that do not support ephemeral push MUST NOT advertise this capability.
+Servers supporting this specification MUST add a property named `urn:jmap:chat:websocket` to the JMAP Session object capabilities. The value of this property is an empty JSON object `{}`. Presence of this capability indicates that the server supports ephemeral push: it delivers `ChatTypingEvent` and `ChatPresenceEvent` messages over the WebSocket connection and accepts `ChatStreamEnable` and `ChatStreamDisable` control messages from the client. Servers that do not support ephemeral push MUST NOT advertise this capability.
 
 This capability is distinct from `urn:ietf:params:jmap:websocket` ({{RFC8887}}), which advertises the WebSocket transport itself. A server supporting both this specification and {{RFC8887}} will advertise both capabilities in the Session object.
 
@@ -117,7 +117,7 @@ Example Session object fragment:
       "url": "wss://chat.example.com/jmap/ws/",
       "supportsPush": true
     },
-    "urn:ietf:params:jmap:chat:websocket": {}
+    "urn:jmap:chat:websocket": {}
   }
 }
 ~~~
@@ -134,7 +134,7 @@ Because a single authenticated WebSocket connection authorizes a continuous stre
 
 # JMAP Chat API over WebSocket {#api}
 
-All JMAP Chat owner-facing methods defined in {{JMAP-CHAT}} — including all `/get`, `/set`, `/query`, `/changes`, `/queryChanges`, `Chat/typing`, and `Space/join` methods — operate over the {{RFC8887}} WebSocket transport without modification. Clients include `"urn:ietf:params:jmap:chat"` in the `using` array of each JMAP Request object.
+All JMAP Chat owner-facing methods defined in {{JMAP-CHAT}} — including all `/get`, `/set`, `/query`, `/changes`, `/queryChanges`, `Chat/typing`, and `Space/join` methods — operate over the {{RFC8887}} WebSocket transport without modification. Clients include `"urn:jmap:chat"` in the `using` array of each JMAP Request object.
 
 The `maxConcurrentRequests` limit in the Session capabilities applies to requests made on the WebSocket connection. When using the WebSocket subprotocol over a binding of HTTP that supports request multiplexing (e.g., HTTP/2), this limit applies to the sum of requests made on both the JMAP API endpoint and the WebSocket connection, per {{RFC8887}} Section 4.3.2.
 
@@ -172,7 +172,7 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 : MUST be `"ChatStreamEnable"`.
 
 `dataTypes` (String[]):
-: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`. It also defines two companion values: `"vtc"` for the VTC events (ring and in-call) defined by {{JMAP-VTC-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:scene:websocket`.
+: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`. It also defines two companion values: `"vtc"` for the VTC events (ring and in-call) defined by {{JMAP-VTC-WSS}}, recognized only when the server advertises `urn:jmap:vtc:websocket`, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}, recognized only when the server advertises `urn:jmap:scene:websocket`.
 
 > **Implementation Note:** The `"vtc"` and `"scene"` dataTypes in ChatStreamEnable are convenience aliases. When one is present, the Chat WSS server delegates event delivery to the VTC WSS or Scene WSS event pipeline. The Chat WSS implementation treats this as an opaque delegation — it activates the companion's event delivery for the connection without the Chat WSS layer needing to understand the companion's event semantics. When the companion capability is not present in the server's capabilities, the value in `dataTypes` is silently ignored under the unrecognized-value rule below.
 
@@ -193,7 +193,7 @@ The server does not send an explicit acknowledgment for `ChatStreamEnable`. As w
 
 If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"`, `"presence"`, or a companion value whose capability the server advertises), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
 
-> **Note:** When a companion capability (e.g., `urn:ietf:params:jmap:vtc:websocket`) is not present, its corresponding `dataTypes` value (e.g., `"vtc"`) is treated as unrecognized and silently ignored. Clients SHOULD check the server's capability list before relying on companion dataTypes, as no error feedback is provided for absent capabilities.
+> **Note:** When a companion capability (e.g., `urn:jmap:vtc:websocket`) is not present, its corresponding `dataTypes` value (e.g., `"vtc"`) is treated as unrecognized and silently ignored. Clients SHOULD check the server's capability list before relying on companion dataTypes, as no error feedback is provided for absent capabilities.
 
 ~~~json
 {
@@ -351,7 +351,7 @@ WS_DATA
   "@type": "Request",
   "id": "R1",
   "using": ["urn:ietf:params:jmap:core",
-            "urn:ietf:params:jmap:chat"],
+            "urn:jmap:chat"],
   "methodCalls": [["Message/set", {
     "accountId": "u1",
     "create": {
@@ -438,7 +438,7 @@ Servers SHOULD ensure that ephemeral events for one owner's subscription are nev
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:chat:websocket`
+: `urn:jmap:chat:websocket`
 
 Intended Use:
 : common

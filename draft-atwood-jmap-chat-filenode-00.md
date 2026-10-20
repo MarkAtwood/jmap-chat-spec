@@ -89,7 +89,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{JMAP-FILENODE}} is used throughout.
 
-This specification follows the URN convention established in {{JMAP-CHAT}}: capability identifiers (strings appearing in the JMAP Session `capabilities` object) use the `urn:ietf:params:jmap:` namespace, while data-model value strings (strings appearing inside object fields, such as role values and endpoint type URIs) use the `urn:jmap:` namespace.
+This specification follows the URN convention established in {{JMAP-CHAT}}: capability identifiers (strings appearing in the JMAP Session `capabilities` object) defined by JMAP Chat and its companions, including this document, and data-model value strings (strings appearing inside object fields, such as role values and endpoint type URIs) use the `urn:jmap:` namespace. Capabilities defined by JMAP core specifications, such as `urn:ietf:params:jmap:core`, keep the `urn:ietf:params:jmap:` namespace.
 
 The following term is specific to this document:
 
@@ -98,21 +98,21 @@ Space file tree:
 
 # Capability {#capability}
 
-Servers supporting this specification advertise the `urn:ietf:params:jmap:chat:filenode` capability in the JMAP Session object. This capability is meaningful only when both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:filenode` are also present.
+Servers supporting this specification advertise the `urn:jmap:chat:filenode` capability in the JMAP Session object. This capability is meaningful only when both `urn:jmap:chat` and `urn:ietf:params:jmap:filenode` are also present.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:chat:filenode"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:jmap:chat:filenode"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat:filenode"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:jmap:chat:filenode"]` is a JSON object with the following fields:
 
 `maxSpaceStorageBytes` (UnsignedInt, optional):
 : Maximum total blob storage in bytes across all FileNodes in a single Space's file tree. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{RFC9425}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
 
 `autoCreateFileTree` (Boolean):
-: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. This field is REQUIRED in the account-level capability object when `urn:ietf:params:jmap:chat:filenode` is advertised.
+: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. This field is REQUIRED in the account-level capability object when `urn:jmap:chat:filenode` is advertised.
 
 # Space File Tree {#space-file-tree}
 
@@ -166,7 +166,7 @@ The server SHOULD enforce this mapping on every FileNode operation, deriving the
 
 # Attachment Link {#attachment-link}
 
-The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following optional fields when the `urn:ietf:params:jmap:chat:filenode` capability is active.
+The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following optional fields when the `urn:jmap:chat:filenode` capability is active.
 
 ## filenodeId {#filenode-field}
 
@@ -233,7 +233,7 @@ This specification does not define file tree access in federated (mailbox-per-us
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:chat:filenode`
+: `urn:jmap:chat:filenode`
 
 Intended Use:
 : common
