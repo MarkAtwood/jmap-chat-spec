@@ -413,9 +413,12 @@ A client receiving a server-to-client message with an unrecognized
 close the WebSocket connection.  This preserves forward
 compatibility as new ephemeral event types are introduced.
 
-A server receiving a client-to-server message with an unrecognized
-`@type` value SHOULD silently ignore the message and SHOULD NOT
-close the WebSocket connection.
+A client-to-server message with an unrecognized `@type` value is a
+request-level error under {{RFC8887}} Section 4.3.1, which requires
+the server to return a `RequestError`;
+`"urn:ietf:params:jmap:error:notRequest"` ({{RFC8620}} Section
+3.6.1) is the appropriate `type`.  The server SHOULD NOT close the
+WebSocket connection.
 
 # Complete Example {#complete-example}
 
