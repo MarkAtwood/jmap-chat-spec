@@ -762,7 +762,7 @@ and event handling, see the
 
 ### What the spec provides
 
-When `urn:ietf:params:jmap:vtc` is co-deployed, a SceneRegion MAY carry
+When `urn:jmap:vtc` is co-deployed, a SceneRegion MAY carry
 an `activeCallId` binding to a VTCCall. The spec states that spatial audio
 is a simulation-layer concern: the VTCCall provides the voice channel; the
 simulation layer handles spatialization based on avatar positions.
