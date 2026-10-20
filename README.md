@@ -45,6 +45,7 @@ Both topologies use the same client-facing API.
 | [draft-atwood-jmap-graph-00](draft-atwood-jmap-graph-00.md) | `urn:ietf:params:jmap:graph` | Standalone: general-purpose shareable graphs (Graph, GraphNode, GraphEdge) with no built-in semantics |
 | [draft-atwood-jmap-graph-projection-00](draft-atwood-jmap-graph-projection-00.md) | `urn:ietf:params:jmap:graph:projection` | Optional projection of an account's other JMAP data as a Graph |
 | [draft-atwood-jmap-graph-search-00](draft-atwood-jmap-graph-search-00.md) | `urn:ietf:params:jmap:graph:search` | Search for graphs: a built-in JSON filter language plus advertised query languages (GQL, openCypher, Gremlin, DocumentDB, SPARQL) |
+| [draft-atwood-jmap-graph-edit-00](draft-atwood-jmap-graph-edit-00.md) | `urn:ietf:params:jmap:graph:edit` | Live co-editing of a node's content: a server-ordered edit log, snapshots, and a WebSocket stream of ops and cursors |
 
 ---
 
@@ -146,6 +147,7 @@ draft-atwood-jmap-object-uri-00.md      jmap: URI scheme for JMAP object referen
 draft-atwood-jmap-graph-00.md           General-purpose graphs (standalone)
 draft-atwood-jmap-graph-projection-00.md Graph projection of other JMAP data
 draft-atwood-jmap-graph-search-00.md    Graph search (filter language, advertised query languages)
+draft-atwood-jmap-graph-edit-00.md      Live co-editing of graph node content
 jmap-chat-implementer-guide.md          Core implementer's guide (non-normative)
 jmap-push-platform-guide.md             Platform delivery guide (non-normative)
 jmap-chat-push-platform-guide.md        Chat push supplement (non-normative)

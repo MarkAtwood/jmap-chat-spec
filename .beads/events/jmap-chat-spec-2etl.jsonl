@@ -1,1 +1,2 @@
 {"id":"01a15ae7-f096-7d16-b430-2566aceddd75","issue_id":"jmap-chat-spec-2etl","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T20:01:52.278858922Z"}
+{"id":"01a15b37-34bc-7c70-9a94-caba4a92e813","issue_id":"jmap-chat-spec-2etl","event_type":"closed","actor":"agent","old_value":"","new_value":"All children done: graph core, projection, search, edit drafts; object URI type names.","created_at":"2026-10-20T21:28:27.068816047Z"}

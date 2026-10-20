@@ -2,11 +2,13 @@
   "id": "jmap-chat-spec-2etl",
   "title": "jmap-graph core draft (-00)",
   "description": "Unopinionated graph substrate (Graph/Node/Edge) as standalone urn:jmap:graph. Grew out of a Google-Wave-on-JMAP idea; Wave and other uses become later profiles. Search, live text editing, WSS, federation, encrypted annotations, cross-graph edges, profiles are out of scope for -00.",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "epic",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T20:01:52.263032891Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T20:01:52.263032891Z"
+  "updated_at": "2026-10-20T21:28:27.06368121Z",
+  "closed_at": "2026-10-20T21:28:27.06368121Z",
+  "close_reason": "All children done: graph core, projection, search, edit drafts; object URI type names."
 }
