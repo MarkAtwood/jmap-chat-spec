@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-py20",
   "title": "Bibliography and reference audit (2026-10-20)",
   "description": "Audit findings in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/refs/R0-R3*.md (~130). Decisions (Mark 2026-10-20): leave normative/informative classification of non-IETF documents as is (fix only clear mistakes where the draft's own text makes an IETF document required); keep JMAP-TASKS draft -06 normative, fix entry and note expiry; replace jmap: URIs with URNs under urn:ietf:params:jmap with IANA registration. Canonical entries: /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/refs/CANON-internal.md, /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/refs/CANON-external.md.",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "epic",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T19:00:28.328974426Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T19:00:28.328974426Z",
+  "updated_at": "2026-10-20T19:46:05.836148637Z",
+  "closed_at": "2026-10-20T19:46:05.836148637Z",
+  "close_reason": "All children closed 2026-10-20.",
   "labels": [
     "refs"
   ]

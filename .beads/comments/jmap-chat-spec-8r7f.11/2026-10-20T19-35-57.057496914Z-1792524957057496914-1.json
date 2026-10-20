@@ -1,0 +1,7 @@
+{
+  "id": "1792524957057496914-1",
+  "issue_id": "jmap-chat-spec-8r7f.11",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): split: slow-mode Message/set rejection uses RFC 8620 SetError rateLimit; rateLimited stays registered only as a method-level error (federation). Keep notPermitted, tighten its description (no such joinable Space vs caller refused).",
+  "created_at": "2026-10-20T19:35:57.057496914Z"
+}

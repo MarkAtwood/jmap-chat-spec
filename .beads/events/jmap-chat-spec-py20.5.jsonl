@@ -1,2 +1,3 @@
 {"id":"01a15aba-1a50-76f9-bb4d-4ad46c9518bb","issue_id":"jmap-chat-spec-py20.5","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T19:11:48.304457821Z"}
 {"id":"01a15aba-1a55-7479-9772-98bf03220865","issue_id":"jmap-chat-spec-py20.5","event_type":"label_added","actor":"agent","comment":"Added label: refs","created_at":"2026-10-20T19:11:48.309294111Z"}
+{"id":"01a15ad9-6b8a-7d1b-ae24-b2c5440f4bbe","issue_id":"jmap-chat-spec-py20.5","event_type":"closed","actor":"agent","old_value":"","new_value":"Our URNs moved to urn:jmap:*; namespace used unregistered, RFC 8141 registration deferred (per Mark). See bead comment for the uniqueness caveat.","created_at":"2026-10-20T19:46:00.714859638Z"}

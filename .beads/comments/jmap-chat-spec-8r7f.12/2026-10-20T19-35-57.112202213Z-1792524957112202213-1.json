@@ -1,0 +1,7 @@
+{
+  "id": "1792524957112202213-1",
+  "issue_id": "jmap-chat-spec-8r7f.12",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): two named kinds: DID-bearing (owner's own DID, server-set) and DID-referencing (another party's DID, set per consuming spec, verified before trust); label each example.",
+  "created_at": "2026-10-20T19:35:57.112202213Z"
+}

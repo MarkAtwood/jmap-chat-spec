@@ -1,0 +1,7 @@
+{
+  "id": "1792525360069955890-1",
+  "issue_id": "jmap-chat-spec-py20.5",
+  "author": "agent",
+  "text": "Mark 2026-10-20: defer actually registering urn:jmap; use (squat) it for now. chat-00 IANA section 'The urn:jmap Namespace' states it is unregistered, registration (RFC 8141) deferred, no IANA action; keeps syntax/assignment/uniqueness rules. Before any future RFC 8141 registration: object URNs (urn:jmap:\u003ctype\u003e:\u003cacct\u003e:\u003cid\u003e) are unique only per server, which RFC 8141 experts will likely challenge (would need an issuer/server component).",
+  "created_at": "2026-10-20T19:42:40.06995589Z"
+}

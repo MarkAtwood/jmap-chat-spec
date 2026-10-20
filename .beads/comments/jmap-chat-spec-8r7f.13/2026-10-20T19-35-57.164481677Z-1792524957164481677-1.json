@@ -1,0 +1,7 @@
+{
+  "id": "1792524957164481677-1",
+  "issue_id": "jmap-chat-spec-8r7f.13",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): PushSubscription/set with chatPush for an account lacking the capability -\u003e invalidProperties naming chatPush. Oversized single entry: servers keep payloads within platform limits (implementation-defined), SHOULD shrink/drop the snippet then fall back to StateChange for that message.",
+  "created_at": "2026-10-20T19:35:57.164481677Z"
+}

@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-49i8.33",
   "title": "guides: remove remaining guide-invented keywords",
   "description": "Left by the guide-fix pass: delegation guide section 7 SHOULDs (presence, DND, ring rate-limit; one self-contradicts: 'SHOULD respect busy' vs 'busy does not block rings'); delegation guide 'A note on RFC 2119 keywords' says guides may use keywords for best practice, conflicting with the keyword rule; implementer guide MUSTs at ~147, 295, 315, 394, 469, 529, 580, 781 not audited; guide SHOULDs in e2ee/filenode guides not audited.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "chore",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T17:41:10.238136948Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T17:41:10.238136948Z",
+  "updated_at": "2026-10-20T19:35:57.39989809Z",
+  "closed_at": "2026-10-20T19:35:57.39989809Z",
+  "close_reason": "Moot: guides keep their own keywords (decision 2026-10-20); the one real contradiction (busy presence) was fixed in the keyword pass.",
   "labels": [
     "vtc"
   ],

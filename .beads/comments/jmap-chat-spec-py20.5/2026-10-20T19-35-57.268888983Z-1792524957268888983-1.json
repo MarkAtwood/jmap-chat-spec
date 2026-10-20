@@ -1,0 +1,7 @@
+{
+  "id": "1792524957268888983-1",
+  "issue_id": "jmap-chat-spec-py20.5",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): keep urn:jmap:; convert URNs our drafts define (our capability URNs, object URNs, action/endpoint types) from urn:ietf:params:jmap to urn:jmap; keep identifiers defined by RFC 8620/8621/8887 and other specs; add RFC 8141 formal namespace registration for 'jmap'.",
+  "created_at": "2026-10-20T19:35:57.268888983Z"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "1792524956957643808-1",
+  "issue_id": "jmap-chat-spec-49i8.13",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): a kicked participant (kickedBy set) cannot rejoin that call until a moderator clears kickedBy; rejoin no longer clears kickedBy automatically.",
+  "created_at": "2026-10-20T19:35:56.957643808Z"
+}

@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-py20.4",
   "title": "chat-00: Design Tokens color value is an object",
   "description": "draft-atwood-jmap-chat-00.md ~L221 says a W3C Design Tokens color $value is a CSS Color 4 string, but the DTCG Color Module (2025.10, now cited as DTCG-COLOR) defines it as an object (colorSpace, components). The MUST-accept/MUST-handle rule for three color forms depends on this. Also decide whether DTCG-COLOR, CSS-COLOR-4, CAM16 should be normative given that MUST. Found by the 2026-10-20 reference fix pass.",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "bug",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T19:08:56.05786478Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T19:08:56.05786478Z",
+  "updated_at": "2026-10-20T19:46:00.627477268Z",
+  "closed_at": "2026-10-20T19:46:00.627477268Z",
+  "close_reason": "Design Tokens $value is the color object; example added; references stay informative.",
   "labels": [
     "refs"
   ],
