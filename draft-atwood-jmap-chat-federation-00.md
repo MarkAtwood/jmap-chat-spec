@@ -194,7 +194,7 @@ Before granting peer-role access, the local server checks that the `ownerUserId`
 
 ## Request Signing {#request-signing}
 
-A server MUST sign every HTTP request it sends to a peer to obtain a peer-role session or to invoke a Peer/* method, using HTTP Message Signatures {{RFC9421}}. Each such request carries exactly one signature whose `tag` parameter is `"jmap-chat-peer"`; the signature label is chosen by the signer. The signature:
+A server MUST sign every HTTP request it sends to a peer to obtain a peer-role session, to invoke a Peer/* method, or to fetch a blob from a `fetchUrl` ({{blob-fetch}}), using HTTP Message Signatures {{RFC9421}}. Each such request carries exactly one signature whose `tag` parameter is `"jmap-chat-peer"`; the signature label is chosen by the signer. The signature:
 
 - MUST use the `ed25519` algorithm ({{RFC9421}} Section 3.3.6), and MUST include the `alg` parameter with that value.
 - MUST include the `keyid` parameter, whose value is the signer's peer domain, the character `#`, and the `kid` of the signing key ({{key-publication}}); for example, `alice.example#kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k`.
@@ -220,7 +220,7 @@ A server publishes its signing public keys in the `peerSigningKeys` field of its
 
 To find the keys of a peer domain, the receiving server fetches `https://<peer-domain>/.well-known/jmap` ({{peer-discovery}}) over HTTPS, validating the server certificate against the peer domain as {{RFC9110}} Section 4.3.4 and {{RFC9525}} describe. The receiving server MAY follow redirects, provided each one is to an `https` URI whose certificate it validates the same way; the fetch is subject to {{ssrf}}. A key is usable only if its `kty` and `crv` are as above and the receiving server, recomputing the thumbprint, obtains the key's `kid`. The receiving server MUST ignore any other entry.
 
-This key fetch, like every discovery fetch of `/.well-known/jmap` ({{peer-discovery}}), is an unsigned GET: the fetching server MUST NOT sign it. A server MUST answer an unsigned GET of its `/.well-known/jmap` with a Session object that includes `ownerUserId` and `peerSigningKeys`, and MUST NOT require any authentication for that response; in it, `accounts` and `primaryAccounts` MAY be empty objects and `username` MAY be the empty string. Only the request that obtains a peer-role session and Peer/* method calls are signed ({{request-signing}}). Verifying a signature therefore never requires a signed request back to the signer, so two servers that verify each other's requests cannot wait on each other.
+This key fetch, like every discovery fetch of `/.well-known/jmap` ({{peer-discovery}}), is an unsigned GET: the fetching server MUST NOT sign it. A server MUST answer an unsigned GET of its `/.well-known/jmap` with a Session object that includes `ownerUserId` and `peerSigningKeys`, and MUST NOT require any authentication for that response; in it, `accounts` and `primaryAccounts` MAY be empty objects and `username` MAY be the empty string. Only the request that obtains a peer-role session, Peer/* method calls, and blob fetches ({{blob-fetch}}) are signed ({{request-signing}}). Verifying a signature therefore never requires a signed request back to the signer, so two servers that verify each other's requests cannot wait on each other.
 
 The receiving server MAY cache the keys of a peer domain for the HTTP freshness lifetime of the response, but for no longer than one hour. When a request names a `kid` that is not among the usable keys of its peer domain (the cached keys that are usable under the precedence rule of {{dnssec-keys}}), the receiving server MUST fetch the keys again, bypassing its cache, before rejecting the request; if it uses the DNSSEC binding ({{dnssec-keys}}), it also queries the `_jmap-peer` name again, bypassing any DNS answer it has cached. It SHOULD NOT refetch the keys of one peer domain, or repeat that query, more often than once every 60 seconds; a request that arrives within that interval and names a `kid` that is not among the usable keys is rejected.
 
@@ -262,6 +262,12 @@ If the binding does not hold, the local server MUST reject the request. This bin
 3. A peer domain cannot claim an identity whose host is another domain.
 
 The peer identity is the `identity` of the peer's ChatContact on the local server (see ChatContact in {{JMAP-CHAT}}) and is the identity against which all Peer/* method arguments are validated. The ChatContact's `id` is assigned by the local server and is unrelated to this string.
+
+## Blob Fetch Authorization {#blob-fetch}
+
+A server that receives a `fetchUrl` in a Peer/* payload fetches the blob with an HTTP GET signed as {{request-signing}} requires. The serving server, the one that issued the `fetchUrl`, MUST verify the signature as for any peer request. It SHOULD serve the blob only to a peer domain to which it has sent a payload carrying that `fetchUrl`, recording the grant before it sends the payload, because the receiver fetches attachments while it processes the payload ({{new-message-validation}}). It SHOULD answer a verified request from any other peer domain with HTTP status 404 (Not Found), so as not to reveal that the blob exists. A serving server that follows these rules need not keep its `fetchUrl` values secret: holding one grants nothing without the signature of a peer it was sent to.
+
+The serving server MUST NOT redirect a blob fetch to another origin, because only the server that issued the `fetchUrl` can check the grant, and a fetching server does not follow such a redirect ({{ssrf}}).
 
 # Account-Level Capability {#account-capability}
 
@@ -355,7 +361,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `body` (String) — Message content. Validated per step 8 of {{new-message-validation}}.
   - `bodyType` (String) — MIME type of `body`. Validated against `supportedBodyTypes`.
   - `sentAt` (UTCDate) — Sender's claimed composition time. Stored as-is; SHOULD NOT be used for ordering.
-  - `attachments` (Object[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob.
+  - `attachments` (Object[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob, with a signed request ({{blob-fetch}}).
   - `mentions` (Mention[], optional) — Structured per-user @mention annotations. Each Mention `id` carries an identity string ({{identity-mapping}}).
   - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). The receiving server is authoritative for computing the local recipient set; the sending server's set is informational only. See {{broadcast-mention-resolution}}.
   - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection, except that user-reference fields the server recognises are mapped, and MessageActions whose `uri` is a JMAP object URI are removed, per {{identity-mapping}}.
@@ -422,7 +428,7 @@ Before storing a new message, the server MUST perform the following steps in ord
 8. Validate `body` byte length against `maxBodyBytes`; reject with `invalidArguments` if exceeded. For plaintext `bodyType` values, also validate UTF-8 encoding. For encrypted `bodyType` values (e.g., `"application/mls-ciphertext"`), `body` is opaque ciphertext; servers MUST NOT parse or transform it beyond byte-length checking.
 9. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type SHOULD include it in `supportedBodyTypes`.
 10. Validate each attachment `filename`, `contentType`, and `size` per Attachment in {{JMAP-CHAT}}.
-11. Fetch each attachment blob from its `fetchUrl`; verify the byte count against `size` and the content against `sha256`. Reject with `invalidArguments` if either check fails. See {{ssrf}} for restrictions on `fetchUrl` targets.
+11. Fetch each attachment blob from its `fetchUrl` with a signed request ({{blob-fetch}}); verify the byte count against `size` and the content against `sha256`. Reject with `invalidArguments` if either check fails. See {{ssrf}} for restrictions on `fetchUrl` targets.
 12. Take mentions only from the `mentions` array and broadcast mentions only from the `broadcastMentions` array, for every `bodyType` (per {{JMAP-CHAT}}). The receiving server does not parse `body`, including a rich body's spans, to find mentions for push-notification mention elevation or delivery-time recipient-set computation.
 13. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, or `"admins"`. The recipient set is computed by the receiving server at delivery time, not taken from the sending server's send-time set ({{broadcast-mention-resolution}}).
 14. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. Whether or not `senderExpiresAt` is present, if `burnOnRead` is `true`, register a trigger to hard-delete the message when `readAt` is set; otherwise, if `expiresAfterReadSeconds` is present, register a trigger to hard-delete the message that many seconds after `readAt` is set.
