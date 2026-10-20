@@ -366,7 +366,7 @@ The blocked participant is not informed of the suppression.
 The following event types are subject to this rule:
 
 - `VTCParticipantEvent` — the recipient MUST NOT receive join,
-  leave, or role-change notifications for a blocked participant.
+  leave, or kick notifications for a blocked participant.
 
 - `VTCMediaStateEvent` — the recipient MUST NOT receive media-state
   updates originating from a blocked participant.
@@ -615,9 +615,10 @@ the connection is open:
   delivered for calls in which the authenticated user is a current
   participant at delivery time.
 
-- `VTCRingEvent` MUST NOT be delivered when the initiator
-  corresponds to a blocked contact at delivery time
-  ({{blocked-sender}}).
+- `VTCRingEvent`, `VTCCallEndEvent`, and the in-call events listed
+  in {{blocked-sender}} MUST NOT be delivered when the originating
+  user corresponds to a blocked contact at delivery time, as
+  specified there.
 
 - `VTCGatewaySignal` MUST only be delivered to participants with
   `moderator` role unless the deployment explicitly permits broader
