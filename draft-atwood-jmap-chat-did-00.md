@@ -62,8 +62,8 @@ informative:
     title: "did:plc Method Specification"
     target: https://web.plc.directory/spec/v0.1/did-plc
   DID-WEBVH:
-    title: "The did:webvh DID Method"
-    target: https://identity.foundation/didwebvh/
+    title: "The did:webvh DID Method v1.0"
+    target: https://identity.foundation/didwebvh/v1.0/
 
 --- abstract
 
@@ -139,7 +139,7 @@ A server advertising the `urn:ietf:params:jmap:chat:did` capability MUST be able
 
 This list is mandatory-to-implement. A server that cannot resolve any one of these three methods MUST NOT advertise the `urn:ietf:params:jmap:chat:did` capability.
 
-Support for `did:webvh` ({{DID-WEBVH}}) is RECOMMENDED but not mandatory-to-implement. `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, it SHOULD NOT trust keys from the `did:web` DID Document that are not present in the verified `did:webvh` log.
+Support for `did:webvh` ({{DID-WEBVH}}) is RECOMMENDED but not mandatory-to-implement. `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, keys from the `did:web` DID Document are treated as defined in {{JMAP-DID}} and {{DID-WEBVH}}: a key not present in the verified `did:webvh` log carries none of the log's guarantees.
 
 Servers MAY additionally support any other DID method registered in the W3C DID Methods registry or otherwise specified. Support for additional methods is advertised by including the method name in the `supportedMethods` array ({{capability}}).
 
