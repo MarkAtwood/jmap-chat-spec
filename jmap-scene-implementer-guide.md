@@ -197,7 +197,7 @@ and in every get/query handler that checks region access.
 `urn:ietf:params:jmap:chat` is co-deployed and `spaceId` is set on the
 region. The server resolves membership by querying the Space's member list.
 If JMAP Chat is not present and a region is created with `accessPolicy:
-"space"`, the server MUST reject the create with `invalidArguments` (there
+"space"`, the server MUST reject the create with `invalidProperties` (there
 is no Space to bind to).
 
 **`simulationUri` provisioning.** Three common patterns:
@@ -323,7 +323,7 @@ positions. Choose one strategy and apply it consistently:
   Simpler for clients but can produce surprising results (an object intended
   for `[600, 0, 0]` in a region bounded at `[-500, ..., 500]` silently
   appears at `[500, 0, 0]`).
-- *Reject*: return `invalidArguments`. Stricter but forces clients to check
+- *Reject*: return `invalidProperties`. Stricter but forces clients to check
   bounds before creating objects.
 
 Clamping is friendlier for interactive building tools; rejection is safer for
@@ -339,7 +339,7 @@ the size.
 **Scene graph depth.** Deep parent-child hierarchies complicate transform
 computation and cascade deletion. A depth limit of 16 levels is generous for
 any practical scene graph. Enforce this by walking the `parentId` chain on
-create and returning `invalidArguments` if the depth would exceed the limit.
+create and returning `invalidProperties` if the depth would exceed the limit.
 
 **Simulation layer notification.** When an object is created, moved, or
 destroyed via JMAP, the simulation layer may need to update its internal
@@ -371,14 +371,14 @@ unrenderable; the reverse is meaningless.
 
 | Concern | Pattern |
 |---|---|
-| Position validation | Reject out-of-bounds; return `invalidArguments` with the violated axis. |
+| Position validation | Reject out-of-bounds; return `invalidProperties` with the violated axis. |
 | Custom properties | Store opaquely; enforce 64 KB size limit; no schema validation. |
 | Scene graph | Depth limit of 8-16; cascade delete children on parent destroy. |
 | Simulation sync | Push via message queue for dynamic scenes; poll for static. |
 
 ### Recommended starting point
 
-Reject out-of-bounds positions with `invalidArguments`. Enforce a 64 KB limit
+Reject out-of-bounds positions with `invalidProperties`. Enforce a 64 KB limit
 on serialized `worldState`. Set a scene graph depth limit of 16.
 Synchronize the simulation layer via polling (`SceneObject/changes`) for the
 first version; add push notifications when latency becomes a problem. Use
@@ -476,8 +476,10 @@ and how the simulation layer is coordinated with the JMAP avatar lifecycle.
 constraints:
 
 1. If a user already has an active avatar (`leftAt: null`) in the target
-   region, the server returns the existing record in `updated` rather than
-   creating a duplicate.
+   region, the server rejects the create with an `alreadyExists` SetError
+   whose `existingId` is that avatar's id, rather than creating a duplicate.
+   A reconnecting client treats this as "already entered" and uses
+   `existingId`.
 2. If a user has an active avatar in a *different* region, the server sets
    `leftAt` on that avatar before creating the new one.
 
@@ -523,8 +525,9 @@ more database writes. For most deployments, 15 seconds is a good balance.
 1. Client calls `SceneAvatar/set create` with `regionId`.
 2. Server checks access policy (public/invite/space).
 3. Server checks `maxAvatarsPerRegion` quota.
-4. Server checks for existing active avatar in the same region (return
-   existing) or different region (eject from previous).
+4. Server checks for existing active avatar in the same region (reject
+   with `alreadyExists` and `existingId`) or different region (eject from
+   previous).
 5. Server creates (or reconnects) the SceneAvatar record with
    `spawnPosition`, `spawnOrientation`, `joinedAt`, `leftAt: null`.
 6. Server increments `activeAvatarCount` on the SceneRegion.
@@ -664,7 +667,7 @@ rendering engines should adapt.
 ### What you must decide
 
 - **Quaternion epsilon**: the maximum deviation from unit length that the
-  server accepts before rejecting with `invalidArguments`.
+  server accepts before rejecting with `invalidProperties`.
 - **Coordinate conversion responsibility**: whether the JMAP server, the
   simulation layer, or the client is responsible for converting between
   the spec's convention and engine-native conventions.
@@ -684,7 +687,7 @@ will drift from unit length. The server must normalize before storage. An
 epsilon of `1e-4` (0.0001) is reasonable for rejecting inputs that are clearly
 not unit quaternions (e.g., `[0, 0, 0, 0]` or `[10, 10, 10, 10]`). Inputs
 within the epsilon should be silently normalized. Inputs outside the epsilon
-should be rejected with `invalidArguments`.
+should be rejected with `invalidProperties`.
 
 **Meters are absolute.** Position values are in meters. An object at
 `[100, 0, 50]` is 100 meters from the origin along X. This has implications
@@ -716,7 +719,7 @@ server stores and returns coordinates in the spec's convention unconditionally.
 
 Set quaternion epsilon to `1e-4`. Normalize all quaternions to unit length
 on write. Reject quaternions with magnitude deviation greater than `1e-4`
-with `invalidArguments`. Permit negative scale values (mirroring). Perform
+with `invalidProperties`. Permit negative scale values (mirroring). Perform
 no coordinate conversion on the server; document the convention clearly for
 client implementers.
 
@@ -1153,7 +1156,7 @@ operator alerting.
 
 ### What the spec leaves open
 
-The spec references standard JMAP SetError types (`invalidArguments`,
+The spec references standard JMAP SetError types (`invalidProperties`,
 `forbidden`, `notFound`, `overQuota`, `stateMismatch`) throughout the method
 definitions. What the spec leaves open is how to structure error descriptions,
 whether to include additional deployment-defined error types, and how to
@@ -1175,14 +1178,14 @@ some fail).
 
 | Condition | SetError type | When it occurs |
 |---|---|---|
-| Missing required field | `invalidArguments` | Create without `regionId`, `position`, etc. |
-| `visualRef` without `visualType` | `invalidArguments` | Create or update with mismatched pair. |
-| `visualType` not in `supportedVisualTypes` | `invalidArguments` | Create with unsupported media type. |
-| `bounds.min` >= `bounds.max` on any axis | `invalidArguments` | Region create with degenerate bounds. |
-| Quaternion magnitude outside epsilon | `invalidArguments` | Object or avatar create/update. |
-| `parentId` in different region | `invalidArguments` | Object create with cross-region parent. |
-| Position outside region bounds | `invalidArguments` | Object create/update (if rejecting, not clamping). |
-| `leftAt` already set on avatar | `invalidArguments` | Attempt to leave when already left. |
+| Missing required field | `invalidProperties` | Create without `regionId`, `position`, etc. |
+| `visualRef` without `visualType` | `invalidProperties` | Create or update with mismatched pair. |
+| `visualType` not in `supportedVisualTypes` | `invalidProperties` | Create with unsupported media type. |
+| `bounds.min` >= `bounds.max` on any axis | `invalidProperties` | Region create with degenerate bounds. |
+| Quaternion magnitude outside epsilon | `invalidProperties` | Object or avatar create/update. |
+| `parentId` in different region | `invalidProperties` | Object create with cross-region parent. |
+| Position outside region bounds | `invalidProperties` | Object create/update (if rejecting, not clamping). |
+| `leftAt` already set on avatar | `invalidProperties` | Attempt to leave when already left. |
 | Region does not exist or no access | `notFound` | Object create referencing inaccessible region. |
 | Object/avatar in inaccessible region | `notFound` | Get/query for unauthorized data. |
 | User not object owner, region owner, or admin | `forbidden` | Object update/destroy by unauthorized user. |
@@ -1204,7 +1207,8 @@ and the constraint that was violated. For example:
 
 ```json
 {
-  "type": "invalidArguments",
+  "type": "invalidProperties",
+  "properties": ["position"],
   "description": "position[0] is 600.0, which is outside region bounds [-500, 500] on the X axis"
 }
 ```
@@ -1213,7 +1217,8 @@ Not:
 
 ```json
 {
-  "type": "invalidArguments",
+  "type": "invalidProperties",
+  "properties": ["position"],
   "description": "Invalid position"
 }
 ```

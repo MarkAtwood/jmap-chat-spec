@@ -128,7 +128,7 @@ Servers MUST support `spaceId` as a filter criterion in `FileNode/query`, enabli
 When a client creates a FileNode with `role: "urn:jmap:chat:filenode:space"`, it MUST supply `@type: "Directory"` (as {{JMAP-FILENODE}} requires on create) and `spaceId`. The server MUST validate:
 
 - The Space identified by `spaceId` exists and the requesting user is a member. If not, the server MUST return `forbidden`. Servers SHOULD return `forbidden` in both cases — Space not found and user not a member — to avoid revealing Space existence to non-members.
-- No file tree root already exists for that Space (at most one root per Space is permitted). If one exists, the server MUST return `invalidArguments`.
+- No file tree root already exists for that Space (at most one root per Space is permitted). If one exists, the server MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) with `existingId` set to the id of the existing root.
 - The requesting user holds sufficient permission to create the root (see {{permissions}}). If not, the server MUST return `forbidden`.
 
 On any of these failures, the server MUST NOT create the FileNode.
@@ -169,7 +169,7 @@ The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following op
 ## filenodeId {#filenode-field}
 
 `filenodeId` (String, optional):
-: The `id` of a FileNode in the Space's file tree. When present in a `Message/set` create request for a channel Chat (a Chat with `kind: "channel"` as defined in {{JMAP-CHAT}}), the server uses that FileNode's blob as the attachment blob. When `filenodeId` is present on an Attachment, the fields `blobId`, `filename`, `contentType`, `size`, and `sha256` become OPTIONAL for that Attachment entry; the server MUST populate any absent fields from the referenced FileNode's properties before storage. If `filenodeId` is absent, these fields retain their normal required status per {{JMAP-CHAT}}. If the client supplies these fields, the server MAY validate them against the FileNode and MAY reject the request with `invalidArguments` if they conflict.
+: The `id` of a FileNode in the Space's file tree. When present in a `Message/set` create request for a channel Chat (a Chat with `kind: "channel"` as defined in {{JMAP-CHAT}}), the server uses that FileNode's blob as the attachment blob. When `filenodeId` is present on an Attachment, the fields `blobId`, `filename`, `contentType`, `size`, and `sha256` become OPTIONAL for that Attachment entry; the server MUST populate any absent fields from the referenced FileNode's properties before storage. If `filenodeId` is absent, these fields retain their normal required status per {{JMAP-CHAT}}. If the client supplies these fields, the server MAY validate them against the FileNode and MAY reject the create with an `invalidProperties` SetError naming `attachments` if they conflict.
 
 When `filenodeId` is present, the server MUST verify that the referenced FileNode exists and belongs to the same Space. If validation fails, the server MUST return a SetError of type `invalidProperties` naming `filenodeId`. Additionally, the server MUST verify:
 
