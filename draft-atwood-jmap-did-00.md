@@ -127,7 +127,7 @@ informative:
 
 --- abstract
 
-This document defines the `urn:ietf:params:jmap:did` JMAP capability. When a server advertises this capability, every JMAP account is bound to a Decentralized Identifier (DID) as defined in {{DID-CORE}}. The capability adds a `did` property to JMAP data types designated by consuming specifications, enabling globally resolvable, cryptographically verifiable identity across JMAP servers. The account-to-DID binding is server-authoritative; clients MAY independently verify the binding by resolving the DID document.
+This document defines the `urn:jmap:did` JMAP capability. When a server advertises this capability, every JMAP account is bound to a Decentralized Identifier (DID) as defined in {{DID-CORE}}. The capability adds a `did` property to JMAP data types designated by consuming specifications, enabling globally resolvable, cryptographically verifiable identity across JMAP servers. The account-to-DID binding is server-authoritative; clients MAY independently verify the binding by resolving the DID document.
 
 --- middle
 
@@ -152,11 +152,11 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 # Capability {#capability}
 
-A server supporting this extension MUST advertise the `urn:ietf:params:jmap:did` capability in the JMAP Session resource ({{RFC8620}} Section 2).
+A server supporting this extension MUST advertise the `urn:jmap:did` capability in the JMAP Session resource ({{RFC8620}} Section 2).
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
+The value of `capabilities["urn:jmap:did"]` is a JSON object with the following fields:
 
 `supportedMethods` (String[]):
 : The DID methods the server is able to resolve and verify. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method. Every account's bound DID MUST use a listed method. Companion specifications that need to advertise DID method support reuse this field rather than defining their own.
@@ -170,7 +170,7 @@ Example:
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": {},
-    "urn:ietf:params:jmap:did": {
+    "urn:jmap:did": {
       "supportedMethods": ["key", "web"],
       "verificationEndpoint": null
     }
@@ -180,7 +180,7 @@ Example:
 
 ## Account-Level Capability Object {#account-capability}
 
-The value of `accountCapabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:jmap:did"]` is a JSON object with the following fields:
 
 `did` (String):
 : The DID bound to this account. This is the canonical, globally resolvable identifier for the account holder. The value MUST be a valid DID as defined in {{DID-CORE}} Section 3.1.
@@ -201,7 +201,7 @@ Example:
   "accounts": {
     "acct-001": {
       "accountCapabilities": {
-        "urn:ietf:params:jmap:did": {
+        "urn:jmap:did": {
           "did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
           "didDocumentUri": null,
           "previousDid": null,
@@ -234,13 +234,13 @@ Regardless of mechanism, the server MUST ensure that:
 
 ## Definition
 
-When `urn:ietf:params:jmap:did` is advertised, consuming specifications MAY designate their data types as DID-bearing. A DID-bearing data type gains the following property:
+When `urn:jmap:did` is advertised, consuming specifications MAY designate their data types as DID-bearing. A DID-bearing data type gains the following property:
 
 A DID-bearing property is a String\|null value, server-set, whose value is the DID given by the account-to-DID binding defined in {{binding}} at the time the object was created. The value is `null` when the account has no DID binding (transitional state during migration) or when the object represents a non-user entity (system-generated objects, anonymous participants).
 
-The property name is not required to be `did`. A consuming specification MAY define multiple DID-bearing properties on a single data type when different fields reference different identities. For example, a delegation record might carry both `delegatorDid` and `delegateeDid`.
+The property name is not required to be `did`.
 
-Properties that reference the DID of an entity other than the owning account (e.g., the DID of a remote peer on a ChatContact record) are not DID-bearing properties as defined in this section, even though they contain DID values. Such properties are governed by the consuming specification that defines them.
+A DID-referencing property holds the DID of a party other than the owning account: a peer, a participant, an organizer, or a sender as seen by a recipient (e.g., the DID of a remote peer on a ChatContact record). Its value is set as the consuming specification defines, not from the binding, and is not trusted until verified ({{verification}}). A data type MAY carry DID-referencing properties alongside a DID-bearing one; for example, a delegation record might carry `delegatorDid` (DID-bearing) and `delegateeDid` (DID-referencing). The rest of this section applies to DID-bearing properties only.
 
 All DID-bearing properties share these semantics:
 
@@ -255,7 +255,7 @@ Signatures and other attestations on an object verify against the DID recorded o
 A consuming specification that designates a data type as DID-bearing needs to define:
 
 1. Which data type gains DID-bearing properties, and the property names.
-2. Which identity each property represents and from which account binding it is taken.
+2. Which DID-referencing properties the type carries, how their values are set, and how they are verified.
 3. The semantic role of the DID on that type (see {{did-roles}}).
 4. Any type-specific behavior when the DID is migrated or revoked.
 
@@ -271,53 +271,53 @@ A DID on a JMAP object can serve different purposes depending on the data type a
 
 **Participation.** The DID identifies a participant in a multi-party interaction. Enables verifiable participant identity in contexts where trust in the hosting server is insufficient. Applicable to call participants, shared document editors, calendar event attendees, and chat room members.
 
-**Delegation.** The DID identifies a party in a delegated authority relationship. A calendar delegate, a shared mailbox accessor, or an authorized API client may each carry a DID that enables the receiving party to verify the delegation chain. A single object MAY carry multiple DID-bearing properties (e.g., `ownerDid` and `delegateDid`) when the object involves more than one identity.
+**Delegation.** The DID identifies a party in a delegated authority relationship. A calendar delegate, a shared mailbox accessor, or an authorized API client may each carry a DID that enables the receiving party to verify the delegation chain. An object that involves more than one identity carries one DID-bearing property for the owning account (e.g., `ownerDid`) and DID-referencing properties for the others (e.g., `delegateDid`).
 
 **Provenance.** The DID establishes a verifiable chain of custody. Combined with content-addressed references (e.g., SHA-256 digests from {{JMAP-CID}}), a DID on an asset or file creates a binding between content identity and owner identity that is verifiable without trusting the hosting server.
 
 **Contact identity.** The DID provides a stable, cross-server identifier for a person or organization in a contact record. Enables contact deduplication across servers and portable block/allow lists.
 
-Consuming specifications SHOULD identify which role or roles apply to each DID-bearing property they define.
+Consuming specifications SHOULD identify which role or roles apply to each DID-bearing or DID-referencing property they define.
 
 ## Illustrative Extensions {#extensions}
 
-The following are non-normative illustrations of how JMAP specifications could designate DID-bearing types. The normative declarations belong in the consuming specifications themselves. These examples demonstrate the breadth of applicable roles; they are not exhaustive.
+The following are non-normative illustrations of how JMAP specifications could designate DID-bearing types and DID-referencing properties; each is labeled with its kind. The normative declarations belong in the consuming specifications themselves. These examples demonstrate the breadth of applicable roles; they are not exhaustive.
 
 ### JMAP Mail ({{RFC8621}})
 
-**Email** — `senderDid` (role: authorship). The DID of the authenticated sender. Complements existing email authentication mechanisms (DKIM, SPF, DMARC) with a sender-controlled identity that is independent of the sending domain. A recipient's client can resolve the DID document and verify the sender's key material without trusting the sending server or relying on DNS-based authentication alone.
+**Email** — `senderDid` (role: authorship; DID-bearing on the sender's own copy, DID-referencing as received). The DID of the authenticated sender. Complements existing email authentication mechanisms (DKIM, SPF, DMARC) with a sender-controlled identity that is independent of the sending domain. A recipient's client can resolve the DID document and verify the sender's key material without trusting the sending server or relying on DNS-based authentication alone.
 
-**Identity** — `did` (role: ownership). The DID bound to the sending identity. When a user has multiple JMAP identities (e.g., personal and work email addresses), each identity MAY be bound to the same or different DIDs.
+**Identity** — `did` (role: ownership; DID-bearing). The DID bound to the sending identity. When a user has multiple JMAP identities (e.g., personal and work email addresses), each identity MAY be bound to the same or different DIDs.
 
 ### JMAP Calendars ({{JMAP-CALENDARS}})
 
 CalendarEvent and Participant are defined by {{JMAP-CALENDARS}}; their data format is JSCalendar ({{RFC8984}}).
 
-**CalendarEvent** — `organizerDid` (role: authorship). The DID of the event organizer. Enables cross-server invitation verification: an invitee can verify that the invitation was issued by the claimed organizer without trusting the calendar server that delivered it.
+**CalendarEvent** — `organizerDid` (role: authorship; DID-bearing on the organizer's copy, DID-referencing on an invitee's copy). The DID of the event organizer. Enables cross-server invitation verification: an invitee can verify that the invitation was issued by the claimed organizer without trusting the calendar server that delivered it.
 
-**CalendarEvent** — `delegateDid` (role: delegation). When a calendar event was created by a delegate on behalf of another user, the delegate's DID enables the receiving party to verify the delegation chain.
+**CalendarEvent** — `delegateDid` (role: delegation; DID-referencing). When a calendar event was created by a delegate on behalf of another user, the delegate's DID enables the receiving party to verify the delegation chain.
 
-**Participant** — `did` (role: participation). The DID of a calendar event participant. Enables deduplication of participants across servers (two servers may have different accountIds for the same person, but the DID is the same).
+**Participant** — `did` (role: participation; DID-referencing). The DID of a calendar event participant. Enables deduplication of participants across servers (two servers may have different accountIds for the same person, but the DID is the same).
 
 ### JMAP Contacts ({{RFC9610}})
 
-**ContactCard** — `did` (role: contact identity). A stable, globally resolvable identifier for the person or organization described by the contact. Enables contact deduplication across servers, portable block/allow lists, and cross-server contact lookup.
+**ContactCard** — `did` (role: contact identity; DID-referencing). A stable, globally resolvable identifier for the person or organization described by the contact. Enables contact deduplication across servers, portable block/allow lists, and cross-server contact lookup.
 
 ### JMAP File Storage ({{JMAP-FILENODE}})
 
-**FileNode** — `ownerDid` (role: ownership/provenance). The DID of the file owner. Combined with the `sha256` field from {{JMAP-CID}}, creates a verifiable content-addressed ownership binding: "the file with content hash H belongs to DID D." Enables portable file provenance that survives migration between storage servers.
+**FileNode** — `ownerDid` (role: ownership/provenance; DID-bearing). The DID of the file owner. Combined with the `sha256` field from {{JMAP-CID}}, creates a verifiable content-addressed ownership binding: "the file with content hash H belongs to DID D." Enables portable file provenance that survives migration between storage servers.
 
 ### JMAP Chat ({{JMAP-CHAT}})
 
-**Message** — `senderDid` (role: authorship). The DID of the message sender. Enables cross-server sender verification: a recipient on Server B can verify that a federated message from Server A was authored by the claimed DID without trusting Server A.
+**Message** — `senderDid` (role: authorship; DID-bearing on the sender's own copy, DID-referencing as received). The DID of the message sender. Enables cross-server sender verification: a recipient on Server B can verify that a federated message from Server A was authored by the claimed DID without trusting Server A.
 
 ### JMAP VTC ({{JMAP-VTC}})
 
-**VTCParticipant** — `did` (role: participation). The DID of the call participant. Enables cryptographic participant identity verification in calls that span server boundaries.
+**VTCParticipant** — `did` (role: participation; DID-referencing). The DID of the call participant. Enables cryptographic participant identity verification in calls that span server boundaries.
 
 ### JMAP Scene ({{JMAP-SCENE}})
 
-**SceneAvatar** — `did` (role: participation). The DID of the user whose avatar this is. Persistent cross-server avatar identity: the same DID appears on your avatar regardless of which JMAP Scene server hosts the region.
+**SceneAvatar** — `did` (role: participation; DID-referencing). The DID of the user whose avatar this is. Persistent cross-server avatar identity: the same DID appears on your avatar regardless of which JMAP Scene server hosts the region.
 
 **SceneObject** — `ownerDid` (role: ownership/provenance). The DID of the object creator. Combined with the `sha256` field on the object's SceneAsset and {{JMAP-CID}}, enables verifiable content-addressed ownership of 3D assets.
 
@@ -337,7 +337,7 @@ A client that performs verification and detects a mismatch SHOULD treat the `did
 
 ## Cross-Server Verification
 
-When a client receives objects that originate from a different server (e.g., federated email, cross-server calendar invitations, federated chat messages, shared files), the DID-bearing property enables verification without trusting the originating server:
+When a client receives objects that originate from a different server (e.g., federated email, cross-server calendar invitations, federated chat messages, shared files), the originating server's DID-bearing value arrives as a DID-referencing value, which the client can verify without trusting the originating server:
 
 1. The receiving server includes the `did` as attested by the originating server.
 2. The client resolves the DID document independently.
@@ -448,7 +448,7 @@ When the server generates a `did:key` on behalf of a user and retains the privat
 IANA is requested to register the following entry in the "JMAP Capabilities" registry established by {{RFC8620}}:
 
 Capability Name:
-: `urn:ietf:params:jmap:did`
+: `urn:jmap:did`
 
 Intended Use:
 : common

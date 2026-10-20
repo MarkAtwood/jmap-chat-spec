@@ -124,7 +124,7 @@ This specification follows three principles consistent with the broader JMAP Cha
 
 This document does not redefine ChatContact, does not introduce new JMAP methods, and does not modify the JMAP Chat federation method set ({{JMAP-CHAT-FED}}). It defines:
 
-- A new JMAP capability `urn:ietf:params:jmap:chat:did` and its session-level and account-level capability objects.
+- A new JMAP capability `urn:jmap:chat:did` and its session-level and account-level capability objects.
 - A non-foreclosing list of mandatory-to-implement DID methods.
 - An optional `did` field on the ChatContact data type for the pseudonymous case (an `identity` that is not a DID, with a separately bound DID).
 - A normative authentication requirement for federated peers that present DID-form identities, layered onto the {{JMAP-CHAT-FED}} authentication model.
@@ -134,7 +134,7 @@ Implementations of this specification MUST also implement {{JMAP-CHAT}}.
 
 ## Relationship to JMAP DID
 
-This document builds normatively on {{JMAP-DID}}. A server advertising `urn:ietf:params:jmap:chat:did` MUST also advertise `urn:ietf:params:jmap:did` and MUST follow {{JMAP-DID}} for account-to-DID binding and DID lifecycle. The lifecycle terms "key rotation" (new keys in the DID Document, same DID) and "DID migration" (the DID itself changes) have the meanings defined in {{JMAP-DID}}.
+This document builds normatively on {{JMAP-DID}}. A server advertising `urn:jmap:chat:did` MUST also advertise `urn:jmap:did` and MUST follow {{JMAP-DID}} for account-to-DID binding and DID lifecycle. The lifecycle terms "key rotation" (new keys in the DID Document, same DID) and "DID migration" (the DID itself changes) have the meanings defined in {{JMAP-DID}}.
 
 ## Relationship to W3C DID Core
 
@@ -152,29 +152,29 @@ Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{DID-CORE}} is used throughout
 
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:chat:did` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also advertised on the same account.
+Servers supporting this specification MUST advertise the `urn:jmap:chat:did` capability in the JMAP Session object. This capability is meaningful only when `urn:jmap:chat` is also advertised on the same account.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:chat:did"]` at the session level is an empty JSON object `{}`. The session-level capability carries no parameters.
+The value of `capabilities["urn:jmap:chat:did"]` at the session level is an empty JSON object `{}`. The session-level capability carries no parameters.
 
-The DID methods the server is able to resolve and verify are advertised in the `supportedMethods` field of the `urn:ietf:params:jmap:did` session-level capability object ({{JMAP-DID}}). This document defines no separate method list. The `supportedMethods` array MUST include at least the three mandatory-to-implement methods specified in {{methods}}. Peers MUST NOT assume the absence of a method name from this array implies that the method is invalid, only that this server cannot resolve it.
+The DID methods the server is able to resolve and verify are advertised in the `supportedMethods` field of the `urn:jmap:did` session-level capability object ({{JMAP-DID}}). This document defines no separate method list. The `supportedMethods` array MUST include at least the three mandatory-to-implement methods specified in {{methods}}. Peers MUST NOT assume the absence of a method name from this array implies that the method is invalid, only that this server cannot resolve it.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat:did"]` is an empty JSON object `{}`.
+The value of `accountCapabilities["urn:jmap:chat:did"]` is an empty JSON object `{}`.
 
 Servers MAY include other fields in the account-level capability object as deployment policy hints; clients and peers MUST ignore unknown fields. This specification does not define any fields in this revision.
 
 # Mandatory DID Methods {#methods}
 
-A server advertising the `urn:ietf:params:jmap:chat:did` capability MUST be able to resolve DIDs of the following methods and verify signatures made by keys bound in their DID Documents:
+A server advertising the `urn:jmap:chat:did` capability MUST be able to resolve DIDs of the following methods and verify signatures made by keys bound in their DID Documents:
 
 - **`did:web`** ({{DID-WEB}}) — resolution by HTTPS GET of a JSON DID Document at a well-known path derived from the DID's authority component.
 - **`did:key`** ({{DID-KEY}}) — resolution by deterministic local derivation of the DID Document from the public key material encoded in the DID URI itself. No network resolution is performed.
 - **`did:plc`** ({{DID-PLC}}) — resolution via the PLC directory protocol, including the operation-log integrity check defined by that protocol.
 
-This list is mandatory-to-implement. A server that cannot resolve any one of these three methods MUST NOT advertise the `urn:ietf:params:jmap:chat:did` capability.
+This list is mandatory-to-implement. A server that cannot resolve any one of these three methods MUST NOT advertise the `urn:jmap:chat:did` capability.
 
 Support for `did:webvh` ({{DID-WEBVH}}) is RECOMMENDED but not mandatory-to-implement. `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, keys from the `did:web` DID Document are treated as defined in {{JMAP-DID}} and {{DID-WEBVH}}: a key not present in the verified `did:webvh` log carries none of the log's guarantees.
 
@@ -188,16 +188,17 @@ This specification does not foreclose any DID method. Future companion specifica
 
 {{JMAP-CHAT}} establishes that the ChatContact `identity` property holds the stable, opaque identity string supplied by the authentication layer, and that DID URIs are a permissible form of that string. `ChatContact.id` is a server-assigned Id local to each server and is not a DID. This specification reaffirms that:
 
-- A server advertising `urn:ietf:params:jmap:chat:did` MAY return ChatContact records whose `identity` property is a DID URI.
+- A server advertising `urn:jmap:chat:did` MAY return ChatContact records whose `identity` property is a DID URI.
 - A server treats a DID-form `identity` as opaque per {{JMAP-CHAT}}; the wire-level semantics of ChatContact are unchanged.
 - A ChatContact whose `identity` is a DID URI imposes no special handling on JMAP Chat methods beyond what is specified elsewhere in this document for federation authentication and resolution.
+- A DID-form `identity` names a party other than the owning account, so it is DID-referencing, never DID-bearing, in the terms of {{JMAP-DID}}.
 
 ## Optional `did` field {#did-field}
 
 ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable `identity` that is not a DID is preserved (for example, to keep MLS group membership stable across DID migrations ({{JMAP-DID}}) in a relay deployment) while a separately bound DID provides the cryptographic identity used for federation authentication and key resolution.
 
 `did` (String, optional):
-: A DID URI ({{DID-CORE}}) bound to this ChatContact for cryptographic purposes. When present, the DID's verification methods are the authoritative source of public-key material for verifying signatures attributed to this ChatContact. When absent, no DID is bound to this ChatContact; cryptographic identity is derived from the authentication layer as defined in {{JMAP-CHAT}}.
+: A DID-referencing property ({{JMAP-DID}}): a DID URI ({{DID-CORE}}) bound to this ChatContact for cryptographic purposes. It is server-set (`ChatContact/set` create accepts only `identity`); how the server learns the value is deployment-defined. When present, the DID's verification methods are the authoritative source of public-key material for verifying signatures attributed to this ChatContact. When absent, no DID is bound to this ChatContact; cryptographic identity is derived from the authentication layer as defined in {{JMAP-CHAT}}.
 
 If `did` is present AND `identity` parses as a DID URI, the two MUST refer to the same DID. A server detecting a mismatch (the parsed DID from `identity` differs from the DID in `did`) SHOULD treat the ChatContact record as invalid and SHOULD NOT use either DID for authentication.
 
@@ -306,7 +307,7 @@ A ChatContact MAY carry both a DID-form `identity` and a `did` field ({{did-fiel
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:chat:did`
+: `urn:jmap:chat:did`
 
 Intended Use:
 : common
