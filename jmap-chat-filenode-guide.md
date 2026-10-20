@@ -10,8 +10,8 @@ deployments and offers patterns and starting points for running file
 storage as a service.
 
 The filenode draft itself defines the wire surface: the
-`urn:jmap:chat:filenode` capability, the
-`urn:jmap:chat:filenode:space` FileNode role, the `spaceId` extension
+`urn:ietf:params:jmap:chat:filenode` capability, the
+`chatspace` FileNode role, the `spaceId` extension
 property, the Space-role-to-FileNode-access permission mapping, the
 attachment-link fields (`filenodeId`, `thumbnailBlobId`), and the
 Space-destruction grace-period contract. The main

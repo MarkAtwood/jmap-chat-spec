@@ -89,38 +89,38 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{JMAP-FILENODE}} is used throughout.
 
-This specification follows the URN convention established in {{JMAP-CHAT}}: capability identifiers (strings appearing in the JMAP Session `capabilities` object) defined by JMAP Chat and its companions, including this document, and data-model value strings (strings appearing inside object fields, such as role values and endpoint type URIs) use the `urn:jmap:` namespace. Capabilities defined by JMAP core specifications, such as `urn:ietf:params:jmap:core`, keep the `urn:ietf:params:jmap:` namespace.
+The capability identifier defined by this document is a name in the `urn:ietf:params:jmap` sub-namespace ({{RFC8620, Section 9.3}}), assigned as described in {{JMAP-CHAT}}.
 
 The following term is specific to this document:
 
 Space file tree:
-: The FileNode subtree associated with a given Space, rooted at the FileNode whose `role` is `"urn:jmap:chat:filenode:space"` and whose `spaceId` matches the Space's `id`.
+: The FileNode subtree associated with a given Space, rooted at the FileNode whose `role` is `"chatspace"` and whose `spaceId` matches the Space's `id`.
 
 # Capability {#capability}
 
-Servers supporting this specification advertise the `urn:jmap:chat:filenode` capability in the JMAP Session object. This capability is meaningful only when both `urn:jmap:chat` and `urn:ietf:params:jmap:filenode` are also present.
+Servers supporting this specification advertise the `urn:ietf:params:jmap:chat:filenode` capability in the JMAP Session object. This capability is meaningful only when both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:filenode` are also present.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:chat:filenode"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:chat:filenode"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:chat:filenode"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat:filenode"]` is a JSON object with the following fields:
 
 `maxSpaceStorageBytes` (UnsignedInt, optional):
 : Maximum total blob storage in bytes across all FileNodes in a single Space's file tree. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{RFC9425}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
 
 `autoCreateFileTree` (Boolean):
-: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. This field is REQUIRED in the account-level capability object when `urn:jmap:chat:filenode` is advertised.
+: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. This field is REQUIRED in the account-level capability object when `urn:ietf:params:jmap:chat:filenode` is advertised.
 
 # Space File Tree {#space-file-tree}
 
-A Space's file tree is rooted at a single FileNode identified by the well-known `role` value `"urn:jmap:chat:filenode:space"` and the `spaceId` extension property defined below.
+A Space's file tree is rooted at a single FileNode identified by the well-known `role` value `"chatspace"` and the `spaceId` extension property defined below.
 
 ## The `spaceId` Extension Property {#filenode-extension}
 
-This document defines the following extension property on FileNode objects that serve as Space file tree roots (i.e., where `role` is `"urn:jmap:chat:filenode:space"`):
+This document defines the following extension property on FileNode objects that serve as Space file tree roots (i.e., where `role` is `"chatspace"`):
 
 `spaceId` (String, immutable):
 : The `id` of the JMAP Chat Space this FileNode is associated with. Supplied by the client at creation and treated as immutable thereafter. Absent on all FileNode objects that are not Space file tree roots.
@@ -129,15 +129,17 @@ Servers MUST support `spaceId` as a filter criterion in `FileNode/query`, enabli
 
 ## Creating the File Tree Root {#root-creation}
 
-When a client creates a FileNode with `role: "urn:jmap:chat:filenode:space"`, it MUST supply `spaceId`, and its `@type` ({{JMAP-FILENODE}} requires one on create) MUST be `"Directory"`. The server MUST validate:
+When a client creates a FileNode with `role: "chatspace"`, it MUST supply `spaceId`, and its `@type` ({{JMAP-FILENODE}} requires one on create) MUST be `"Directory"`. The server MUST validate:
 
 - The Space identified by `spaceId` exists and the requesting user is a member. If not, the server SHOULD return `forbidden` in both cases — Space not found and user not a member — to avoid revealing Space existence to non-members.
 - No file tree root already exists for that Space (at most one root per Space is permitted). If one exists, the server MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) with `existingId` set to the id of the existing root.
 - The requesting user holds sufficient permission to create the root (see {{permissions}}). If not, the server MUST return `forbidden`.
 
+The `role` value `"chatspace"` can be set only when a FileNode is created. A server MUST reject a `FileNode/set` update that changes `role` to or from `"chatspace"` with an `invalidProperties` SetError ({{RFC8620}} Section 5.3) naming `role`. Otherwise an update could bypass the checks above, producing a root without `spaceId` or a second root for a Space, and discovery ({{discovery}}) would no longer find exactly one root.
+
 ## Discovering the File Tree Root {#discovery}
 
-To locate the file tree root for a given Space, clients issue a `FileNode/query` request filtering on `role: "urn:jmap:chat:filenode:space"` and `spaceId: <id>`. When a file tree exists for the Space, exactly one matching FileNode is returned. When no file tree exists, the result is empty; clients MAY attempt to create one via `FileNode/set` (subject to the rules in {{root-creation}}), or MAY present the absence of a file tree as an informational state to the user.
+To locate the file tree root for a given Space, clients issue a `FileNode/query` request filtering on `role: "chatspace"` and `spaceId: <id>`. When a file tree exists for the Space, exactly one matching FileNode is returned. When no file tree exists, the result is empty; clients MAY attempt to create one via `FileNode/set` (subject to the rules in {{root-creation}}), or MAY present the absence of a file tree as an informational state to the user.
 
 Clients MAY cache the file tree root `id` for the duration of the session and re-query on `cannotCalculateChanges`.
 
@@ -160,13 +162,13 @@ For Space members, the following table maps role permissions to FileNode access.
 
 Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation SHOULD use separate Spaces.
 
-Creating the Space file tree root (a FileNode with `role: "urn:jmap:chat:filenode:space"`) requires `"manage_space"` permission. This is a higher bar than the general Create access granted by `"send"`, because establishing the root is a one-time structural operation that affects all Space members.
+Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission. This is a higher bar than the general Create access granted by `"send"`, because establishing the root is a one-time structural operation that affects all Space members.
 
 The server SHOULD enforce this mapping on every FileNode operation, deriving the requesting user's membership and roles from its own authoritative state. When a Space member's roles change, the server SHOULD reflect the updated FileNode access immediately, without requiring any client action.
 
 # Attachment Link {#attachment-link}
 
-The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following optional fields when the `urn:jmap:chat:filenode` capability is active.
+The `Attachment` type defined in {{JMAP-CHAT}} is extended with the following optional fields when the `urn:ietf:params:jmap:chat:filenode` capability is active.
 
 ## filenodeId {#filenode-field}
 
@@ -233,7 +235,7 @@ This specification does not define file tree access in federated (mailbox-per-us
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:chat:filenode`
+: `urn:ietf:params:jmap:chat:filenode`
 
 Intended Use:
 : common
@@ -252,7 +254,7 @@ Security and privacy considerations:
 IANA is requested to register the following entry in the "JMAP FileNode Roles" registry defined by {{JMAP-FILENODE}}:
 
 Role:
-: `urn:jmap:chat:filenode:space`
+: `chatspace`
 
 Description:
 : Root directory of the file storage tree associated with a JMAP Chat Space. At most one FileNode with this role exists per Space (when file storage is enabled for that Space). The associated Space is identified by the `spaceId` extension property defined in this document.

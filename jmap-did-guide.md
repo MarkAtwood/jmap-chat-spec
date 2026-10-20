@@ -51,7 +51,7 @@ identifier derived from W3C Decentralized Identifiers (DID Core). It complements
 | Portability | Not portable | Portable across servers |
 | Key material | None | DID document contains public keys |
 
-The capability identifier is `urn:jmap:did`. When a server
+The capability identifier is `urn:ietf:params:jmap:did`. When a server
 advertises it, every account gains a `did` binding in the account-level
 capability object, and consuming JMAP specifications may add DID-bearing
 properties to their data types.
@@ -633,7 +633,7 @@ new authentication. Objects SHOULD retain the revoked DID for provenance
 
 ### 7.1 General pattern
 
-When your JMAP server implements both `urn:jmap:did` and a
+When your JMAP server implements both `urn:ietf:params:jmap:did` and a
 consuming specification (Mail, Calendars, Contacts, FileNode, Chat, VTC,
 Scene), the DID capability adds properties to the consuming specification's
 data types. A property is either DID-bearing (the owning account's own DID,
@@ -830,7 +830,7 @@ determine which method is used for each account.
 
 ## 10. Operational checklist
 
-Before enabling `urn:jmap:did` in production:
+Before enabling `urn:ietf:params:jmap:did` in production:
 
 - [ ] Binding strategy selected and implemented (Section 3.1)
 - [ ] Account table extended with DID column (Section 3.2)

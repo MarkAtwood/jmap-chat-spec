@@ -49,6 +49,13 @@ normative:
     date: 2026-09-11
 
 informative:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   RFC9420:
   RFC8552:
   JMAP-CHAT-DID:
@@ -181,7 +188,7 @@ The Session object MAY include an `ownerDirectAddress` field (see {{session-exte
 
 A peer is a domain. A server authenticates to a peer by signing each HTTP request with a key that its peer domain publishes; the receiving server verifies the signature and so learns which peer domain sent the request. Every server MUST support the baseline mechanism ({{request-signing}} through {{key-publication}}). Publishing the signing keys in DNSSEC-signed DNS ({{dnssec-keys}}) is RECOMMENDED where DNSSEC is available, and mutual TLS with a DANE-verified client certificate ({{mutual-tls}}) is OPTIONAL. Neither replaces the request signature.
 
-Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide a JMAP account in the resulting session that carries the `urn:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
+Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide a JMAP account in the resulting session that carries the `urn:ietf:params:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
 
 Before granting peer-role access, the local server checks that the `ownerUserId` advertised at the authenticated peer domain is bound to that domain, and rejects the request if it is not ({{identity-binding}}).
 
@@ -258,7 +265,7 @@ The peer identity is the `identity` of the peer's ChatContact on the local serve
 
 # Account-Level Capability {#account-capability}
 
-The value of `accountCapabilities["urn:jmap:chat"]` is a JSON object. This document defines the following field within that object, which is relevant to federation:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object. This document defines the following field within that object, which is relevant to federation:
 
 `role` (String):
 : Either `"owner"` or `"peer"`. An account with `role: "owner"` has full access to all JMAP Chat methods. An account with `role: "peer"` is granted access only to the Peer/* methods defined in this document. Callers authenticated as a peer and operating against an account where `role` is `"peer"` MUST receive `forbidden` for any method not listed in {{peer-methods}}.
@@ -303,7 +310,7 @@ Servers MAY include the following additional field:
 
 # Server-to-Server Methods {#peer-methods}
 
-The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
+The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
 
 All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the peer identity of the calling server. Servers MUST validate all such fields identically against the peer identity.
 
@@ -320,6 +327,8 @@ The receiving server compares identity strings octet for octet and resolves each
 3. Otherwise, the receiving server MUST create a placeholder ChatContact with that `identity` and a server-assigned `id`, and the identity refers to the placeholder. The placeholder's other properties are learned through later interactions.
 
 The receiving server stores the resolved local reference wherever {{JMAP-CHAT}} or a companion specification stores a user reference, for example in Chat members, `Message.senderId`, Mention `id` values, and `deliveryReceipts` keys. A server that does not recognise a field passes it through unmapped. Neither server maps, validates, or rewrites the `userId` of a `"mention"` span in a rich `body`: spans are display data with no server meaning ({{JMAP-CHAT}}), and servers never modify `body`. Only the `mentions` array is mapped and authoritative. A receiving server creates placeholders only as part of a request it accepts; a rejected request creates none.
+
+A JMAP object URI ({{JMAP-OBJECT-URI}}) is meaningful only on the server whose account it names, so it is not passed through between servers. A receiving server removes every MessageAction and every Endpoint whose `uri` is a JMAP object URI (a URI with the scheme `jmap`) from data it receives from a peer, whether in a Peer/* call or from the peer's Session object (such as `ownerEndpoints`), before storing the data or delivering it to its clients. The remaining entries keep their order, and an array left empty is stored as absent. MessageActions and Endpoints with other URIs, such as `https` URLs, are kept. A sending server MAY omit such MessageActions and Endpoints itself. Rich-body `"link"` spans never carry JMAP object URIs ({{JMAP-CHAT}}), and encrypted content does not either, so neither needs to be inspected.
 
 ## Peer/deliver {#peer-deliver}
 
@@ -349,7 +358,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `attachments` (Object[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob.
   - `mentions` (Mention[], optional) — Structured per-user @mention annotations. Each Mention `id` carries an identity string ({{identity-mapping}}).
   - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). The receiving server is authoritative for computing the local recipient set; the sending server's set is informational only. See {{broadcast-mention-resolution}}.
-  - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection, except that user-reference fields the server recognises are mapped per {{identity-mapping}}.
+  - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection, except that user-reference fields the server recognises are mapped, and MessageActions whose `uri` is a JMAP object URI are removed, per {{identity-mapping}}.
   - `replyTo` (String, optional) — The `senderMsgId` of the message being replied to, as assigned by the sending server. The receiver resolves this to a local message `id` via the `senderMsgId` index. See {{outbound-preparation}} for how the sending server constructs this value.
   - `threadRootId` (String, optional) — The `senderMsgId` of the thread root message, as assigned by the sending server. The receiver resolves this similarly. See {{outbound-preparation}}. If the receiver cannot resolve a `replyTo` or `threadRootId` senderMsgId to a local message id (because the referenced message was never received or was hard-deleted), the receiver MUST store the message with `replyTo` and/or `threadRootId` set to null. The message MUST NOT be rejected on this basis.
   - `topicId` (String, optional): Topic identifier, carried unchanged. Validated per `topicId` in {{JMAP-CHAT}}; reject with `invalidArguments` if invalid.
@@ -894,7 +903,7 @@ IANA is requested to add the following entries to the "Underscored and Globally 
 | TXT | _jmap-peer | This document, {{dnssec-keys}} |
 | TLSA | _jmap-peer | This document, {{mutual-tls}} |
 
-This document requests no other IANA registrations. The `urn:jmap:chat` capability URI is registered by {{JMAP-CHAT}}. This document extends the semantics of that capability by defining the `role: "peer"` account capability value and the Peer/* server-to-server methods; no additional capability URI is required.
+This document requests no other IANA registrations. The `urn:ietf:params:jmap:chat` capability URI is registered by {{JMAP-CHAT}}. This document extends the semantics of that capability by defining the `role: "peer"` account capability value and the Peer/* server-to-server methods; no additional capability URI is required.
 
 --- back
 

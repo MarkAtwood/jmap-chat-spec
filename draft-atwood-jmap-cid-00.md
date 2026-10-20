@@ -51,7 +51,7 @@ informative:
 
 --- abstract
 
-This document defines the `urn:jmap:cid` JMAP capability.
+This document defines the `urn:ietf:params:jmap:cid` JMAP capability.
 When a server advertises this capability, it extends the blob upload
 response defined in {{RFC8620}} with a `sha256` field carrying the
 SHA-256 digest of the uploaded content. When {{JMAP-FILENODE}} is also
@@ -104,7 +104,7 @@ sha256-value = 64( %x30-39 / %x61-66 )
 # Capability {#capability}
 
 A server supporting this extension MUST advertise the
-`urn:jmap:cid` capability in the JMAP Session resource
+`urn:ietf:params:jmap:cid` capability in the JMAP Session resource
 ({{RFC8620}} Section 2). The value of this capability is an object with
 no defined properties in this version of the specification.
 
@@ -114,14 +114,14 @@ Example Session capability object:
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": { ... },
-    "urn:jmap:cid": {}
+    "urn:ietf:params:jmap:cid": {}
   }
 }
 ~~~
 
 # Blob Upload Response Extension {#upload}
 
-When a server advertises `urn:jmap:cid`, the upload
+When a server advertises `urn:ietf:params:jmap:cid`, the upload
 response defined in {{RFC8620}} Section 6.1 is extended with one
 additional field:
 
@@ -197,7 +197,7 @@ carry it only inside encrypted data. See {{plaintext-hash}}.
 
 # FileNode Extension {#filenode}
 
-When a server advertises both `urn:jmap:cid` and the
+When a server advertises both `urn:ietf:params:jmap:cid` and the
 {{JMAP-FILENODE}} capability, FileNode objects MUST include the following
 additional property:
 
@@ -306,7 +306,7 @@ IANA is requested to register the following entry in the "JMAP
 Capabilities" registry established by {{RFC8620}}:
 
 Capability Name:
-: `urn:jmap:cid`
+: `urn:ietf:params:jmap:cid`
 
 Intended Use:
 : common

@@ -400,7 +400,7 @@ each other's capabilities (which `Peer/*` methods, which extensions).
 - *Capability negotiation* is reading the peer's Session object and
   understanding which capabilities they advertise. JMAP capabilities are
   self-describing; the peer either advertises
-  `urn:jmap:chat` (with `role: "peer"` available) or they
+  `urn:ietf:params:jmap:chat` (with `role: "peer"` available) or they
   don't federate at all. Extension capabilities (push, WSS, filenode,
   calendars, tasks, etc.) are advertised in the same Session object;
   operators should know which extensions the peer supports.
@@ -411,7 +411,7 @@ each other's capabilities (which `Peer/*` methods, which extensions).
 - *Documentation*: peer operators should publish at minimum: their
   whether they publish the DNSSEC key binding; the format of their
   `ownerUserId` (regex or example); their `serverUrl` and discovery
-  endpoint; which `urn:jmap:chat:*` companion capabilities
+  endpoint; which `urn:ietf:params:jmap:chat:*` companion capabilities
   they implement; their rate-limit policies; their abuse-report contact.
 
 ### Common patterns

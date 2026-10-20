@@ -404,7 +404,7 @@ opt-in.
 
 ### What the spec leaves open
 
-The spec says `urn:jmap:chat:cap:task` MessageActions carry task metadata
+The spec says `urn:ietf:params:jmap:chat:cap:task` MessageActions carry task metadata
 and clients SHOULD render them as task cards. It does not prescribe the
 card layout, which fields appear, or how the rendering responds to
 metadata updates.
@@ -630,7 +630,7 @@ server-local.
 - If attempting federation: how cross-server `Task` references in chat
   messages are handled when the receiving user does not have access to
   the originating server's TaskList.
-- How federated chat clients display `urn:jmap:chat:cap:task` MessageActions
+- How federated chat clients display `urn:ietf:params:jmap:chat:cap:task` MessageActions
   whose URIs they cannot resolve.
 
 ### Considerations

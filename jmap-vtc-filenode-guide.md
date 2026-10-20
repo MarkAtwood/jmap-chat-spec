@@ -105,8 +105,8 @@ organized as FileNode objects rather than transient blob attachments.
 
 ### Recommended starting point
 
-Use **FileNode-backed sharing** when both `urn:jmap:vtc` and
-`urn:jmap:chat:filenode` are present. Concrete pattern:
+Use **FileNode-backed sharing** when both `urn:ietf:params:jmap:vtc` and
+`urn:ietf:params:jmap:chat:filenode` are present. Concrete pattern:
 
 1. When the first file is shared in a call, create a FileNode folder under the bound
    Space's file tree, named `"Call: <subject or callId>"`, parented to the Space root.

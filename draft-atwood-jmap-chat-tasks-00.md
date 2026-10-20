@@ -17,6 +17,13 @@ author:
     email: mark@reviewcommit.com
 
 normative:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   RFC2119:
   RFC8174:
   RFC8620:
@@ -26,13 +33,6 @@ normative:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
-    date: 2026
-  JMAP-CHAT-CALENDARS:
-    title: "JMAP Chat Calendars"
-    author:
-      fullname: Mark Atwood
-    seriesinfo:
-      Internet-Draft: draft-atwood-jmap-chat-calendars-00
     date: 2026
   JMAP-TASKS:
     title: "JMAP for Tasks"
@@ -78,7 +78,7 @@ This specification follows three principles consistent with the broader JMAP Cha
 
 - A new optional `taskListId` field on the Space data type (introduced in {{JMAP-CHAT}}).
 - A new optional `chatId` field on the Task data type (introduced in {{JMAP-TASKS}}).
-- The semantics of the existing `urn:jmap:chat:cap:task` MessageAction / Endpoint type URI (registered in {{JMAP-CHAT}}) in a JMAP Tasks context.
+- The semantics of the existing `urn:ietf:params:jmap:chat:cap:task` MessageAction / Endpoint type URI (defined in {{JMAP-CHAT}}) in a JMAP Tasks context.
 - Recommended permission mappings (with deployment latitude).
 
 Implementations of this specification MUST also implement {{JMAP-TASKS}}. A deployment that supports JMAP Chat but not JMAP Tasks MUST NOT advertise the capability defined here.
@@ -95,15 +95,15 @@ Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{JMAP-TASKS}} is used througho
 
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:jmap:chat:tasks` capability in the JMAP Session object. This capability is meaningful only when both `urn:jmap:chat` and `urn:ietf:params:jmap:tasks` are also advertised on the same account.
+Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:chat:tasks` capability in the JMAP Session object. This capability is meaningful only when both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:tasks` are also advertised on the same account.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:chat:tasks"]` at the session level is an empty JSON object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:chat:tasks"]` at the session level is an empty JSON object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:chat:tasks"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat:tasks"]` is a JSON object with the following fields:
 
 `mayBindTaskList` (Boolean):
 : `true` if accounts on this server may associate a TaskList with a Space, `false` otherwise. For example, multi-tenant deployments where the chat and task accounts are administratively separate set this to `false`.
@@ -113,7 +113,7 @@ The value of `accountCapabilities["urn:jmap:chat:tasks"]` is a JSON object with 
 
 # Space Extension: TaskList Binding {#tasklist-binding}
 
-The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:jmap:chat:tasks` capability is active.
+The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:ietf:params:jmap:chat:tasks` capability is active.
 
 ## taskListId {#task-list-id}
 
@@ -151,7 +151,7 @@ The chat-layer wiring (binding a TaskList to a Space, surfacing Tasks in message
 
 # Task Extension: Chat Back-Reference {#task-chatid}
 
-The Task data type defined in {{JMAP-TASKS}} is extended with one optional field when the `urn:jmap:chat:tasks` capability is active and the server advertises `mayBackReferenceChat: true`.
+The Task data type defined in {{JMAP-TASKS}} is extended with one optional field when the `urn:ietf:params:jmap:chat:tasks` capability is active and the server advertises `mayBackReferenceChat: true`.
 
 ## chatId {#task-chatid-field}
 
@@ -176,19 +176,19 @@ Closing a Task (setting its `progress` to `"completed"` or `"cancelled"` ({{RFC8
 
 # Task in Chat Context {#task-in-chat}
 
-A Task ({{JMAP-TASKS}}) MAY be referenced from a chat message via the `urn:jmap:chat:cap:task` MessageAction type (registered in {{JMAP-CHAT}} Endpoint and MessageAction type vocabularies).
+A Task ({{JMAP-TASKS}}) MAY be referenced from a chat message via the `urn:ietf:params:jmap:chat:cap:task` MessageAction type (defined in the {{JMAP-CHAT}} Endpoint and MessageAction type vocabularies).
 
 ## MessageAction format
 
-The MessageAction object has the following shape when its `type` is `urn:jmap:chat:cap:task`:
+The MessageAction object has the following shape when its `type` is `urn:ietf:params:jmap:chat:cap:task`:
 
 `type` (String):
-: `urn:jmap:chat:cap:task`.
+: `urn:ietf:params:jmap:chat:cap:task`.
 
 `uri` (String):
 : A URI identifying the referenced Task. Two URI forms are recognized:
 
-  - A JMAP object URN ({{JMAP-CHAT-CALENDARS}}) of type `task`, in the form `urn:jmap:task:<accountId>:<taskId>`, referencing a Task on the named account.
+  - A JMAP object URI ({{JMAP-OBJECT-URI}}) of type `task`, in the form `jmap:task:<accountId>:<taskId>`, referencing a Task on the named account.
   - A standard `https://` URL pointing to an external task representation (for example, a link to a third-party issue tracker that bridges to JMAP Tasks).
 
 `label` (String, optional):
@@ -229,7 +229,7 @@ When a user wishes to create a Task whose discussion will live in the current Ch
 
 1. The client calls `Task/set` (per {{JMAP-TASKS}}) with the desired Task fields and the current Chat's id as the new Task's `chatId`.
 2. The server creates the Task on the bound TaskList (or the TaskList specified by the client) and stores the back-reference.
-3. The client may then post a confirmation message in the Chat carrying a MessageAction of type `urn:jmap:chat:cap:task` pointing to the new Task; this is OPTIONAL and useful for surfacing the Task in the chat history.
+3. The client may then post a confirmation message in the Chat carrying a MessageAction of type `urn:ietf:params:jmap:chat:cap:task` pointing to the new Task; this is OPTIONAL and useful for surfacing the Task in the chat history.
 
 The Task creation MAY succeed even if the current Chat is not bound to the same Space as the target TaskList; back-references are loose by design (per {{task-chatid}}).
 
@@ -249,7 +249,7 @@ Cross-server federation of TaskList binding is **not in scope** for this revisio
 
 Cross-server federation of Task-Chat back-references is similarly out of scope. A Task's `chatId` references a Chat on the same account, and so on the same server ({{task-chatid-field}}).
 
-Cross-server federation of `urn:jmap:chat:cap:task` MessageActions works in the limited sense described in {{task-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts. A `jmap:` URI may resolve only on the originating account; an external `https://` URL may resolve anywhere.
+Cross-server federation of `urn:ietf:params:jmap:chat:cap:task` MessageActions works in the limited sense described in {{task-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts. A MessageAction whose `uri` is a JMAP object URI is removed by the receiving server ({{JMAP-CHAT-FED}}), because such a URI is meaningful only on its originating server ({{JMAP-OBJECT-URI}}); one with an external `https://` URL is kept and may resolve anywhere.
 
 The `assigneeIds` metadata key is a user-reference field. Between servers it carries identity strings, not local ids, per User References in Peer Methods in {{JMAP-CHAT-FED}}: the sending server maps each local id to the user's identity, and the receiving server maps each identity to its local id. A receiving server that does not recognise the field passes it through unmapped.
 
@@ -288,7 +288,7 @@ Cross-server federation of TaskList binding, Task-Chat back-references, and auth
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:chat:tasks`
+: `urn:ietf:params:jmap:chat:tasks`
 
 Intended Use:
 : common
@@ -302,19 +302,22 @@ Specification document:
 Security and privacy considerations:
 : See {{security}} of this document.
 
-## JMAP Object URN Type Registration
+## JMAP Object URI Type Registration
 
-IANA is requested to register the following entry in the "JMAP Object URN Types" registry defined by {{JMAP-CHAT-CALENDARS}}:
+IANA is requested to register the following entry in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
 
 Type Name:
 : `task`
+
+Data Type:
+: Task
 
 Reference:
 : This document.
 
 ## MessageAction Type URI
 
-The `urn:jmap:chat:cap:task` URI value used in MessageAction and Endpoint contexts is registered by {{JMAP-CHAT}}. This document refines its semantics in a JMAP Tasks context but does not request a new URI registration.
+The `urn:ietf:params:jmap:chat:cap:task` URI value used in MessageAction and Endpoint contexts is assigned by {{JMAP-CHAT}} under the `urn:ietf:params:jmap:chat:cap:` placeholder it registers. This document refines its semantics in a JMAP Tasks context and requests no IANA action for it.
 
 --- back
 
@@ -325,7 +328,7 @@ This non-normative section documents the design influences from production chat-
 ## Influences
 
 - **Slack Lists** inspired the per-Space single-TaskList model. Slack's Lists feature treats lists as per-channel content with simple membership-driven access. This specification scales that to per-Space single-TaskList (a Space contains multiple channels but shares one task list across them), preserving the simplicity.
-- **Microsoft Teams + Microsoft Planner** inspired the rich task metadata in MessageAction. Teams renders Planner cards inline with status, due date, and assignees visible. This specification permits equivalent metadata in `urn:jmap:chat:cap:task` MessageActions.
+- **Microsoft Teams + Microsoft Planner** inspired the rich task metadata in MessageAction. Teams renders Planner cards inline with status, due date, and assignees visible. This specification permits equivalent metadata in `urn:ietf:params:jmap:chat:cap:task` MessageActions.
 - **Linear / Jira / GitHub Issues chat integrations** inspired the Task-to-Chat back-reference. Most third-party trackers maintain a per-issue discussion thread linked back from the issue; this specification provides a native equivalent via `Task.chatId`.
 - **Slack /todo and todoist bots** inspired the "task creation from a chat thread" pattern documented in {{operations}}. These bots create tasks whose context is the conversation; the specification's `Task.chatId` field gives the same back-reference natively.
 

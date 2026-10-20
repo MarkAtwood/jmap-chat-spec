@@ -221,7 +221,7 @@ out why without reading server source code.
 
 The spec says RSVPs are performed via `CalendarEvent/set` (no new method).
 The chat layer's contribution is the UX wiring: a message with a
-`urn:jmap:chat:cap:calendar-event` MessageAction can render RSVP buttons.
+`urn:ietf:params:jmap:chat:cap:calendar-event` MessageAction can render RSVP buttons.
 The spec does not prescribe the button set, layout, or interaction model.
 
 ### What you must decide

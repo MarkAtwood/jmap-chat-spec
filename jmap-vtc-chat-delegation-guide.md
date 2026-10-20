@@ -7,7 +7,7 @@ For VTC implementers leveraging JMAP Chat for in-call features with `draft-atwoo
 ## How to read this guide
 
 `draft-atwood-jmap-vtc-00` (the VTC spec) recommends that deployments co-advertise
-`urn:jmap:chat` alongside `urn:jmap:vtc`. When both
+`urn:ietf:params:jmap:chat` alongside `urn:ietf:params:jmap:vtc`. When both
 capabilities are present, several in-call collaboration features — text chat,
 reactions, live captions, lobby communication — are delegated to JMAP Chat's
 existing infrastructure rather than re-invented inside the VTC layer.
@@ -265,8 +265,8 @@ it from a system or bot ChatContact and including the
 
 `draft-atwood-jmap-chat-wss-00` (Section "Enabling Ephemeral Push") defines
 `"vtc"` as a companion `dataTypes` value in `ChatStreamEnable`. It is
-recognized only when the server advertises `urn:jmap:vtc:websocket`
-(and `urn:jmap:chat:websocket`); otherwise it is silently ignored.
+recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`
+(and `urn:ietf:params:jmap:chat:websocket`); otherwise it is silently ignored.
 It subscribes the connection to the VTC in-call events defined by
 `draft-atwood-jmap-vtc-wss-00` (participant, media, and call-state events), not
 to captions. Caption Messages arrive through the normal Message path.

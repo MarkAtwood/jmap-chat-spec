@@ -52,7 +52,7 @@ informative:
 
 This document defines a WebSocket binding for ephemeral spatial
 events in JMAP for Scenes ({{JMAP-SCENE}}).  It registers the
-`urn:jmap:scene:websocket` capability and introduces
+`urn:ietf:params:jmap:scene:websocket` capability and introduces
 `SceneStreamEnable` and `SceneStreamDisable` control messages that
 give clients region-scoped, event-type-scoped subscription over a
 JMAP WebSocket connection ({{RFC8887}}).
@@ -114,7 +114,7 @@ message types each side may send.  This document updates
 
 This is the same rule stated in {{JMAP-CHAT-WSS}}; it is restated
 here so that this document stands alone.  Under it, the
-`urn:jmap:scene:websocket` capability defines
+`urn:ietf:params:jmap:scene:websocket` capability defines
 `SceneStreamEnable`, `SceneStreamDisable`, and the event types in
 {{event-types}}.  Except as updated here, all {{RFC8887}}
 requirements apply unchanged.
@@ -129,10 +129,10 @@ they appear in all capitals, as shown here.
 
 # Capability {#capability}
 
-## urn:jmap:scene:websocket
+## urn:ietf:params:jmap:scene:websocket
 
 Servers supporting this specification MUST add a property named
-`urn:jmap:scene:websocket` to the JMAP Session object
+`urn:ietf:params:jmap:scene:websocket` to the JMAP Session object
 capabilities.  The value of this property is an empty JSON object
 `{}`.
 
@@ -144,10 +144,10 @@ the client.
 
 This capability is distinct from `urn:ietf:params:jmap:websocket`
 ({{RFC8887}}), which advertises the WebSocket transport itself, and
-from `urn:jmap:scene` ({{JMAP-SCENE}}), which
+from `urn:ietf:params:jmap:scene` ({{JMAP-SCENE}}), which
 advertises the Scene data model and methods.  A server advertising
-`urn:jmap:scene:websocket` MUST also advertise both
-`urn:ietf:params:jmap:websocket` and `urn:jmap:scene`.
+`urn:ietf:params:jmap:scene:websocket` MUST also advertise both
+`urn:ietf:params:jmap:websocket` and `urn:ietf:params:jmap:scene`.
 
 ### Session Object Example
 
@@ -158,8 +158,8 @@ advertises the Scene data model and methods.  A server advertising
       "url": "wss://scene.example.com/jmap/ws/",
       "supportsPush": true
     },
-    "urn:jmap:scene": {},
-    "urn:jmap:scene:websocket": {}
+    "urn:ietf:params:jmap:scene": {},
+    "urn:ietf:params:jmap:scene:websocket": {}
   }
 }
 ~~~
@@ -788,7 +788,7 @@ filter here as it does to `SceneObject/get` and `SceneObject/query`.
 
 ## Blocked-Sender Suppression {#blocked-sender}
 
-When the JMAP Chat capability (`urn:jmap:chat`) is
+When the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is
 available for the receiving account, the server SHOULD consult the
 recipient's ChatContact records before delivering Scene ephemeral
 events.  If the originating user corresponds to a ChatContact whose
@@ -824,7 +824,7 @@ identified by the event's `userId` field.
 
 ### Without Chat Capability
 
-If the JMAP Chat capability (`urn:jmap:chat`) is not
+If the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is not
 present in the account's capabilities, no blocked-sender filtering
 is applied to Scene ephemeral events.  There is no blocked list to
 consult and the server delivers all events that pass the other
@@ -897,8 +897,8 @@ on the same connection.
 
 ## Interoperability with JMAP Chat WebSocket {#chat-wss-interop}
 
-When a server advertises both `urn:jmap:chat:websocket`
-({{JMAP-CHAT-WSS}}) and `urn:jmap:scene:websocket`
+When a server advertises both `urn:ietf:params:jmap:chat:websocket`
+({{JMAP-CHAT-WSS}}) and `urn:ietf:params:jmap:scene:websocket`
 (this document), two subscription paths exist for Scene ephemeral
 events:
 
@@ -1242,7 +1242,7 @@ not reveal to other users who is in the call.
 IANA is requested to register the following entry in the "JMAP
 Capabilities" registry defined in {{RFC8620}} Section 9.4:
 
-- **Capability Name:** `urn:jmap:scene:websocket`
+- **Capability Name:** `urn:ietf:params:jmap:scene:websocket`
 - **Intended Use:** common
 - **Change Controller:** IETF
 - **Specification document:** This document.
