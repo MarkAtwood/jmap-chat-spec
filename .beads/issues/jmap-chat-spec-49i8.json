@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-49i8",
   "title": "VTC review findings (2026-10-20)",
   "description": "Close read of draft-atwood-jmap-vtc-00.md and draft-atwood-jmap-vtc-wss-00.md plus guide drift check of the 8 jmap-vtc-* guides. Children: draft bugs, design decisions, one bead per guide.",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "issue_type": "epic",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T17:32:02.523911121Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T17:32:02.523911121Z",
+  "updated_at": "2026-10-20T19:46:05.671083346Z",
+  "closed_at": "2026-10-20T19:46:05.671083346Z",
+  "close_reason": "All children closed 2026-10-20.",
   "labels": [
     "vtc"
   ]

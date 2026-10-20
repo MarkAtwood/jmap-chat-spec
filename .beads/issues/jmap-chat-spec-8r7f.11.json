@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-8r7f.11",
   "title": "chat-00: rateLimited duplicates RFC 8620 rateLimit",
   "description": "chat-00 :1914 registers a new error type rateLimited used as a Message/set SetError for slow mode; RFC 8620 5.3 already defines SetError rateLimit. Federation uses rateLimited as a method-level error (no RFC 8620 equivalent). scene-00 uses rateLimit. Decide: reuse rateLimit for SetErrors and keep rateLimited only as a method-level error, or keep as is.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "decision",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T17:58:20.077671767Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T17:58:20.077671767Z",
+  "updated_at": "2026-10-20T19:46:00.364805614Z",
+  "closed_at": "2026-10-20T19:46:00.364805614Z",
+  "close_reason": "Slow mode uses RFC 8620 rateLimit; rateLimited only method-level (federation); notPermitted kept with tightened description; registry template per RFC 8620 9.5.",
   "labels": [
     "keywords"
   ],

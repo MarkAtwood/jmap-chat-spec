@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-49i8.7",
   "title": "vtc-00: breakout move patches immutable callId",
   "description": "draft-atwood-jmap-vtc-00.md:947 assigns breakout rooms by updating VTCParticipant.callId, which :284 declares immutable. Decide the mechanism; recommendation: an assigned-room field the participant's client acts on by joining the child call.",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "decision",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T17:32:04.022233023Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T17:32:04.022233023Z",
+  "updated_at": "2026-10-20T19:46:00.016660039Z",
+  "closed_at": "2026-10-20T19:46:00.016660039Z",
+  "close_reason": "breakoutCallId added; callId immutable, no move exception; guides synced.",
   "labels": [
     "vtc"
   ],

@@ -1,0 +1,7 @@
+{
+  "id": "1792524956899723678-1",
+  "issue_id": "jmap-chat-spec-49i8.21",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): one paragraph: gateway is server-side; on an inbound call it causes the server to create a VTCParticipant (joinMethod = gateway protocol, userId null, matched by gatewayPin or dial-in address); gateway-server interface deployment-defined.",
+  "created_at": "2026-10-20T19:35:56.899723678Z"
+}

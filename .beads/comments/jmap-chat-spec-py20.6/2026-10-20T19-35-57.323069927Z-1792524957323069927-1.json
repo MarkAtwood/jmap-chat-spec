@@ -1,0 +1,7 @@
+{
+  "id": "1792524957323069927-1",
+  "issue_id": "jmap-chat-spec-py20.6",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): rename metadata key status -\u003e progress in chat-tasks and the chat-00 example.",
+  "created_at": "2026-10-20T19:35:57.323069927Z"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "1792524957218783420-1",
+  "issue_id": "jmap-chat-spec-py20.4",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): match current Design Tokens Color Module: $value is the color object (colorSpace, components, optional alpha/hex); CAM16 and hex unchanged; references stay informative.",
+  "created_at": "2026-10-20T19:35:57.21878342Z"
+}

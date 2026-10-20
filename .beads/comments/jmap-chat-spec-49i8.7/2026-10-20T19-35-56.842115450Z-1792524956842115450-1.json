@@ -1,0 +1,7 @@
+{
+  "id": "1792524956842115450-1",
+  "issue_id": "jmap-chat-spec-49i8.7",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): add VTCParticipant.breakoutCallId; moderator sets it, participant's client joins that breakout call normally; drop the callId-update exception.",
+  "created_at": "2026-10-20T19:35:56.84211545Z"
+}
