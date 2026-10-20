@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-draj",
+  "title": "JMAP object URIs passed through federation resolve in wrong context",
+  "description": "Pre-existing (predates object-uri move). draft-atwood-jmap-object-uri-00 makes a jmap: URI relative to the session/peer it was received from, but a server relaying a peer's Peer/deliver payload to its own clients passes the URI on unchanged; the client then resolves it against its own server (notFound, or a different object with the same ids). Federation draft never mentions jmap: URIs. Options: (a) receiving server strips MessageActions/fields whose uri is a jmap: object URI; (b) server rewrites/annotates with origin; (c) define rule in object-uri draft that relays must not pass jmap: URIs through unchanged and let carrying protocols choose. Affects object-uri, chat-federation, chat-tasks (line ~252 'receiving client adapts'), chat-calendars uri definitions. Found by verify workflow wf_e2550798-ffd.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:56:24.44411076Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T21:03:30.620573711Z",
+  "started_at": "2026-10-20T21:00:11.282101543Z",
+  "closed_at": "2026-10-20T21:03:30.620573711Z",
+  "close_reason": "(c)+(a): object-uri relay MUST NOT; federation strips jmap: MessageActions/Endpoints from Peer/* data and peer Session (ownerEndpoints); link spans MUST NOT carry jmap: URIs; clients MUST NOT put jmap: URIs in encrypted content. Verified by skeptic; signatures/edits/push/MIMI unaffected."
+}

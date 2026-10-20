@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-2etl.5",
+  "title": "Write draft-atwood-jmap-graph-search-00.md",
+  "description": "Search over annotations/content/structure deliberately excluded from graph core. Direction discussed: servers advertise supported query languages (e.g. ISO GQL 39075, openCypher, GraphQL+schema, a simple native one), none mandatory. GraphQL rejected as MUST/SHOULD: no search semantics, overlaps JMAP.",
+  "notes": "Mark 2026-10-20 decision: servers ADVERTISE supported query languages (none mandatory among foreign ones: gql, opencypher, gremlin, sparql, ...), PLUS we define our own small MQL-style JSON filter language in the search draft. Other candidates surveyed: Gremlin/TinkerPop (JVM, implementation-defined, side effects), openCypher (folding into GQL), ISO GQL 39075 (paywalled, huge), SQL/PGQ, SPARQL (RDF misfit), PGQL/AQL/GSQL/nGQL (vendor), Datalog (no spec), MQL/DocumentDB (JSON fits JMAP filters; no SDO spec).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:11:28.418880874Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T20:35:59.073697893Z",
+  "started_at": "2026-10-20T20:22:31.688432252Z",
+  "closed_at": "2026-10-20T20:35:59.073697893Z",
+  "close_reason": "Drafted; 9 confirmed review findings applied (collation default=codepoint, well-formedness + error mapping, $in array rule, Gremlin labels, SPARQL Federated ref, pinned versions openCypher 9 / TinkerPop 3.7 / DocumentDB 1.0, design-note fixes); builds clean",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2etl.5",
+      "depends_on_id": "jmap-chat-spec-2etl",
+      "type": "parent-child",
+      "created_at": "2026-10-20T20:11:28.445566681Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "jmap-chat-spec-2etl.4",
+  "title": "Write draft-atwood-jmap-graph-projection-00.md",
+  "description": "Read-only per-account projected Graph of native JMAP data (MAY). objectUrn on GraphNode; edges from top-level id-reference properties, type \u003cDataType\u003e/\u003cproperty\u003e; per-user filtering by native read rights (carve-out from per-Graph access); edges only when both endpoints visible.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:08:21.686978979Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T20:11:28.351935168Z",
+  "started_at": "2026-10-20T20:08:21.763785861Z",
+  "closed_at": "2026-10-20T20:11:28.351935168Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2etl.4",
+      "depends_on_id": "jmap-chat-spec-2etl",
+      "type": "parent-child",
+      "created_at": "2026-10-20T20:08:21.712696776Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

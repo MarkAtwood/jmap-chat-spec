@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-b9qs",
+  "title": "chat-filenode: chatspace root role can be set/cleared by update",
+  "description": "Pre-existing (applied equally to the old urn role). Root invariants (spaceId present, one root per Space, manage_space to create) are checked only on FileNode/set create; upstream role is mutable, so an update can set role chatspace on any Directory (no spaceId) or clear it (second root becomes creatable, discovery returns nothing). Proposed fix: role chatspace can be set only at creation; server rejects updates changing role to/from chatspace with invalidProperties naming role. Found by verify workflow wf_e2550798-ffd.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:56:24.491683192Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T21:04:35.7613306Z",
+  "started_at": "2026-10-20T21:04:05.687389415Z",
+  "closed_at": "2026-10-20T21:04:35.7613306Z",
+  "close_reason": "chatspace role settable only at create; updates changing role to/from chatspace rejected with invalidProperties"
+}
