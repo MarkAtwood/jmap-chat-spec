@@ -17,17 +17,17 @@ different application:
 
 - A server advertising only `urn:ietf:params:jmap:mail` gives you
   Thunderbird.
-- A server advertising only `urn:ietf:params:jmap:chat` gives you Slack.
-- Add `urn:ietf:params:jmap:vtc` and you get Slack with integrated Zoom.
-- Add `urn:ietf:params:jmap:scene` with `viewHint: "2d-topdown"` and you
+- A server advertising only `urn:jmap:chat` gives you Slack.
+- Add `urn:jmap:vtc` and you get Slack with integrated Zoom.
+- Add `urn:jmap:scene` with `viewHint: "2d-topdown"` and you
   get Gather.
-- Add `urn:ietf:params:jmap:scene` with `viewHint: "3d"` and you get
+- Add `urn:jmap:scene` with `viewHint: "3d"` and you get
   Mozilla Hubs.
 - A server advertising `urn:ietf:params:jmap:mail` and
-  `urn:ietf:params:jmap:chat` gives you Outlook.
-- A server advertising only `urn:ietf:params:jmap:vtc` gives you a
+  `urn:jmap:chat` gives you Outlook.
+- A server advertising only `urn:jmap:vtc` gives you a
   standalone calling app.
-- A server advertising only `urn:ietf:params:jmap:scene` gives you a
+- A server advertising only `urn:jmap:scene` gives you a
   spatial environment browser.
 
 The client never assumes a capability exists. Every UI surface, every
@@ -101,18 +101,18 @@ Example Session object (abbreviated):
     },
     "urn:ietf:params:jmap:mail": {},
     "urn:ietf:params:jmap:submission": {},
-    "urn:ietf:params:jmap:chat": {},
-    "urn:ietf:params:jmap:chat:websocket": {},
-    "urn:ietf:params:jmap:chat:push": {},
-    "urn:ietf:params:jmap:vtc": {},
-    "urn:ietf:params:jmap:vtc:websocket": {},
-    "urn:ietf:params:jmap:scene": {},
-    "urn:ietf:params:jmap:scene:websocket": {},
-    "urn:ietf:params:jmap:cid": {},
-    "urn:ietf:params:jmap:chat:did": {},
-    "urn:ietf:params:jmap:chat:filenode": {},
-    "urn:ietf:params:jmap:chat:calendars": {},
-    "urn:ietf:params:jmap:chat:tasks": {}
+    "urn:jmap:chat": {},
+    "urn:jmap:chat:websocket": {},
+    "urn:jmap:chat:push": {},
+    "urn:jmap:vtc": {},
+    "urn:jmap:vtc:websocket": {},
+    "urn:jmap:scene": {},
+    "urn:jmap:scene:websocket": {},
+    "urn:jmap:cid": {},
+    "urn:jmap:chat:did": {},
+    "urn:jmap:chat:filenode": {},
+    "urn:jmap:chat:calendars": {},
+    "urn:jmap:chat:tasks": {}
   },
   "accounts": {
     "u1": {
@@ -126,7 +126,7 @@ Example Session object (abbreviated):
         "urn:ietf:params:jmap:submission": {
           "maxDelayedSend": 44236800
         },
-        "urn:ietf:params:jmap:chat": {
+        "urn:jmap:chat": {
           "maxBodyBytes": 65536,
           "maxAttachmentBytes": 26214400,
           "maxAttachmentsPerMessage": 10,
@@ -137,7 +137,7 @@ Example Session object (abbreviated):
           ],
           "supportsThreads": true
         },
-        "urn:ietf:params:jmap:vtc": {
+        "urn:jmap:vtc": {
           "mayCreateCall": true,
           "supportsRingCalls": true,
           "supportsRoomCalls": true,
@@ -150,7 +150,7 @@ Example Session object (abbreviated):
           "maxParticipantsPerCall": 100,
           "maxConcurrentCalls": 5
         },
-        "urn:ietf:params:jmap:scene": {
+        "urn:jmap:scene": {
           "mayCreateRegion": true,
           "mayCreateObject": true,
           "supportedVisualTypes": [
@@ -166,9 +166,9 @@ Example Session object (abbreviated):
   "primaryAccounts": {
     "urn:ietf:params:jmap:mail": "u1",
     "urn:ietf:params:jmap:submission": "u1",
-    "urn:ietf:params:jmap:chat": "u1",
-    "urn:ietf:params:jmap:vtc": "u1",
-    "urn:ietf:params:jmap:scene": "u1"
+    "urn:jmap:chat": "u1",
+    "urn:jmap:vtc": "u1",
+    "urn:jmap:scene": "u1"
   },
   "apiUrl": "https://chat.example.com/jmap/",
   "uploadUrl": "https://chat.example.com/jmap/upload/{accountId}/",
@@ -337,7 +337,7 @@ independently on the same WebSocket.
 
 For mobile and backgrounded desktop clients, the client registers a
 `PushSubscription` (RFC 8620 Section 7.2) targeting the platform push
-service (APNs, FCM, Web Push). When `urn:ietf:params:jmap:chat:push`
+service (APNs, FCM, Web Push). When `urn:jmap:chat:push`
 is available, the subscription includes `chatPush` configuration for
 inline message content in push payloads, avoiding the wake-fetch-display
 round trip.
@@ -506,7 +506,7 @@ the tab bar shows Mail and Chat as peer top-level views.
 
 #### Chat Module
 
-**Capability:** `urn:ietf:params:jmap:chat`
+**Capability:** `urn:jmap:chat`
 
 **Data types managed:**
 - ChatContact (contacts list, presence, endpoints)
@@ -529,7 +529,7 @@ PresenceStatus, Space, CustomEmoji, SpaceBan, SpaceInvite
 
 #### VTC Module
 
-**Capability:** `urn:ietf:params:jmap:vtc`
+**Capability:** `urn:jmap:vtc`
 
 **Data types managed:**
 - VTCCall (call lifecycle, state machine, join URI)
@@ -558,7 +558,7 @@ VTCLivestream
 
 #### Scene Module
 
-**Capability:** `urn:ietf:params:jmap:scene`
+**Capability:** `urn:jmap:scene`
 
 **Data types managed:**
 - SceneRegion (bounded spatial environments)
@@ -583,7 +583,7 @@ SceneInteractionEvent
 
 #### FileNode Module
 
-**Capability:** `urn:ietf:params:jmap:chat:filenode`
+**Capability:** `urn:jmap:chat:filenode`
 
 **Responsibilities:**
 - Space-scoped file tree management
@@ -594,7 +594,7 @@ SceneInteractionEvent
 
 #### Calendar Module
 
-**Capability:** `urn:ietf:params:jmap:chat:calendars`
+**Capability:** `urn:jmap:chat:calendars`
 
 **Responsibilities:**
 - Space-scoped calendar binding (`Space.calendarId`)
@@ -608,7 +608,7 @@ SceneInteractionEvent
 
 #### Task Module
 
-**Capability:** `urn:ietf:params:jmap:chat:tasks`
+**Capability:** `urn:jmap:chat:tasks`
 
 **Responsibilities:**
 - Space-scoped task list binding (`Space.taskListId`)
@@ -620,7 +620,7 @@ SceneInteractionEvent
 
 #### Identity Module (DID)
 
-**Capability:** `urn:ietf:params:jmap:chat:did`
+**Capability:** `urn:jmap:chat:did`
 
 **Responsibilities:**
 - DID field extension on ChatContact (`ChatContact.did`)
@@ -632,7 +632,7 @@ SceneInteractionEvent
 
 #### CID Module
 
-**Capability:** `urn:ietf:params:jmap:cid`
+**Capability:** `urn:jmap:cid`
 
 **Responsibilities:**
 - sha256 extension on blob upload responses
@@ -1081,7 +1081,7 @@ tab via a "Pop Out" action. This allows the user to have a chess game
 **Example: Email + Chess + Doom**
 
 A user connected to a server advertising `urn:ietf:params:jmap:mail`,
-`urn:ietf:params:jmap:chat`, and `urn:ietf:params:jmap:scene`:
+`urn:jmap:chat`, and `urn:jmap:scene`:
 
 ```
 Tab bar: [Mail (2)]  [Chat]  [Chess - Board Room]  [Doom - Arena]
@@ -1257,7 +1257,7 @@ SceneObject.visualRef (blobId)
     +------+----------+
            |
            v
-    CID verification (if urn:ietf:params:jmap:cid present):
+    CID verification (if urn:jmap:cid present):
       compute sha256 of downloaded content
       compare with SceneAsset.sha256 or Attachment.sha256
       reject on mismatch
@@ -1769,7 +1769,7 @@ Credentials never touch the webview's localStorage or IndexedDB.
 
 ### 12.4 Blob Integrity
 
-When `urn:ietf:params:jmap:cid` is present:
+When `urn:jmap:cid` is present:
 1. On upload, the server returns `sha256` in the upload response. The
    client stores this alongside the `blobId`.
 2. On download, the client computes sha256 of the received content and
@@ -2013,18 +2013,18 @@ capabilities).
 |---|---|---|
 | Mail | `urn:ietf:params:jmap:mail` | Mailbox, Email, Thread, SearchSnippet |
 | Mail Submission | `urn:ietf:params:jmap:submission` | Identity, EmailSubmission |
-| Chat | `urn:ietf:params:jmap:chat` | ChatContact, Chat, Message, Space, SpaceRole, SpaceMember, SpaceInvite, SpaceBan, CustomEmoji, ReadPosition, PresenceStatus |
-| Chat WSS | `urn:ietf:params:jmap:chat:websocket` | (events: ChatTypingEvent, ChatPresenceEvent) |
-| Chat Push | `urn:ietf:params:jmap:chat:push` | ChatPushConfig, ChatMessagePush, ChatMessageEntry |
-| Chat DID | `urn:ietf:params:jmap:chat:did` | (extends ChatContact with `did` field) |
-| Chat FileNode | `urn:ietf:params:jmap:chat:filenode` | FileNode (Space-scoped) |
-| Chat Tasks | `urn:ietf:params:jmap:chat:tasks` | (bindings: Space.taskListId, Task.chatId) |
-| Chat Calendars | `urn:ietf:params:jmap:chat:calendars` | (bindings: Space.calendarId, MessageAction calendar types) |
-| VTC | `urn:ietf:params:jmap:vtc` | VTCCall, VTCParticipant, VTCRecording, VTCLivestream |
-| VTC WSS | `urn:ietf:params:jmap:vtc:websocket` | (events: VTCRingEvent, VTCCallEndEvent, VTCParticipantEvent, VTCMediaStateEvent, VTCActiveSpeakerEvent, VTCUnmuteRequestEvent, VTCRecordingStateEvent, VTCGatewaySignal) |
-| Scene | `urn:ietf:params:jmap:scene` | SceneRegion, SceneObject, SceneAvatar, SceneAsset |
-| Scene WSS | `urn:ietf:params:jmap:scene:websocket` | (events: SceneAvatarEvent, SceneObjectEvent, SceneInteractionEvent) |
-| CID | `urn:ietf:params:jmap:cid` | (extends blob upload response with sha256) |
+| Chat | `urn:jmap:chat` | ChatContact, Chat, Message, Space, SpaceRole, SpaceMember, SpaceInvite, SpaceBan, CustomEmoji, ReadPosition, PresenceStatus |
+| Chat WSS | `urn:jmap:chat:websocket` | (events: ChatTypingEvent, ChatPresenceEvent) |
+| Chat Push | `urn:jmap:chat:push` | ChatPushConfig, ChatMessagePush, ChatMessageEntry |
+| Chat DID | `urn:jmap:chat:did` | (extends ChatContact with `did` field) |
+| Chat FileNode | `urn:jmap:chat:filenode` | FileNode (Space-scoped) |
+| Chat Tasks | `urn:jmap:chat:tasks` | (bindings: Space.taskListId, Task.chatId) |
+| Chat Calendars | `urn:jmap:chat:calendars` | (bindings: Space.calendarId, MessageAction calendar types) |
+| VTC | `urn:jmap:vtc` | VTCCall, VTCParticipant, VTCRecording, VTCLivestream |
+| VTC WSS | `urn:jmap:vtc:websocket` | (events: VTCRingEvent, VTCCallEndEvent, VTCParticipantEvent, VTCMediaStateEvent, VTCActiveSpeakerEvent, VTCUnmuteRequestEvent, VTCRecordingStateEvent, VTCGatewaySignal) |
+| Scene | `urn:jmap:scene` | SceneRegion, SceneObject, SceneAvatar, SceneAsset |
+| Scene WSS | `urn:jmap:scene:websocket` | (events: SceneAvatarEvent, SceneObjectEvent, SceneInteractionEvent) |
+| CID | `urn:jmap:cid` | (extends blob upload response with sha256) |
 
 ## Appendix B: Cross-Capability Binding Reference
 
