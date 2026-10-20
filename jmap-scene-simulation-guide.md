@@ -1133,12 +1133,12 @@ unreliable datagrams (RFC 9221).
 
 Pros: no head-of-line blocking between streams; unreliable datagrams available;
 0-RTT connection establishment; built-in congestion control. Cons: limited
-browser support for raw QUIC (WebTransport is the browser API, still maturing);
-requires native client or WebTransport-capable browser; fewer production
+browser access to raw QUIC (browsers reach QUIC only through WebTransport);
+requires a native client or the WebTransport browser API; fewer production
 libraries than WebSocket or WebRTC.
 
-QUIC via WebTransport is a strong future choice. For current deployments, it
-is viable only with native clients or browsers that support WebTransport.
+QUIC via WebTransport is a practical choice today: WebTransport is MDN
+Baseline 2026, interoperable in current browsers since March 2026.
 
 **Raw UDP.** The game server standard. Unreliable, unordered, minimal overhead.
 
@@ -1158,16 +1158,15 @@ choice.
 | WebSocket | Yes | No | N/A (TCP) | Low |
 | WebRTC data channel | Yes | Yes | Built-in (ICE) | Medium |
 | QUIC (native) | No | Yes (RFC 9221 datagrams) | N/A | Medium-High |
-| WebTransport | Partial (Chrome, Edge; not yet Safari/Firefox) | Yes (datagrams + unidirectional streams) | N/A | Medium |
+| WebTransport | Yes (MDN Baseline 2026) | Yes (datagrams + unidirectional streams) | N/A | Medium |
 | Raw UDP | No | Yes | Manual (STUN/TURN) | High |
 
 **WebTransport note.** WebTransport is a browser API layered on HTTP/3 (QUIC).
 It provides both reliable streams and unreliable datagrams from browser
 JavaScript -- something WebSocket and WebRTC data channels cannot both offer
-cleanly. Browser support is partial: Chromium-based browsers (Chrome, Edge)
-ship WebTransport; Safari and Firefox have it behind flags or in development
-as of mid-2026. For deployments that can require Chromium or that serve both
-browser and native clients, WebTransport is a strong middle ground between
+cleanly. WebTransport is MDN Baseline 2026, interoperable in current
+browsers since March 2026. For deployments that serve both browser and
+native clients, WebTransport is a strong middle ground between
 WebSocket (reliable-only, browser-universal) and raw QUIC (full control,
 native-only).
 
