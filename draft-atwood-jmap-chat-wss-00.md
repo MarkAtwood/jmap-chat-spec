@@ -309,7 +309,7 @@ When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST del
 }
 ~~~
 
-Servers SHOULD rate-limit outbound `ChatPresenceEvent` messages per contact: no more than one `ChatPresenceEvent` per contact per 30 seconds SHOULD be delivered; events above this rate MAY be silently dropped. This rate limit is consistent with the `Peer/subscribePresence` delivery rate defined in {{JMAP-CHAT-FED}}.
+Servers SHOULD rate-limit outbound `ChatPresenceEvent` messages per contact: no more than one `ChatPresenceEvent` per contact per 30 seconds SHOULD be delivered; events above this rate MAY be silently dropped, but the most recent presence state SHOULD be delivered when the rate window reopens, so that a dropped transition does not leave the recipient with stale presence. This rate limit is consistent with the `Peer/subscribePresence` delivery rate defined in {{JMAP-CHAT-FED}}.
 
 Servers MUST NOT deliver `ChatPresenceEvent` for a contact whose `blocked` field is `true` on the owner's ChatContact record for that contact.
 
