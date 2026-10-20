@@ -3,6 +3,7 @@ title: JMAP VTC over WebSocket
 abbrev: JMAP VTC WebSocket
 docname: draft-atwood-jmap-vtc-wss-00
 category: std
+updates: 8887
 stream: IETF
 
 ipr: trust200902
@@ -81,6 +82,28 @@ events by including `"vtc"` in the `dataTypes` array of a
 VTC without JMAP Chat.  This document provides a standalone
 subscription mechanism for that case and a finer-grained,
 call-scoped alternative for deployments that have both.
+
+## Update to RFC 8887 {#rfc8887-update}
+
+{{RFC8887}} Section 4.2 states that "other message types MUST NOT
+be transmitted over this connection," and Section 4.3 limits the
+message types each side may send.  This document updates
+{{RFC8887}} to relax both restrictions as follows:
+
+- A JMAP capability advertised in the Session object ({{RFC8620}}
+  Section 2) MAY define additional WebSocket message types, each
+  identified by its `@type` value.
+
+- A server MUST NOT send an additional server-to-client message
+  type unless the client has enabled it using a control message
+  defined by the same capability.
+
+This is the same rule stated in {{JMAP-CHAT-WSS}}; it is restated
+here so that this document stands alone.  Under it, the
+`urn:ietf:params:jmap:vtc:websocket` capability defines
+`VTCStreamEnable`, `VTCStreamDisable`, and the WebSocket delivery of
+the event types listed in {{event-types}}.  Except as updated here,
+all {{RFC8887}} requirements apply unchanged.
 
 # Conventions Used in This Document
 
@@ -233,7 +256,7 @@ processed independently.  Receiving a VTC ephemeral event SHOULD NOT
 cause the client to update any locally cached state token or issue
 any JMAP method call.
 
-## Event Types
+## Event Types {#event-types}
 
 This specification governs the WebSocket delivery of all eight
 ephemeral event types defined by {{JMAP-VTC}}:
