@@ -191,9 +191,9 @@ ignore the others. Common facing directions for top-down:
 | Facing | Screen direction | Angle (rad) | Quaternion `[x, y, z, w]` |
 |---|---|---|---|
 | +Z | Down | 0 | `[0, 0, 0, 1]` |
-| +X | Right | -pi/2 | `[0, -0.707, 0, 0.707]` |
+| +X | Right | pi/2 | `[0, 0.707, 0, 0.707]` |
 | -Z | Up | pi | `[0, 1, 0, 0]` |
-| -X | Left | pi/2 | `[0, 0.707, 0, 0.707]` |
+| -X | Left | -pi/2 | `[0, -0.707, 0, 0.707]` |
 
 ### Scale
 
@@ -283,7 +283,7 @@ For large maps, this produces many objects. Two optimization strategies:
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000010",
+  "id": "01J5QBJ0000000000000000010",
   "regionId": "01J5RGN0000000000000000001",
   "parentId": null,
   "name": "North wall",
@@ -320,12 +320,12 @@ interpretation is the client's responsibility.
 
 ```json
 {
-  "id": "user:bob@example.com",
+  "id": "01J5AV00000000000000000002",
   "regionId": "01J5RGN0000000000000000001",
   "userId": "user:bob@example.com",
   "displayName": "Bob Martinez",
   "position": [8, 0, 5],
-  "orientation": [0, -0.707, 0, 0.707],
+  "orientation": [0, 0.707, 0, 0.707],
   "visualRef": "blob-sprite-bob-001",
   "visualType": "image/png",
   "joinedAt": "2026-06-06T09:00:00Z",
@@ -448,9 +448,9 @@ etc.). For a 4-direction sprite sheet:
 ```
 Quaternion Y rotation   ->   Sprite direction
 [0, 0, 0, 1]                +Z facing (down on screen)
-[0, -0.707, 0, 0.707]       +X facing (right on screen)
+[0, 0.707, 0, 0.707]        +X facing (right on screen)
 [0, 1, 0, 0]                -Z facing (up on screen)
-[0, 0.707, 0, 0.707]        -X facing (left on screen)
+[0, -0.707, 0, 0.707]       -X facing (left on screen)
 ```
 
 For 8-direction sprite sheets, use 45-degree increments. Clients MAY also
@@ -523,7 +523,7 @@ SceneObjects positioned on the tile grid.
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000020",
+  "id": "01J5QBJ0000000000000000020",
   "regionId": "01J5RGN0000000000000000001",
   "name": "Desk A",
   "position": [5, 0, 3],
@@ -588,7 +588,7 @@ Model these as invisible SceneObjects with `visible: false` and
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000030",
+  "id": "01J5QBJ0000000000000000030",
   "regionId": "01J5RGN0000000000000000001",
   "name": "Kitchen zone",
   "position": [25, 0, 15],
@@ -673,7 +673,7 @@ top-down:
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000040",
+  "id": "01J5QBJ0000000000000000040",
   "regionId": "01J5RGN0000000000000000002",
   "name": "Floating platform",
   "position": [12, 5, 0],
@@ -695,7 +695,7 @@ side-scrolling).
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000041",
+  "id": "01J5QBJ0000000000000000041",
   "regionId": "01J5RGN0000000000000000002",
   "name": "Gold coin",
   "position": [14, 7, 0],
@@ -840,7 +840,7 @@ all fields shown:
 
 ```json
 {
-  "id": "01J5OBJ0000000000000000080",
+  "id": "01J5QBJ0000000000000000080",
   "regionId": "01J5RGN0000000000000000001",
   "parentId": null,
   "name": "Standing Desk B2",
@@ -870,12 +870,12 @@ A complete 2D SceneAvatar representing a user with a sprite:
 
 ```json
 {
-  "id": "user:alice@example.com",
+  "id": "01J5AV00000000000000000001",
   "regionId": "01J5RGN0000000000000000001",
   "userId": "user:alice@example.com",
   "displayName": "Alice Chen",
   "position": [6, 0, 5],
-  "orientation": [0, -0.707, 0, 0.707],
+  "orientation": [0, 0.707, 0, 0.707],
   "visualRef": "blob-avatar-alice-pixel-001",
   "visualType": "image/png",
   "joinedAt": "2026-06-06T09:15:00Z",

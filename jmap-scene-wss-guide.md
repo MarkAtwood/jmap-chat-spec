@@ -79,6 +79,9 @@ The server silently drops a `SceneAvatarEvent` for a recipient when:
 - The recipient's subscription does not include `"SceneAvatarEvent"` in `eventTypes`.
 - The event's `userId` is on the recipient's blocked list (`ChatContact.blocked: true`)
   when the Chat capability is present.
+- The region's `activeCallId` references a VTCCall with `e2eeEnabled: true` and the
+  recipient is not a participant in that call (via `SceneStreamEnable` or
+  `ChatStreamEnable` alike).
 
 ### SceneObjectEvent suppression
 
@@ -173,6 +176,10 @@ After the WebSocket handshake completes, send these messages in order:
    }, "0"]]
    ```
 
+   If the user already has a SceneAvatar record in the region (from an earlier visit),
+   the create fails with `alreadyExists` and `existingId`. If that record's `leftAt` is
+   non-null, re-enter by updating it to set `leftAt` to `null`.
+
 3. **`SceneStreamEnable`** to subscribe to ephemeral events for the region:
 
    ```json
@@ -184,9 +191,10 @@ After the WebSocket handshake completes, send these messages in order:
    ```
 
 The ordering matters. Send `WebSocketPushEnable` first so state-change notifications
-begin flowing immediately. Enter the region before enabling the scene stream — the
-server silently ignores `regionIds` entries where the user does not have an active
-avatar.
+begin flowing immediately. Enter the region before enabling the scene stream — a
+`regionIds` entry for a region where the user has no active avatar produces no events
+until the user enters it. An optional `id` on `SceneStreamEnable` comes back as the
+`requestId` of any `RequestError` it causes.
 
 ### SceneStreamEnable: region-scoped filtering
 
@@ -263,7 +271,8 @@ does not send pings automatically, clients SHOULD send a WebSocket ping frame ev
 **Reconnection:** on any unclean close (non-1000 close code, network error, or timeout),
 clients SHOULD reconnect with exponential backoff starting at 1 second, capped at 60
 seconds, with jitter. On reconnect, clients MUST repeat the full startup sequence:
-`WebSocketPushEnable` (with stored `pushState`), re-enter the region if needed, then
+`WebSocketPushEnable` (with stored `pushState`), re-enter the region if the server set
+`leftAt` meanwhile (update the existing SceneAvatar to set `leftAt` to `null`), then
 `SceneStreamEnable`. Ephemeral events are not buffered — anything missed during the
 disconnect is gone.
 
@@ -273,8 +282,9 @@ environments or when the app is about to be suspended. Send a clean WebSocket cl
 
 ### Credential expiry
 
-The server closes the connection with code `1008` when authentication credentials expire.
-The handling is identical to the Chat WSS case: re-authenticate, then reconnect with the
+A server that closes the connection when authentication credentials expire SHOULD use
+code `1008`; one that keeps it open SHOULD NOT deliver further Scene ephemeral events.
+The client handling is identical to the Chat WSS case: re-authenticate, then reconnect with the
 new credentials and repeat the startup sequence. Do not clear the stored `pushState` on
 a `1008` close.
 
@@ -285,13 +295,16 @@ a `1008` close.
 ```json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "avatarId": "user:bob@example.com",
+  "avatarId": "01J5AV00000000000000000002",
   "event": "entered",
   "userId": "user:bob@example.com",
   "displayName": "Bob Martinez"
 }
 ```
+
+Ids are unique only within an account; key local state on the event's `accountId` too.
 
 On `"entered"`: add the avatar to the region's presence list. The `displayName` is the
 avatar's display name at event time — use it directly for UI. If the client needs the
@@ -315,8 +328,9 @@ active.
 ```json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "objectId": "01J5OBJ0000000000000000042",
+  "objectId": "01J5QBJ0000000000000000042",
   "event": "created",
   "updatedBy": "user:bob@example.com",
   "position": [8.0, 1.2, -3.5]
@@ -346,8 +360,9 @@ behavior). Clients MAY use this to distinguish user actions from system actions 
 ```json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "objectId": "01J5OBJ0000000000000000001",
+  "objectId": "01J5QBJ0000000000000000001",
   "userId": "user:alice@example.com",
   "action": "click",
   "data": null
@@ -385,8 +400,9 @@ Distinguish them by the `@type` field:
 | `VTCParticipantEvent`      | VTC ephemeral      | Update participant list              |
 | (unrecognized)             | Unknown            | Silently ignore                      |
 
-Clients MUST silently ignore messages with unrecognized `@type` values. Do not close the
-connection — future spec extensions will add new event types.
+Clients SHOULD silently ignore messages with unrecognized `@type` values. Do not close the
+connection — future spec extensions will add new event types. In the other direction, a
+server answers an unrecognized client `@type` with a `RequestError` of type `notRequest`.
 
 ### Defensive parsing of ephemeral event frames
 
@@ -525,8 +541,9 @@ A workable structure:
   when `SceneStreamEnable` is received and unsubscribes when `SceneStreamDisable` is
   received or the connection closes.
 - For `regionIds: null` subscriptions, the handler subscribes to all regions where the
-  user currently has an active avatar. The server MUST dynamically update these
-  subscriptions when the user enters or leaves a region.
+  user currently has an active avatar. These topic subscriptions follow the user as they
+  enter or leave a region, or the handler subscribes more broadly and relies on the
+  delivery-time avatar check below.
 
 The delivery path is: application logic publishes event to region topic, pub/sub layer
 fans out to subscribed handlers, each handler checks (1) event-type filter, (2) avatar
@@ -534,17 +551,17 @@ presence, (3) visibility contract, and sends the frame if all checks pass.
 
 ### Authorization at delivery time
 
-Servers MUST verify authorization at the time of each event delivery, not only when
+Servers SHOULD verify authorization at the time of each event delivery, not only when
 `SceneStreamEnable` is received. Region access and avatar presence can change while the
 connection is open:
 
-- All Scene ephemeral events MUST only be delivered for regions where the user has an
+- All Scene ephemeral events SHOULD only be delivered for regions where the user has an
   active avatar at delivery time. If the user's avatar was ejected between subscription
-  and delivery, the event MUST be dropped.
-- `SceneObjectEvent` MUST respect the visibility contract: if the server would not return
-  this object in a `SceneObject/get` response to this user, it MUST NOT deliver the
+  and delivery, the event SHOULD be dropped.
+- `SceneObjectEvent` SHOULD respect the visibility contract: if the server would not return
+  this object in a `SceneObject/get` response to this user, it SHOULD NOT deliver the
   ephemeral event.
-- `SceneInteractionEvent` for objects the user cannot see MUST NOT be delivered.
+- `SceneInteractionEvent` for objects the user cannot see SHOULD NOT be delivered.
 
 Perform these checks in the delivery path, not at subscribe time. This is simpler —
 implementations need not track avatar presence changes and update subscriptions
@@ -552,13 +569,12 @@ reactively.
 
 ### Visibility filtering
 
-The spec defines two normative levels for visibility filtering of ephemeral events:
+The spec defines two levels of visibility filtering for ephemeral events:
 
-**Base visibility contract (MUST):** The server MUST apply the same visibility contract
+**Base visibility contract (SHOULD):** The server SHOULD apply the same visibility contract
 as `SceneObject/get` to ephemeral events. If a user would not receive an object in a
-`SceneObject/get` response, the server MUST NOT deliver a `SceneObjectEvent` for that
-object. This is not optional — it is a hard requirement regardless of deployment
-complexity.
+`SceneObject/get` response, the server SHOULD NOT deliver a `SceneObjectEvent` for that
+object, regardless of deployment complexity.
 
 **Deployment-specific spatial filtering (SHOULD):** A deployment that performs additional
 server-side spatial filtering (radius-based, occlusion-based) SHOULD apply the same
@@ -597,8 +613,9 @@ position, not an intermediate one. Object updates at higher frequency belong on 
 simulation layer, not the JMAP WebSocket.
 
 **SceneInteractionEvent**: the spec recommends no more than 5 events per user per region
-per second. Events above this rate MAY be silently dropped. Track with a structure keyed
-by `(connectionId, regionId, userId)`.
+per second. Frames above this rate MAY be silently dropped; an interaction over the limit
+submitted with `SceneObject/interact` is reported in `notAccepted` with a `rateLimit`
+SetError. Track with a structure keyed by `(connectionId, regionId, userId)`.
 
 These structures are per-connection and in-memory. When a connection closes, discard them.
 The spec also notes that servers MAY apply additional rate limits to other event types
@@ -612,7 +629,7 @@ per second per connection is reasonable.
 
 State-change delivery for Scene data types (SceneRegion, SceneObject, SceneAvatar,
 SceneAsset) via `WebSocketPushEnable` reuses RFC 8887's existing mechanism. The concerns
-are identical to Chat: assign a new `pushState` token with each delivery, retain enough
+are identical to Chat: include a new `pushState` token with each delivery (if supported), retain enough
 history for reconnect replay (RECOMMENDED: 10-15 minutes minimum).
 
 Note that Scene ephemeral events and Scene state-change events can overlap in subject
@@ -625,19 +642,19 @@ Clients MUST handle both arriving and MUST NOT treat them as duplicates.
 
 When the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is available for the
 receiving account and the originating user is on the recipient's blocked list
-(`ChatContact.blocked` is `true`), the server MUST silently drop all Scene ephemeral
+(`ChatContact.blocked` is `true`), the server SHOULD silently drop all Scene ephemeral
 events originating from that user before delivery. This applies to all three event types:
 
-- **SceneAvatarEvent**: Events for a blocked user's avatar (keyed on `userId`) MUST NOT
+- **SceneAvatarEvent**: Events for a blocked user's avatar (keyed on `userId`) SHOULD NOT
   be delivered. The blocking user should not see the blocked user enter, leave, or get
   ejected.
-- **SceneObjectEvent**: Events where `updatedBy` matches a blocked user MUST NOT be
+- **SceneObjectEvent**: Events where `updatedBy` matches a blocked user SHOULD NOT be
   delivered. Events where `updatedBy` is `null` (server-initiated, e.g., physics
   simulation) are not subject to suppression and are delivered normally.
-- **SceneInteractionEvent**: Events where `userId` matches a blocked user MUST NOT be
+- **SceneInteractionEvent**: Events where `userId` matches a blocked user SHOULD NOT be
   delivered.
 
-The blocked user MUST NOT be informed of the suppression — their events flow normally to
+The blocked user SHOULD NOT be informed of the suppression — their events flow normally to
 all other recipients. Without the Chat capability, no blocked-sender filtering applies
 (there is no blocked list to consult).
 
@@ -699,7 +716,7 @@ retention of avatar movement data.
 
 `SceneInteractionEvent` carries an opaque `data` field that the server relays without
 interpretation. Deployments SHOULD validate that `data` payloads do not exceed a
-deployment-defined size limit. Clients MUST NOT trust `data` contents for
+deployment-defined size limit. Clients SHOULD NOT trust `data` contents for
 security-critical decisions — a malicious user can send arbitrary payloads.
 
 ### Credential handling
@@ -763,7 +780,7 @@ in a `Response` envelope:
       "accountId": "account-xyz",
       "created": {
         "av0": {
-          "id": "user:alice@example.com",
+          "id": "01J5AV00000000000000000001",
           "regionId": "01J5ABC0000000000000000001",
           "userId": "user:alice@example.com",
           "displayName": "Alice Chen",
@@ -797,8 +814,9 @@ Server delivers an avatar-enter event:
 ```json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "avatarId": "user:bob@example.com",
+  "avatarId": "01J5AV00000000000000000002",
   "event": "entered",
   "userId": "user:bob@example.com",
   "displayName": "Bob Martinez"
@@ -812,8 +830,9 @@ Bob places an object; server delivers a create event:
 ```json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "objectId": "01J5OBJ0000000000000000042",
+  "objectId": "01J5QBJ0000000000000000042",
   "event": "created",
   "updatedBy": "user:bob@example.com",
   "position": [8.0, 1.2, -3.5]
@@ -825,24 +844,31 @@ Client optionally fetches the full object:
 ```json
 [["SceneObject/get", {
   "accountId": "account-xyz",
-  "ids": ["01J5OBJ0000000000000000042"]
+  "ids": ["01J5QBJ0000000000000000042"]
 }, "1"]]
 ```
 
 ### 7. User interaction
 
-Alice clicks an interactable object:
+Alice clicks an interactable object; her client sends a `SceneInteractionEvent` frame:
 
 ```json
 {
   "@type": "SceneInteractionEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "objectId": "01J5OBJ0000000000000000001",
+  "objectId": "01J5QBJ0000000000000000001",
   "userId": "user:alice@example.com",
   "action": "click",
   "data": null
 }
 ```
+
+The server ignores any `userId` in the frame and sets the authenticated user's userId on
+the relayed event. It sends no response; a frame that fails the avatar or
+`interactable` check is discarded silently. A client that needs confirmation or errors
+calls `SceneObject/interact` instead. Each accepted interaction, from either path, is
+delivered to the region's subscribers as a `SceneInteractionEvent`.
 
 ### 8. State change (interleaved)
 
@@ -869,8 +895,9 @@ updates per second for this object, dropping intermediate positions:
 ```json
 {
   "@type": "SceneObjectEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "objectId": "01J5OBJ0000000000000000042",
+  "objectId": "01J5QBJ0000000000000000042",
   "event": "updated",
   "updatedBy": "user:bob@example.com",
   "position": [12.0, 1.2, -4.0]
@@ -884,8 +911,9 @@ Server delivers an avatar-leave event:
 ```json
 {
   "@type": "SceneAvatarEvent",
+  "accountId": "account-xyz",
   "regionId": "01J5ABC0000000000000000001",
-  "avatarId": "user:bob@example.com",
+  "avatarId": "01J5AV00000000000000000002",
   "event": "left",
   "userId": "user:bob@example.com",
   "displayName": "Bob Martinez"
