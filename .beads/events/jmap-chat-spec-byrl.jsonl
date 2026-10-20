@@ -1,1 +1,2 @@
 {"id":"01a1525f-1f3f-77b2-b729-d47495a424be","issue_id":"jmap-chat-spec-byrl","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-19T04:15:28.063505013Z"}
+{"id":"01a15b48-d868-7db1-898c-a893cf3f736c","issue_id":"jmap-chat-spec-byrl","event_type":"closed","actor":"agent","old_value":"","new_value":"All line citations replaced with section titles; bare section numbers split to jmap-chat-spec-2zts","created_at":"2026-10-20T21:47:43.08089824Z"}

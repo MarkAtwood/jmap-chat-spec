@@ -2,11 +2,13 @@
   "id": "jmap-chat-spec-27ro",
   "title": "Federation: 'delivered' defined two ways",
   "description": "Delivery State Transitions bullet: delivered = all recipients acknowledged; a later paragraph: in group chats, at least one peer accepted. Contradiction; needs Mark's decision.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "bug",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-19T04:15:28.215927784Z",
   "created_by": "agent",
-  "updated_at": "2026-10-19T04:15:28.215927784Z"
+  "updated_at": "2026-10-20T21:40:03.376594676Z",
+  "closed_at": "2026-10-20T21:40:03.376594676Z",
+  "close_reason": "Already reconciled in current text: Delivery State Transitions 'delivered' bullet says 'for group chats: at least one recipient's server has, per the aggregate rule below', matching the aggregate paragraph (best state any recipient reached). No 'all recipients acknowledged' wording remains."
 }

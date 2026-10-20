@@ -267,9 +267,7 @@ Both topologies are fully compatible with this specification. Transport, identit
 
 ## Authentication Model
 
-Authentication is handled entirely at the transport layer. The protocol requires only that the authentication layer provide a stable, opaque user identity string for each connection. How that identity is established — overlay network membership, mutual TLS, bearer tokens, or any other mechanism — is outside the scope of this document. Authorization rules derived from this identity are defined in {{authorization}}.
-
-In the mailbox-per-user deployment topology, the peer authentication model is defined in {{JMAP-CHAT-FED}}.
+Client authentication is handled entirely at the transport layer. The protocol requires only that the authentication layer provide a stable, opaque user identity string for each client connection. How that identity is established — overlay network membership, mutual TLS, bearer tokens, or any other mechanism — is outside the scope of this document. Authentication between servers is not: {{JMAP-CHAT-FED}} defines it. Authorization rules derived from this identity are defined in {{authorization}}.
 
 ## Relationship to MIMI
 
@@ -1734,7 +1732,7 @@ Clients cannot assume a specific governance model. Where the UI needs to surface
 
 ## Identity Verification
 
-`senderUserId` in all Peer/* methods is caller-supplied and untrusted. {{JMAP-CHAT-FED}} requires the server to compare it with the identity from its own authentication layer before any storage or action.
+`senderUserId` in all Peer/* methods is caller-supplied and untrusted. {{JMAP-CHAT-FED}} requires the server to compare it with the peer identity, the identity bound to the request's authenticated peer domain, before any storage or action.
 
 ## Input Validation
 

@@ -99,8 +99,8 @@ publish the DNSSEC binding, and whether they add mutual TLS with DANE.
   thief act as your domain toward every peer for as long as peers
   cache it (at most one hour per the draft). Keep the private key out
   of the process that parses peer input.
-- *Rotation* is cheap because receivers refetch on an unknown `kid`,
-  re-querying the DNSSEC binding too.
+- *Rotation* is cheap because receivers refetch when a request's `kid`
+  is not among the usable keys, re-querying the DNSSEC binding too.
   The draft asks for the new key to be published an hour before first
   use and the old key kept ten minutes after last use; both waits exist
   for DNS caches and in-flight signatures, not for HTTP caches.

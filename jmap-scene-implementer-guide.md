@@ -986,8 +986,10 @@ regions, and how to handle cross-region visibility.
 - **Invitation management for `"invite"` regions**: how invitations are
   created, accepted, and revoked.
 - **`notFound` vs. `forbidden` consistency**: ensuring that every code path
-  that checks access returns `notFound` for unauthorized users, never
-  `forbidden` (to prevent enumeration).
+  that checks access answers an unauthorized user exactly as it would for a
+  nonexistent object, never with `forbidden` (to prevent enumeration):
+  `notFound` for `/get`, update, and destroy, and `invalidProperties`
+  naming the reference for a create.
 - **Ejection policy**: under what circumstances admins and region owners
   may eject avatars, and whether ejected users can re-enter immediately.
 
@@ -1000,11 +1002,14 @@ discovering whether a region exists by observing the error type. Apply this
 consistently across all code paths, including query results (unauthorized
 regions simply do not appear in results).
 
-The same applies to `SceneAvatar/set create` (entering a region): the spec
-returns `notFound` when the region does not exist, and SHOULD return
-`notFound` when the access policy does not admit the caller (e.g., an
-`"invite"` region whose `invitedUserIds` omits them, or a `"space"` region
-whose Space they are not in). `forbidden` is reserved for a deployment ban
+The same masking applies to `/set` creates that name a region (entering a
+region with `SceneAvatar/set create`, or placing an object with
+`SceneObject/set create`), but the error type differs: RFC 8620 allows
+`notFound` only for update and destroy, so the spec returns
+`invalidProperties` naming `regionId` when the region does not exist, and
+SHOULD return the same error when the access policy does not admit the
+caller (e.g., an `"invite"` region whose `invitedUserIds` omits them, or a
+`"space"` region whose Space they are not in). `forbidden` is reserved for a deployment ban
 or an active post-eject cooldown, where the user already knows the region
 exists.
 
@@ -1216,8 +1221,10 @@ operator alerting.
 ### What the spec leaves open
 
 The spec references standard JMAP SetError types (`invalidProperties`,
-`forbidden`, `notFound`, `overQuota`, `stateMismatch`) throughout the method
-definitions. What the spec leaves open is how to structure error descriptions,
+`forbidden`, `notFound`, `overQuota`) throughout the method definitions.
+`stateMismatch` is not a SetError: a stale `ifInState` fails the whole
+`/set` call with a method-level `stateMismatch` error (RFC 8620 Section
+5.3). What the spec leaves open is how to structure error descriptions,
 whether to include additional deployment-defined error types, and how to
 handle compound errors (e.g., a batch operation where some items succeed and
 some fail).
@@ -1245,23 +1252,27 @@ some fail).
 | `parentId` in different region | `invalidProperties` | Object create with cross-region parent. |
 | Position outside region bounds | `invalidProperties` | Object create/update (if rejecting, not clamping). |
 | `leftAt` already set on avatar | `invalidProperties` | Attempt to leave when already left. |
-| Region does not exist or no access | `notFound` | Object create referencing inaccessible region. |
+| Region does not exist or no access | `invalidProperties` (`regionId`) | Object or avatar create referencing a missing or inaccessible region. |
 | Object/avatar in inaccessible region | `notFound` | Get/query for unauthorized data. |
 | User not object owner, region owner, or admin | `forbidden` | Object update/destroy by unauthorized user. |
 | Modifying another user's avatar | `forbidden` | Avatar update with mismatched userId. |
 | `mayCreateRegion` is `false` | `forbidden` | Region create by unauthorized user. |
 | `mayCreateObject` is `false` | `forbidden` | Object create by unauthorized user. |
-| Access policy does not admit the user | `notFound` | Avatar create in invite-only region without invitation. |
+| Access policy does not admit the user | `invalidProperties` (`regionId`) | Avatar create in invite-only region without invitation. |
 | User banned or in post-eject cooldown | `forbidden` | Avatar create or re-entry update. |
 | User already has a record in the region | `alreadyExists` (`existingId`) | Avatar create; re-enter by updating that record. |
 | `maxRegionsPerAccount` exceeded | `overQuota` | Region create. |
 | `maxObjectsPerRegion` exceeded | `overQuota` | Object create. |
 | `maxAvatarsPerRegion` exceeded | `overQuota` | Avatar create (entering a full region). |
 | `maxAssetSizeBytes` exceeded | `overQuota` | Asset create with oversized blob. |
-| Concurrent modification | `stateMismatch` | Set with stale `ifInState`. |
 | Visual asset or text field violates content policy | `contentPolicy` | Synchronous rejection of SceneObject/set create or update (spec section 9.9). |
 | Per-user create rate limit exceeded | `rateLimit` | SceneObject/set create (spec section 9.9). Include `retryAfter` (seconds). |
 | SceneAvatar/set destroy attempted | `forbidden` | Destroy on any SceneAvatar record. Departure is modeled as an update setting `leftAt`; destroy is always forbidden (spec section 6.4). |
+
+Concurrent modification is not in the table because it is not a SetError:
+a `/set` call with a stale `ifInState` is rejected as a whole with a
+method-level `stateMismatch` error, and no create, update, or destroy in it
+is applied.
 
 **Error descriptions should be actionable.** Include the specific field name
 and the constraint that was violated. For example:

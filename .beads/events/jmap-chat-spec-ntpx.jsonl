@@ -1,1 +1,2 @@
 {"id":"01a15571-727f-7e2f-aaf3-80223dc2708e","issue_id":"jmap-chat-spec-ntpx","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-19T18:34:20.671931056Z"}
+{"id":"01a15b48-d6f3-7e62-8c63-cf1b4b47c16e","issue_id":"jmap-chat-spec-ntpx","event_type":"closed","actor":"agent","old_value":"","new_value":"P3/P2 batch 2026-10-20: see commit; pcoc/amkj/uz1h(1,2) already correct in committed text; ntpx stats row verified correct (bead count was wrong)","created_at":"2026-10-20T21:47:42.707943248Z"}

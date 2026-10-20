@@ -820,12 +820,7 @@ Response:
 | `blobId` is missing | `blobId` is required; it references the previously-uploaded blob. |
 | `mediaType` is missing | `mediaType` is required. |
 | `mediaType` is not in `supportedVisualTypes` and is not a recognized audio/image type | The server must support the declared media type. |
-
-**`notFound`** -- referenced blob does not exist:
-
-| Condition | Description |
-|---|---|
-| `blobId` does not reference a valid blob | The blob must have been previously uploaded via the JMAP upload endpoint. The server MAY use either `invalidProperties` (naming `blobId`) or `notFound` depending on whether the blobId is syntactically valid but absent (notFound) vs. malformed (invalidProperties). |
+| `blobId` does not reference a valid blob | The blob must have been previously uploaded via the JMAP upload endpoint. This applies whether the blobId is malformed or well-formed but absent. |
 
 **`forbidden`** -- authorization failures:
 
@@ -1578,7 +1573,7 @@ Example create:
 }
 ~~~
 
-The server MUST return `forbidden` when `mayCreateObject` is `false`. The server MUST return `overQuota` when `maxObjectsPerRegion` would be exceeded. The server MUST return `notFound` when `regionId` does not exist, and SHOULD return `notFound` (not `forbidden`) when the caller does not have access to the region (see {{access-control}}). The server MUST return `invalidProperties` naming `visualType` when `visualType` is not in `supportedVisualTypes`. The server MUST return `invalidProperties` naming `visualRef` and `visualType` when `visualRef` is present but `visualType` is absent, or vice versa. The server MUST return `invalidProperties` naming `parentId` when `parentId` references a SceneObject in a different region.
+The server MUST return `forbidden` when `mayCreateObject` is `false`. The server MUST return `overQuota` when `maxObjectsPerRegion` would be exceeded. The server MUST return `invalidProperties` naming `regionId` when `regionId` does not exist, and SHOULD return the same error (not `forbidden`) when the caller does not have access to the region (see {{access-control}}). The server MUST return `invalidProperties` naming `visualType` when `visualType` is not in `supportedVisualTypes`. The server MUST return `invalidProperties` naming `visualRef` and `visualType` when `visualRef` is present but `visualType` is absent, or vice versa. The server MUST return `invalidProperties` naming `parentId` when `parentId` references a SceneObject in a different region.
 
 Example create request with full JMAP envelope:
 
@@ -1769,6 +1764,9 @@ Response:
 | `parentId` references a SceneObject in a different region | Parent-child relationships are region-scoped. |
 | `parentId` creates a circular reference | Setting `parentId` such that the object is its own ancestor (directly or transitively) is invalid. |
 | `parentId` would cause scene-graph depth to exceed deployment limit | Servers MAY impose a maximum hierarchy depth. |
+| `regionId` does not exist or caller lacks access | The server returns the same error in both cases (not `forbidden`) per the enumeration-safe access-control rule. |
+| `parentId` does not reference an existing SceneObject | The parent object must exist (within the same region). |
+| `visualRef` does not reference a valid blob | The blobId must have been previously uploaded via the JMAP upload endpoint. |
 
 **`forbidden`** -- authorization failures:
 
@@ -1776,21 +1774,13 @@ Response:
 |---|---|
 | `mayCreateObject` is `false` | The account-level capability denies object creation. |
 
-**`notFound`** -- referenced entities do not exist:
-
-| Condition | Description |
-|---|---|
-| `regionId` does not exist or caller lacks access | The server returns `notFound` (not `forbidden`) per the enumeration-safe access-control rule. |
-| `parentId` does not reference an existing SceneObject | The parent object must exist (within the same region). |
-| `visualRef` does not reference a valid blob | The blobId must have been previously uploaded via the JMAP upload endpoint. |
-
 **`overQuota`** -- resource limits:
 
 | Condition | Description |
 |---|---|
 | Creating the object would exceed `maxObjectsPerRegion` | The per-region object cap has been reached. |
 
-Example error response -- notFound (regionId does not exist):
+Example error response -- invalidProperties (regionId does not exist):
 
 ~~~json
 [["SceneObject/set", {
@@ -1802,7 +1792,8 @@ Example error response -- notFound (regionId does not exist):
   "destroyed": null,
   "notCreated": {
     "o0": {
-      "type": "notFound",
+      "type": "invalidProperties",
+      "properties": ["regionId"],
       "description": "regionId is not an accessible SceneRegion."
     }
   },
@@ -2178,7 +2169,7 @@ The server responds:
 }
 ~~~
 
-The server MUST return `notFound` when `regionId` does not reference an existing SceneRegion. The server SHOULD also return `notFound` when the caller has no access to the region under its `accessPolicy` (for example, an `"invite"` region whose `invitedUserIds` does not list the caller, or a `"space"` region whose Space the caller is not a member of), so that the response does not reveal that the region exists ({{access-control}}). The server MUST return `overQuota` when `maxAvatarsPerRegion` would be exceeded.
+The server MUST return `invalidProperties` naming `regionId` when `regionId` does not reference an existing SceneRegion. The server SHOULD return the same error when the caller has no access to the region under its `accessPolicy` (for example, an `"invite"` region whose `invitedUserIds` does not list the caller, or a `"space"` region whose Space the caller is not a member of), so that the response does not reveal that the region exists ({{access-control}}). The server MUST return `overQuota` when `maxAvatarsPerRegion` would be exceeded.
 
 Example create request with full JMAP envelope:
 
@@ -2369,7 +2360,7 @@ Response:
 
 #### Re-entering a Region {#scene-avatar-reenter}
 
-A user who has left (has a non-null `leftAt`) re-enters the same region by updating their existing SceneAvatar record to set `leftAt` to `null`. The server sets `joinedAt` to the current time, `position` to the region's `spawnPosition`, and `orientation` to the region's `spawnOrientation`. `displayName`, `visualRef`, `visualType`, and `worldState` keep their values unless the same update patches them. The access checks and errors for entering a region ({{scene-avatar-create-errors}}) apply. A `create` for a user who already has a record in the region fails with `alreadyExists` ({{scene-avatar-enter}}). Reusing the record keeps a single continuous identity across visits; `SceneAvatar/changes` reports the record as updated.
+A user who has left (has a non-null `leftAt`) re-enters the same region by updating their existing SceneAvatar record to set `leftAt` to `null`. The server sets `joinedAt` to the current time, `position` to the region's `spawnPosition`, and `orientation` to the region's `spawnOrientation`. `displayName`, `visualRef`, `visualType`, and `worldState` keep their values unless the same update patches them. The access checks and errors for entering a region ({{scene-avatar-create-errors}}) apply, except that a caller who no longer has access to the region receives `notFound`, because the record is then hidden from the caller ({{access-control}}). A `create` for a user who already has a record in the region fails with `alreadyExists` ({{scene-avatar-enter}}). Reusing the record keeps a single continuous identity across visits; `SceneAvatar/changes` reports the record as updated.
 
 ~~~json
 {
@@ -2391,6 +2382,9 @@ A user who has left (has a non-null `leftAt`) re-enters the same region by updat
 |---|---|
 | `regionId` is missing | `regionId` is required to specify which region to enter. |
 | `visualRef` is present but `visualType` is absent (or vice versa) | Both must be present together or both absent. |
+| `regionId` does not exist or caller lacks access | Same enumeration-safe access-control rule; `properties` names `regionId`. |
+| Region `accessPolicy` is `"invite"` and `invitedUserIds` does not list the user | The user has no access to the region ({{access-control}}). |
+| Region `accessPolicy` is `"space"` and user is not a member of the bound Space | Space membership is checked when JMAP Chat is present with `spaceId` set. |
 
 **`forbidden`** -- access denied:
 
@@ -2398,14 +2392,6 @@ A user who has left (has a non-null `leftAt`) re-enters the same region by updat
 |---|---|
 | User is banned or ejected with a cooldown period still active | Deployment-defined ban/eject policies may temporarily or permanently deny entry. The user already knows the region exists. |
 | Caller is creating an avatar record for a different user | The server sets `userId` from the authenticated identity, so a user can only create their own avatar. |
-
-**`notFound`** -- region does not exist:
-
-| Condition | Description |
-|---|---|
-| `regionId` does not exist or caller lacks access | Same enumeration-safe access-control rule. |
-| Region `accessPolicy` is `"invite"` and `invitedUserIds` does not list the user | The user has no access to the region ({{access-control}}). |
-| Region `accessPolicy` is `"space"` and user is not a member of the bound Space | Space membership is checked when JMAP Chat is present with `spaceId` set. |
 
 **`alreadyExists`** -- one record per user per region:
 
@@ -2419,7 +2405,7 @@ A user who has left (has a non-null `leftAt`) re-enters the same region by updat
 |---|---|
 | `maxAvatarsPerRegion` would be exceeded | The region has reached its concurrent-avatar capacity. |
 
-Example error response -- notFound (invite-only region that does not list the caller):
+Example error response -- invalidProperties (invite-only region that does not list the caller):
 
 ~~~json
 [["SceneAvatar/set", {
@@ -2431,7 +2417,8 @@ Example error response -- notFound (invite-only region that does not list the ca
   "destroyed": null,
   "notCreated": {
     "av0": {
-      "type": "notFound",
+      "type": "invalidProperties",
+      "properties": ["regionId"],
       "description": "regionId is not an accessible SceneRegion."
     }
   },
@@ -2616,7 +2603,7 @@ A user has access to a region when its `accessPolicy` admits the user, when the 
 `"space"`:
 : When `urn:ietf:params:jmap:chat` is present and `spaceId` is set: the members of the bound Space.
 
-The server SHOULD treat a request from a user without access to a region as if the region did not exist: `notFound` for `SceneRegion/get`, `SceneObject/get`, and `SceneAvatar/get`, for `/set` operations that target the region or its records, and for `SceneObject/interact`; and no results from the region in `/query`. Returning `forbidden` would confirm that the region exists.
+The server SHOULD treat a request from a user without access to a region as if the region did not exist: `notFound` for `SceneRegion/get`, `SceneObject/get`, and `SceneAvatar/get`, for `/set` updates and destroys that target the region or its records, and for `SceneObject/interact`; `invalidProperties` naming `regionId` for a `/set` create that names the region, the same error as for a region that does not exist ({{RFC8620}} Section 5.3 allows `notFound` only for update and destroy); and no results from the region in `/query`. Returning `forbidden` would confirm that the region exists.
 
 A change to `accessPolicy` or `invitedUserIds` does not set `leftAt` on avatars already present; the region owner ejects them if that is wanted ({{avatar-permissions}}).
 
@@ -3564,7 +3551,7 @@ Server responds:
 }, "0"]]
 ~~~
 
-From this point forward, users not listed in `invitedUserIds` receive `notFound` when attempting `SceneAvatar/set` create for this region ({{access-control}}). Users already present are not ejected by the policy change; they remain until they leave or are explicitly ejected.
+From this point forward, users not listed in `invitedUserIds` receive `invalidProperties` naming `regionId` when attempting `SceneAvatar/set` create for this region ({{access-control}}). Users already present are not ejected by the policy change; they remain until they leave or are explicitly ejected.
 
 ### Step 4: Admin ejects an avatar
 
