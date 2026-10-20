@@ -26,6 +26,11 @@ normative:
       org: W3C
     target: https://www.w3.org/TR/did-core/
     date: 2022
+  DID-WEBVH:
+    title: "The did:webvh DID Method v1.0"
+    author:
+      org: Decentralized Identity Foundation
+    target: https://identity.foundation/didwebvh/v1.0/
 
 informative:
   RFC8621:
@@ -142,7 +147,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:did"]` is a JSON object 
 : The DID bound to this account. This is the canonical, globally resolvable identifier for the account holder. The value MUST be a valid DID as defined in {{DID-CORE}} Section 3.1.
 
 `didDocumentUri` (String|null):
-: A URI where the DID document can be fetched. For `did:web` this is derivable from the DID itself; for `did:key` the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method. When `didDocumentUri` is non-null but unreachable (network error, HTTP 4xx/5xx), clients SHOULD fall back to standard method-specific resolution for the DID. The `didDocumentUri` is a convenience hint, not a binding constraint.
+: A URI where the DID document can be fetched. For `did:web` this is derivable from the DID itself; for `did:webvh` it is the URL of the DID log (`did.jsonl`), also derivable from the DID ({{DID-WEBVH}}), and a log fetched from this URI is resolved as defined in {{did-webvh}}, like one fetched from the method-derived URL. The witness proofs file (`did-witness.json`) always comes from the method-derived URL ({{DID-WEBVH}}), even when this URI served the log. For `did:key` the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method. When `didDocumentUri` is non-null but unreachable (network error, HTTP 4xx/5xx), clients SHOULD fall back to standard method-specific resolution for the DID. The `didDocumentUri` is a convenience hint, not a binding constraint.
 
 `previousDid` (String|null):
 : The DID bound to this account immediately before the most recent DID migration ({{migration}}). The server retains it for a deployment-defined transition period after the migration. `null` when no migration has occurred or the transition period has expired.
@@ -286,7 +291,7 @@ Clients receiving a `did` value on a JMAP object MAY verify the server's attesta
 
 1. Resolve the DID to a DID document using the standard resolution mechanism for the DID method ({{DID-CORE}} Section 7).
 2. Extract the authentication verification method from the DID document.
-3. Verify that the server has demonstrated control of a key listed in the DID document's `authentication` verification relationship. For `did:web` where the JMAP server's domain matches the DID's domain component, successful TLS-authenticated retrieval of the DID document provides implicit domain binding. For all other cases, the server MUST present a signed assertion (e.g., a JWS or HTTP Message Signature) that validates against the DID document's authentication key.
+3. Verify that the server has demonstrated control of a key listed in the DID document's `authentication` verification relationship. For `did:web` where the JMAP server's domain matches the DID's domain component, successful TLS-authenticated retrieval of the DID document provides implicit domain binding. This implicit binding does not apply to `did:webvh`, because the host serving the DID log need not hold any key in it. For all other cases, the server MUST present a signed assertion (e.g., a JWS or HTTP Message Signature) that validates against the DID document's authentication key.
 
 Verification is OPTIONAL. In a single-operator deployment where the client trusts the server, verification adds overhead with no security benefit. In a federated or zero-trust deployment, verification allows clients to detect a compromised or dishonest server that claims a DID it does not control.
 
@@ -302,19 +307,35 @@ When a client receives objects that originate from a different server (e.g., fed
 
 This pattern requires no direct trust relationship between the client and the originating server. The DID document, resolvable by any party, serves as the trust anchor.
 
+## Resolving `did:webvh` {#did-webvh}
+
+A `did:webvh` DID ({{DID-WEBVH}}) has the form `did:webvh:<SCID>:<domain>[:<path>]`. Its DID document is the state in the latest valid entry of a hash-chained DID log (`did.jsonl`). Each entry is signed by an active update key: from the previous entry, or under pre-rotation from the entry itself, committed to by the previous entry's `nextKeyHashes`. The self-certifying identifier (SCID) is derived from the genesis entry.
+
+A client or server resolves a `did:webvh` DID as defined in {{DID-WEBVH}}, which specifies verification of the DID log, the handling of invalid entries, witness proofs, and the treatment of a parallel `did:web` document. This document adds no resolution requirements.
+
+Note: {{DID-WEBVH}} allows a resolver to treat the first invalid entry and every later entry as invalid. Versions before the first invalid entry remain usable for checking stored objects accepted under them.
+
+A valid log shows only that each entry the resolver received was authorized. A holder of an update key can create two valid children of one entry and present them to different resolvers (a split view), and whoever serves the log can present an older, valid prefix of it (a rollback). Witnesses ({{DID-WEBVH}}) mitigate split view, because a witness does not sign two children of one parent. A rollback is detected only against a newer `versionId` the resolver has already seen, or by comparing sources such as watchers ({{DID-WEBVH}}). A resolver seeing a DID for the first time, with no witnesses or watchers, has no protection against either.
+
+To verify a signature or attestation on an object it accepted earlier and stored, a party uses the DID document version that was in effect when it accepted the object, not the current version. A party that stores such objects SHOULD record with each object the `versionId` in effect at acceptance, and verify against that version. Without it, the party cannot re-verify stored history after a key rotation ({{key-rotation}}), because a key removed by a later log entry no longer appears in the current document. For an object being received, the current version applies.
+
+A holder MAY publish a parallel `did:web` document for the same domain and path ({{DID-WEBVH}}). That document is outside the log's verification, and its keys carry none of the log's guarantees ({{DID-WEBVH}}).
+
 # DID Lifecycle {#lifecycle}
 
 This document uses "rotation" only for key rotation. A change of the DID itself is a DID migration.
 
 ## Key Rotation {#key-rotation}
 
-A key rotation replaces verification methods in the DID document while the DID stays the same. Whether and how keys can be rotated depends on the DID method (for example, `did:web` supports it by updating the hosted document; `did:key` does not, because a new key is a new DID).
+A key rotation replaces verification methods in the DID document while the DID stays the same. Whether and how keys can be rotated depends on the DID method (for example, `did:web` supports it by updating the hosted document; `did:webvh` supports it by appending a DID log entry signed by an authorized update key, which yields a new `versionId` ({{did-webvh}}); `did:key` does not, because a new key is a new DID).
 
 A key rotation requires no action at the JMAP layer. The account-level capability object and all DID-bearing property values are unchanged. Clients and peers learn of the new keys by resolving the DID document again.
 
 ## DID Migration {#migration}
 
 A DID migration occurs when an account's bound DID changes. This may happen due to key compromise recovery for a method without key rotation, method migration (e.g., `did:key` to `did:web`), or organizational policy.
+
+A `did:webvh` DID whose log enables portability can move to a new domain or path while keeping its SCID and log ({{DID-WEBVH}}). The DID string changes, so the move is a DID migration as defined here. The moved DID document lists the previous DID in `alsoKnownAs`, and a verifier can confirm that both DIDs share one verified log.
 
 When a DID migration occurs:
 
@@ -350,7 +371,7 @@ When a DID is revoked:
 
 ## Binding Trust
 
-The account-to-DID binding is server-authoritative. A compromised server can bind any DID to any account. Client verification ({{verification}}) mitigates this for `did:key` (where the DID is derived from the public key and can be verified without contacting any server) and for `did:web` (where the DID document is hosted at a well-known URL under the DID controller's domain). DID methods that rely on the JMAP server itself for resolution do not benefit from client verification.
+The account-to-DID binding is server-authoritative. A compromised server can bind any DID to any account. Client verification ({{verification}}) mitigates this for `did:key` (where the DID is derived from the public key and can be verified without contacting any server) and for `did:web` (where the DID document is hosted at a well-known URL under the DID controller's domain). It mitigates it further for `did:webvh` ({{did-webvh}}): the SCID binds the DID to its genesis log entry, and the host serving the log cannot add a key without an update key. DID methods that rely on the JMAP server itself for resolution do not benefit from client verification.
 
 Deployments where the DID binding is security-critical SHOULD use DID methods with independent resolution (not dependent on the JMAP server) and SHOULD encourage clients to perform verification.
 
@@ -366,17 +387,17 @@ Deployments MUST document their DID correlation properties so users can make inf
 
 The security properties of the `did` field depend entirely on the DID method used. This document does not mandate any specific DID method. Deployments SHOULD evaluate:
 
-- **Key compromise recovery.** `did:key` has no recovery mechanism; if the private key is lost, the identity is lost. `did:web` can rotate keys by updating the hosted DID document.
-- **Censorship resistance.** `did:web` depends on DNS and HTTP infrastructure; a domain seizure disables the DID. `did:key` has no external dependency.
-- **Resolution availability.** `did:web` requires the hosting server to be reachable. `did:key` is self-resolving.
+- **Key compromise recovery.** `did:key` has no recovery mechanism; if the private key is lost, the identity is lost. `did:web` can rotate keys by updating the hosted DID document. `did:webvh` rotates keys through signed DID log entries; with pre-rotation (`nextKeyHashes`), the keys authorized for the next update are committed in advance.
+- **Censorship resistance.** `did:web` depends on DNS and HTTP infrastructure; a domain seizure disables the DID. `did:webvh` has the same dependency, but a DID whose log enables portability can move to another domain and keep its log ({{migration}}). `did:key` has no external dependency.
+- **Resolution availability.** `did:web` requires the hosting server to be reachable. `did:webvh` requires a copy of the DID log; the log verifies regardless of where it was obtained. `did:key` is self-resolving.
 
-## Phishing via `did:web`
+## Phishing via `did:web` and `did:webvh`
 
-A `did:web` DID is anchored to a domain name. An attacker who registers a visually similar domain (e.g., `did:web:examp1e.com` vs. `did:web:example.com`) can create DIDs that appear legitimate to users who do not inspect the domain carefully. Clients displaying `did:web` identities SHOULD highlight the domain component and SHOULD warn users when a domain is visually similar to a domain they have previously trusted.
+A `did:web` DID is anchored to a domain name. An attacker who registers a visually similar domain (e.g., `did:web:examp1e.com` vs. `did:web:example.com`) can create DIDs that appear legitimate to users who do not inspect the domain carefully. The same applies to the domain component of a `did:webvh` DID: the SCID does not help, because an attacker can create a new log with its own SCID under the look-alike domain. Clients displaying `did:web` or `did:webvh` identities SHOULD highlight the domain component and SHOULD warn users when a domain is visually similar to a domain they have previously trusted.
 
 ## Revoked DID Reuse
 
-DID methods that allow identifier reuse after revocation create a risk: a new controller could impersonate the previous controller's historical objects. Deployments SHOULD prefer DID methods where revoked identifiers cannot be reassigned (e.g., `did:key`, where the identifier is derived from the public key and cannot be reused with a different key).
+DID methods that allow identifier reuse after revocation create a risk: a new controller could impersonate the previous controller's historical objects. Deployments SHOULD prefer DID methods where revoked identifiers cannot be reassigned (e.g., `did:key`, where the identifier is derived from the public key and cannot be reused with a different key, or `did:webvh`, where the SCID is derived from the genesis log entry and a new controller of the domain cannot recreate the DID with a different history).
 
 ### Server-Generated DID Key Pairs {#server-generated-keys}
 
@@ -407,7 +428,9 @@ Security and Privacy Considerations:
 
 # Employer-Managed DID Deployments {#employer-managed}
 
-The account-to-DID binding mechanisms described in {{binding}} are intentionally abstract. One deployment pattern worth noting is employer-managed DIDs, where an organization operates a sidecar process that watches enterprise identity provider events (Okta, Google Workspace, Microsoft Entra, Active Directory, SCIM, SAML) and maintains `did:web` documents on behalf of employees.
+The account-to-DID binding mechanisms described in {{binding}} are intentionally abstract. One deployment pattern worth noting is employer-managed DIDs, where an organization operates a sidecar process that watches enterprise identity provider events (Okta, Google Workspace, Microsoft Entra, Active Directory, SCIM, SAML) and maintains `did:webvh` DIDs ({{did-webvh}}) on behalf of employees.
+
+The sidecar holds the update keys, so the organization controls each employee's DID log. Witnesses ({{DID-WEBVH}}) are OPTIONAL and a deployment choice. Without witnesses, the organization can present different valid logs to different resolvers (a split view). Witnesses mitigate split view only. Whether or not witnesses are used, a rollback to an older prefix of a log is detected only by a resolver that has already seen a newer `versionId`, or by comparing watchers ({{did-webvh}}).
 
 In this model, the sidecar maps IdP user identifiers to DIDs, and the JMAP server queries the sidecar (or reads the DID documents it publishes) to populate the account-level capability object. Employee offboarding in the IdP triggers DID suspension or revocation via the sidecar, which propagates to the JMAP server's lifecycle handling as defined in {{lifecycle}}. This pattern ensures that identity lifecycle is driven by the organization's existing HR and IT infrastructure rather than requiring a separate identity management system.
 
