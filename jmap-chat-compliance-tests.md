@@ -148,7 +148,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00 line 197
 **Severity:** MUST | **Round:** 15
 
-**Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:ietf:params:jmap:chat"]` is `{}`. Chat properties (maxBodyBytes, supportedBodyTypes, etc.) belong ONLY in account-level `accountCapabilities`.
+**Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:jmap:chat"]` is `{}`. Chat properties (maxBodyBytes, supportedBodyTypes, etc.) belong ONLY in account-level `accountCapabilities`.
 
 **Common failure:** Session-level capability contains the properties that should only be at account level.
 
@@ -156,25 +156,25 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-push-00 Section 2
 **Severity:** MUST | **Round:** 3
 
-**Test:** Verify `capabilities["urn:ietf:params:jmap:chat:push"]` at session level is `{}`. Push properties (maxSnippetBytes, supportedUrgencyValues, maxMessagesPerPush) belong at account level.
+**Test:** Verify `capabilities["urn:jmap:chat:push"]` at session level is `{}`. Push properties (maxSnippetBytes, supportedUrgencyValues, maxMessagesPerPush) belong at account level.
 
 ### 3.3 Account-level push capability populated
 **Spec:** draft-atwood-jmap-chat-push-00 Section 3.2
 **Severity:** MUST | **Round:** 3
 
-**Test:** Verify `accountCapabilities["urn:ietf:params:jmap:chat:push"]` contains `maxSnippetBytes` (UnsignedInt), `supportedUrgencyValues` (String[]), and optionally `maxMessagesPerPush`.
+**Test:** Verify `accountCapabilities["urn:jmap:chat:push"]` contains `maxSnippetBytes` (UnsignedInt), `supportedUrgencyValues` (String[]), and optionally `maxMessagesPerPush`.
 
 ### 3.4 RFC 8887 WebSocket capability present
 **Spec:** draft-atwood-jmap-chat-wss-00 Section 3
 **Severity:** MUST | **Round:** 3
 
-**Test:** Verify `capabilities["urn:ietf:params:jmap:websocket"]` exists with `url` (String) and `supportsPush` (Boolean). This is SEPARATE from `urn:ietf:params:jmap:chat:websocket` (which must be `{}`).
+**Test:** Verify `capabilities["urn:ietf:params:jmap:websocket"]` exists with `url` (String) and `supportsPush` (Boolean). This is SEPARATE from `urn:jmap:chat:websocket` (which must be `{}`).
 
 ### 3.5 Account-level role field
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 4
 **Severity:** MUST | **Round:** 2
 
-**Test:** Verify `accountCapabilities["urn:ietf:params:jmap:chat"]` contains `role` field. Value is `"owner"` for normal accounts, `"peer"` for peer-provisioned accounts.
+**Test:** Verify `accountCapabilities["urn:jmap:chat"]` contains `role` field. Value is `"owner"` for normal accounts, `"peer"` for peer-provisioned accounts.
 
 ### 3.6 Chat capability field names
 **Spec:** draft-atwood-jmap-chat-00 Section capability
@@ -186,7 +186,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** none (RFC 8620 Section 2 `primaryAccounts` is optional per capability)
 **Severity:** Optional (deployment check) | **Round:** 4
 
-**Test:** Verify `primaryAccounts` contains `urn:ietf:params:jmap:chat:push` mapped to the primary account id. No draft requires this entry; do not report its absence as a spec failure.
+**Test:** Verify `primaryAccounts` contains `urn:jmap:chat:push` mapped to the primary account id. No draft requires this entry; do not report its absence as a spec failure.
 
 ---
 
@@ -262,7 +262,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** MUST | **Round:** 3
 
-**Test:** Set slowModeSeconds on a channel. Send two messages in rapid succession from a non-admin. Verify the second is rejected with `rateLimited`.
+**Test:** Set slowModeSeconds on a channel. Send two messages in rapid succession from a non-admin. Verify the second is rejected with a `rateLimit` SetError (RFC 8620 Section 5.3) in `notCreated`, not the method-level `rateLimited`.
 
 ### 4.11 CustomEmoji name uniqueness within scope
 **Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 791
@@ -678,7 +678,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Spec:** draft-atwood-jmap-chat-00 line 197
 **Severity:** MUST | **Round:** 15
 
-**Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:ietf:params:jmap:chat"]` is exactly `{}`. The chat properties (maxBodyBytes, supportedBodyTypes, etc.) must ONLY appear in per-account `accountCapabilities["urn:ietf:params:jmap:chat"]`.
+**Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:jmap:chat"]` is exactly `{}`. The chat properties (maxBodyBytes, supportedBodyTypes, etc.) must ONLY appear in per-account `accountCapabilities["urn:jmap:chat"]`.
 
 **Common failure:** Copying the properties into both session-level and account-level. Session-level must be empty.
 
