@@ -36,6 +36,13 @@ normative:
     date: 2026-10-18
 
 informative:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   JMAP-CHAT-FED:
     title: "JMAP Chat Federation"
     author:
@@ -261,6 +268,14 @@ Description:
 
 Reference:
 : This document.
+
+## JMAP Object URI Type Registrations
+
+IANA is requested to register the following entries in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
+
+| Type Name | Data Type | Reference |
+|---|---|---|
+| filenode | FileNode | This document |
 
 --- back
 
