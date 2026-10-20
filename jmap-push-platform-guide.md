@@ -54,12 +54,14 @@ that can read the payload in transit.
 
 ## Common patterns
 
-### Always use data-only messages
+### Use data-only messages
 
 Every platform supports two message types: **display messages**, where the OS or vendor
 infrastructure constructs and shows a notification, and **data messages**, where the
 payload is delivered to the app silently. Servers MUST use data messages, not display
-messages. With a display message, the OS generates a notification before the app runs —
+messages, except for an APNs alert push that sets `"mutable-content": 1` so a
+Notification Service Extension can rewrite it before display (see APNs "Delivery
+modes"). With a display message, the OS generates a notification before the app runs —
 the implementation cannot apply JMAP-specific logic (mention highlighting, E2E
 decryption, deduplication) to a notification that has already been shown.
 
@@ -124,7 +126,7 @@ Content-Type: application/json
 
 `data` values MUST be strings; servers embed the payload JSON as an escaped string
 under an application-defined key (`"jmap-push"` is a reasonable choice). The
-`"notification"` key MUST be omitted (see "Always use data-only messages").
+`"notification"` key MUST be omitted (see "Use data-only messages").
 
 **iOS via FCM:** servers MUST replace the `"android"` block with an `"apns"` block. FCM
 can only deliver to iOS if an APNs auth key (`.p8`) or certificate is configured in the
@@ -408,10 +410,9 @@ notification; omitting it queues indefinitely. Shorter expiries suit higher urge
 In alert mode, `"high"` uses priority `10` (immediate) and `"normal"` uses priority `5`
 (power-efficient). `"low"` and `"very-low"` remain background regardless of mode.
 
-Note: `"high"` urgency MUST use alert mode for timely delivery. The background column entry for `"high"` is unreachable in correct implementations per the requirement above.
-
 Background push cannot guarantee timely delivery regardless of urgency. For prompt
-delivery of high-urgency notifications, servers MUST use alert mode.
+delivery of high-urgency notifications, servers SHOULD use alert mode (see "Delivery
+modes").
 
 ### Error responses
 
@@ -505,11 +506,14 @@ ntfy exposes standard Web Push endpoints — servers MUST treat it identically t
 other Web Push delivery; no special casing is required.
 
 UnifiedPush routes through user-chosen distributors (ntfy, Gotify, a self-hosted relay,
-etc.). Servers MUST treat any UnifiedPush endpoint identically to Web Push. RFC 8291
+etc.). Servers MUST treat any UnifiedPush endpoint as a Web Push endpoint. RFC 8291
 encryption support varies by distributor. Servers SHOULD test with an encrypted payload
-against each distributor they plan to support and MAY fall back to unencrypted delivery
-for distributors that reject encrypted payloads. Operators MUST be aware that
-unencrypted delivery exposes payload content to the distributor infrastructure.
+against each distributor they plan to support. When the `PushSubscription` has `keys`,
+RFC 8620 Section 7.2 requires the server to encrypt all data sent to it, so a server
+MUST NOT fall back to unencrypted delivery on that subscription; a client whose
+distributor rejects encrypted payloads registers without `keys` instead. Operators MUST
+be aware that unencrypted delivery exposes payload content to the distributor
+infrastructure.
 
 ---
 
@@ -588,7 +592,7 @@ response body.
 | `201 Created` | Accepted (Web Push) | None |
 | `400 Bad Request` | Malformed payload | Server SHOULD log and fix; MUST NOT retry this payload |
 | `401 Unauthorized` | Credential expired | Server MUST refresh credential and retry |
-| `403 Forbidden` | App unregistered or token invalid | Server MUST destroy the `PushSubscription` |
+| `403 Forbidden` | Usually a credential or configuration error (APNs provider token, Web Push VAPID key) | Server MUST parse the body; MUST NOT destroy the `PushSubscription` unless the body says the token is gone (e.g. FCM `SENDER_ID_MISMATCH`) |
 | `404 Not Found` | Endpoint gone | Server MUST destroy the `PushSubscription` |
 | `410 Gone` | Subscription explicitly expired | Server MUST destroy the `PushSubscription` |
 | `413 Payload Too Large` | Over size limit | Server SHOULD truncate and retry |

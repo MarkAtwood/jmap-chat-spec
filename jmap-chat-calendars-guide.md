@@ -133,13 +133,13 @@ The new calendars spec section "Authorization" explicitly defers the
 authorization model to deployments. The wire contract is:
 
 - JMAP Calendars authorization is authoritative for Calendar operations.
-- Servers MUST evaluate JMAP Calendars authorization on every Calendar
+- Servers SHOULD evaluate JMAP Calendars authorization on every Calendar
   operation.
 - Servers MAY use Space membership and the closed Space-permission
   vocabulary as inputs to that decision (per §Space Permission Resolution
   of `draft-atwood-jmap-chat-00.md`, the per-method auth latitude paragraph
   from commit 38055ec).
-- Deployments MUST document the actual authorization model.
+- Deployments SHOULD document the actual authorization model.
 
 ### What you must decide
 
@@ -379,8 +379,8 @@ attachment.
 
 The spec says `Principal/getAvailability` may be exposed in chat context but
 the policy is deployment-defined (per `draft-atwood-jmap-chat-calendars-00.md`,
-the Availability section). The wire contract is: servers MAY expose, MUST reject
-violations, MUST document the policy. The spec enumerates policy axes
+the Availability section). The wire contract is: servers MAY expose, SHOULD reject
+violations, SHOULD document the policy. The spec enumerates policy axes
 (same-Space membership, cross-account, federation, organizational unit,
 explicit consent, time windows, sensitivity tags, regulatory overlays) but
 does not prescribe values.

@@ -116,7 +116,7 @@ infeasible and the signing key resolves to the requesting DID.
   signed-component model, and is well-suited to authenticating
   individual HTTP requests in the JMAP federation pattern. Library
   availability is good in Go, JavaScript, Rust, and Python.
-- *Signed components* MUST include enough request context to defeat
+- *Signed components* SHOULD include enough request context to defeat
   replay across different requests. A typical minimum is `@method`,
   `@target-uri`, `@authority`, `content-digest` (for requests with a
   body), the requesting DID, a per-request nonce, and a timestamp.

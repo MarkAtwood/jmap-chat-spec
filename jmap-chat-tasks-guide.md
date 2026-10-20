@@ -143,11 +143,11 @@ The new tasks spec section "Authorization" explicitly defers the
 authorization model to deployments. The wire contract is:
 
 - JMAP Tasks authorization is authoritative for Task operations.
-- Servers MUST evaluate JMAP Tasks authorization on every Task operation.
+- Servers SHOULD evaluate JMAP Tasks authorization on every Task operation.
 - Servers MAY use Space membership and the closed Space-permission
   vocabulary as inputs to that decision (per the per-method auth
   latitude in `draft-atwood-jmap-chat-00.md`).
-- Deployments MUST document the actual authorization model.
+- Deployments SHOULD document the actual authorization model.
 
 ### What you must decide
 

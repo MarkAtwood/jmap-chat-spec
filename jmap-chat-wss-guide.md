@@ -47,8 +47,8 @@ this spec.
 carry no state token; require no follow-up API call; are not durable — the server does
 not buffer them for disconnected clients. On reconnect, missed ephemeral events are gone.
 
-Receiving a `ChatTypingEvent` MUST NOT trigger a `ChatContact/changes` call. Receiving a
-`ChatPresenceEvent` MUST NOT trigger a `ChatContact/changes` call. The reason is
+Receiving a `ChatTypingEvent` SHOULD NOT trigger a `ChatContact/changes` call. Receiving a
+`ChatPresenceEvent` SHOULD NOT trigger a `ChatContact/changes` call. The reason is
 latency: a typing indicator has sub-second relevance, and a presence transition is useful
 for tens of seconds. By the time a client receives a `StateChange`, issues a `/changes`
 call, and fetches the result, the signal is stale — the user may have already stopped
@@ -105,7 +105,8 @@ EventSource (SSE) for server-to-client state-change events and `PushSubscription
 push for background and mobile delivery. HTTP polling is a last resort and SHOULD only
 be used when neither SSE nor push is available. If the second capability is absent but
 the first is present, the WebSocket transport works but ephemeral events are not
-supported; clients MUST NOT send `ChatStreamEnable` in that case.
+supported; clients MUST NOT send `ChatStreamEnable` in that case (a server that does not
+recognize it answers with a `RequestError` of type `notRequest`).
 
 ### Startup sequence
 
@@ -146,6 +147,9 @@ After the WebSocket handshake completes, send these messages in order:
    }
    ```
 
+   An optional `id` on `ChatStreamEnable` comes back as the `requestId` of any
+   `RequestError` it causes; give each control message one if you send several in a row.
+
 Clients SHOULD send both control messages before issuing JMAP API requests. The server
 begins delivering events as soon as it processes each control message — if API requests
 arrive first, `StateChange` frames may arrive while catch-up is still in progress.
@@ -183,8 +187,8 @@ delivery for users who switch apps briefly.
 
 ### Credential expiry
 
-The server closes the connection with code `1008` when authentication credentials expire
-during a live session. On receiving `1008`, clients MUST:
+A server that closes the connection when authentication credentials expire during a
+live session should use code `1008`. On receiving `1008`, clients MUST:
 
 1. Re-authenticate using the app's normal auth flow (refresh token, re-login, etc.).
 2. Reconnect to the same WebSocket URL with the new credentials and repeat the startup
@@ -222,7 +226,7 @@ first login, clients MUST omit `pushState` from `WebSocketPushEnable` entirely.
 
 ### Handling state-change events
 
-On receiving a `StateChange` frame, clients MUST:
+On receiving a `StateChange` frame, clients SHOULD:
 
 1. Save the `pushState` token from the frame.
 2. For each data type listed in `changed`, issue a `{Type}/changes` call using the
@@ -234,16 +238,17 @@ On receiving a `StateChange` frame, clients MUST:
 availability and custom status. A `StateChange` for this type means the owner's record
 changed; the standard `/changes` to `/get` fallback applies.
 
-Clients MUST NOT process `StateChange` frames while the connection is still in the
+Clients SHOULD NOT process `StateChange` frames while the connection is still in the
 startup sequence (before both `WebSocketPushEnable` and `ChatStreamEnable` have been
-sent). They MUST queue them and process once startup is complete to avoid issuing
+sent). They SHOULD queue them and process once startup is complete to avoid issuing
 `/changes` calls against a state they are still catching up from.
 
 ### Handling typing indicators
 
 On receiving `ChatTypingEvent` with `typing: true`, clients SHOULD:
 
-- Show the typing indicator for `chatId` attributed to `senderId`.
+- Show the typing indicator for `chatId` attributed to `senderId`. Ids are unique only
+  within an account, so key on the event's `accountId` too.
 - Start or reset a decay timer for that (chatId, senderId) pair.
 
 On receiving `ChatTypingEvent` with `typing: false`, clients SHOULD hide the typing
@@ -322,8 +327,8 @@ A workable structure:
   subscribed handlers → each handler checks membership and block authorization at
   delivery time and sends the frame if authorized.
 
-Servers MUST check authorization at delivery time rather than at subscribe time. This
-is required by the spec and also simpler — implementations need not track membership
+Servers SHOULD check authorization at delivery time rather than at subscribe time. This
+is recommended by the spec and also simpler — implementations need not track membership
 changes and update subscriptions when a user leaves a chat or blocks a contact. Just
 check at the moment of delivery and drop silently if unauthorized.
 
@@ -333,9 +338,9 @@ for the recipient account before sending a `ChatTypingEvent` frame. If the field
 chats only; channel chats are exempt. Perform this check in the delivery path alongside
 the membership check, not at subscribe time.
 
-Similarly, each handler MUST check whether the sending ChatContact is `blocked` on the
+Similarly, each handler SHOULD check whether the sending ChatContact is `blocked` on the
 recipient's contact list before sending a `ChatTypingEvent` or `ChatPresenceEvent` frame;
-if `blocked` is `true`, the handler MUST silently drop the event. Like the membership and
+if `blocked` is `true`, the handler SHOULD silently drop the event. Like the membership and
 `receiveTypingIndicators` checks, this is a delivery-time check, not a subscribe-time
 check. The same blocked-sender suppression rule applies on both event types and protects
 users from leaking presence or attention patterns to a blocked contact whose messages are
@@ -344,8 +349,8 @@ already being dropped.
 ### State-change push
 
 State-change delivery via `WebSocketPushEnable` reuses RFC 8887's existing mechanism.
-The main server-side concern is `pushState` management: servers MUST assign a new
-`pushState` token with each `StateChange` delivery and SHOULD maintain enough history
+The main server-side concern is `pushState` management: servers that support `pushState`
+(optional in RFC 8887) include a new token with each `StateChange` delivery and SHOULD maintain enough history
 to replay missed frames for any stored token a reconnecting client presents. How long
 to retain history is a policy decision; servers SHOULD retain a minimum of 10–15 minutes
 to cover most transient disconnects.
@@ -358,7 +363,7 @@ way.
 
 ### Rate limiting
 
-The spec requires rate limiting typing events to one per sender per chat per 3 seconds
+The spec recommends (SHOULD) rate limiting typing events to one per sender per chat per 3 seconds
 and presence events to one per contact per 30 seconds. These limits are per outbound
 connection: each connected client has its own independent rate-limit budget, so two
 simultaneously connected clients can each receive the same event at the full rate.
@@ -366,8 +371,9 @@ simultaneously connected clients can each receive the same event at the full rat
 Servers SHOULD track the last delivery timestamp in a structure keyed by
 `(connectionId, chatId, senderId)` for typing and `(connectionId, contactId)` for
 presence, where `connectionId` is a server-internal identifier for the WebSocket
-connection. Before sending a frame, the server MUST check the elapsed time and drop
-silently if within the rate window.
+connection. Before sending a frame, the server checks the elapsed time and MAY drop
+silently if within the rate window. For presence, the most recent state SHOULD be
+delivered when the window reopens, so a dropped transition does not leave stale presence.
 
 These structures are per-connection and in-memory — they need not be durable or shared
 across nodes. When a connection closes, servers SHOULD discard its rate-limit state.
@@ -380,16 +386,17 @@ second per connection is reasonable.
 ### Credential expiry
 
 When a server detects that the credentials for an authenticated WebSocket connection
-have expired (token validation failure, session revocation, etc.), the spec requires
+have expired (token validation failure, session revocation, etc.), RFC 8887 allows
 one of two responses: return authentication error responses for subsequent requests
-without closing the connection, or close the WebSocket connection with close code
-`1008` (Policy Violation). Servers MUST NOT silently continue accepting requests as if
-they were authenticated. When closing the connection, servers MUST use `1008` — it is
-what well-behaved clients detect and recover from.
+without closing the connection, or close the WebSocket connection. Servers SHOULD NOT
+silently continue accepting requests as if they were authenticated. When closing the
+connection, servers SHOULD use `1008` (Policy Violation) — it is what well-behaved
+clients detect and recover from. A server that keeps the connection open SHOULD NOT
+deliver further ephemeral events on it.
 
 Servers MAY support credential refresh without closing the connection (e.g. a token
 rotation mechanism that the client can trigger mid-session); that is outside the scope
-of this spec but not prohibited. The `1008` requirement applies only when credentials
+of this spec but not prohibited. The `1008` recommendation applies only when credentials
 are unrecoverably expired and the server cannot continue the session.
 
 ---
@@ -421,6 +428,6 @@ suppression at delivery.
 
 Typing and presence signals are metadata about user behavior. Even without message
 content, these signals can reveal whether a user is online and active, and with whom they
-are communicating. Servers SHOULD honor `Chat.receiveTypingIndicators` and implement
+are communicating. Servers MUST honor `Chat.receiveTypingIndicators` and implement
 presence visibility controls accordingly. Clients SHOULD make these controls visible and
 accessible to users.
