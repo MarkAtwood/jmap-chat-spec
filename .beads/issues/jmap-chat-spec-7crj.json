@@ -2,11 +2,13 @@
   "id": "jmap-chat-spec-7crj",
   "title": "did-00: drop out-of-band signature mechanism",
   "description": "draft-atwood-jmap-chat-did-00 says the signature mechanism and parameters are deployment-defined and peers MUST agree on it out of band; federation-00 now mandates RFC 9421 Ed25519 signed requests. Align did-00 (and its DID-identity verification hook used by sh60's host-less binding rule). Follow-up to jmap-chat-spec-sh60 (peer auth via RFC 9421 signatures, approved 2026-10-19).",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "task",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-19T18:27:27.983178132Z",
   "created_by": "agent",
-  "updated_at": "2026-10-19T18:27:27.983178132Z"
+  "updated_at": "2026-10-20T21:52:40.633223085Z",
+  "closed_at": "2026-10-20T21:52:40.633223085Z",
+  "close_reason": "P2 batch 2026-10-20: chat-did aligned with federation RFC 9421 signing (DID binding via authentication relationship, 60s re-resolve cap); chat-did guide aligned; filenode rights table names FilesRights flags per crate-jmap decision"
 }

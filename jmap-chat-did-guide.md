@@ -15,13 +15,16 @@ URN `urn:ietf:params:jmap:chat:did` (which builds on
 its key rotation and DID migration lifecycle), the three
 mandatory-to-implement methods (`did:web`, `did:key`, `did:plc`) plus
 RECOMMENDED `did:webvh` with an open extensibility hook, optional ChatContact extensions for explicit DID binding, and
-the high-level requirement that federation authentication verify a
-DID-bound signature. The main `jmap-chat-implementer-guide.md` covers
+the DID-bound verification that federation applies to a peer
+identity that is a DID without a host: the Ed25519 key that signed
+the request must appear in the `authentication` verification
+relationship of the DID Document. The request signature itself is
+defined by `draft-atwood-jmap-chat-federation-00`. The main `jmap-chat-implementer-guide.md` covers
 identity topics that overlap with core JMAP Chat concerns (the
 opaque-identity rule, the `@user@host` mention form, ChatContact federation
 caching). This guide focuses on what those documents do not cover:
-the concrete realization of DID-based identity and authentication,
-plus the operational practice of running DIDs as identities at scale.
+choosing and maintaining DID identities for federation, plus the
+operational practice of running DIDs as identities at scale.
 
 ---
 
@@ -46,9 +49,8 @@ specification:
 
 `draft-atwood-jmap-chat-did-00` deliberately specifies a minimal wire
 contract — capability URN, mandatory method list, ChatContact
-extensions, federation auth requirement — and defers the signature
-mechanism, signed-component list, replay-prevention parameters,
-DID-document role conventions, multi-device handling, provisioning
+extensions, DID-bound verification of federated peers — and defers
+DID-document role conventions beyond that verification, multi-device handling, provisioning
 workflows, and recovery mechanisms to deployments. DID deployment
 models range from "single user with a `did:key`" through "small group
 of cooperating organizations each running their own `did:web`" to
@@ -74,135 +76,118 @@ canonical answer. Other deployment patterns are equally valid.
 
 ---
 
-## 1. Federation auth mechanism — concrete realization
+## 1. Federation authentication for DID identities
 
 ### What the spec leaves open
 
-The DID draft (§Federation Authentication) requires that a federated peer's
-DID-based identity be verified by validating a cryptographic signature
-made by a key bound in the peer's DID Document. The draft RECOMMENDS
-RFC 9421 HTTP Message Signatures with Ed25519 over a key from the
-DID Document's `authentication` verification relationship, and
-explicitly leaves the on-the-wire signed-component list, the
-replay-prevention parameters, the signature header location, and the
-rejection-error code values to deployments. Alternative signature
-mechanisms (JWS-over-challenge, custom binary schemes) are permitted
-provided they bind a signature to a request such that replay is
-infeasible and the signing key resolves to the requesting DID.
+The signature mechanism is not open. The federation draft
+(§Peer Authentication Model) requires every request that obtains a
+peer-role session or invokes a Peer/* method to carry an RFC 9421
+HTTP Message Signature with Ed25519. It defines the covered
+components, the `created`/`expires`/`nonce` replay window, the
+`peerSigningKeys` Session field and key discovery, the 403 rejection,
+and the binding of the peer's `ownerUserId` to the authenticated peer
+domain. Peers need no out-of-band agreement on any of it.
+
+The DID draft (§Federation Authentication) adds one rule for a peer
+identity that is a DID without a host (`did:key`, `did:plc`,
+`did:webvh`, or any method other than `did:web`): after the
+signature verifies, the receiving server resolves the DID, and the
+Ed25519 key that verified the signature must appear in the
+`authentication` verification relationship of the DID Document. If
+it does not, the request is rejected. A `did:web` identity is bound
+by the domain it encodes under the federation draft, and the DID
+check is optional for it.
+
+What remains open is which DID form a server uses as its
+`ownerUserId`, how the server's signing key gets into that DID
+Document and stays in step with key rotation, whether to run the DID
+check on `did:web` peers, and local diagnostics.
 
 ### What you must decide
 
-- The signature mechanism: RFC 9421 HTTP Message Signatures, JWS,
-  or something else.
-- The signed components (which request elements the signature covers).
-- The header or body location in which the signature is presented.
-- The DID Document verification relationship used to select the
-  signing key (`authentication`, `assertionMethod`, etc.).
-- The replay-prevention parameters: nonce semantics, nonce-cache TTL,
-  timestamp tolerance.
-- The error code returned for each failure mode (mechanism mismatch,
-  signature invalid, DID resolution failed, replay detected, clock
-  skew).
-- Whether multiple mechanisms are accepted (per-peer choice) or a
-  single mechanism is mandatory.
-- How peers learn which mechanism a given deployment expects
-  (out-of-band documentation, capability advertisement extension,
-  trial-and-error rejection signaling).
+- Whether the server's `ownerUserId` is a DID at all, and if so,
+  which method.
+- How the server's peer signing key enters the DID Document's
+  `authentication` relationship, and how a rotation of that key
+  reaches the DID Document.
+- Whether to apply the DID check to `did:web` peer identities too.
+- What detail to log locally when a request fails the DID check.
 
 ### Considerations
 
-- *RFC 9421 HTTP Message Signatures* is the recommended starting
-  point. It has broad implementation support, a flexible
-  signed-component model, and is well-suited to authenticating
-  individual HTTP requests in the JMAP federation pattern. Library
-  availability is good in Go, JavaScript, Rust, and Python.
-- *Signed components* SHOULD include enough request context to defeat
-  replay across different requests. A typical minimum is `@method`,
-  `@target-uri`, `@authority`, `content-digest` (for requests with a
-  body), the requesting DID, a per-request nonce, and a timestamp.
-  Signing too few components opens replay holes; signing too many
-  creates brittleness against benign request rewriting by proxies.
-- *Nonce-cache TTL and timestamp tolerance* together define the
-  replay window. A 300-second timestamp window with a 600-second
-  nonce cache is a defensible default for cooperating peers across
-  the public Internet; tighten for hostile environments, loosen for
-  embedded or asynchronous-relay deployments.
-- *Verification-method selection* is in scope for the deployment, not
-  the spec. The W3C DID Core `authentication` verification
-  relationship is the natural choice for authenticating a request;
-  `assertionMethod` is more appropriate for signing standalone
-  assertions (e.g., credentials). Pick one and document it.
-- *Mechanism heterogeneity* between deployments is an interop risk.
-  The spec does not define a negotiation protocol; deployments
-  expecting to federate broadly SHOULD support the recommended
-  mechanism (RFC 9421 + Ed25519 + `authentication` VM) even if their
-  internal deployments also accept others.
-- *Library maturity* varies. JOSE/JWS libraries are older and more
-  widely deployed than RFC 9421 implementations. Some deployments may
-  prefer JWS-over-challenge for that reason alone; that is a
-  legitimate trade-off.
-- *Error code design* matters for diagnostics. Returning a single
-  generic "401 Unauthorized" for all failure modes hides root causes.
-  Returning highly specific codes (signature-malformed,
-  nonce-replayed, clock-skew, DID-unresolvable, key-not-in-VM-list)
-  helps operators triage federation problems quickly.
+- *The server holds an `authentication` key of a host-less DID
+  identity.* The server signs every peer request, so its signing key
+  is in the DID's `authentication` relationship. If that DID is also
+  the account's bound DID under `draft-atwood-jmap-did-00`, the
+  account's `keyCustody` cannot be `"user"` (and SHOULD be `"server"`). Device keys the user holds
+  alone can sit in the same relationship, but the server key cannot
+  be left out.
+- *`did:key` ties the DID to the signing key.* A `did:key` DID
+  Document contains only the key the DID encodes, so the server signs
+  with that key, and rotating the signing key changes the DID: a DID
+  migration, which every peer sees as a new identity. The federation
+  draft's rotation overlap does not help.
+- *`did:plc` and `did:webvh` allow rotation without changing the
+  DID.* The federation draft asks a server to publish a new key in
+  `peerSigningKeys` at least an hour before signing with it and to
+  keep a retired key published for 10 minutes after last use. The DID
+  Document needs the same overlap. A receiver whose cached DID
+  Document lacks the signing key re-resolves once before rejecting
+  (DID draft §DID Resolution), so a late DID update costs a
+  re-resolution, and a missing one causes rejection.
+- *`did:web` peers.* A `did:web` document typically lists the user's
+  device keys, not the server's peer signing key. Applying the DID
+  check to every `did:web` peer rejects peers that the federation
+  draft accepts by host. Apply it only to peers you have enrolled as
+  high-assurance and whose documents you know list the signing key.
+- *Diagnostics.* Rejections reach the peer as a bare rejection.
+  Locally, distinguish DID unresolvable, unsupported method, and key
+  absent from `authentication` after re-resolution; operators need
+  that split to triage federation failures.
+- *Re-resolution load.* A peer can force a re-resolution on each
+  request by signing with a key absent from its DID Document. Cap
+  re-resolutions per DID (§2), as the federation draft caps key
+  refetch per peer domain to once every 60 seconds.
 
 ### Common patterns
 
-- **RFC 9421 + Ed25519 + `authentication` VM** is the configuration
-  in the Agora protocol spec (§3.5.3), which is the closest existing
-  production-shaped deployment using overlapping primitives. The
-  Agora component list — `@method`, `@target-uri`, `@authority`,
-  `content-digest`, peer-DID header, timestamp, nonce — is a
-  defensible starting point and is reproduced here as one concrete
-  example.
-- **JWS over a JSON challenge envelope** is the alternative seen in
-  early DIDComm and Aries deployments. The peer signs a JSON object
-  containing the request fingerprint plus nonce and timestamp; the
-  signature accompanies the request as a header or body field. Works
-  well for binary or non-HTTP transports; less natural fit for JMAP's
-  HTTP request/response pattern.
-- **mTLS with the DID document's key as the TLS client cert** has
-  been proposed for `did:web` deployments. It works but ties key
-  rotation to TLS certificate issuance, which is awkward for
-  `did:plc` (where rotation is via PLC operations) and impossible
-  for `did:key` (no rotation at all). Not recommended as the only
-  mechanism.
+- **`did:web` on the server's own domain.** Bound by host; no DID
+  check and no DID Document maintenance tied to signing-key rotation.
+  The simplest DID choice for a server with a stable domain.
+- **`did:plc` or `did:webvh` with the server key in
+  `authentication`.** The identity survives a move to another server
+  domain. The server, or the component that controls the DID
+  (a PDS-equivalent for `did:plc`, the update-key holder for
+  `did:webvh`), publishes the server's signing keys in the DID
+  Document alongside any device keys.
+- **`did:key` for test or disposable servers.** No resolution
+  infrastructure; acceptable where a new identity on key rotation is
+  not a problem.
 
 ### Recommended starting point
 
-Implement RFC 9421 HTTP Message Signatures using an Ed25519 signing
-key selected from the requesting DID Document's `authentication`
-verification relationship. Sign the following components:
+Use `did:web` on the server's domain as a DID-form `ownerUserId`
+when the domain is stable. Use `did:plc` or `did:webvh` when the
+identity must outlive the domain: list the current signing key in
+`authentication`, add a new key to the DID Document before
+publishing it in `peerSigningKeys`, and remove a retired key from
+both after the federation draft's 10-minute tail. Avoid `did:key` as
+a long-lived `ownerUserId`.
 
-```
-"@method"
-"@target-uri"
-"@authority"
-"content-digest"      (POST requests with a body)
-"JMAP-Chat-DID"       (requesting peer's DID URI)
-"JMAP-Chat-Timestamp" (integer seconds Unix epoch)
-"JMAP-Chat-Nonce"     (random 128-bit value, base64url)
-```
-
-Reject any request whose timestamp differs from the receiving
-server's clock by more than 300 seconds. Maintain a nonce cache with
-a 600-second TTL; reject any request whose nonce has been seen in
-that window. Refresh the cached DID Document for the requesting DID
-when signature verification fails (as required by the draft); reject
-the request with a specific error code distinguishing
-signature-malformed, nonce-replayed, clock-skew, DID-unresolvable,
-and key-not-in-authentication-VM-list failures.
-
----
+Run the DID check exactly where the drafts require it (host-less
+DIDs). On a key mismatch, re-resolve once, at most once every 60
+seconds per DID, then reject. Log the failure cause locally.
 
 ## 2. DID resolution and caching strategy
 
 ### What the spec leaves open
 
-The DID draft (§DID Resolution) requires that a server refresh its
-cached DID Document on signature-verification failure (the assumption
-being that the failure is the strongest available signal of key
+The DID draft (§DID Resolution) requires that a server resolve a DID
+again, bypassing its cache, before failing the DID-bound verification
+when the key that verified a request signature is absent from the
+cached DID Document's `authentication` relationship (the assumption
+being that the mismatch is the strongest available signal of key
 rotation). Beyond that single normative requirement, every aspect of
 the caching strategy is deployment-defined: TTL defaults, per-method
 behavior, refresh triggers, stale-key handling, persistent-failure
@@ -244,7 +229,7 @@ escalation.
   directory exposes the log; deployments SHOULD poll the log head at
   a low frequency (e.g., once per hour for any given DID) and trigger
   full document refresh on advancement.
-- *Refresh-on-failure (mandated by the spec) is the strongest signal,*
+- *Refresh-on-key-mismatch (mandated by the spec) is the strongest signal,*
   not the only signal. A deployment SHOULD ALSO refresh on TTL
   expiry, on operation-log advancement (for `did:plc`), on observed
   rotation signals via gossip or out-of-band messages, and on
@@ -274,7 +259,7 @@ escalation.
 ### Common patterns
 
 - **HTTP cache-header-respecting `did:web` resolution** with floor 5
-  minutes and ceiling 24 hours. Refresh on signature failure plus a
+  minutes and ceiling 24 hours. Refresh on signing-key mismatch plus a
   background poll near TTL expiry. Production-shaped pattern.
 - **Zero-cache `did:key`.** Recompute on every use; the cost is
   negligible.
@@ -294,18 +279,18 @@ For each supported method:
 
 - **`did:web`**: HTTPS GET, honor HTTP cache headers with floor 5
   minutes and ceiling 24 hours. Background refresh at 75% of TTL.
-  Hard refresh on signature failure. Pin TLS chain where operator
+  Hard refresh on signing-key mismatch. Pin TLS chain where operator
   policy permits.
 - **`did:key`**: no caching. Recompute on each use.
 - **`did:webvh`** (RECOMMENDED by the draft): cache the resolved DID
-  Document plus the verified log head. Refresh on signature failure.
+  Document plus the verified log head. Refresh on signing-key mismatch.
   When a `did:webvh` DID exists for the same domain and path as a
   `did:web` DID, do not trust `did:web` keys that are absent from the
   verified log (draft §Methods).
 - **`did:plc`**: cache the resolved DID Document plus the operation-
   log head from the PLC directory. Poll the log head every 60 minutes
   per active DID. Refresh the document on log-head advancement and
-  on signature failure.
+  on signing-key mismatch.
 - **All methods**: serve stale entries for up to 3 seconds during an
   in-flight refresh; reject if refresh has not completed. Treat
   persistent (24-hour) resolution failure as a peer downgrade event
@@ -318,9 +303,12 @@ For each supported method:
 
 ### What the spec leaves open
 
-The DID draft (§Federation Authentication, "Explicit non-prescriptions") does
-not prescribe DID Document conventions. Which verification
-relationships are used for which purpose, which key types are
+The DID draft prescribes one DID Document convention: for a
+host-less DID peer identity, the `authentication` verification
+relationship contains the Ed25519 key that signs the server's
+federation requests (§Federation Authentication). Beyond that
+("Explicit non-prescriptions"), which verification
+relationships are used for which purpose, which other key types are
 accepted, how multiple devices are represented in a single DID
 Document, and how device revocation is signaled are all
 deployment-defined. The W3C DID Core data model is the only normative
@@ -346,10 +334,9 @@ source of truth on DID Document structure.
 ### Considerations
 
 - *The `authentication` verification relationship* is the natural fit
-  for keys used to authenticate JMAP Chat federation requests. The
-  recommended starting point in §1 selects the signing key from this
-  relationship; deployments diverging from this should document the
-  alternative in operator-facing docs.
+  for keys used to authenticate JMAP Chat federation requests, and the
+  DID draft requires the server's peer signing key there for a
+  host-less DID peer identity (§1).
 - *The `keyAgreement` verification relationship* is the natural fit
   for X25519 keys used in MLS KeyPackage init keys or HPKE-style
   payload encryption. JMAP Chat itself does not currently require
@@ -358,9 +345,10 @@ source of truth on DID Document structure.
   `keyAgreement` proactively is forward-compatible.
 - *Key type choice* affects interoperability and security posture.
   Ed25519 is the strongest default for signing: small keys, fast
-  verification, no curve-choice surprises. P-256 / ECDSA is a common
-  alternative when hardware constraints favor it (e.g., HSMs without
-  Ed25519 support).
+  verification, no curve-choice surprises. Federation request
+  signatures are Ed25519 only, so the server's peer signing key is
+  always Ed25519; P-256 / ECDSA remains an option for other keys when
+  hardware constraints favor it (e.g., HSMs without Ed25519 support).
 - *Multi-device handling* is a real operational concern. A single
   user typically has several devices (laptop, phone, tablet). Each
   device generates its own keypair inside its secure hardware
@@ -406,6 +394,10 @@ source of truth on DID Document structure.
   type; the same pattern fits JMAP Chat directly.
 
 ### Recommended starting point
+
+For a host-less DID used as a server's `ownerUserId`, list the
+server's current peer signing keys (Ed25519) in `authentication`
+(§1).
 
 Populate two verification relationships per device:
 
@@ -925,7 +917,8 @@ security postures real in a deployment. This guide expands on each.
   hygiene; faster cadences (quarterly, monthly) are appropriate for
   high-risk environments. Rotation MUST be triggered immediately on
   suspected or confirmed compromise. For `did:key`, a key change creates
-  a new DID (a DID migration, not a key rotation); for `did:web`,
+  a new DID (a DID migration, not a key rotation), including a change
+  of the server signing key behind a `did:key` `ownerUserId` (§1); for `did:web`,
   rotation updates the DID Document; for `did:plc`, rotation publishes
   a PLC operation.
 - *Threat models vary.* A self-sovereign individual using `did:key`
@@ -1020,8 +1013,8 @@ document the recovery interaction.
 | Dependency on JMAP DID; key rotation vs DID migration | `draft-atwood-jmap-chat-did-00.md` §Relationship to JMAP DID |
 | Mandatory DID methods; RECOMMENDED `did:webvh` | `draft-atwood-jmap-chat-did-00.md` §Methods |
 | ChatContact `identity`-as-DID and optional `did` field | `draft-atwood-jmap-chat-did-00.md` §ChatContact Extensions |
-| Federation authentication requirement | `draft-atwood-jmap-chat-did-00.md` §Federation Authentication |
-| DID resolution refresh-on-failure rule | `draft-atwood-jmap-chat-did-00.md` §DID Resolution |
+| DID-bound verification of host-less DID peer identities | `draft-atwood-jmap-chat-did-00.md` §Federation Authentication |
+| DID resolution refresh-on-key-mismatch rule | `draft-atwood-jmap-chat-did-00.md` §DID Resolution |
 | Mention textual form | `draft-atwood-jmap-chat-did-00.md` §Mentions |
 | Security considerations | `draft-atwood-jmap-chat-did-00.md` §Security Considerations |
 
@@ -1032,6 +1025,7 @@ document the recovery interaction.
 | Core opaque-identity rule (`ChatContact.identity` is opaque) | `draft-atwood-jmap-chat-00.md` |
 | `@user@host` mention form | `draft-atwood-jmap-chat-00.md` |
 | Federation method set (`Peer/*`) | `draft-atwood-jmap-chat-federation-00.md` |
+| Request signing, `peerSigningKeys`, identity binding | `draft-atwood-jmap-chat-federation-00.md` §Peer Authentication Model |
 | Federation peer authentication framing | `jmap-chat-federation-guide.md` §1 |
 | Identity and federation deployment posture | `jmap-chat-implementer-guide.md` §3 |
 
@@ -1063,4 +1057,3 @@ choices.
 | Recovery key offline-backup pattern | Agora protocol spec §2.4.1 |
 | Social recovery with Shamir's Secret Sharing | Agora protocol spec §2.4.2 |
 | Encrypted backup with Argon2id | Agora protocol spec §2.4.3 |
-| RFC 9421 federation authentication with Ed25519 | Agora protocol spec §3.5.3 |

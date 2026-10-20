@@ -109,7 +109,7 @@ Non-normative companion documents for implementers. These explain *how* to imple
 | [jmap-chat-filenode-guide.md](jmap-chat-filenode-guide.md) | Server operators: running Space file storage at scale — backends, scanning, quotas, previews, grace-period |
 | [jmap-chat-calendars-guide.md](jmap-chat-calendars-guide.md) | Server and client implementers: deployment posture for calendar binding, RSVP, availability, ICS parsing |
 | [jmap-chat-tasks-guide.md](jmap-chat-tasks-guide.md) | Server and client implementers: deployment posture for TaskList binding, Task↔Chat back-references, workflow |
-| [jmap-chat-did-guide.md](jmap-chat-did-guide.md) | Server and client implementers: federation auth realization, DID resolution caching, DID document conventions, provisioning, recovery |
+| [jmap-chat-did-guide.md](jmap-chat-did-guide.md) | Server and client implementers: DID-bound federation authentication, DID resolution caching, DID document conventions, provisioning, recovery |
 
 ---
 

@@ -2,11 +2,13 @@
   "id": "jmap-chat-spec-r9fy",
   "title": "did-guide: align with signed peer requests",
   "description": "jmap-chat-did-guide.md was not checked against the new federation peer-auth text; align it. Follow-up to jmap-chat-spec-sh60 (peer auth via RFC 9421 signatures, approved 2026-10-19).",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "task",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-19T18:27:28.10108738Z",
   "created_by": "agent",
-  "updated_at": "2026-10-19T18:27:28.10108738Z"
+  "updated_at": "2026-10-20T21:52:40.671946282Z",
+  "closed_at": "2026-10-20T21:52:40.671946282Z",
+  "close_reason": "P2 batch 2026-10-20: chat-did aligned with federation RFC 9421 signing (DID binding via authentication relationship, 60s re-resolve cap); chat-did guide aligned; filenode rights table names FilesRights flags per crate-jmap decision"
 }
