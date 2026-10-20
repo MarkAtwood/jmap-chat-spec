@@ -22,38 +22,32 @@ normative:
   RFC6234:
   RFC8174:
   RFC8620:
+  JMAP-FILENODE:
+    title: "JMAP File Storage extension"
+    author:
+      - fullname: Bron Gondwana
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-filenode-17
+    date: 2026-10-18
 
 informative:
+  RFC9404:
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
-  JMAP-FILENODE:
-    title: JMAP File Storage Extension
-    author:
-      fullname: Bron Gondwana
-    seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-16
-    date: 2026
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/
-  JMAP-BLOBEXT:
-    title: "JSON Meta Application Protocol (JMAP) Blob Management Extension"
-    author:
-      fullname: Bron Gondwana
-      role: editor
-    seriesinfo:
-      RFC: "9404"
-    date: 2023
-    target: https://www.rfc-editor.org/rfc/rfc9404
   MULTIFORMATS-CID:
-    title: "CID (Content IDentifier) Specification"
+    title: "CID (Content IDentifier)"
     author:
-      org: Protocol Labs
-    date: 2026
-    target: https://github.com/multiformats/cid
+      - fullname: Marcin Rataj
+        role: editor
+      - fullname: Robin Berjon
+        role: editor
+    date: 2026-06-26
+    target: https://specs.ipfs.tech/cid/
 
 --- abstract
 
@@ -78,7 +72,7 @@ as file storage ({{JMAP-FILENODE}}), messaging with attachments
 a standardized way to obtain the SHA-256 digest of a blob alongside its
 identifier.
 
-The JMAP Blob Management Extensions ({{JMAP-BLOBEXT}}) define a
+The JMAP Blob Management Extension ({{RFC9404}}) defines a
 `digest:sha-256` property requestable via `Blob/get`, providing a
 base64-encoded digest over an arbitrary byte range of a stored blob. This
 document addresses the complementary case: returning the SHA-256 digest of
@@ -176,15 +170,15 @@ indicates storage corruption or unauthorized modification; clients SHOULD
 treat the downloaded content as untrusted and SHOULD surface the
 discrepancy to the user or calling application.
 
-## Relationship to JMAP Blob Management Extensions {#upload-vs-blobext}
+## Relationship to JMAP Blob Management Extension {#upload-vs-blobext}
 
-{{JMAP-BLOBEXT}} defines `digest:sha-256` as a property requestable via
+{{RFC9404}} defines `digest:sha-256` as a property requestable via
 `Blob/get`, returning a base64-encoded digest over a selected byte range
 of a blob. The `sha256` field defined in this document differs in three
 ways: it is returned unconditionally at upload time (not on demand), it
 always covers the full blob, and it uses lowercase hex encoding rather
 than base64. Clients MAY use both mechanisms to cross-validate results, provided they
-convert encodings before comparing and request the BLOBEXT digest over
+convert encodings before comparing and request the {{RFC9404}} digest over
 the full blob rather than a partial byte range.
 
 ## Client-Encrypted Blobs {#encrypted-blobs}
@@ -230,8 +224,8 @@ compute the SHA-256 digest of the received bytes and compare it against
 the FileNode's `sha256`. A `sha256` value of null has two possible
 causes: the FileNode is a directory (which has no associated blob and
 should not be downloaded), or the FileNode is a legacy file entry
-created before this capability was active. Clients MUST check the
-FileNode type to distinguish these cases. For a legacy file FileNode
+created before this capability was active. The FileNode type
+distinguishes these cases. For a legacy file FileNode
 with null `sha256`, integrity verification via this mechanism is not
 available; clients SHOULD treat such downloads as unverified. A mismatch
 on a non-null `sha256` indicates storage corruption or modification;
@@ -258,8 +252,8 @@ matching digest at upload time confirms that the server received the bytes
 the client sent without corruption. A matching digest at download time
 confirms that the server returned the bytes it stored without corruption.
 It does not protect against a server that intentionally stores or returns
-modified content. Clients SHOULD validate using their own locally computed
-digest as described in {{upload-client}} and {{filenode-client}}.
+modified content. Validation against a locally computed digest is
+described in {{upload-client}} and {{filenode-client}}.
 
 ## Blob Probing {#blob-probing}
 
@@ -384,5 +378,5 @@ bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku
 # Acknowledgements
 
 This document builds on foundational JMAP work: {{RFC8620}} by the JMAP
-working group, and {{JMAP-BLOBEXT}} and {{JMAP-FILENODE}} by Bron
+working group, and {{RFC9404}} and {{JMAP-FILENODE}} by Bron
 Gondwana.
