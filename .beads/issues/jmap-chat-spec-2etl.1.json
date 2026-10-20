@@ -1,0 +1,26 @@
+{
+  "id": "jmap-chat-spec-2etl.1",
+  "title": "Write draft-atwood-jmap-graph-00.md",
+  "description": "Graph (RFC 9670 shareWith), Node, Edge; standard /get /changes /set /query /queryChanges; Edge/query filters graphId fromId toId type; Node/query filters graphId only; cascade destroy; same-graph endpoint check; annotations per-key patch LWW; maxAnnotationSize capability field.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:01:52.356756229Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T20:05:42.749362521Z",
+  "started_at": "2026-10-20T20:01:52.830877027Z",
+  "closed_at": "2026-10-20T20:05:42.749362521Z",
+  "close_reason": "Closed",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2etl.1",
+      "depends_on_id": "jmap-chat-spec-2etl",
+      "type": "parent-child",
+      "created_at": "2026-10-20T20:01:52.387577343Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

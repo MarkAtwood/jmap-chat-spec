@@ -1,0 +1,17 @@
+{
+  "id": "jmap-chat-spec-k16o",
+  "title": "Rename urn:jmap: to urn:ietf:params:jmap: corpus-wide",
+  "description": "Mark 2026-10-20: urn:jmap: was a mistake; use RFC 8620 sec 9.3 sub-namespace urn:ietf:params:jmap: everywhere. Mechanical sed plus rewrite of convention/namespace prose (chat-00 iana-urn section, calendars object URN + collision rule, filenode/graph URN convention paragraphs). Collision rule must now cover core capabilities (e.g. filenode).",
+  "notes": "Done: sed (428), namespace prose rewrites, chat:cap: placeholder registration (RFC 8620 9.4.7 model; also covers error: segment), ABNF scoped to corpus-assigned names, calendars/tasks 'registered by' fixed, 21 long using-array lines rewrapped; all drafts build with baseline warning counts. OPEN DECISION (Mark): object URNs urn:ietf:params:jmap:\u003ctype\u003e:\u003cacct\u003e:\u003cid\u003e violate RFC 3553 (global scope, IANA-assigned, unique). Options: (b) only type prefix assigned, full string is context-relative reference; (a) stop calling them URNs / move out of urn:ietf:params. Affects chat-00 iana-urn item 2 + Uniqueness, calendars object-urn + iana-urn-types (also needs RFC 3553 reference request), tasks urn:...:task, graph-projection objectUrn.\nMark chose (c): dedicated URI scheme jmap: for object references (jmap:\u003ctype\u003e:\u003cacct\u003e:\u003cid\u003e); term object URN -\u003e object URI; registry JMAP Object URI Types; drop collision rule + RFC 3553 requests.\nMark: (1) yes move jmap: scheme + JMAP Object URI Types registry to standalone draft-atwood-jmap-object-uri-00; (2) filenode role value -\u003e plain token 'chatspace'.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:25:30.302242852Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T20:56:49.040792829Z",
+  "started_at": "2026-10-20T20:25:33.236034143Z",
+  "closed_at": "2026-10-20T20:56:49.040792829Z",
+  "close_reason": "urn:ietf:params:jmap: rename done; object refs moved to jmap: URI scheme in standalone draft-atwood-jmap-object-uri-00; chat:cap: placeholder; chatspace role; 3 verify workflows applied. Follow-ups: draj, b9qs."
+}

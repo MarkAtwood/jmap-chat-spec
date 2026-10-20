@@ -1,0 +1,23 @@
+{
+  "id": "jmap-chat-spec-2etl.7",
+  "title": "Object URN type names for Calendars/Tasks/FileNode/Chat types",
+  "description": "graph-projection projects only types with registered JMAP Object URN type names; it registers RFC 8621/9610 types only. Calendar, TaskList, FileNode, and JMAP Chat types need registrations. JMAP Chat's Chat type cannot be 'chat' (collides with urn:jmap:chat capability segment); needs another name. Also: Object URN definition lives in chat-calendars draft, an awkward normative dependency for jmap-graph-projection; consider moving it to a standalone doc.",
+  "notes": "After urn:ietf:params:jmap: rename (k16o): type names also may not equal core capability segments; FileNode cannot be 'filenode' (urn:ietf:params:jmap:filenode). Object URN definition now lives in sub-namespace assigned by JMAP-CHAT iana-urn section.\nSUPERSEDED constraint: after move to jmap: URI scheme, type names no longer collide with capability segments; Chat may be 'chat' and FileNode 'filenode'. Registry renamed JMAP Object URI Types.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T20:11:28.61821803Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T20:45:57.267411765Z",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-2etl.7",
+      "depends_on_id": "jmap-chat-spec-2etl",
+      "type": "parent-child",
+      "created_at": "2026-10-20T20:11:28.655691242Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
