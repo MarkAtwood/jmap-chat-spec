@@ -10,8 +10,8 @@ and offers patterns and starting points for using Decentralized
 Identifiers as JMAP Chat identities.
 
 The DID draft itself defines a minimal wire contract: the capability
-URN `urn:jmap:chat:did` (which builds on
-`urn:jmap:did` and reuses its `supportedMethods` list and
+URN `urn:ietf:params:jmap:chat:did` (which builds on
+`urn:ietf:params:jmap:did` and reuses its `supportedMethods` list and
 its key rotation and DID migration lifecycle), the three
 mandatory-to-implement methods (`did:web`, `did:key`, `did:plc`) plus
 RECOMMENDED `did:webvh` with an open extensibility hook, optional ChatContact extensions for explicit DID binding, and

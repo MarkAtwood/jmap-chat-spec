@@ -127,7 +127,7 @@ informative:
 
 --- abstract
 
-This document defines the `urn:jmap:did` JMAP capability. When a server advertises this capability, every JMAP account is bound to a Decentralized Identifier (DID) as defined in {{DID-CORE}}. The capability adds a `did` property to JMAP data types designated by consuming specifications, enabling globally resolvable, cryptographically verifiable identity across JMAP servers. The account-to-DID binding is server-authoritative; clients MAY independently verify the binding by resolving the DID document.
+This document defines the `urn:ietf:params:jmap:did` JMAP capability. When a server advertises this capability, every JMAP account is bound to a Decentralized Identifier (DID) as defined in {{DID-CORE}}. The capability adds a `did` property to JMAP data types designated by consuming specifications, enabling globally resolvable, cryptographically verifiable identity across JMAP servers. The account-to-DID binding is server-authoritative; clients MAY independently verify the binding by resolving the DID document.
 
 --- middle
 
@@ -152,11 +152,11 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 # Capability {#capability}
 
-A server supporting this extension MUST advertise the `urn:jmap:did` capability in the JMAP Session resource ({{RFC8620}} Section 2).
+A server supporting this extension MUST advertise the `urn:ietf:params:jmap:did` capability in the JMAP Session resource ({{RFC8620}} Section 2).
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:did"]` is a JSON object with the following fields:
+The value of `capabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
 
 `supportedMethods` (String[]):
 : The DID methods the server is able to resolve and verify. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method. Every account's bound DID MUST use a listed method. Companion specifications that need to advertise DID method support reuse this field rather than defining their own.
@@ -170,7 +170,7 @@ Example:
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": {},
-    "urn:jmap:did": {
+    "urn:ietf:params:jmap:did": {
       "supportedMethods": ["key", "web"],
       "verificationEndpoint": null
     }
@@ -180,7 +180,7 @@ Example:
 
 ## Account-Level Capability Object {#account-capability}
 
-The value of `accountCapabilities["urn:jmap:did"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
 
 `did` (String):
 : The DID bound to this account. This is the canonical, globally resolvable identifier for the account holder. The value MUST be a valid DID as defined in {{DID-CORE}} Section 3.1.
@@ -201,7 +201,7 @@ Example:
   "accounts": {
     "acct-001": {
       "accountCapabilities": {
-        "urn:jmap:did": {
+        "urn:ietf:params:jmap:did": {
           "did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
           "didDocumentUri": null,
           "previousDid": null,
@@ -234,7 +234,7 @@ Regardless of mechanism, the server MUST ensure that:
 
 ## Definition
 
-When `urn:jmap:did` is advertised, consuming specifications MAY designate their data types as DID-bearing. A DID-bearing data type gains the following property:
+When `urn:ietf:params:jmap:did` is advertised, consuming specifications MAY designate their data types as DID-bearing. A DID-bearing data type gains the following property:
 
 A DID-bearing property is a String\|null value, server-set, whose value is the DID given by the account-to-DID binding defined in {{binding}} at the time the object was created. The value is `null` when the account has no DID binding (transitional state during migration) or when the object represents a non-user entity (system-generated objects, anonymous participants).
 
@@ -448,7 +448,7 @@ When the server generates a `did:key` on behalf of a user and retains the privat
 IANA is requested to register the following entry in the "JMAP Capabilities" registry established by {{RFC8620}}:
 
 Capability Name:
-: `urn:jmap:did`
+: `urn:ietf:params:jmap:did`
 
 Intended Use:
 : common

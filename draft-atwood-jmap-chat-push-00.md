@@ -81,15 +81,15 @@ Terminology from {{RFC8620}} and {{JMAP-CHAT}} is used throughout.
 
 # Capability {#capability}
 
-Servers supporting this specification advertise the `urn:jmap:chat:push` capability in the JMAP Session object. This capability is meaningful only when `urn:jmap:chat` is also present.
+Servers supporting this specification advertise the `urn:ietf:params:jmap:chat:push` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also present.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:chat:push"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:chat:push"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:chat:push"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat:push"]` is a JSON object with the following fields:
 
 `maxSnippetBytes` (UnsignedInt):
 : Maximum byte length of the `bodySnippet` field in a `ChatMessageEntry`. Servers MUST truncate body snippets to this length before including them in the payload. Truncation MUST occur on a UTF-8 character boundary.
@@ -107,7 +107,7 @@ This document extends the `PushSubscription` object defined in {{RFC8620}} Secti
 `chatPush` (Id[ChatPushConfig], optional):
 : A map of accountId to `ChatPushConfig` object. When present for an account, the server delivers `ChatMessagePush` payloads to the push endpoint for new inbound messages in that account that match the configuration. When absent or null for an account, the server delivers standard `StateChange` notifications for that account without inline message content.
 
-If a `PushSubscription/set` create or update includes a `chatPush` entry for an account whose `accountCapabilities` does not include `urn:jmap:chat:push`, the server MUST return an `invalidProperties` SetError whose `properties` names the offending entry (e.g., `chatPush/<id>`) and MUST NOT store the subscription change.
+If a `PushSubscription/set` create or update includes a `chatPush` entry for an account whose `accountCapabilities` does not include `urn:ietf:params:jmap:chat:push`, the server MUST return an `invalidProperties` SetError whose `properties` names the offending entry (e.g., `chatPush/<id>`) and MUST NOT store the subscription change.
 
 ## ChatPushConfig {#chat-push-config}
 
@@ -331,7 +331,7 @@ Push payloads are generated and delivered by the receiving server. In federated 
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:chat:push`
+: `urn:ietf:params:jmap:chat:push`
 
 Intended Use:
 : common

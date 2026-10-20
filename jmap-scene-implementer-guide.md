@@ -66,7 +66,7 @@ normative protocol specification:
 
 ### What the spec leaves open
 
-The spec requires advertising `urn:jmap:scene` in the JMAP
+The spec requires advertising `urn:ietf:params:jmap:scene` in the JMAP
 Session object (section 4). The session-level capability value is an empty
 object `{}`. The account-level capability object carries quota limits,
 permission flags, and the `supportedVisualTypes` array. The spec does not
@@ -119,12 +119,12 @@ Example session response:
 ```json
 {
   "capabilities": {
-    "urn:jmap:scene": {}
+    "urn:ietf:params:jmap:scene": {}
   },
   "accounts": {
     "account-xyz": {
       "accountCapabilities": {
-        "urn:jmap:scene": {
+        "urn:ietf:params:jmap:scene": {
           "mayCreateRegion": true,
           "mayCreateObject": true,
           "supportedVisualTypes": ["model/gltf-binary"],
@@ -195,7 +195,7 @@ userId have access to this regionId?" in the `SceneAvatar/set create` handler
 and in every get/query handler that checks region access.
 
 **Access policy: `"space"`.** This policy only functions when
-`urn:jmap:chat` is co-deployed and `spaceId` is set on the
+`urn:ietf:params:jmap:chat` is co-deployed and `spaceId` is set on the
 region. The server resolves membership by querying the Space's member list.
 If JMAP Chat is not present and a region is created with `accessPolicy:
 "space"`, the server MUST reject the create with `invalidProperties` (there
@@ -568,7 +568,7 @@ seconds as a starting point). Serialize avatar creation per user
 to prevent race conditions. Source `displayName` from the user profile or
 ChatContact when JMAP Chat is co-deployed (spec section 6.4: "the server
 sets `displayName` from the user profile or ChatContact when
-`urn:jmap:chat` is present"). The client MAY supply
+`urn:ietf:params:jmap:chat` is present"). The client MAY supply
 `displayName` in the create request, but the server is the authoritative
 source.
 
@@ -1044,7 +1044,7 @@ caller the region owner? Is caller an admin? If none, return `forbidden`.
 
 ### Blocked-contact spatial presence filtering
 
-When `urn:jmap:chat` is co-deployed, the server has access to
+When `urn:ietf:params:jmap:chat` is co-deployed, the server has access to
 each user's ChatContact records and their `blocked` field. Spec section 9.8
 defines how blocking affects spatial queries:
 
@@ -1471,7 +1471,7 @@ region configuration changes, object creation or destruction. It is the
 wrong channel for continuous position updates. Avatar position changes at
 simulation rates (10+ Hz) MUST travel through the simulation layer behind
 `simulationUri` — not through JMAP push. If the JMAP Scene WebSocket
-capability (`urn:jmap:scene:websocket`) is deployed, discrete
+capability (`urn:ietf:params:jmap:scene:websocket`) is deployed, discrete
 events such as avatar entry/exit and object placement can also travel over
 the JMAP WebSocket as ephemeral `SceneAvatarEvent` and `SceneObjectEvent`
 frames (see the WSS spec), giving lower latency than the

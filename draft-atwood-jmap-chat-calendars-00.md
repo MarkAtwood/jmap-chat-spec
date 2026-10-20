@@ -17,8 +17,14 @@ author:
     email: mark@reviewcommit.com
 
 normative:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   RFC2119:
-  RFC5234:
   RFC8174:
   RFC8620:
   RFC5545:
@@ -46,7 +52,6 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
-  RFC8126:
   RFC9073:
 
 --- abstract
@@ -72,7 +77,7 @@ This specification follows three principles consistent with the broader JMAP Cha
 {{JMAP-CALENDARS}} is the normative source of truth for calendar data types and methods. This document does not redefine Calendar, CalendarEvent, or their methods. It defines only:
 
 - A new optional `calendarId` field on the Space data type (defined in {{JMAP-CHAT}}).
-- The semantics of the existing `urn:jmap:chat:cap:calendar-event` and `urn:jmap:chat:cap:availability` MessageAction / Endpoint type URIs (registered in {{JMAP-CHAT}}) in a JMAP Calendars context.
+- The semantics of the existing `urn:ietf:params:jmap:chat:cap:calendar-event` and `urn:ietf:params:jmap:chat:cap:availability` MessageAction / Endpoint type URIs (defined in {{JMAP-CHAT}}) in a JMAP Calendars context.
 - Server behavior for optional .ics attachment parsing.
 - Privacy considerations specific to in-chat availability lookup.
 
@@ -88,38 +93,17 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 Terminology from {{RFC8620}}, {{JMAP-CHAT}}, and {{JMAP-CALENDARS}} is used throughout.
 
-# JMAP Object URNs {#object-urn}
-
-A JMAP object URN identifies one JMAP object by type, account, and id. It is a URN in the "jmap" URN namespace ({{JMAP-CHAT}}), with the following syntax ({{RFC5234}}):
-
-~~~abnf
-jmap-object-urn = "urn:jmap:" type-name ":"
-                  account-id ":" object-id
-type-name       = 1*( %x61-7A / DIGIT )
-                  ; registered in "JMAP Object URN Types"
-account-id      = 1*255id-char
-object-id       = 1*255id-char
-id-char         = ALPHA / DIGIT / "-" / "_"
-                  ; the Id character set of RFC 8620, Section 1.2
-~~~
-
-`type-name` is the lowercased name of a JMAP data type, as registered in the "JMAP Object URN Types" registry ({{iana-urn-types}}). `account-id` is the JMAP accountId of the account holding the object, and `object-id` is the object's `id`. For example, `urn:jmap:calendarevent:A13824:E6B2` identifies the CalendarEvent with id `E6B2` in account `A13824`.
-
-Type names come from the "JMAP Object URN Types" registry, which is separate from the "JMAP Capabilities" registry. A type name never equals the first segment after `urn:jmap:` of any other URN assigned under `urn:jmap:`: the capability URNs (such as `chat` in `urn:jmap:chat` and `urn:jmap:chat:calendars`, or `did` in `urn:jmap:did`) and the `urn:jmap:chat:cap:*` MessageAction and Endpoint types ({{JMAP-CHAT}}), so a JMAP object URN cannot be mistaken for a capability URN or an action type. JMAP core capability URNs use `urn:ietf:params:jmap:` ({{RFC8620, Section 9.3}}) and cannot collide.
-
-JMAP object URNs are for object references within JMAP method calls. Servers SHOULD NOT expose these URNs to non-JMAP systems without transformation; carrying them in JMAP method calls, including {{JMAP-CHAT-FED}} `Peer/deliver`, is within the JMAP method-call context.
-
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:jmap:chat:calendars` capability in the JMAP Session object. This capability is meaningful only when both `urn:jmap:chat` and `urn:ietf:params:jmap:calendars` are also advertised on the same account.
+Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:chat:calendars` capability in the JMAP Session object. This capability is meaningful only when both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:calendars` are also advertised on the same account.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:chat:calendars"]` at the session level is an empty JSON object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:chat:calendars"]` at the session level is an empty JSON object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:chat:calendars"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat:calendars"]` is a JSON object with the following fields:
 
 `mayBindCalendar` (Boolean):
 : `true` if accounts on this server may associate a Calendar with a Space, `false` otherwise. For example, multi-tenant deployments where the chat and calendar accounts are administratively separate set this to `false`.
@@ -132,7 +116,7 @@ The value of `accountCapabilities["urn:jmap:chat:calendars"]` is a JSON object w
 
 # Space Extension: Calendar Binding {#calendar-binding}
 
-The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:jmap:chat:calendars` capability is active.
+The Space data type defined in {{JMAP-CHAT}} is extended with one optional field when the `urn:ietf:params:jmap:chat:calendars` capability is active.
 
 ## calendarId {#calendar-id}
 
@@ -166,19 +150,19 @@ The chat-layer wiring (binding a Calendar to a Space, surfacing CalendarEvents i
 
 # CalendarEvent in Chat Context {#event-in-chat}
 
-A CalendarEvent ({{JMAP-CALENDARS}}) MAY be referenced from a chat message via the `urn:jmap:chat:cap:calendar-event` MessageAction type (registered in {{JMAP-CHAT}} Endpoint and MessageAction type vocabularies).
+A CalendarEvent ({{JMAP-CALENDARS}}) MAY be referenced from a chat message via the `urn:ietf:params:jmap:chat:cap:calendar-event` MessageAction type (defined in the {{JMAP-CHAT}} Endpoint and MessageAction type vocabularies).
 
 ## MessageAction format
 
-The MessageAction object has the following shape when its `type` is `urn:jmap:chat:cap:calendar-event`:
+The MessageAction object has the following shape when its `type` is `urn:ietf:params:jmap:chat:cap:calendar-event`:
 
 `type` (String):
-: `urn:jmap:chat:cap:calendar-event`.
+: `urn:ietf:params:jmap:chat:cap:calendar-event`.
 
 `uri` (String):
 : A URI identifying the referenced CalendarEvent. Two URI forms are recognized:
 
-  - A JMAP object URN ({{object-urn}}) of type `calendarevent`, in the form `urn:jmap:calendarevent:<accountId>:<eventId>`, referencing a CalendarEvent on the named account. This form requires the receiving client to have JMAP Calendars access to the named account.
+  - A JMAP object URI ({{JMAP-OBJECT-URI}}) of type `calendarevent`, in the form `jmap:calendarevent:<accountId>:<eventId>`, referencing a CalendarEvent on the named account. This form requires the receiving client to have JMAP Calendars access to the named account.
   - A standard `webcal://` or `https://` URL pointing to an iCalendar object retrievable out-of-band.
 
 `label` (String, optional):
@@ -208,7 +192,7 @@ If the underlying CalendarEvent is modified or destroyed after the chat message 
 
 # RSVP Handling {#rsvp}
 
-This specification does not define a new method for RSVPing to events. RSVPs are performed using {{JMAP-CALENDARS}}'s existing `CalendarEvent/set` method to patch the `participants` map on the target event. The chat layer's contribution is solely the UX wiring: a message carrying a `urn:jmap:chat:cap:calendar-event` MessageAction can render RSVP buttons that, when activated, trigger the appropriate JMAP Calendars call.
+This specification does not define a new method for RSVPing to events. RSVPs are performed using {{JMAP-CALENDARS}}'s existing `CalendarEvent/set` method to patch the `participants` map on the target event. The chat layer's contribution is solely the UX wiring: a message carrying a `urn:ietf:params:jmap:chat:cap:calendar-event` MessageAction can render RSVP buttons that, when activated, trigger the appropriate JMAP Calendars call.
 
 ## Recommended client flow
 
@@ -240,7 +224,7 @@ Servers MAY parse `.ics` ({{RFC5545}}, with extensions per {{RFC9073}}) attachme
 When a Message is created with an attachment whose `contentType` is `text/calendar` and the server has `supportsIcsParsing: true`, the server MAY perform one or more of the following actions:
 
 - Parse the iCalendar object and surface a derived CalendarEvent on the account's default Calendar (or a deployment-defined target Calendar).
-- Synthesize a MessageAction of type `urn:jmap:chat:cap:calendar-event` referencing the newly created or matched CalendarEvent.
+- Synthesize a MessageAction of type `urn:ietf:params:jmap:chat:cap:calendar-event` referencing the newly created or matched CalendarEvent.
 - Decline to parse (return the message with the raw attachment intact), in which case the client may parse client-side or render the attachment as a generic file.
 
 The specific behavior is deployment-defined. Deployments SHOULD NOT auto-RSVP on the recipient's behalf as a result of `.ics` parsing; RSVPs require explicit user action.
@@ -259,16 +243,16 @@ Servers MAY choose not to parse `.ics` attachments server-side at all. In that c
 
 # Availability Lookup {#availability}
 
-The `urn:jmap:chat:cap:availability` MessageAction / Endpoint type URI (registered in {{JMAP-CHAT}}) MAY surface a hyperlink to a Principal whose free/busy availability can be queried via {{JMAP-CALENDARS}} `Principal/getAvailability`.
+The `urn:ietf:params:jmap:chat:cap:availability` MessageAction / Endpoint type URI (defined in {{JMAP-CHAT}}) MAY surface a hyperlink to a Principal whose free/busy availability can be queried via {{JMAP-CALENDARS}} `Principal/getAvailability`.
 
 ## MessageAction format
 
-When `type` is `urn:jmap:chat:cap:availability`:
+When `type` is `urn:ietf:params:jmap:chat:cap:availability`:
 
 `uri` (String):
 : A URI identifying the Principal. Two forms are recognized:
 
-  - A JMAP object URN ({{object-urn}}) of type `principal`, in the form `urn:jmap:principal:<accountId>:<principalId>`.
+  - A JMAP object URI ({{JMAP-OBJECT-URI}}) of type `principal`, in the form `jmap:principal:<accountId>:<principalId>`.
   - A standard scheduling URL.
 
 `label` (String, optional):
@@ -297,7 +281,7 @@ Implementations SHOULD expose availability in slot-based form (busy / free for e
 
 Cross-server federation of calendar binding is **not in scope** for this revision. A Space's `calendarId` references a Calendar on the same account, and so on the same server ({{calendar-id}}). Calendar federation across JMAP servers (where two servers' Calendars are synchronized or one references the other) is a separate problem that may be addressed in a future revision of this or a different specification.
 
-Cross-server federation of calendar-event MessageActions and ICS attachments works in the limited sense described in {{event-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts.
+Cross-server federation of calendar-event MessageActions and ICS attachments works in the limited sense described in {{event-in-chat}}: the MessageAction carries a URI that may or may not be dereferenceable from the receiving server; the receiving client adapts. A MessageAction whose `uri` is a JMAP object URI is removed by the receiving server ({{JMAP-CHAT-FED}}), because such a URI is meaningful only on its originating server ({{JMAP-OBJECT-URI}}); one with an `https` or `webcal` URL is kept.
 
 Cross-server availability lookup is out of scope for this specification; the wire contract here does not extend across the federation boundary.
 
@@ -336,7 +320,7 @@ This document explicitly excludes cross-server calendar binding and availability
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:chat:calendars`
+: `urn:ietf:params:jmap:chat:calendars`
 
 Intended Use:
 : common
@@ -350,30 +334,18 @@ Specification document:
 Security and privacy considerations:
 : See {{security}} of this document.
 
-## JMAP Object URN Types Registry {#iana-urn-types}
+## JMAP Object URI Type Registrations
 
-IANA is requested to create the "JMAP Object URN Types" registry in the "JSON Meta Application Protocol (JMAP)" registry group. It lists the type names used in JMAP object URNs ({{object-urn}}). The registration policy is Specification Required ({{RFC8126, Section 4.6}}).
+IANA is requested to register the following entries in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
 
-The designated expert checks that a type name matches the `type-name` rule in {{object-urn}}, is the lowercased name of the JMAP data type it identifies, and does not equal the first segment following `urn:jmap:` in any URN registered in the "JMAP Capabilities" registry or otherwise assigned under the "jmap" URN namespace ({{JMAP-CHAT}}). IANA is also requested to add a note to the "JMAP Capabilities" registry: a capability URN whose first segment following `urn:jmap:` equals a registered JMAP object URN type name is not registered.
-
-Each registration has the following fields:
-
-Type Name:
-: The type name, matching the `type-name` rule.
-
-Reference:
-: The document that defines the type's use in JMAP object URNs.
-
-Initial registrations:
-
-| Type Name | Reference |
-|---|---|
-| calendarevent | This document |
-| principal | This document |
+| Type Name | Data Type | Reference |
+|---|---|---|
+| calendarevent | CalendarEvent | This document |
+| principal | Principal | This document |
 
 ## MessageAction Type URI
 
-The `urn:jmap:chat:cap:calendar-event` and `urn:jmap:chat:cap:availability` URI values used in MessageAction and Endpoint contexts are registered by {{JMAP-CHAT}}. This document refines their semantics in a JMAP Calendars context but does not request new URI registrations.
+The `urn:ietf:params:jmap:chat:cap:calendar-event` and `urn:ietf:params:jmap:chat:cap:availability` URI values used in MessageAction and Endpoint contexts are assigned by {{JMAP-CHAT}} under the `urn:ietf:params:jmap:chat:cap:` placeholder it registers. This document refines their semantics in a JMAP Calendars context and requests no IANA action for them.
 
 --- back
 

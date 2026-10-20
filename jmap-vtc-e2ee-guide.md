@@ -605,7 +605,7 @@ implements.
 
 ## 11. Relationship to JMAP Chat E2EE
 
-When both `urn:jmap:vtc` and `urn:jmap:chat` are
+When both `urn:ietf:params:jmap:vtc` and `urn:ietf:params:jmap:chat` are
 deployed, there are two independent E2EE domains:
 
 1. **Media E2EE** (this guide): encrypted audio/video frames via WebRTC

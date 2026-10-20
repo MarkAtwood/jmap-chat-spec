@@ -97,7 +97,7 @@ This document defines how a gateway converts messages between the IETF More Inst
 
 This document collects the conversion rules that such a gateway follows. Servers and clients that never convert MIMI messages are not affected by it. Keeping these rules separate from {{JMAP-CHAT}} lets them track revisions of the MIMI drafts without revising the core specification.
 
-MIMI leaves the client-server interface out of scope. This document also fills that gap for JMAP: {{capability}} through {{mls-messages}} define the `urn:jmap:chat:mimi` capability, with which an MLS {{RFC9420}} client uses a JMAP Chat server as its MIMI provider. Such a server routes MLS messages between the client and the MIMI hub and never decrypts them. The conversion rules of {{message-ids}} through {{status}} apply only to a party that decrypts MIMI messages and stores the result as JMAP Chat Messages.
+MIMI leaves the client-server interface out of scope. This document also fills that gap for JMAP: {{capability}} through {{mls-messages}} define the `urn:ietf:params:jmap:chat:mimi` capability, with which an MLS {{RFC9420}} client uses a JMAP Chat server as its MIMI provider. Such a server routes MLS messages between the client and the MIMI hub and never decrypts them. The conversion rules of {{message-ids}} through {{status}} apply only to a party that decrypts MIMI messages and stores the result as JMAP Chat Messages.
 
 # Conventions and Definitions
 
@@ -105,7 +105,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 Terminology from {{JMAP-CHAT}} and {{MIMI-CONTENT}} is used throughout. A "converting party" is any server or client that converts `application/mimi-content` messages to JMAP Chat Messages.
 
-Terminology from {{RFC8620}}, {{RFC9420}}, and {{MIMI-PROTOCOL}} (hub, follower, room, participant list) is also used. A "MIMI provider" is a server that advertises the `urn:jmap:chat:mimi` capability. A MIMI provider is the hub of rooms created through it ({{room-create}}) and a follower in rooms hosted elsewhere.
+Terminology from {{RFC8620}}, {{RFC9420}}, and {{MIMI-PROTOCOL}} (hub, follower, room, participant list) is also used. A "MIMI provider" is a server that advertises the `urn:ietf:params:jmap:chat:mimi` capability. A MIMI provider is the hub of rooms created through it ({{room-create}}) and a follower in rooms hosted elsewhere.
 
 Every byte-string property defined in {{capability}} through {{mls-messages}} is the unpadded base64url encoding ({{RFC4648, Section 5}}) of the exact octets of the named MLS {{RFC9420}} or MIMI {{MIMI-PROTOCOL}} structure in the TLS presentation language encoding those documents use. Servers MUST NOT re-encode these octets, because clients sign some of them and verify signatures over others.
 
@@ -144,17 +144,17 @@ A MIMI media reaction (a reaction that is not an emoji) is carried in JMAP Chat 
 
 MIMI message statuses `expired`, `hidden`, and `error` {{MIMI-MESSAGE-STATUS}} are not read acknowledgements, so a converting party does not set `readAt` or a ReadDisposition for them.
 
-# The urn:jmap:chat:mimi Capability {#capability}
+# The urn:ietf:params:jmap:chat:mimi Capability {#capability}
 
-Servers supporting the client interface of this document advertise the `urn:jmap:chat:mimi` capability in the JMAP Session object. This capability is meaningful only when `urn:jmap:chat` is also present.
+Servers supporting the client interface of this document advertise the `urn:ietf:params:jmap:chat:mimi` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also present.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:chat:mimi"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:chat:mimi"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:chat:mimi"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON object with the following fields:
 
 `userUri` (String):
 : The account owner's MIMI user URI ({{MIMI-PROTOCOL}}). The server uses it as `requestingUser` and `sendingUri` on the owner's behalf.
@@ -613,7 +613,7 @@ A Welcome is stored in the owner's account, so all of the owner's clients receiv
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:chat:mimi`
+: `urn:ietf:params:jmap:chat:mimi`
 
 Intended Use:
 : common
@@ -641,7 +641,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat:mimi`
+: `urn:ietf:params:jmap:chat:mimi`
 
 Reference:
 : This document
@@ -677,7 +677,7 @@ Published specification:
 : This document.
 
 Applications that use this media type:
-: JMAP Chat servers and clients that implement the `urn:jmap:chat:mimi` capability.
+: JMAP Chat servers and clients that implement the `urn:ietf:params:jmap:chat:mimi` capability.
 
 Fragment identifier considerations:
 : N/A

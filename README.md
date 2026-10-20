@@ -26,21 +26,25 @@ Both topologies use the same client-facing API.
 
 | Draft | Capability | What It Covers |
 |---|---|---|
-| [draft-atwood-jmap-chat-00](draft-atwood-jmap-chat-00.md) | `urn:jmap:chat` | Core data types, methods, push events, blob storage |
+| [draft-atwood-jmap-chat-00](draft-atwood-jmap-chat-00.md) | `urn:ietf:params:jmap:chat` | Core data types, methods, push events, blob storage |
 | [draft-atwood-jmap-chat-federation-00](draft-atwood-jmap-chat-federation-00.md) | — | Server-to-server Peer/* methods, peer discovery, federation auth |
 
 ### Extensions
 
 | Draft | Capability | What It Covers |
 |---|---|---|
-| [draft-atwood-jmap-chat-push-00](draft-atwood-jmap-chat-push-00.md) | `urn:jmap:chat:push` | Inline push payloads (`ChatMessagePush`) for mobile/background clients |
-| [draft-atwood-jmap-chat-wss-00](draft-atwood-jmap-chat-wss-00.md) | `urn:jmap:chat:websocket` | WebSocket transport: ephemeral typing and presence events |
-| [draft-atwood-jmap-chat-filenode-00](draft-atwood-jmap-chat-filenode-00.md) | `urn:jmap:chat:filenode` | Space-scoped shared file storage via JMAP FileNode |
-| [draft-atwood-jmap-chat-calendars-00](draft-atwood-jmap-chat-calendars-00.md) | `urn:jmap:chat:calendars` | Binds Spaces to JMAP Calendars; surfaces CalendarEvents, RSVP, and availability in chat |
-| [draft-atwood-jmap-chat-tasks-00](draft-atwood-jmap-chat-tasks-00.md) | `urn:jmap:chat:tasks` | Binds Spaces to JMAP Tasks TaskLists; surfaces Tasks in chat with Task↔Chat back-references |
+| [draft-atwood-jmap-chat-push-00](draft-atwood-jmap-chat-push-00.md) | `urn:ietf:params:jmap:chat:push` | Inline push payloads (`ChatMessagePush`) for mobile/background clients |
+| [draft-atwood-jmap-chat-wss-00](draft-atwood-jmap-chat-wss-00.md) | `urn:ietf:params:jmap:chat:websocket` | WebSocket transport: ephemeral typing and presence events |
+| [draft-atwood-jmap-chat-filenode-00](draft-atwood-jmap-chat-filenode-00.md) | `urn:ietf:params:jmap:chat:filenode` | Space-scoped shared file storage via JMAP FileNode |
+| [draft-atwood-jmap-chat-calendars-00](draft-atwood-jmap-chat-calendars-00.md) | `urn:ietf:params:jmap:chat:calendars` | Binds Spaces to JMAP Calendars; surfaces CalendarEvents, RSVP, and availability in chat |
+| [draft-atwood-jmap-chat-tasks-00](draft-atwood-jmap-chat-tasks-00.md) | `urn:ietf:params:jmap:chat:tasks` | Binds Spaces to JMAP Tasks TaskLists; surfaces Tasks in chat with Task↔Chat back-references |
 | [draft-atwood-jmap-chat-mimi-00](draft-atwood-jmap-chat-mimi-00.md) | — | Gateway mapping from MIMI content to JMAP Chat Messages |
-| [draft-atwood-jmap-chat-did-00](draft-atwood-jmap-chat-did-00.md) | `urn:jmap:chat:did` | Decentralized Identifier support: mandatory DID methods, ChatContact extensions, federation auth |
-| [draft-atwood-jmap-cid-00](draft-atwood-jmap-cid-00.md) | `urn:jmap:cid` | SHA-256 content identifiers on blob upload responses and FileNode objects |
+| [draft-atwood-jmap-chat-did-00](draft-atwood-jmap-chat-did-00.md) | `urn:ietf:params:jmap:chat:did` | Decentralized Identifier support: mandatory DID methods, ChatContact extensions, federation auth |
+| [draft-atwood-jmap-cid-00](draft-atwood-jmap-cid-00.md) | `urn:ietf:params:jmap:cid` | SHA-256 content identifiers on blob upload responses and FileNode objects |
+| [draft-atwood-jmap-object-uri-00](draft-atwood-jmap-object-uri-00.md) | — | The `jmap:` URI scheme for context-relative JMAP object references, and the JMAP Object URI Types registry |
+| [draft-atwood-jmap-graph-00](draft-atwood-jmap-graph-00.md) | `urn:ietf:params:jmap:graph` | Standalone: general-purpose shareable graphs (Graph, GraphNode, GraphEdge) with no built-in semantics |
+| [draft-atwood-jmap-graph-projection-00](draft-atwood-jmap-graph-projection-00.md) | `urn:ietf:params:jmap:graph:projection` | Optional projection of an account's other JMAP data as a Graph |
+| [draft-atwood-jmap-graph-search-00](draft-atwood-jmap-graph-search-00.md) | `urn:ietf:params:jmap:graph:search` | Search for graphs: a built-in JSON filter language plus advertised query languages (GQL, openCypher, Gremlin, DocumentDB, SPARQL) |
 
 ---
 
@@ -138,6 +142,10 @@ draft-atwood-jmap-chat-tasks-00.md      Task binding extension
 draft-atwood-jmap-chat-did-00.md        DID-based identity extension
 draft-atwood-jmap-chat-mimi-00.md       MIMI gateway mapping
 draft-atwood-jmap-cid-00.md             Blob content identifiers
+draft-atwood-jmap-object-uri-00.md      jmap: URI scheme for JMAP object references
+draft-atwood-jmap-graph-00.md           General-purpose graphs (standalone)
+draft-atwood-jmap-graph-projection-00.md Graph projection of other JMAP data
+draft-atwood-jmap-graph-search-00.md    Graph search (filter language, advertised query languages)
 jmap-chat-implementer-guide.md          Core implementer's guide (non-normative)
 jmap-push-platform-guide.md             Platform delivery guide (non-normative)
 jmap-chat-push-platform-guide.md        Chat push supplement (non-normative)

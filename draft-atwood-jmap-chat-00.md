@@ -17,6 +17,7 @@ author:
     email: mark@reviewcommit.com
 
 normative:
+  RFC3553:
   RFC2119:
   RFC8174:
   RFC8620:
@@ -37,7 +38,13 @@ normative:
     date: 2026
 
 informative:
-  RFC8141:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   RFC7763:
   RFC7764:
   RFC8621:
@@ -237,7 +244,7 @@ informative:
 
 This document defines JMAP for Chat, a JMAP capability ({{RFC8620}}) for direct and group text messaging. It supports two deployment topologies: a mailbox-per-user model in which each user operates their own server, and a relay model in which a shared server routes end-to-end encrypted messages.
 
-The specification defines the `urn:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
+The specification defines the `urn:ietf:params:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
 
 The protocol covers the feature set common to contemporary messaging systems: group chat with membership roles, message reactions, editing, deletion, threading, @mentions, typing indicators, read receipts per participant, presence, pinned messages, per-chat notification settings, sender-controlled message expiry, and burn-on-read. Spaces provide a named multi-channel container with a role-based permission system, analogous to what other systems call a server, workspace, or team.
 
@@ -296,17 +303,17 @@ identity / id:
 
 Where this specification or companion specifications define color-valued fields, implementations SHOULD represent colors using the W3C Design Tokens Community Group color token format {{DTCG-COLOR}} (a JSON object with `"$type": "color"` and a `"$value"` that is a Design Tokens color object with `colorSpace` and `components` members and optional `alpha` and `hex` members, not a CSS color string; `colorSpace` names a color space defined in CSS Color Level 4 {{CSS-COLOR-4}}). For example: `{"$type": "color", "$value": {"colorSpace": "srgb", "components": [0.345, 0.396, 0.949], "hex": "#5865f2"}}`. When the Design Tokens format is not practical, implementations SHOULD use CAM16 uniform color space coordinates {{CAM16}} (`[J, a, b]` or `[J, M, h]`). As a baseline fallback, implementations MAY use sRGB hex strings (e.g., `"#5865f2"`). Servers MUST accept all three representations in color-valued fields and MUST preserve the representation provided by the client. Clients MUST handle all three representations gracefully.
 
-# The urn:jmap:chat Capability {#capability}
+# The urn:ietf:params:jmap:chat Capability {#capability}
 
-The `urn:jmap:chat` capability is advertised in the JMAP Session object at both the top-level `capabilities` key and within each account's `accountCapabilities` map.
+The `urn:ietf:params:jmap:chat` capability is advertised in the JMAP Session object at both the top-level `capabilities` key and within each account's `accountCapabilities` map.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:chat"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:chat"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:chat"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object with the following fields:
 
 `maxBodyBytes` (UnsignedInt):
 : Maximum UTF-8 {{RFC3629}} byte length of a Message `body`. Servers MUST reject messages exceeding this limit; in `Message/set` the rejection is a `tooLarge` SetError.
@@ -329,7 +336,7 @@ Note: {{RFC9425}} defines a `Quota` data type for exposing account-level storage
 
 ## Session Object Extensions
 
-When the `urn:jmap:chat` capability is present, servers MAY include the following additional fields in the Session object:
+When the `urn:ietf:params:jmap:chat` capability is present, servers MAY include the following additional fields in the Session object:
 
 `ownerUserId` (String):
 : The identity of the mailbox owner (equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact). Servers implementing {{JMAP-CHAT-FED}} MUST include this field; other servers MAY include it.
@@ -372,15 +379,15 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
 `type` (String):
 : A URI identifying the capability type. Well-known values defined by this document:
 
-  - `"urn:jmap:chat:cap:vtc"` — video/voice teleconference. `uri` is a signaling or room URL (e.g., a WebRTC signaling endpoint, a Jitsi room URL, a SIP URI).
-  - `"urn:jmap:chat:cap:payment"` — payment receiving endpoint. `uri` is a payment URI (e.g., `lightning:...`, `zcash:...`, `monero:...`, `bitcoin:...`).
-  - `"urn:jmap:chat:cap:blob"` — out-of-band file transfer endpoint. `uri` is a base URL for fetching or uploading blobs outside the JMAP blob mechanism.
-  - `"urn:jmap:chat:cap:calendar-event"` — calendar event link or meeting invite. `uri` is a calendar event URL or a JMAP CalendarEvent identifier. See {{JMAP-CALENDARS}} for the underlying calendar data model and {{JMAP-CHAT-CALENDARS}} for the chat integration semantics, including RSVP handling and structured rendering hints.
-  - `"urn:jmap:chat:cap:availability"` — invitation to perform a free/busy availability lookup. `uri` is a scheduling URL or JMAP Principal identifier. See {{JMAP-CALENDARS}} and {{JMAP-CHAT-CALENDARS}}.
-  - `"urn:jmap:chat:cap:task"` — task or to-do item link. `uri` is a JMAP Task identifier or an external task tracking URL. See {{JMAP-TASKS}} for the underlying task data model and {{JMAP-CHAT-TASKS}} for the chat integration semantics, including task-chat back-references and structured rendering hints.
-  - `"urn:jmap:chat:cap:filenode"` — file storage node link. `uri` is a JMAP FileNode URL or identifier in a Space-scoped file tree. See {{JMAP-FILENODE}}.
+  - `"urn:ietf:params:jmap:chat:cap:vtc"` — video/voice teleconference. `uri` is a signaling or room URL (e.g., a WebRTC signaling endpoint, a Jitsi room URL, a SIP URI).
+  - `"urn:ietf:params:jmap:chat:cap:payment"` — payment receiving endpoint. `uri` is a payment URI (e.g., `lightning:...`, `zcash:...`, `monero:...`, `bitcoin:...`).
+  - `"urn:ietf:params:jmap:chat:cap:blob"` — out-of-band file transfer endpoint. `uri` is a base URL for fetching or uploading blobs outside the JMAP blob mechanism.
+  - `"urn:ietf:params:jmap:chat:cap:calendar-event"` — calendar event link or meeting invite. `uri` is a calendar event URL or a JMAP object URI ({{JMAP-OBJECT-URI}}) of type `calendarevent`. See {{JMAP-CALENDARS}} for the underlying calendar data model and {{JMAP-CHAT-CALENDARS}} for the chat integration semantics, including RSVP handling and structured rendering hints.
+  - `"urn:ietf:params:jmap:chat:cap:availability"` — invitation to perform a free/busy availability lookup. `uri` is a scheduling URL or a JMAP object URI ({{JMAP-OBJECT-URI}}) of type `principal`. See {{JMAP-CALENDARS}} and {{JMAP-CHAT-CALENDARS}}.
+  - `"urn:ietf:params:jmap:chat:cap:task"` — task or to-do item link. `uri` is a JMAP object URI ({{JMAP-OBJECT-URI}}) of type `task` or an external task tracking URL. See {{JMAP-TASKS}} for the underlying task data model and {{JMAP-CHAT-TASKS}} for the chat integration semantics, including task-chat back-references and structured rendering hints.
+  - `"urn:ietf:params:jmap:chat:cap:filenode"` — file storage node link. `uri` is a URL for a FileNode in a Space-scoped file tree. See {{JMAP-FILENODE}}.
 
-  Other type URIs MAY be defined by deployments or future documents. The `urn:jmap:chat:cap:` prefix is reserved for types defined in JMAP Chat specifications.
+  Other type URIs MAY be defined by deployments or future documents. Names under the `urn:ietf:params:jmap:chat:cap:` prefix, which is reserved by a placeholder registration in the "JMAP Capabilities" registry ({{iana-capability}}), are assigned only by Standards Track RFCs; other documents and deployments use type URIs outside that prefix, such as `https` URIs under a domain they control.
 
 `uri` (String):
 : The endpoint URI. Format is type-specific. Peer-supplied; SHOULD be treated as untrusted.
@@ -641,7 +648,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : Per-Chat override of the account-level `PresenceStatus.receiptSharing` preference (see {{presence-status}}). When present, this value takes precedence over the account-level setting for this Chat only. When absent, the account-level preference applies. Owner-side preference; not shared with peers.
 
 `activeCallId` (String|null, server-set):
-: When `urn:jmap:vtc` ({{JMAP-VTC}}) is present: the id of a VTCCall that is currently active and bound to this Chat via the VTCCall's `chatId` field. The server sets this when a bound VTCCall enters the `"active"` state and clears it to `null` when the call ends. `null` when no call is active or VTC is not available. Clients MAY use this to display a "join call" banner.
+: When `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}) is present: the id of a VTCCall that is currently active and bound to this Chat via the VTCCall's `chatId` field. The server sets this when a bound VTCCall enters the `"active"` state and clears it to `null` when the call ends. `null` when no call is active or VTC is not available. Clients MAY use this to display a "join call" banner.
 
   When a VTCCall with a `chatId` matching this Chat's `id` transitions to state `"active"`, the server MUST set this field to that VTCCall's `id` and emit a `StateChange` for the Chat type. When that VTCCall transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange`. These updates are side effects of the VTCCall state transition and MUST be applied atomically with it from the client's perspective — a client polling `/changes` after receiving the VTCCall `StateChange` MUST see the corresponding Chat `activeCallId` update.
 
@@ -1555,7 +1562,7 @@ Additional fields are type-specific:
 | `"blockquote"` | none | Quoted text |
 | `"mention"` | `userId` (String) | Per-user @mention, for display; `userId` is display data written by the composing client, with no server meaning, and need not be an id on the receiving server |
 | `"broadcast"` | `scope` (String) | Broadcast-scope @mention, for display; `scope` is one of `"everyone"`, `"here"`, or `"admins"` (see {{broadcast-mention}}) |
-| `"link"` | `uri` (String) | Hyperlink; `uri` SHOULD be treated as untrusted |
+| `"link"` | `uri` (String) | Hyperlink; `uri` SHOULD be treated as untrusted, and MUST NOT be a JMAP object URI ({{JMAP-OBJECT-URI}}), because `body` is relayed between servers unchanged |
 
 Servers MUST NOT reject messages solely because they contain unrecognized span types; this allows protocol evolution. Clients MUST silently ignore unknown span types and render the `text` field as plaintext, preserving forward compatibility.
 
@@ -1789,8 +1796,8 @@ Clients SHOULD NOT expose sub-minute precision for `readAt`, `lastReadAt`, or `d
 `ChatContact.endpoints`, `Session.ownerEndpoints`, and `Message.actions` carry peer-supplied URIs, which are untrusted at every level ({{endpoint}}, {{message-action}}):
 
 - Clients do not fetch or connect to any OOB URI automatically; all OOB interactions require explicit user initiation ({{message-action}}, {{chat-contact}}). Auto-joining a call is a privacy violation.
-- Payment URIs (`urn:jmap:chat:cap:payment`) are validated by the client wallet before any funds are transferred. Servers store and forward payment URI values without inspection ({{message-action}}).
-- Blob/file URIs (`urn:jmap:chat:cap:blob`) used for OOB fetch are an SSRF vector; servers that fetch from peer-supplied blob endpoints SHOULD restrict connections to the known peer address space.
+- Payment URIs (`urn:ietf:params:jmap:chat:cap:payment`) are validated by the client wallet before any funds are transferred. Servers store and forward payment URI values without inspection ({{message-action}}).
+- Blob/file URIs (`urn:ietf:params:jmap:chat:cap:blob`) used for OOB fetch are an SSRF vector; servers that fetch from peer-supplied blob endpoints SHOULD restrict connections to the known peer address space.
 - `metadata` values are peer-supplied and MUST be ignored if they do not conform to the expected shape for the known `type`.
 - Clients ignore unknown `type` URIs, as {{endpoint}} and {{message-action}} require; servers SHOULD silently ignore them.
 
@@ -1805,7 +1812,7 @@ In relay deployments, the relay routes Peer/* messages but SHOULD NOT have acces
 
 ### Fields Inside the Ciphertext {#e2ee-fields}
 
-When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, and `subject` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update that has an encrypted `bodyType` and any of these fields non-empty with an `invalidProperties` SetError whose `properties` lists each such field, and MUST reject such a `Peer/deliver` payload with an `invalidArguments` method error ({{JMAP-CHAT-FED}}).
+When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, and `subject` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. Because no server can remove a JMAP object URI from ciphertext, and such a URI is meaningful only on the server that issued it ({{JMAP-OBJECT-URI}}), a client MUST NOT place one in encrypted content; a client that finds one after decryption treats it as unresolvable. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update that has an encrypted `bodyType` and any of these fields non-empty with an `invalidProperties` SetError whose `properties` lists each such field, and MUST reject such a `Peer/deliver` payload with an `invalidArguments` method error ({{JMAP-CHAT-FED}}).
 
 As a consequence, the server cannot validate mentions, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. Likewise, the `topicId` filter of `Message/query` matches only messages with a non-encrypted `bodyType`; clients group encrypted messages into topics after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
 
@@ -1823,12 +1830,12 @@ Security considerations for server-to-server federation are defined in {{JMAP-CH
 
 # IANA Considerations
 
-## JMAP Capability Registration
+## JMAP Capability Registration {#iana-capability}
 
-IANA is requested to register the following entry in the "JMAP Capabilities" registry:
+IANA is requested to register the following entries in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Intended Use:
 : common
@@ -1836,36 +1843,39 @@ Intended Use:
 Change Controller:
 : IETF
 
-Reference:
+Specification document:
 : This document.
 
 Security and Privacy Considerations:
 : See {{security}} of this document.
 
-## The urn:jmap Namespace {#iana-urn}
+Capability Name:
+: `urn:ietf:params:jmap:chat:cap:`
 
-This document and its companion specifications use the URN namespace identifier "jmap". The identifier is not registered with IANA; registration as a formal URN namespace ({{RFC8141}}) is deferred. No IANA action is requested for it at this time. Names under `urn:jmap:` are structured and allocated as follows.
+Intended Use:
+: placeholder
 
-Syntax:
-: A URN in this namespace matches `jmap-urn` ({{RFC5234}}):
+Change Controller:
+: IETF
 
-  ~~~abnf
-  jmap-urn = "urn:jmap:" segment *( ":" segment )
-  segment  = 1*( ALPHA / DIGIT / "-" / "_" )
-  ~~~
+Specification document:
+: This document, {{endpoint}}.
 
-  The first segment is allocated as described under Assignment and determines how the rest of the name is structured. Names contain no percent-encoded characters. URN-equivalence is that of {{RFC8141, Section 3}}: the NSS is compared case-sensitively, because JMAP account and object ids are case-sensitive. No r-component or q-component semantics are defined, and f-components are not used.
+Security and Privacy Considerations:
+: See {{security}} of this document.
 
-Assignment:
-: Each first segment is held by exactly one of the following, and the two sets are disjoint:
+## The urn:ietf:params:jmap Sub-namespace {#iana-urn}
 
-  1. A capability: a URN registered in the "JMAP Capabilities" registry ({{RFC8620, Section 9.4}}) whose first segment is that segment. Additional capability URNs under the segment (for example, `urn:jmap:chat:calendars`) are registered the same way. Other names under the segment are assigned by the specification that defines the capability or by documents that extend it; this document assigns `urn:jmap:chat:cap:*` ({{endpoint}}).
-  2. An object URN type: a type name registered in the "JMAP Object URN Types" registry ({{JMAP-CHAT-CALENDARS}}). The rest of the name is `<accountId>:<objectId>` as that document defines.
+This document and its companion specifications assign names in the `urn:ietf:params:jmap` sub-namespace ({{RFC8620, Section 9.3}}) only through the "JMAP Capabilities" registry ({{RFC8620, Section 9.4}}): capability URNs, and placeholder registrations in the manner of {{RFC8620, Section 9.4.7}}, which reserves `urn:ietf:params:jmap:error:`. This document registers the capability `urn:ietf:params:jmap:chat` and the placeholder `urn:ietf:params:jmap:chat:cap:` ({{iana-capability}}), and assigns the names under that placeholder listed in {{endpoint}}. Further names under the placeholder are assigned only by Standards Track RFCs ({{RFC3553, Section 3}}). Those names match `chat-cap-urn` ({{RFC5234}}):
 
-  The collision rule of {{JMAP-CHAT-CALENDARS}} keeps the two sets apart: a type name is not registered if it equals the first segment of an assigned capability URN, and a capability URN is not registered if its first segment equals a registered type name. Uniqueness of capability URNs and type names follows from the registries. A name, once assigned, is not reassigned.
+~~~abnf
+chat-cap-urn = "urn:ietf:params:jmap:chat:cap:" 1*cap-char
+cap-char     = %x61-7A / DIGIT / "-"
+~~~
 
-Uniqueness:
-: {{RFC8620}} does not make account ids globally unique, so an object URN identifies an object only relative to the JMAP server that issued the account id; equal object URNs received from two different servers can name different objects. Implementations interpret an object URN only in the context of the JMAP session or federation peer from which it was received. Names in this namespace never equal names in `urn:ietf:params:jmap:`, because the NIDs differ.
+Lexical equivalence is exact string match ({{RFC3553}}).
+
+References to individual JMAP objects do not use this sub-namespace; they use the `jmap` URI scheme ({{JMAP-OBJECT-URI}}).
 
 ## JMAP Data Types Registration
 
@@ -1881,7 +1891,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1896,7 +1906,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1911,7 +1921,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1926,7 +1936,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1941,7 +1951,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1956,7 +1966,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1971,7 +1981,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -1986,7 +1996,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document
@@ -2001,7 +2011,7 @@ Can Use for State Change:
 : Yes
 
 Capability:
-: `urn:jmap:chat`
+: `urn:ietf:params:jmap:chat`
 
 Reference:
 : This document

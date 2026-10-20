@@ -28,7 +28,7 @@ join, and the call history ends up searchable in the message thread.
 
 ### When to advertise both
 
-Advertise `urn:jmap:vtc` alongside `urn:jmap:chat` when your
+Advertise `urn:ietf:params:jmap:vtc` alongside `urn:ietf:params:jmap:chat` when your
 deployment includes both a call-state manager and a chat server on the same account.
 The two capabilities are independent — a deployment can run either without the other —
 but the integration features described in this guide only activate when both are present
@@ -42,16 +42,16 @@ A session advertising both capabilities looks like this:
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": { ... },
-    "urn:jmap:chat": {},
-    "urn:jmap:vtc": {}
+    "urn:ietf:params:jmap:chat": {},
+    "urn:ietf:params:jmap:vtc": {}
   },
   "accounts": {
     "acct1": {
       "name": "alice@example.com",
       "isPersonal": true,
       "accountCapabilities": {
-        "urn:jmap:chat": { ... },
-        "urn:jmap:vtc": {
+        "urn:ietf:params:jmap:chat": { ... },
+        "urn:ietf:params:jmap:vtc": {
           "mayCreateCall": true,
           "supportsRingCalls": true,
           "supportsRoomCalls": true,
@@ -70,7 +70,7 @@ A session advertising both capabilities looks like this:
 }
 ```
 
-The session-level capability value for `urn:jmap:vtc` is always an empty
+The session-level capability value for `urn:ietf:params:jmap:vtc` is always an empty
 object `{}`. The substantive per-account fields live under `accountCapabilities`.
 
 ### Account-level capability fields your Chat UI needs
@@ -88,7 +88,7 @@ offering calling features:
 ### Feature detection
 
 Do not assume VTC is present because you know your own deployment. Clients MUST check
-for `urn:jmap:vtc` in `accountCapabilities` before rendering any calling
+for `urn:ietf:params:jmap:vtc` in `accountCapabilities` before rendering any calling
 UI. This ensures the same client code works against deployments that have not yet
 deployed calling, and against accounts on multi-tenant servers where calling is not
 enabled for every account.
@@ -125,7 +125,7 @@ transitions the call to `"ringing"`.
 
 ```json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:vtc"],
+  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:vtc"],
   "methodCalls": [
     ["VTCCall/set", {
       "accountId": "acct1",
@@ -154,7 +154,7 @@ there is no ringing phase. Members join when they choose to.
 
 ```json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:vtc"],
+  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:vtc"],
   "methodCalls": [
     ["VTCCall/set", {
       "accountId": "acct1",
@@ -202,7 +202,7 @@ clients can neither set nor clear it. A client that sees a stale value (referenc
 ended or nonexistent call) treats it as `null` for UI purposes; the server repairs it on
 next read. The spec says:
 
-> When `urn:jmap:vtc` is present: the id of a VTCCall that is currently
+> When `urn:ietf:params:jmap:vtc` is present: the id of a VTCCall that is currently
 > active and bound to this Chat via the VTCCall's `chatId` field. The server sets this
 > when a bound VTCCall enters the `"active"` state and clears it to `null` when the
 > call ends. `null` when no call is active or VTC is not available.
@@ -390,13 +390,13 @@ point for members who were offline when the call started or who join the chat la
 
 ### Constructing the MessageAction
 
-A MessageAction for a VTC call uses `type: "urn:jmap:chat:cap:vtc"`. The `uri` field
+A MessageAction for a VTC call uses `type: "urn:ietf:params:jmap:chat:cap:vtc"`. The `uri` field
 carries the `joinUri` from the VTCCall. The `metadata` field carries the `callId` and
 optionally a `joinPassword`:
 
 ```json
 {
-  "type": "urn:jmap:chat:cap:vtc",
+  "type": "urn:ietf:params:jmap:chat:cap:vtc",
   "uri": "https://meet.example.com/room/standup-2026",
   "label": "Join standup call",
   "metadata": {
@@ -416,7 +416,7 @@ VTC fall back to treating `uri` as a plain link, which is correct graceful degra
 
 ### Rich link preview showing call status
 
-A client that receives a Message with a `urn:jmap:chat:cap:vtc` MessageAction and
+A client that receives a Message with a `urn:ietf:params:jmap:chat:cap:vtc` MessageAction and
 has VTC capability can render a live status card:
 
 1. Extract `callId` from `actions[0].metadata`.
@@ -469,7 +469,7 @@ Create a system Message in the bound Chat for the following VTCCall lifecycle ev
 **Call started:**
 When a VTCCall with a `chatId` binding enters `"active"` state, create a Message in
 that Chat. The body text should be something like "Alice started a call." Include a
-`urn:jmap:chat:cap:vtc` MessageAction so the system message doubles as a join link
+`urn:ietf:params:jmap:chat:cap:vtc` MessageAction so the system message doubles as a join link
 while the call is active.
 
 **Call ended:**
@@ -541,17 +541,17 @@ When implementing the Chat-VTC integration, your server must:
   members of the bound Chat or Space.
 - Create system Messages in the bound Chat for call-started, call-ended, and missed-call
   events.
-- Advertise both `urn:jmap:chat` and `urn:jmap:vtc` under
+- Advertise both `urn:ietf:params:jmap:chat` and `urn:ietf:params:jmap:vtc` under
   `accountCapabilities` for accounts that have both capabilities.
 
 When implementing on the client side, your client must:
 
-- Check `urn:jmap:vtc` in `accountCapabilities` before showing calling UI.
+- Check `urn:ietf:params:jmap:vtc` in `accountCapabilities` before showing calling UI.
 - Check `mayCreateCall` before enabling the call button.
 - Respond to Chat `StateChange` notifications to show or hide the join banner based
   on `activeCallId`.
 - Only open `joinUri` after explicit user action — never automatically.
 - Use `callType: "ring"` for 1:1 direct chats and `callType: "room"` for group
   channels (when both are supported; see section 2 for the fallback).
-- Include a `urn:jmap:chat:cap:vtc` MessageAction in the Message created when a room
+- Include a `urn:ietf:params:jmap:chat:cap:vtc` MessageAction in the Message created when a room
   call starts in a channel.

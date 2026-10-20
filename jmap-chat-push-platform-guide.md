@@ -28,13 +28,13 @@ specification:
 ## Overview
 
 `ChatMessagePush` is an extension to the RFC 8620 `PushSubscription` mechanism. When a
-server supports this extension, it advertises the `urn:jmap:chat:push`
+server supports this extension, it advertises the `urn:ietf:params:jmap:chat:push`
 capability. Clients that want inline push payloads add a `chatPush` property to their
 `PushSubscription` objects. The server then delivers `ChatMessagePush` payloads directly
 to the push endpoint instead of (or in addition to) the standard `StateChange` object.
 
 Before registering a `chatPush` configuration, clients SHOULD check the account-level
-capability object for `urn:jmap:chat:push`. It contains:
+capability object for `urn:ietf:params:jmap:chat:push`. It contains:
 
 - `maxSnippetBytes` — the maximum byte length the server will include in `bodySnippet`
 - `supportedUrgencyValues` — the urgency values the server accepts in `ChatPushConfig`
@@ -48,7 +48,7 @@ Clients MUST NOT request an `urgency` or `mentionUrgency` value not in
 `supportedUrgencyValues`; the server will reject the `PushSubscription/set` create or
 update with an `invalidProperties` SetError naming the offending property.
 
-If `urn:jmap:chat:push` is absent from the account capabilities, the server
+If `urn:ietf:params:jmap:chat:push` is absent from the account capabilities, the server
 does not support inline `ChatMessagePush` payloads. Clients MUST fall back to a standard
 RFC 8620 `PushSubscription` without a `chatPush` property. In that case the server
 delivers plain `StateChange` events for the `Message` data type; clients handle them by

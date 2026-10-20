@@ -1620,7 +1620,7 @@ The simulation layer on receiving a `"shoot"` event:
 
 ```json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:scene"],
   "methodCalls": [[
     "SceneObject/set",
     {

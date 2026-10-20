@@ -105,11 +105,11 @@ informative:
 
 --- abstract
 
-This document defines JMAP Scene, a JMAP capability ({{RFC8620}}) for managing three-dimensional spatial environments. It defines the `urn:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a `SceneObject/interact` method for object interactions; a coordinate system convention; and a visibility contract between server and client.
+This document defines JMAP Scene, a JMAP capability ({{RFC8620}}) for managing three-dimensional spatial environments. It defines the `urn:ietf:params:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a `SceneObject/interact` method for object interactions; a coordinate system convention; and a visibility contract between server and client.
 
 The specification models spatial *state* — what objects exist, where they are, and who is present — without prescribing the rendering technology or simulation protocol. Actual real-time position synchronization, physics, and rendering travel through a deployment-chosen simulation stack; the JMAP server is a spatial state database, not a rendering engine.
 
-The capability is standalone (`urn:jmap:scene`). When JMAP Chat ({{JMAP-CHAT}}) is also present, SceneRegion objects MAY carry back-references to Chat and Space objects for in-world text communication. When JMAP VTC ({{JMAP-VTC}}) is also present, SceneRegion objects MAY bind to VTCCall objects for in-world voice and video.
+The capability is standalone (`urn:ietf:params:jmap:scene`). When JMAP Chat ({{JMAP-CHAT}}) is also present, SceneRegion objects MAY carry back-references to Chat and Space objects for in-world text communication. When JMAP VTC ({{JMAP-VTC}}) is also present, SceneRegion objects MAY bind to VTCCall objects for in-world voice and video.
 
 --- middle
 
@@ -128,7 +128,7 @@ This document defines a JMAP capability that models spatial state as JMAP data t
 
 ## Relationship to JMAP Chat (optional) {#chat-binding}
 
-When `urn:jmap:chat` ({{JMAP-CHAT}}) is advertised alongside `urn:jmap:scene`, SceneRegion objects MAY carry `chatId`, `spaceId`, and `channelId` back-references. When present:
+When `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is advertised alongside `urn:ietf:params:jmap:scene`, SceneRegion objects MAY carry `chatId`, `spaceId`, and `channelId` back-references. When present:
 
 - **In-region text chat** is the Chat bound via `chatId`. Messages sent to that Chat appear as in-world text communication.
 - **Proximity chat** may be modeled as a Chat per region or as ephemeral events on the Chat's WebSocket connection ({{JMAP-CHAT-WSS}}).
@@ -138,7 +138,7 @@ Without JMAP Chat, the Scene capability is fully functional as a standalone spat
 
 ## Relationship to JMAP VTC (optional) {#vtc-binding}
 
-When `urn:jmap:vtc` ({{JMAP-VTC}}) is advertised alongside `urn:jmap:scene`, SceneRegion objects MAY carry an `activeCallId` binding to a VTCCall. When present:
+When `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}) is advertised alongside `urn:ietf:params:jmap:scene`, SceneRegion objects MAY carry an `activeCallId` binding to a VTCCall. When present:
 
 - **In-region voice/video** is the VTCCall bound via `activeCallId`. Joining the region and joining the call are independent actions; the binding provides the association.
 - **Spatial audio** is a simulation-layer concern. The VTCCall provides the voice channel; the simulation layer handles spatialization based on avatar positions.
@@ -194,15 +194,15 @@ Scale is a JSON array of three Numbers: `[sx, sy, sz]`, representing scale facto
 
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:jmap:scene` capability in the JMAP Session object.
+Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:scene` capability in the JMAP Session object.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:scene"]` at the session level is an empty JSON object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:scene"]` at the session level is an empty JSON object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:scene"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:scene"]` is a JSON object with the following fields:
 
 `mayCreateRegion` (Boolean):
 : `true` if the authenticated user may create new SceneRegion objects.
@@ -463,16 +463,16 @@ SceneObjects within any anchored region are positioned in meters relative to the
 The following fields are present only when the corresponding companion capability is advertised on the same account:
 
 `chatId` (String|null):
-: When `urn:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this region. `null` if the region has no chat binding.
+: When `urn:ietf:params:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this region. `null` if the region has no chat binding.
 
 `spaceId` (String|null):
-: When `urn:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this region. `null` if the region has no Space context.
+: When `urn:ietf:params:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this region. `null` if the region has no Space context.
 
 `channelId` (String|null):
-: When `urn:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the region has no channel context.
+: When `urn:ietf:params:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the region has no channel context.
 
 `activeCallId` (String|null):
-: When `urn:jmap:vtc` is present: the id of an active VTCCall ({{JMAP-VTC}}) bound to this region. `null` if no call is active. When the VTCCall referenced by `activeCallId` transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange` for the SceneRegion type. This update is a side effect of the VTCCall state transition.
+: When `urn:ietf:params:jmap:vtc` is present: the id of an active VTCCall ({{JMAP-VTC}}) bound to this region. `null` if no call is active. When the VTCCall referenced by `activeCallId` transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange` for the SceneRegion type. This update is a side effect of the VTCCall state transition.
 
 When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat also has an `activeCallId` field (per {{JMAP-CHAT}}), the two fields SHOULD reference the same VTCCall. If they diverge (e.g., due to independent client updates), the SceneRegion's `activeCallId` is authoritative for spatial audio binding and the Chat's `activeCallId` is authoritative for the text-channel call banner.
 
@@ -712,7 +712,10 @@ Example create request with full JMAP envelope:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneAsset/set", {
       "accountId": "acct-001",
@@ -762,7 +765,10 @@ Example destroy request:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneAsset/set", {
       "accountId": "acct-001",
@@ -939,7 +945,10 @@ Request:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneRegion/get", {
       "accountId": "acct-001",
@@ -1077,7 +1086,10 @@ Example create request with full JMAP envelope:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneRegion/set", {
       "accountId": "acct-001",
@@ -1148,7 +1160,10 @@ Example update -- patch a region's accessPolicy and bounds:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneRegion/set", {
       "accountId": "acct-001",
@@ -1198,7 +1213,10 @@ Example destroy:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneRegion/set", {
       "accountId": "acct-001",
@@ -1249,7 +1267,7 @@ Response:
 | `spawnPosition` is not a valid 3-element numeric array | Position must be `[x, y, z]` finite Numbers. |
 | `spawnOrientation` is not a valid quaternion | Quaternion must be `[x, y, z, w]` with finite components and non-zero magnitude; a server that rejects non-unit values also rejects a magnitude outside its epsilon (see {{coordinate-system}}). |
 | `environment` contains values the server rejects | When the server validates environment sub-fields (deployment-defined schema), invalid field types or values trigger this error. |
-| `accessPolicy` is `"space"` but `urn:jmap:chat` is not in the server's capabilities | `accessPolicy "space" requires urn:jmap:chat`. |
+| `accessPolicy` is `"space"` but `urn:ietf:params:jmap:chat` is not in the server's capabilities | `accessPolicy "space" requires urn:ietf:params:jmap:chat`. |
 | `accessPolicy` is `"space"` but `spaceId` is null | `accessPolicy "space" requires spaceId`. |
 | `chatId`, `spaceId`, or `channelId` fails the binding checks | See the binding checks above. |
 | `invitedUserIds` is not an array of Strings | `invitedUserIds` is a String\[\]. |
@@ -1361,7 +1379,10 @@ Example query -- public regions sorted by population:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneRegion/query", {
       "accountId": "acct-001",
@@ -1432,7 +1453,10 @@ Request:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/get", {
       "accountId": "acct-001",
@@ -1553,7 +1577,10 @@ Example create request with full JMAP envelope:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/set", {
       "accountId": "acct-001",
@@ -1632,7 +1659,10 @@ Example update request with full JMAP envelope -- move an object:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/set", {
       "accountId": "acct-001",
@@ -1676,7 +1706,10 @@ Example destroy -- children are also destroyed recursively:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/set", {
       "accountId": "acct-001",
@@ -1884,7 +1917,10 @@ Example query -- all interactable objects within 20 meters of a point:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/query", {
       "accountId": "acct-001",
@@ -1930,7 +1966,10 @@ Example query -- objects within an axis-aligned bounding box:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/query", {
       "accountId": "acct-001",
@@ -2027,7 +2066,10 @@ Example request:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneObject/interact", {
       "accountId": "acct-001",
@@ -2135,7 +2177,10 @@ Example create request with full JMAP envelope:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneAvatar/set", {
       "accountId": "acct-001",
@@ -2214,7 +2259,10 @@ Example update -- teleport to a bookmark position:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneAvatar/set", {
       "accountId": "acct-001",
@@ -2273,7 +2321,10 @@ Example leave request with full JMAP envelope:
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneAvatar/set", {
       "accountId": "acct-001",
@@ -2451,7 +2502,10 @@ Example query -- active avatars within 30 meters of a point (proximity query):
 
 ~~~json
 {
-  "using": ["urn:ietf:params:jmap:core", "urn:jmap:scene"],
+  "using": [
+    "urn:ietf:params:jmap:core",
+    "urn:ietf:params:jmap:scene"
+  ],
   "methodCalls": [
     ["SceneAvatar/query", {
       "accountId": "acct-001",
@@ -2553,7 +2607,7 @@ A user has access to a region when its `accessPolicy` admits the user, when the 
 : The users whose userIds are listed in `invitedUserIds`. Servers MAY admit users to an `"invite"` region by other mechanisms as well, such as possession of a shared secret, a wallet proof, a PKIX certificate, or an external authorization oracle; such mechanisms are expected to be standardized separately.
 
 `"space"`:
-: When `urn:jmap:chat` is present and `spaceId` is set: the members of the bound Space.
+: When `urn:ietf:params:jmap:chat` is present and `spaceId` is set: the members of the bound Space.
 
 The server SHOULD treat a request from a user without access to a region as if the region did not exist: `notFound` for `SceneRegion/get`, `SceneObject/get`, and `SceneAvatar/get`, for `/set` operations that target the region or its records, and for `SceneObject/interact`; and no results from the region in `/query`. Returning `forbidden` would confirm that the region exists.
 
@@ -2619,7 +2673,7 @@ SceneObject data returned to a client reveals information about the scene (objec
 
 ## Blocked-Contact Spatial Presence {#blocked-contact-spatial}
 
-When `urn:jmap:chat` ({{JMAP-CHAT}}) is co-deployed with `urn:jmap:scene`, the server has access to the blocking user's ChatContact records and their `blocked` field. The server SHOULD use this information to suppress spatial presence of blocked users:
+When `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed with `urn:ietf:params:jmap:scene`, the server has access to the blocking user's ChatContact records and their `blocked` field. The server SHOULD use this information to suppress spatial presence of blocked users:
 
 - SceneAvatar records belonging to a blocked ChatContact SHOULD be excluded from `SceneAvatar/get` responses and `SceneAvatar/query` results delivered to the blocking user (see {{visibility-contract}} for how this interacts with `/changes`). The blocked user's avatar still exists in the region; it is simply not visible to the blocking user's client.
 
@@ -2629,7 +2683,7 @@ When `urn:jmap:chat` ({{JMAP-CHAT}}) is co-deployed with `urn:jmap:scene`, the s
 
 - The `activeAvatarCount` field on SceneRegion is a server-set aggregate. Servers MAY choose to return the true count (which includes blocked users) or a filtered count that excludes blocked users. Either approach leaks some information: a true count reveals the presence of unseen users; a filtered count that changes when a block is applied reveals the act of blocking. Deployments can document which behavior they implement; they SHOULD prefer the true count, since it is consistent for all observers and does not leak per-user blocking decisions.
 
-Without `urn:jmap:chat`, there is no blocked-contact list and this filtering does not apply. The Scene capability alone has no concept of blocked users.
+Without `urn:ietf:params:jmap:chat`, there is no blocked-contact list and this filtering does not apply. The Scene capability alone has no concept of blocked users.
 
 ## Content Moderation for User-Created Objects {#content-moderation}
 
@@ -2653,7 +2707,7 @@ Servers SHOULD enforce at least one of the following mitigations to prevent disp
 
 - **Reserved name lists.** The server SHOULD maintain a list of reserved display names that correspond to system roles or administrative functions and SHOULD reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
 
-In deployments where `urn:jmap:chat` ({{JMAP-CHAT}}) is co-deployed, the server MAY enforce that `SceneAvatar.displayName` matches the user's ChatContact display name. This provides a single authoritative source for display names across chat and spatial contexts, reducing the impersonation surface. When this enforcement is active, `SceneAvatar/set` operations that attempt to set a `displayName` different from the ChatContact display name SHOULD be rejected with an `invalidProperties` SetError naming `displayName`.
+In deployments where `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed, the server MAY enforce that `SceneAvatar.displayName` matches the user's ChatContact display name. This provides a single authoritative source for display names across chat and spatial contexts, reducing the impersonation surface. When this enforcement is active, `SceneAvatar/set` operations that attempt to set a `displayName` different from the ChatContact display name SHOULD be rejected with an `invalidProperties` SetError naming `displayName`.
 
 Avatar visual assets (`visualRef`) present a separate impersonation vector: a user may upload a 3D model designed to visually replicate another user's avatar. Servers MAY restrict avatar visual references to a deployment-approved set of assets, or MAY apply perceptual similarity checks against other users' registered avatar assets. These mitigations are deployment-defined; this specification does not prescribe a specific visual-similarity algorithm.
 
@@ -2794,7 +2848,7 @@ When both Scene and Chat capabilities are present, a single `PushSubscription` M
 
 ## Interaction with Chat Push {#push-chat-interaction}
 
-When `urn:jmap:scene` and `urn:jmap:chat` are both advertised on the same account, certain user-visible events may be expressible as both a Scene state change and a Chat state change. The server SHOULD deduplicate cross-capability push notifications for the same logical event to avoid redundant notifications to the user.
+When `urn:ietf:params:jmap:scene` and `urn:ietf:params:jmap:chat` are both advertised on the same account, certain user-visible events may be expressible as both a Scene state change and a Chat state change. The server SHOULD deduplicate cross-capability push notifications for the same logical event to avoid redundant notifications to the user.
 
 ### Avatar Enter and Chat Member Join
 
@@ -2840,7 +2894,7 @@ If a future deployment identifies a need for inline Scene push payloads (for exa
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:scene`
+: `urn:ietf:params:jmap:scene`
 
 Intended Use:
 : common
@@ -2861,25 +2915,25 @@ IANA is requested to register the following entries in the "JMAP Data Types" reg
 Type Name: SceneRegion
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:jmap:scene`
+Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 Type Name: SceneObject
 Can reference blobs: Yes
 Can use for state change: Yes
-Capability: `urn:jmap:scene`
+Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 Type Name: SceneAvatar
 Can reference blobs: Yes
 Can use for state change: Yes
-Capability: `urn:jmap:scene`
+Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 Type Name: SceneAsset
 Can reference blobs: Yes
 Can use for state change: Yes
-Capability: `urn:jmap:scene`
+Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 ## JMAP Error Code Registration {#iana-error}
@@ -2952,7 +3006,7 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
 {
   "capabilities": {
     "urn:ietf:params:jmap:core": {},
-    "urn:jmap:scene": {}
+    "urn:ietf:params:jmap:scene": {}
   },
   "accounts": {
     "alice-account": {
@@ -2966,7 +3020,7 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
       "isPersonal": false,
       "isReadOnly": false,
       "accountCapabilities": {
-        "urn:jmap:scene": {
+        "urn:ietf:params:jmap:scene": {
           "mayCreateRegion": false,
           "mayCreateObject": true,
           "supportedVisualTypes": [
@@ -2988,7 +3042,7 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
 }
 ~~~
 
-Alice's client sees `urn:jmap:scene` is present. The gallery's regions live in `gallery-account`, which Alice accesses as a shared account ({{account-model}}); all of the following calls use that account. In it she can create objects but not regions. The server supports glTF binary and PNG assets, and allows up to 100 concurrent avatars per region.
+Alice's client sees `urn:ietf:params:jmap:scene` is present. The gallery's regions live in `gallery-account`, which Alice accesses as a shared account ({{account-model}}); all of the following calls use that account. In it she can create objects but not regions. The server supports glTF binary and PNG assets, and allows up to 100 concurrent avatars per region.
 
 ### Step 2: Client queries available regions
 

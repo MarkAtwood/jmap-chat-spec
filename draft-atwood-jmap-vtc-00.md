@@ -113,11 +113,11 @@ informative:
 
 --- abstract
 
-This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) plus the embedded VTCMediaState object; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
+This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) plus the embedded VTCMediaState object; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
 
 The specification models call *state* — who is in a call, what state the call is in, and how to join it — without prescribing the media transport. Actual voice and video media travel through a deployment-chosen stack (WebRTC, SIP/RTP, or any other media framework); the JMAP server is a call-state database, not a media server.
 
-The capability is standalone (`urn:jmap:vtc`). When JMAP Chat ({{JMAP-CHAT}}) is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars ({{JMAP-CALENDARS}}) is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
+The capability is standalone (`urn:ietf:params:jmap:vtc`). When JMAP Chat ({{JMAP-CHAT}}) is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars ({{JMAP-CALENDARS}}) is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
 
 --- middle
 
@@ -148,7 +148,7 @@ Protocol-specific signaling beyond the core lifecycle — call transfer (SIP REF
 
 ## Relationship to JMAP Chat (recommended) {#chat-delegation}
 
-Deployments SHOULD advertise `urn:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
+Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:ietf:params:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
 
 - **In-call text chat** is the Chat bound via `chatId`. When `chatId` is supplied, the call is bound to that Chat for in-call text messaging; when omitted, the call has no text backchannel. Messages sent to the bound Chat appear as in-call chat.
 - **In-call reactions** (emoji floats) are reactions on Messages in the bound Chat.
@@ -158,13 +158,13 @@ Deployments SHOULD advertise `urn:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:jmap
 - **Access control** is inherited from the Space/channel permission model (see {{access-control}}).
 - **Active call banner** is signaled via the `activeCallId` and `activeCallAccountId` fields on Chat (see {{JMAP-CHAT}}).
 
-The existing `urn:jmap:chat:cap:vtc` Endpoint and MessageAction type URIs defined in {{JMAP-CHAT}} provide the integration point in the other direction: a chat message can carry a VTC action whose `uri` points to the call's `joinUri`.
+The existing `urn:ietf:params:jmap:chat:cap:vtc` Endpoint and MessageAction type URIs defined in {{JMAP-CHAT}} provide the integration point in the other direction: a chat message can carry a VTC action whose `uri` points to the call's `joinUri`.
 
 Without JMAP Chat, the VTC capability is fully functional as a standalone call-state manager. Calls have no chat binding, and the delegated features above are unavailable.
 
 ## Relationship to JMAP Scene (optional)
 
-When `urn:jmap:scene` ({{JMAP-SCENE}}) is also advertised, SceneRegion objects MAY carry an `activeCallId` field referencing a VTCCall. This binding enables spatial audio: the Scene simulation layer can use SceneAvatar positions to spatialize VTC audio for participants in the region. The VTC capability itself is unaware of Scene; the binding is defined entirely in {{JMAP-SCENE}} and is optional. Without JMAP Scene, calls have no spatial component.
+When `urn:ietf:params:jmap:scene` ({{JMAP-SCENE}}) is also advertised, SceneRegion objects MAY carry an `activeCallId` field referencing a VTCCall. This binding enables spatial audio: the Scene simulation layer can use SceneAvatar positions to spatialize VTC audio for participants in the region. The VTC capability itself is unaware of Scene; the binding is defined entirely in {{JMAP-SCENE}} and is optional. Without JMAP Scene, calls have no spatial component.
 
 ## Relationship to JMAP Calendars (optional)
 
@@ -178,15 +178,15 @@ Terminology from {{RFC8620}} is used throughout. The term "userId" refers to the
 
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:jmap:vtc` capability in the JMAP Session object.
+Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:vtc` capability in the JMAP Session object.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:jmap:vtc"]` at the session level is an empty JSON object `{}`.
+The value of `capabilities["urn:ietf:params:jmap:vtc"]` at the session level is an empty JSON object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:jmap:vtc"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object with the following fields:
 
 `mayCreateCall` (Boolean):
 : `true` if the authenticated user may create new VTCCall objects.
@@ -454,13 +454,13 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 The following fields are present only when the corresponding companion capability is advertised on the same account:
 
 `chatId` (String|null):
-: When `urn:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this call. `null` if the call has no chat binding. Same-account only.
+: When `urn:ietf:params:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this call. `null` if the call has no chat binding. Same-account only.
 
 `spaceId` (String|null):
-: When `urn:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this call. `null` if the call has no Space context.
+: When `urn:ietf:params:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this call. `null` if the call has no Space context.
 
 `channelId` (String|null):
-: When `urn:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the call is Space-wide or has no channel context.
+: When `urn:ietf:params:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the call is Space-wide or has no channel context.
 
 When a Space or channel Chat referenced by `spaceId` or `channelId` is destroyed, the server MUST clear the corresponding field to `null` on all VTCCalls that reference it. This is a side effect of the Space or Chat destruction and changes VTCCall state ({{RFC8620}} Section 7).
 
@@ -616,7 +616,7 @@ VTCCall/set manages call lifecycle: creating calls, ending calls, and updating c
 
 When creating a VTCCall with a `chatId` that is already referenced by another VTCCall in `"active"` or `"ringing"` state, the server MUST return an `invalidProperties` SetError naming `chatId`, with description "A call is already active on this Chat." This ensures that `Chat.activeCallId` is unambiguous and at most one call is active per Chat at any time.
 
-The following checks apply to every `create`. When `chatId` is supplied but `urn:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` does not resolve to a Chat object, the server MUST return `invalidProperties` naming `chatId`. The server SHOULD return the same error when the caller is not a member of that Chat, so that the response does not reveal that the Chat exists. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server SHOULD return `forbidden` if the caller lacks the `"start_call"` permission in the bound Space or channel.
+The following checks apply to every `create`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` does not resolve to a Chat object, the server MUST return `invalidProperties` naming `chatId`. The server SHOULD return the same error when the caller is not a member of that Chat, so that the response does not reveal that the Chat exists. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server SHOULD return `forbidden` if the caller lacks the `"start_call"` permission in the bound Space or channel.
 
 #### Creating a Ring Call
 
@@ -784,10 +784,10 @@ Filter properties:
 : Filter to calls initiated by this userId.
 
 `chatId` (String, optional):
-: Filter to calls associated with this Chat. Only valid when `urn:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
+: Filter to calls associated with this Chat. Only valid when `urn:ietf:params:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
 
 `spaceId` (String, optional):
-: Filter to calls associated with this Space. Only valid when `urn:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
+: Filter to calls associated with this Space. Only valid when `urn:ietf:params:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
 
 `hasParticipant` (String, optional):
 : Filter to calls in which this userId is or was a participant.
@@ -916,7 +916,7 @@ The server responds with the complete VTCParticipant record:
 }
 ~~~
 
-The server SHOULD return `notFound` if the `callId` does not exist or the caller does not have access to it. When `urn:jmap:chat` is present, callers without access include a caller who lacks `"view"` permission on the channel of a Space-bound call, a caller who is not a member of the Chat bound by `chatId`, and a caller whom the call initiator has blocked (`ChatContact.blocked` is `true` on the initiator's contact record for the caller). Using `notFound` for all of these keeps the response from revealing that the call exists or that the caller is blocked. The server MUST return `invalidProperties` naming `callId` if the call is in state `"ended"`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the account already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
+The server SHOULD return `notFound` if the `callId` does not exist or the caller does not have access to it. When `urn:ietf:params:jmap:chat` is present, callers without access include a caller who lacks `"view"` permission on the channel of a Space-bound call, a caller who is not a member of the Chat bound by `chatId`, and a caller whom the call initiator has blocked (`ChatContact.blocked` is `true` on the initiator's contact record for the caller). Using `notFound` for all of these keeps the response from revealing that the call exists or that the caller is blocked. The server MUST return `invalidProperties` naming `callId` if the call is in state `"ended"`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the account already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
 
 #### Declining a Ring Call
 
@@ -1506,7 +1506,7 @@ Example — moderator sends outbound SIP REFER (call transfer) via `VTCParticipa
 
 ## In-Call Ephemeral Events {#in-call-events}
 
-The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events via `VTCStreamEnable` ({{JMAP-VTC-WSS}}), or by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message ({{JMAP-CHAT-WSS}}), which requires the server to advertise both `urn:jmap:chat:websocket` and `urn:jmap:vtc:websocket`. These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
+The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events via `VTCStreamEnable` ({{JMAP-VTC-WSS}}), or by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message ({{JMAP-CHAT-WSS}}), which requires the server to advertise both `urn:ietf:params:jmap:chat:websocket` and `urn:ietf:params:jmap:vtc:websocket`. These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
 
 ### VTCParticipantEvent
 
@@ -1648,7 +1648,7 @@ The `accountId` of every method call on a VTC data type, of `VTCCallPush` ({{vtc
 
 ## Chat-Bound Calls {#chat-bound-calls}
 
-When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:jmap:chat` is present, access control is inherited from JMAP Chat's permission model:
+When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:ietf:params:jmap:chat` is present, access control is inherited from JMAP Chat's permission model:
 
 - **Visibility:** A call is visible to members of the bound Chat or Space channel. Non-members SHOULD receive `notFound` for `VTCCall/get` and `VTCParticipant/get` requests on the call. For calls with `e2eeEnabled: true`, participant records are further restricted per {{e2ee-participant-visibility}}.
 - **Join permission:** In a Space-bound call, participants who can `"view"` the channel MAY join an existing call even without the `"start_call"` permission (see {{JMAP-CHAT}}); `"start_call"` gates call creation, not joining.
@@ -1669,7 +1669,7 @@ When no Chat binding is present (the VTC capability is used standalone), the ser
 
 Cross-server VTCCall state synchronization is out of scope for this document.
 
-When used with JMAP Chat federation ({{JMAP-CHAT-FED}}), a call invitation MAY be delivered to remote participants via `Peer/deliver` carrying a MessageAction of type `"urn:jmap:chat:cap:vtc"` with the `joinUri` — using the existing out-of-band action mechanism defined in {{JMAP-CHAT}}. The receiving server MAY auto-create a local VTCCall record from the inbound MessageAction to provide call-state tracking on the remote side.
+When used with JMAP Chat federation ({{JMAP-CHAT-FED}}), a call invitation MAY be delivered to remote participants via `Peer/deliver` carrying a MessageAction of type `"urn:ietf:params:jmap:chat:cap:vtc"` with the `joinUri` — using the existing out-of-band action mechanism defined in {{JMAP-CHAT}}. The receiving server MAY auto-create a local VTCCall record from the inbound MessageAction to provide call-state tracking on the remote side.
 
 Federated call state synchronization — maintaining a consistent VTCCall object across multiple servers, with synchronized participant lists and state transitions — is a significantly more complex problem and is deferred to a future companion specification.
 
@@ -1738,7 +1738,7 @@ VTCGatewaySignal events ({{gateway-signal}}) carry opaque protocol-specific data
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:jmap:vtc`
+: `urn:ietf:params:jmap:vtc`
 
 Intended Use:
 : common
@@ -1759,25 +1759,25 @@ IANA is requested to register the following entries in the "JMAP Data Types" reg
 Type Name: VTCCall
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:jmap:vtc`
+Capability: `urn:ietf:params:jmap:vtc`
 Specification document: This document.
 
 Type Name: VTCParticipant
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:jmap:vtc`
+Capability: `urn:ietf:params:jmap:vtc`
 Specification document: This document.
 
 Type Name: VTCRecording
 Can reference blobs: Yes
 Can use for state change: Yes
-Capability: `urn:jmap:vtc`
+Capability: `urn:ietf:params:jmap:vtc`
 Specification document: This document.
 
 Type Name: VTCLivestream
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:jmap:vtc`
+Capability: `urn:ietf:params:jmap:vtc`
 Specification document: This document.
 
 --- back
