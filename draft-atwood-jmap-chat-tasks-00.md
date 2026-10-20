@@ -302,18 +302,14 @@ Specification document:
 Security and privacy considerations:
 : See {{security}} of this document.
 
-## JMAP Object URI Type Registration
+## JMAP Object URI Type Registrations
 
-IANA is requested to register the following entry in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
+IANA is requested to register the following entries in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
 
-Type Name:
-: `task`
-
-Data Type:
-: Task
-
-Reference:
-: This document.
+| Type Name | Data Type | Reference |
+|---|---|---|
+| tasklist | TaskList | This document |
+| task | Task | This document |
 
 ## MessageAction Type URI
 

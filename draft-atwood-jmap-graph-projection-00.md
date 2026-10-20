@@ -38,6 +38,34 @@ normative:
     date: 2026
 
 informative:
+  JMAP-CHAT:
+    title: "JMAP for Chat"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-00
+    date: 2026
+  JMAP-CHAT-FILENODE:
+    title: "JMAP Chat File Storage"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-filenode-00
+    date: 2026
+  JMAP-SCENE:
+    title: "JMAP for Scenes"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-scene-00
+    date: 2026
+  JMAP-VTC:
+    title: "JMAP for Video/Voice Teleconferencing"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-vtc-00
+    date: 2026
   JMAP-CHAT-CALENDARS:
     title: "JMAP Chat Calendars"
     author:
@@ -309,7 +337,7 @@ Native access control is often finer than an account: per Mailbox, per AddressBo
 
 ## Types not registered here
 
-This document registers object URI type names only for data types defined in published RFCs. Other documents register further type names: {{JMAP-CHAT-CALENDARS}} registers `calendarevent` and `principal`, and {{JMAP-CHAT-TASKS}} registers `task`, so those data types are projectable too. The remaining data types, including the other JMAP Calendars and JMAP Tasks data types, those of JMAP File Storage, and those of the JMAP Chat documents, become projectable when a document registers type names for them.
+This document registers object URI type names only for data types defined in published RFCs. Each other document registers type names for the data types it owns or integrates: {{JMAP-CHAT}} for the JMAP Chat data types, {{JMAP-CHAT-CALENDARS}} for `calendar`, `calendarevent`, and `principal`, {{JMAP-CHAT-TASKS}} for `tasklist` and `task`, {{JMAP-CHAT-FILENODE}} for `filenode`, {{JMAP-SCENE}} for the Scene data types, and {{JMAP-VTC}} for the VTC data types. All of these are therefore projectable. A data type without a registered type name becomes projectable when a document registers one.
 
 # Acknowledgements
 

@@ -26,6 +26,13 @@ normative:
     target: https://github.com/ulid/spec
 
 informative:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   RFC3261:
   RFC3515:
   RFC4733:
@@ -1779,6 +1786,17 @@ Can reference blobs: No
 Can use for state change: Yes
 Capability: `urn:ietf:params:jmap:vtc`
 Specification document: This document.
+
+## JMAP Object URI Type Registrations
+
+IANA is requested to register the following entries in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
+
+| Type Name | Data Type | Reference |
+|---|---|---|
+| vtccall | VTCCall | This document |
+| vtcparticipant | VTCParticipant | This document |
+| vtcrecording | VTCRecording | This document |
+| vtclivestream | VTCLivestream | This document |
 
 --- back
 

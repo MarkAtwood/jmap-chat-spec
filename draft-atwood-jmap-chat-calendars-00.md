@@ -340,6 +340,7 @@ IANA is requested to register the following entries in the "JMAP Object URI Type
 
 | Type Name | Data Type | Reference |
 |---|---|---|
+| calendar | Calendar | This document |
 | calendarevent | CalendarEvent | This document |
 | principal | Principal | This document |
 

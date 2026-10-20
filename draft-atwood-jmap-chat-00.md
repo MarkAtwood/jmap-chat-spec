@@ -2016,6 +2016,22 @@ Capability:
 Reference:
 : This document
 
+## JMAP Object URI Type Registrations
+
+IANA is requested to register the following entries in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
+
+| Type Name | Data Type | Reference |
+|---|---|---|
+| chatcontact | ChatContact | This document |
+| chat | Chat | This document |
+| message | Message | This document |
+| space | Space | This document |
+| spaceinvite | SpaceInvite | This document |
+| customemoji | CustomEmoji | This document |
+| spaceban | SpaceBan | This document |
+| readposition | ReadPosition | This document |
+| presencestatus | PresenceStatus | This document |
+
 ## JMAP Error Code Registration
 
 IANA is requested to register the following entries in the "JMAP Error Codes" registry ({{RFC8620}} Section 9.5):
