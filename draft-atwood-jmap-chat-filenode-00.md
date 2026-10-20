@@ -158,18 +158,18 @@ Access to a Space's file tree is governed entirely by the requesting user's Spac
 
 Users who are not members of the Space — including authenticated users on the same server — SHOULD NOT be granted access to the Space file tree, regardless of any FileNode-level ACL entries that may exist. An exception applies during any grace period defined in {{deletion}}: former members retain the access level they held immediately before the Space was destroyed until the grace period expires.
 
-For Space members, the following table maps role permissions to FileNode access. Permissions are cumulative: a member holding multiple roles receives the union of all applicable grants.
+For Space members, the following table maps role permissions to the `FilesRights` flags ({{JMAP-FILENODE}}) the server reports in `myRights` and enforces on each FileNode in the Space file tree. Each row includes the grants of the rows above it. A member holding multiple roles receives the union of all applicable grants. A flag no applicable row grants is `false`. As {{JMAP-FILENODE}} requires, `mayAddChildren` is always `false` on nodes whose `@type` does not permit children.
 
-| Space condition | FileNode access granted |
+| Space condition | FilesRights flags set to true |
 |---|---|
-| Member with `"view"` | Read: list directories, read file content |
-| Member with `"send"` | Read + Create: upload new files and directories |
-| Member with `"manage_channels"` | Read + Create + Delete: remove any file or directory |
-| Member with `"manage_space"` | Read + Create + Delete + Administer: manage ACLs, rename the tree root |
+| Member with `"view"` | `mayRead` on every node (list directories, read file content) |
+| Member with `"send"` | The above, plus `mayAddChildren` (upload new files and directories) |
+| Member with `"manage_channels"` | The above, plus `mayDelete` on every node, and `mayRename` and `mayModifyContent` on every node except the tree root (remove, rename, move, and replace the content of any file or directory) |
+| Member with `"manage_space"` | The above, plus `mayShare` on every node (manage ACLs) and `mayRename` on the tree root |
 
 Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation SHOULD use separate Spaces.
 
-Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission. This is a higher bar than the general Create access granted by `"send"`, because establishing the root is a one-time structural operation that affects all Space members.
+Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission. This is a higher bar than the `mayAddChildren` grant to `"send"`, because establishing the root is a one-time structural operation that affects all Space members.
 
 The server SHOULD enforce this mapping on every FileNode operation, deriving the requesting user's membership and roles from its own authoritative state. When a Space member's roles change, the server SHOULD reflect the updated FileNode access immediately, without requiring any client action.
 
