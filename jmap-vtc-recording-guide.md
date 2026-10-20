@@ -114,7 +114,7 @@ cannot trigger them:
 
 ### Invalid transitions
 
-The server MUST return `invalidArguments` for any transition not listed above.
+The server MUST return `invalidProperties` naming `state` for any transition not listed above.
 Examples of invalid transitions:
 
 - `"stopped"` back to `"recording"` (a stopped recording cannot be restarted)
@@ -186,7 +186,7 @@ The server MUST return an error for the create in each of these cases:
 | Caller is not a moderator | `forbidden` | Only moderators may start recordings. |
 | `e2eeEnabled: true` on the call and the recording would need server-side media access | `forbidden` | The server must not access plaintext media in an E2EE call. A disclosed key-holding recorder that joins as a participant is allowed (see below). |
 | `supportsRecording` is `false` | `forbidden` | The account does not support recording. |
-| Call is not in state `"active"` | `invalidArguments` | You cannot record a call that has not started or has already ended. |
+| Call is not in state `"active"` | `invalidProperties` (`callId`) | You cannot record a call that has not started or has already ended. |
 | Storage quota exceeded | `overQuota` | Deployment-defined; see section 9. |
 
 Example error response (E2EE conflict):
@@ -1149,7 +1149,7 @@ made and documented each of the following decisions:
 - [ ] E2EE call recording create returns `forbidden` unless a key-holding recorder participant performs it
 - [ ] Key-holding recorder appears in the participant list and is visually distinguished
 - [ ] `supportsRecording: false` create returns `forbidden`
-- [ ] Non-active call create returns `invalidArguments`
+- [ ] Non-active call create returns `invalidProperties` naming `callId`
 
 **Storage and lifecycle**
 - [ ] `blobId` registered in JMAP blob store when recording becomes available

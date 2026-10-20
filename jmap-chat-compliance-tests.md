@@ -388,7 +388,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-push-00 Section 3.1
 **Severity:** MUST | **Round:** 3
 
-**Test:** Call `PushSubscription/set` create with `chatPush.urgency: "invalid"`. Verify `invalidArguments` error (not `invalidProperties`).
+**Test:** Call `PushSubscription/set` create with `chatPush.urgency: "invalid"`. Verify an `invalidProperties` SetError whose `properties` names the `urgency` path (not `invalidArguments`).
 
 ### 6.11 Absent chatPush delivers StateChange
 **Spec:** draft-atwood-jmap-chat-push-00 PushSubscription Extension (`chatPush`); RFC 8620 Section 7.1

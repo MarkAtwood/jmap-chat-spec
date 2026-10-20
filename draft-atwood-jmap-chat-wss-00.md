@@ -186,6 +186,8 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 `contactIds` (String[]|null):
 : Applicable when `"presence"` is in `dataTypes`. An explicit list of ChatContact ids for which presence events are requested, or `null` to receive presence events for all known ChatContacts. Ignored if `"presence"` is not in `dataTypes`.
 
+An absent `chatIds` or `contactIds` is equivalent to `null`, following the {{RFC8620}} and {{RFC8887}} convention for `PushEnable` and `WebSocketPushEnable`.
+
 A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscription in its entirety. There is no partial-update mechanism; the client re-sends the full desired subscription state.
 
 The server does not send an explicit acknowledgment for `ChatStreamEnable`. Clients SHOULD NOT assume the subscription is active until they have received at least one server-originated frame (of any type) after sending `ChatStreamEnable`.
@@ -229,7 +231,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 : The `id` of the Chat in which the typing event occurred.
 
 `senderId` (String):
-: The ChatContact.id of the typing user. MUST NOT be the accountId.
+: The accountId when the typing user is the account owner; otherwise the ChatContact.id of the typing user, as for Message `senderId` in {{JMAP-CHAT}}.
 
 `typing` (Boolean):
 : `true` if the user is typing; `false` if typing has stopped.

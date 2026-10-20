@@ -1159,7 +1159,7 @@ Scene builds on RFC 8620's existing infrastructure:
   scene state changes.
 - *Blob management.* JMAP has it. Visual assets are uploaded as JMAP blobs and
   referenced by `blobId`.
-- *Error handling.* JMAP has it. Standard `SetError` types (`invalidArguments`,
+- *Error handling.* JMAP has it. Standard `SetError` types (`invalidProperties`,
   `forbidden`, `overQuota`, `notFound`) are used throughout.
 
 This is the lesson of every failed "build everything from scratch" protocol.

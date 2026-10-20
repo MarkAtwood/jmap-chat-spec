@@ -141,7 +141,7 @@ The identity orientation (no rotation) is `[0, 0, 0, 1]`.
 
 Quaternions are used because they are the minimal non-degenerate parameterization of 3D rotation, avoid gimbal lock, interpolate smoothly (slerp), and match glTF 2.0 and all major physics engines. The spec does not use Euler angles or axis-angle representations on the wire.
 
-Clients SHOULD send unit quaternions. Servers MAY reject quaternions whose magnitude deviates from 1.0 by more than a deployment-defined epsilon with a SetError of type `invalidArguments`. If the server does not reject the value, it MUST normalize the quaternion to unit length before storage.
+Clients SHOULD send unit quaternions. Servers MAY reject quaternions whose magnitude deviates from 1.0 by more than a deployment-defined epsilon with an `invalidProperties` SetError naming the quaternion property (e.g., `orientation`). If the server does not reject the value, it MUST normalize the quaternion to unit length before storage.
 
 ## Scale
 
@@ -273,7 +273,7 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 : Optional description of the region.
 
 `bounds` (SceneBounds):
-: The spatial extent of the region. Objects and avatars within this region SHOULD have positions inside these bounds. Servers MAY clamp positions that fall outside bounds or MAY reject them with `invalidArguments`.
+: The spatial extent of the region. Objects and avatars within this region SHOULD have positions inside these bounds. Servers MAY clamp positions that fall outside bounds or MAY reject them with an `invalidProperties` SetError naming `position`.
 
 `environment` (Object|null):
 : Deployment-defined environment settings for the region (e.g., sky, lighting, gravity, fog). Opaque to the JMAP Scene specification; clients that understand the deployment's environment schema MAY use it. Clients MUST ignore unrecognized keys.
@@ -736,7 +736,7 @@ Response:
 
 ##### Create Errors
 
-**`invalidArguments`** -- missing or malformed fields:
+**`invalidProperties`** (`properties` lists each offending property) -- missing or malformed fields:
 
 | Condition | Description |
 |---|---|
@@ -748,7 +748,7 @@ Response:
 
 | Condition | Description |
 |---|---|
-| `blobId` does not reference a valid blob | The blob must have been previously uploaded via the JMAP upload endpoint. The server MAY use either `invalidArguments` or `notFound` depending on whether the blobId is syntactically valid but absent (notFound) vs. malformed (invalidArguments). |
+| `blobId` does not reference a valid blob | The blob must have been previously uploaded via the JMAP upload endpoint. The server MAY use either `invalidProperties` (naming `blobId`) or `notFound` depending on whether the blobId is syntactically valid but absent (notFound) vs. malformed (invalidProperties). |
 
 **`forbidden`** -- authorization failures:
 
@@ -765,7 +765,7 @@ Response:
 
 ##### Update Errors
 
-**`invalidArguments`**:
+**`invalidProperties`** (`properties` lists each offending property):
 
 | Condition | Description |
 |---|---|
@@ -994,9 +994,9 @@ Example create:
 }
 ~~~
 
-The server MUST return `forbidden` when `mayCreateRegion` is `false`. The server MUST return `overQuota` when `maxRegionsPerAccount` would be exceeded. The server MUST return `invalidArguments` when `bounds.min` components are not less than or equal to corresponding `bounds.max` components.
+The server MUST return `forbidden` when `mayCreateRegion` is `false`. The server MUST return `overQuota` when `maxRegionsPerAccount` would be exceeded. The server MUST return `invalidProperties` naming `bounds` when `bounds.min` components are not less than or equal to corresponding `bounds.max` components.
 
-When `chatId`, `spaceId`, or `channelId` is set to a non-null value, the server MUST verify that the referenced object exists and the caller has access to it. The server MUST return `invalidArguments` if the referenced object does not exist or the caller cannot access it.
+When `chatId`, `spaceId`, or `channelId` is set to a non-null value, the server MUST verify that the referenced object exists and the caller has access to it. The server MUST return `invalidProperties` naming the binding property (`chatId`, `spaceId`, or `channelId`) if the referenced object does not exist or the caller cannot access it.
 
 Example create request with full JMAP envelope:
 
@@ -1064,7 +1064,7 @@ Response:
 
 `update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, `worldState`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
-When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidArguments` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
+When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidProperties` naming `activeCallId` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
 
 The server MUST return `forbidden` when the caller is not the region owner and does not have deployment-defined administrative privileges.
 
@@ -1160,7 +1160,7 @@ Response:
 
 ##### Create Errors
 
-**`invalidArguments`** -- missing or malformed required fields:
+**`invalidProperties`** (`properties` lists each offending property) -- missing or malformed required fields:
 
 | Condition | Description |
 |---|---|
@@ -1189,7 +1189,7 @@ Response:
 |---|---|
 | Creating the region would exceed `maxRegionsPerAccount` | The account-level cap on total regions has been reached. |
 
-Example error response -- invalidArguments (bounds validation):
+Example error response -- invalidProperties (bounds validation):
 
 ~~~json
 [["SceneRegion/set", {
@@ -1201,7 +1201,8 @@ Example error response -- invalidArguments (bounds validation):
   "destroyed": null,
   "notCreated": {
     "r0": {
-      "type": "invalidArguments",
+      "type": "invalidProperties",
+      "properties": ["bounds"],
       "description": "bounds.min[0] (100) is greater than bounds.max[0] (50); each min component must be <= the corresponding max component."
     }
   },
@@ -1212,7 +1213,7 @@ Example error response -- invalidArguments (bounds validation):
 
 ##### Update Errors
 
-**`invalidArguments`** -- malformed patch values:
+**`invalidProperties`** (`properties` lists each offending property) -- malformed patch values:
 
 Same field-level validations as create apply: `bounds.min >= bounds.max`, invalid `accessPolicy`, invalid `viewHint`, non-unit `spawnOrientation`, malformed `environment` fields.
 
@@ -1468,7 +1469,7 @@ Example create:
 }
 ~~~
 
-The server MUST return `forbidden` when `mayCreateObject` is `false`. The server MUST return `overQuota` when `maxObjectsPerRegion` would be exceeded. The server MUST return `notFound` when `regionId` does not exist or the caller does not have access. The server MUST return `invalidArguments` when `visualType` is not in `supportedVisualTypes`. The server MUST return `invalidArguments` when `visualRef` is present but `visualType` is absent, or vice versa. The server MUST return `invalidArguments` when `parentId` references a SceneObject in a different region.
+The server MUST return `forbidden` when `mayCreateObject` is `false`. The server MUST return `overQuota` when `maxObjectsPerRegion` would be exceeded. The server MUST return `notFound` when `regionId` does not exist or the caller does not have access. The server MUST return `invalidProperties` naming `visualType` when `visualType` is not in `supportedVisualTypes`. The server MUST return `invalidProperties` naming `visualRef` and `visualType` when `visualRef` is present but `visualType` is absent, or vice versa. The server MUST return `invalidProperties` naming `parentId` when `parentId` references a SceneObject in a different region.
 
 Example create request with full JMAP envelope:
 
@@ -1635,7 +1636,7 @@ Response:
 
 ##### Create Errors
 
-**`invalidArguments`** -- missing or malformed required fields:
+**`invalidProperties`** (`properties` lists each offending property) -- missing or malformed required fields:
 
 | Condition | Description |
 |---|---|
@@ -1695,7 +1696,7 @@ Example error response -- notFound (regionId does not exist):
 
 ##### Update Errors
 
-**`invalidArguments`**:
+**`invalidProperties`** (`properties` lists each offending property):
 
 Same field-level validations as create: non-finite position/orientation, invalid `physicsMode`, `visualRef`/`visualType` mismatch, circular `parentId`, excess hierarchy depth.
 
@@ -2012,7 +2013,7 @@ Response:
 }
 ~~~
 
-When the user already has an active SceneAvatar (with `leftAt: null`) in the same region, the server MUST return the existing record in `updated` rather than creating a duplicate. When the user has an active SceneAvatar in a different region, the server MUST set `leftAt` on the previous avatar before creating the new one (a user is present in at most one region at a time).
+When the user already has an active SceneAvatar (with `leftAt: null`) in the same region, the server MUST NOT create a duplicate and MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) in `notCreated` with `existingId` set to the id of the current avatar record (see {{scene-avatar-create-errors}}). When the user has an active SceneAvatar in a different region, the server MUST set `leftAt` on the previous avatar before creating the new one (a user is present in at most one region at a time).
 
 #### Updating Avatar State
 
@@ -2091,7 +2092,7 @@ A user leaves by calling `SceneAvatar/set` with an update setting `leftAt`:
 }
 ~~~
 
-The server MUST return `forbidden` if the caller's userId does not match the SceneAvatar record's userId. The server MUST return `invalidArguments` if the avatar has already left (`leftAt` is non-null).
+The server MUST return `forbidden` if the caller's userId does not match the SceneAvatar record's userId. The server MUST return `invalidProperties` naming `leftAt` if the avatar has already left (`leftAt` is non-null).
 
 Example leave request with full JMAP envelope:
 
@@ -2139,9 +2140,9 @@ When a user who has left (non-null `leftAt`) re-enters the same region, the serv
 
 #### SetError Conditions
 
-##### Create Errors (Entering a Region)
+##### Create Errors (Entering a Region) {#scene-avatar-create-errors}
 
-**`invalidArguments`** -- missing or malformed fields:
+**`invalidProperties`** (`properties` lists each offending property) -- missing or malformed fields:
 
 | Condition | Description |
 |---|---|
@@ -2193,15 +2194,15 @@ Example error response -- forbidden (invite-only region):
 
 **One-avatar-per-region constraint:**
 
-When a user already has an active SceneAvatar (`leftAt: null`) in the same region, the server MUST NOT create a duplicate. Instead, the server MUST return an `alreadyExists` SetError in the `notCreated` map with an `existingId` property containing the id of the current avatar record. Clients can then use `SceneAvatar/get` to retrieve the existing avatar's state.
+When a user already has an active SceneAvatar (`leftAt: null`) in the same region, the server MUST NOT create a duplicate. Instead, the server MUST return an `alreadyExists` SetError in the `notCreated` map with an `existingId` property containing the id of the current avatar record. Clients can then use `SceneAvatar/get` to retrieve the existing avatar's state. A reconnecting client SHOULD treat `alreadyExists` as meaning it has already entered the region and SHOULD use `existingId` as its avatar id rather than retrying the create.
 
-When the user has an active avatar in a different region, the server MUST set `leftAt` on the previous avatar (auto-eject) before creating the new one, enforcing the one-region-at-a-time constraint. This is also not a SetError; it is implicit auto-eject behavior.
+When the user has an active avatar in a different region, the server MUST set `leftAt` on the previous avatar (auto-eject) before creating the new one, enforcing the one-region-at-a-time constraint. This is not a SetError; it is implicit auto-eject behavior.
 
-Servers that prefer to reject rather than auto-eject MAY return an `invalidArguments` SetError with a description indicating the user must leave their current region first. The spec recommends the auto-eject approach.
+Servers that prefer to reject rather than auto-eject MAY return a `forbidden` SetError with a description indicating the user must leave their current region first. The spec recommends the auto-eject approach.
 
 ##### Update Errors
 
-**`invalidArguments`**:
+**`invalidProperties`** (`properties` lists each offending property):
 
 | Condition | Description |
 |---|---|
@@ -2449,13 +2450,13 @@ Rapid `SceneObject/set` create calls can be used as a spam or denial-of-service 
 
 Servers SHOULD enforce at least one of the following mitigations to prevent display-name impersonation:
 
-- **Uniqueness constraints.** The server MAY enforce that no two active SceneAvatar records within the same SceneRegion share the same `displayName`. When a collision is detected, the server SHOULD reject the later `SceneAvatar/set` create with a `SetError` of type `invalidArguments` and a description indicating the name conflict. Alternatively, the server MAY append a disambiguating suffix (e.g., a numeric tag) to the duplicate name.
+- **Uniqueness constraints.** The server MAY enforce that no two active SceneAvatar records within the same SceneRegion share the same `displayName`. When a collision is detected, the server SHOULD reject the later `SceneAvatar/set` create with an `invalidProperties` SetError naming `displayName` and a description indicating the name conflict. Alternatively, the server MAY append a disambiguating suffix (e.g., a numeric tag) to the duplicate name.
 
 - **Visual differentiation.** The server MAY provide system-assigned badges, name colors, or other visual metadata (via `worldState` or a deployment-defined mechanism) that distinguish authenticated identity from user-chosen display names. Clients SHOULD render these differentiators prominently.
 
 - **Reserved name lists.** The server SHOULD maintain a list of reserved display names that correspond to system roles or administrative functions and MUST reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
 
-In deployments where `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed, the server MAY enforce that `SceneAvatar.displayName` matches the user's ChatContact display name. This provides a single authoritative source for display names across chat and spatial contexts, reducing the impersonation surface. When this enforcement is active, `SceneAvatar/set` operations that attempt to set a `displayName` different from the ChatContact display name SHOULD be rejected with a `SetError` of type `invalidArguments`.
+In deployments where `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed, the server MAY enforce that `SceneAvatar.displayName` matches the user's ChatContact display name. This provides a single authoritative source for display names across chat and spatial contexts, reducing the impersonation surface. When this enforcement is active, `SceneAvatar/set` operations that attempt to set a `displayName` different from the ChatContact display name SHOULD be rejected with an `invalidProperties` SetError naming `displayName`.
 
 Avatar visual assets (`visualRef`) present a separate impersonation vector: a user may upload a 3D model designed to visually replicate another user's avatar. Servers MAY restrict avatar visual references to a deployment-approved set of assets, or MAY apply perceptual similarity checks against other users' registered avatar assets. These mitigations are deployment-defined; this specification does not prescribe a specific visual-similarity algorithm.
 

@@ -777,20 +777,20 @@ A delivery attempt is considered failed when the remote server returns an error 
 
 ## Group Chat Delivery
 
-For group chats, the sender delivers independently to each participant's mailbox and tracks per-recipient state in the `deliveryReceipts` field of the outgoing Message record. The aggregate `deliveryState` advances to `"delivered"` when all participants have acknowledged receipt.
+For group chats, the sender delivers independently to each participant's mailbox and, if it supports `deliveryReceipts`, tracks per-recipient state in that field of the outgoing Message record. The aggregate `deliveryState` is the best state any recipient has reached, as defined in {{delivery-state-transitions}}; it advances to `"delivered"` as soon as one recipient's server has acknowledged receipt.
 
 A message whose `senderMsgId` is already known for the given chat at the receiving server MAY be silently discarded by that server. Sending servers SHOULD treat a successful response (even for a discarded duplicate) as confirmation that delivery is complete for that recipient.
 
-## Delivery State Transitions
+## Delivery State Transitions {#delivery-state-transitions}
 
 The `deliveryState` field on an outbound Message transitions as follows:
 
 - `"pending"` — Initial state. The message is queued but no successful delivery has occurred.
-- `"delivered"` — All recipients (for group chats: all participants) have acknowledged receipt.
-- `"failed"` — Delivery has been abandoned after exhausting retries for one or more recipients.
+- `"delivered"` — The recipient's server has acknowledged receipt (for group chats: at least one recipient's server has, per the aggregate rule below).
+- `"failed"` — Delivery has been abandoned after exhausting retries (for group chats: only when every recipient has permanently failed).
 - `"received"` — The message has been explicitly read by the recipient (indicated via `Peer/receipt`). (Note: despite the name, this state indicates the message was *read* by the recipient, not merely received by the server. The `"delivered"` state indicates server-level receipt.)
 
-In group chats delivered to multiple peers, `deliveryState` reflects the aggregate: `"delivered"` when at least one peer has accepted, `"failed"` only when ALL peers have permanently failed. Per-recipient granularity is available via `deliveryReceipts` if supported.
+In group chats, `deliveryState` is the aggregate across recipients: the best state any recipient has reached, ordered `"pending"` < `"delivered"` < `"received"`. The aggregate is `"failed"` only when every recipient has permanently failed. A permanent failure for some recipients never downgrades the aggregate, and retries to one peer never change other recipients' states. Per-recipient granularity is available via `deliveryReceipts` if supported.
 
 ### Message Ordering {#message-ordering}
 

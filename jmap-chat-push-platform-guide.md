@@ -45,8 +45,8 @@ sends the RFC 8620 `StateChange`, and the client fetches new messages after waki
 (see [Content-free pushes](#content-free-pushes)).
 
 Clients MUST NOT request an `urgency` or `mentionUrgency` value not in
-`supportedUrgencyValues`; the server will reject the `PushSubscription/set` call with
-`invalidArguments`.
+`supportedUrgencyValues`; the server will reject the `PushSubscription/set` create or
+update with an `invalidProperties` SetError naming the offending property.
 
 If `urn:ietf:params:jmap:chat:push` is absent from the account capabilities, the server
 does not support inline `ChatMessagePush` payloads. Clients MUST fall back to a standard

@@ -570,7 +570,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 VTCCall/set manages call lifecycle: creating calls, ending calls, and updating call-level settings. Participant management (joining, leaving, muting, kicking) is handled by `VTCParticipant/set` (see {{vtc-participant-methods}}).
 
-When creating a VTCCall with a `chatId` that is already referenced by another VTCCall in `"active"` or `"ringing"` state, the server MUST return `invalidArguments` with description "A call is already active on this Chat." This ensures that `Chat.activeCallId` is unambiguous and at most one call is active per Chat at any time.
+When creating a VTCCall with a `chatId` that is already referenced by another VTCCall in `"active"` or `"ringing"` state, the server MUST return an `invalidProperties` SetError naming `chatId`, with description "A call is already active on this Chat." This ensures that `Chat.activeCallId` is unambiguous and at most one call is active per Chat at any time.
 
 #### Creating a Ring Call
 
@@ -620,7 +620,7 @@ The server creates VTCParticipant records for each target and for the initiator,
 }
 ~~~
 
-Servers MUST return `invalidArguments` when `targetParticipantIds` is empty. Servers MUST return `invalidArguments` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers MUST return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets; if all targets are blocked, the server MUST return `forbidden`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidArguments` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidArguments`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the bound Space or channel; if not, the server MUST return `forbidden`.
+Servers MUST return `invalidProperties` naming `targetParticipantIds` when `targetParticipantIds` is empty. Servers MUST return `invalidProperties` naming `mediaTypes` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers MUST return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets; if all targets are blocked, the server MUST return `forbidden`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidProperties` naming `chatId`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the bound Space or channel; if not, the server MUST return `forbidden`.
 
 #### Creating a Room Call
 
@@ -649,14 +649,14 @@ Example create:
 }
 ~~~
 
-Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsRoomCalls` is `false`. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the target Space or channel; if not, the server MUST return `forbidden`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidArguments` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidArguments`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member.
+Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsRoomCalls` is `false`. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server MUST verify the caller has the `"start_call"` permission in the target Space or channel; if not, the server MUST return `forbidden`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidProperties` naming `chatId`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member.
 
 #### Creating a Scheduled Call
 
 `create` with `callType: "scheduled"` accepts:
 
 `scheduledStartAt` (UTCDate, required):
-: The intended start time. MUST be in the future; servers MUST reject past values with `invalidArguments`.
+: The intended start time. MUST be in the future; servers MUST reject past values with an `invalidProperties` SetError naming `scheduledStartAt`.
 
 `mediaTypes` (String[], required):
 : The media types for this call.
@@ -682,7 +682,7 @@ Example create:
 }
 ~~~
 
-Servers MUST return `invalidArguments` when `scheduledStartAt` is in the past. Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsScheduledCalls` is `false`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidArguments` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidArguments`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member.
+Servers MUST return `invalidProperties` naming `scheduledStartAt` when `scheduledStartAt` is in the past. Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsScheduledCalls` is `false`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` is supplied but does not resolve to a Chat object the caller has access to, the server MUST return `invalidProperties` naming `chatId`. The caller MUST be a member of the Chat referenced by `chatId`. The server MUST return `forbidden` if the caller is not a member.
 
 #### Ending a Call
 
@@ -703,7 +703,7 @@ Example update:
 }
 ~~~
 
-The server MUST return `forbidden` if the caller is not a moderator on this call. The server MUST return `invalidArguments` if the call is already in state `"ended"`. The server MUST return `invalidArguments` for any `state` transition not permitted by the state machine ({{state-machine}}).
+The server MUST return `forbidden` if the caller is not a moderator on this call. The server MUST return `invalidProperties` naming `state` if the call is already in state `"ended"`. The server MUST return `invalidProperties` naming `state` for any `state` transition not permitted by the state machine ({{state-machine}}).
 
 #### Moderator Actions on VTCCall {#moderator-actions}
 
@@ -799,7 +799,7 @@ Example update (target participant answers):
 }
 ~~~
 
-The server MUST return `invalidArguments` if the call is not in state `"ringing"`. The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId. The server MUST return `notFound` if the VTCParticipant record does not exist.
+The server MUST return `invalidProperties` naming `joinMethod` if the call is not in state `"ringing"`. The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId. The server MUST return `notFound` if the VTCParticipant record does not exist.
 
 #### Joining a Room or Scheduled Call
 
@@ -864,7 +864,7 @@ The server responds with the complete VTCParticipant record:
 }
 ~~~
 
-The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidArguments` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. When the VTCCall carries a `chatId` binding and `urn:ietf:params:jmap:chat` is present, the server MUST verify the caller is a member of the bound Chat. The server MUST return `forbidden` if the caller is not a member. When `urn:ietf:params:jmap:chat` is present and the call initiator has blocked the joining user (`ChatContact.blocked` is `true` on the initiator's contact record for the joiner), the server MUST return `forbidden`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
+The server MUST return `notFound` if the `callId` does not exist or the caller does not have access to it. The server MUST return `invalidProperties` naming `callId` if the call is in state `"ended"`. The server MUST return `forbidden` when the call carries a Space binding and the caller does not have `"view"` permission on the target channel. When the VTCCall carries a `chatId` binding and `urn:ietf:params:jmap:chat` is present, the server MUST verify the caller is a member of the bound Chat. The server MUST return `forbidden` if the caller is not a member. When `urn:ietf:params:jmap:chat` is present and the call initiator has blocked the joining user (`ChatContact.blocked` is `true` on the initiator's contact record for the joiner), the server MUST return `forbidden`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the authenticated user already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
 
 #### Declining a Ring Call
 
@@ -880,7 +880,7 @@ A target participant whose VTCParticipant record was created by the ring (with `
 }
 ~~~
 
-The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId. The server MUST return `invalidArguments` if the call is not in state `"ringing"` or the participant's `callResponse` is not `"pending"`.
+The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId. The server MUST return `invalidProperties` naming `callResponse` if the call is not in state `"ringing"` or the participant's `callResponse` is not `"pending"`.
 
 #### Updating Media State
 
@@ -914,7 +914,7 @@ A participant calls `VTCParticipant/set` with an `update` setting their own `lef
 }
 ~~~
 
-The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId (leaving on behalf of another participant is a kick and requires moderator role). The server MUST return `invalidArguments` if the participant has already left (`leftAt` is non-null).
+The server MUST return `forbidden` if the caller's userId does not match the VTCParticipant record's userId (leaving on behalf of another participant is a kick and requires moderator role). The server MUST return `invalidProperties` naming `leftAt` if the participant has already left (`leftAt` is non-null).
 
 #### Reconnecting {#reconnection}
 
@@ -944,7 +944,7 @@ Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipan
 : Update a participant's `role` between `"moderator"` and `"participant"`. A moderator MUST NOT revoke their own moderator role if they are the last moderator; the server MUST reject this with `forbidden`.
 
 **Assign to a breakout room:**
-: Update a participant's `callId` from the parent call to a child breakout-room call. The server sets `leftAt` on the parent-call entry and creates (or reconnects) a VTCParticipant record on the child call. The server MUST return `invalidArguments` if the target `callId` is not a child of the participant's current call.
+: Update a participant's `callId` from the parent call to a child breakout-room call. The server sets `leftAt` on the parent-call entry and creates (or reconnects) a VTCParticipant record on the child call. The server MUST return `invalidProperties` naming `callId` if the target `callId` is not a child of the participant's current call.
 
 Example — admitting a lobby participant and muting another:
 
@@ -961,7 +961,7 @@ Example — admitting a lobby participant and muting another:
 }
 ~~~
 
-The server MUST return `invalidArguments` when a lobby-state transition is invalid (e.g., `"admitted"` → `"waiting"` or `"rejected"` → `"admitted"`). The server MUST return `invalidArguments` when a moderator attempts to update a participant who is not in the same call.
+The server MUST return `invalidProperties` naming `lobbyState` when a lobby-state transition is invalid (e.g., `"admitted"` → `"waiting"` or `"rejected"` → `"admitted"`). The server MUST return `forbidden` when a moderator attempts to update a participant who is not in the same call, since moderator authority covers only the moderator's own call.
 
 #### Gateway Dial-Out {#dial-out}
 
@@ -998,7 +998,7 @@ Example create (PSTN dial-out):
 }
 ~~~
 
-Non-moderators MUST receive `forbidden` for dial-out creates. The server MUST return `invalidArguments` when `joinMethod` does not match any VTCGateway `protocol` whose `supportsDialOut` is `true`. The server MUST return `invalidArguments` when the call is in state `"ended"`.
+Non-moderators MUST receive `forbidden` for dial-out creates. The server MUST return `invalidProperties` naming `joinMethod` when `joinMethod` does not match any VTCGateway `protocol` whose `supportsDialOut` is `true`. The server MUST return `invalidProperties` naming `callId` when the call is in state `"ended"`.
 
 ### VTCParticipant/query
 
@@ -1071,7 +1071,7 @@ Example create:
 }
 ~~~
 
-The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true` and the recording would require server-side media access. The server MAY accept the create for such a call when the recording is performed by a key-holding recorder that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsRecording` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
+The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true` and the recording would require server-side media access. The server MAY accept the create for such a call when the recording is performed by a key-holding recorder that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsRecording` is `false`. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
 
 On success, the server MUST deliver a `VTCRecordingStateEvent` ({{vtc-recording-state-event}}) with `state: "recording"` to all participants in the call. This is a mandatory consent signal (see {{recording-consent}}).
 
@@ -1095,7 +1095,7 @@ Example update (stop recording):
 }
 ~~~
 
-The server MUST return `invalidArguments` for any state transition not listed above (e.g., `"stopped"` → `"recording"`, `"available"` → anything). After stopping, the server transitions the recording through `"processing"` (while the recording file is prepared) to `"available"` (when `blobId`, `size`, `duration`, and `mediaType` are set), or to `"failed"` on error. These post-stop transitions are server-initiated and not client-controllable.
+The server MUST return `invalidProperties` naming `state` for any state transition not listed above (e.g., `"stopped"` → `"recording"`, `"available"` → anything). After stopping, the server transitions the recording through `"processing"` (while the recording file is prepared) to `"available"` (when `blobId`, `size`, `duration`, and `mediaType` are set), or to `"failed"` on error. These post-stop transitions are server-initiated and not client-controllable.
 
 #### Destroying a Recording
 
@@ -1180,7 +1180,7 @@ Example create:
 
 The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error. The `"starting"` → `"live"` and `"starting"` → `"failed"` transitions are server-initiated.
 
-The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true` and the livestream would require server-side media access. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidArguments` when the call is not in state `"active"`.
+The server MUST return `forbidden` when the caller is not a moderator on the associated call. The server MUST return `forbidden` when the call has `e2eeEnabled: true` and the livestream would require server-side media access. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
 
 #### Stopping a Livestream
 
@@ -1196,11 +1196,11 @@ The server MUST return `forbidden` when the caller is not a moderator on the ass
 }
 ~~~
 
-The server MUST return `invalidArguments` if the livestream is not in state `"starting"` or `"live"`. Once stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream (see {{updating-stream-configuration}}) or by creating a new VTCLivestream object.
+The server MUST return `invalidProperties` naming `state` if the livestream is not in state `"starting"` or `"live"`. Once stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream (see {{updating-stream-configuration}}) or by creating a new VTCLivestream object.
 
 #### Updating Stream Configuration {#updating-stream-configuration}
 
-`update` supports patching `streamUri`, `streamKey`, or `platform` only while the livestream is in state `"stopped"` or `"failed"`. The server MUST return `invalidArguments` for configuration updates while the stream is in state `"starting"` or `"live"`.
+`update` supports patching `streamUri`, `streamKey`, or `platform` only while the livestream is in state `"stopped"` or `"failed"`. The server MUST return `invalidProperties` naming each patched configuration property for configuration updates while the stream is in state `"starting"` or `"live"`.
 
 #### Destroying a Livestream
 

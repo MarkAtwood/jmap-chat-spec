@@ -121,10 +121,10 @@ A `ChatPushConfig` specifies which messages trigger inline push and what content
 : The `ChatMessageEntry` fields to include in each payload entry. If absent, the server uses the default set: `messageId`, `chatId`, `chatKind`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, `encrypted`, and `bodySnippet`. The `properties` list is authoritative: the server returns exactly the requested fields. The server MUST support at minimum the following properties: `messageId`, `chatId`, `chatKind`, `chatName`, `spaceId`, `spaceName`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, `encrypted`, and `bodySnippet`.
 
 `urgency` (String, optional):
-: The Web Push urgency level for notifications generated from this configuration. MUST be one of the values in `supportedUrgencyValues`. Default is `"normal"`. If the client supplies a value not in `supportedUrgencyValues`, the server MUST return an `invalidArguments` SetError on `PushSubscription/set` and MUST NOT store the configuration.
+: The Web Push urgency level for notifications generated from this configuration. MUST be one of the values in `supportedUrgencyValues`. Default is `"normal"`. If the client supplies a value not in `supportedUrgencyValues`, the server MUST return an `invalidProperties` SetError on `PushSubscription/set` whose `properties` names the offending path (e.g., `chatPush/<id>/urgency`) and MUST NOT store the configuration.
 
 `mentionUrgency` (String, optional):
-: When present, overrides `urgency` for payloads that contain a direct @user mention (`hasMention: true`) or a broadcast-scope mention (`mentionScopes` is non-empty). MUST be one of the values in `supportedUrgencyValues`. If absent, mention messages use the same urgency as all other messages. The same `invalidArguments` rule applies as for `urgency`.
+: When present, overrides `urgency` for payloads that contain a direct @user mention (`hasMention: true`) or a broadcast-scope mention (`mentionScopes` is non-empty). MUST be one of the values in `supportedUrgencyValues`. If absent, mention messages use the same urgency as all other messages. The same `invalidProperties` rule applies as for `urgency`, naming `chatPush/<id>/mentionUrgency`.
 
 # Push Payload {#push-payload}
 

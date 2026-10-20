@@ -421,13 +421,13 @@ In a Chat with a `roomId`, every Message has `bodyType` `"application/mimi-fanou
 
 ## message/mls {#private-messages}
 
-A client sends an application message as an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, the content that {{RFC9420, Section 17.10}} registers as `message/mls`, with `Room/send` ({{room-send}}). The server MUST reject a `Message/set` create in a Chat with a `roomId` with `invalidArguments`.
+A client sends an application message as an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, the content that {{RFC9420, Section 17.10}} registers as `message/mls`, with `Room/send` ({{room-send}}). The server MUST reject a `Message/set` create in a Chat with a `roomId` with a `forbidden` SetError.
 
-MIMI edits, reactions, and retractions are MIMI content in new messages. The server MUST reject a `Message/set` update that changes `body`, `bodyType`, or `reactions` of a Message in a Chat with a `roomId` with `invalidArguments`.
+MIMI edits, reactions, and retractions are MIMI content in new messages. The server MUST reject a `Message/set` update that changes `body`, `bodyType`, or `reactions` of a Message in a Chat with a `roomId` with an `invalidProperties` SetError naming the changed properties.
 
 ## application/mimi-fanout {#fanout-messages}
 
-A Message with `bodyType` `"application/mimi-fanout"` has as `body` one FanoutMessage ({{MIMI-PROTOCOL, Section 5.5}}). Only servers create such Messages; the server MUST reject a `Message/set` create with this body type with `invalidArguments`.
+A Message with `bodyType` `"application/mimi-fanout"` has as `body` one FanoutMessage ({{MIMI-PROTOCOL, Section 5.5}}). Only servers create such Messages; the server MUST reject a `Message/set` create with this body type with an `invalidProperties` SetError naming `bodyType`.
 
 The server stores each FanoutMessage it receives or originates for a room as one Message, in the order received, in every Chat of a local account bound to that room ({{chat-roomid}}). A FanoutMessage carrying a Welcome is stored only in the account owning a KeyPackageRef named in the Welcome; if that account has no Chat bound to the room, the server first binds the account's unbound Chat for the room again or, if it has none, creates a Chat bound to the room. The server stores a FanoutMessage that carries a commit removing the owner's clients like any other, so that those clients learn of their removal ({{chat-roomid}}).
 
