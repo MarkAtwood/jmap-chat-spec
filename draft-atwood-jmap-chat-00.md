@@ -122,7 +122,7 @@ informative:
   JMAP-METADATA:
     title: JMAP Metadata
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-metadata-03
+      Internet-Draft: draft-ietf-jmap-metadata-04
     date: 2026
     target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
   JMAP-REFPLUS:
