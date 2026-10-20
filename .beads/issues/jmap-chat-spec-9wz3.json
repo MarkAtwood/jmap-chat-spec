@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-9wz3",
+  "title": "Federation: transient attachment fetch failure permanently drops message",
+  "description": "Found 2026-10-20 (avatar discussion). New Message Validation step 11 rejects Peer/deliver with invalidArguments if an attachment fetch fails, including transient failures (sender's blob server down, timeout). invalidArguments is permanent (Error Handling: do not retry), so the sender never retries and the message is lost. Proposed (Mark agreed direction): classify failures - a fetch that fails transiently returns a retryable error so delivery is retried with backoff; a size or sha256 mismatch stays permanent. Unlike avatars (now best-effort), attachments are part of the message, so best-effort is wrong here.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T22:04:35.896110734Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T22:04:35.896110734Z"
+}

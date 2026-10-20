@@ -265,7 +265,7 @@ The peer identity is the `identity` of the peer's ChatContact on the local serve
 
 ## Blob Fetch Authorization {#blob-fetch}
 
-A server that receives a `fetchUrl` in a Peer/* payload fetches the blob with an HTTP GET signed as {{request-signing}} requires. The serving server, the one that issued the `fetchUrl`, MUST verify the signature as for any peer request. It SHOULD serve the blob only to a peer domain to which it has sent a payload carrying that `fetchUrl`, recording the grant before it sends the payload, because the receiver fetches attachments while it processes the payload ({{new-message-validation}}). It SHOULD answer a verified request from any other peer domain with HTTP status 404 (Not Found), so as not to reveal that the blob exists. A serving server that follows these rules need not keep its `fetchUrl` values secret: holding one grants nothing without the signature of a peer it was sent to.
+A server that receives a `fetchUrl` in a Peer/* payload fetches the blob with an HTTP GET signed as {{request-signing}} requires. The serving server, the one that issued the `fetchUrl`, MUST verify the signature as for any peer request. It SHOULD serve the blob only to a peer domain to which it has sent a payload carrying that `fetchUrl`, recording the grant before it sends the payload, because the receiver fetches the blob while it processes the payload ({{new-message-validation}}, {{peer-groupupdate}}). It SHOULD answer a verified request from any other peer domain with HTTP status 404 (Not Found), so as not to reveal that the blob exists. A serving server that follows these rules need not keep its `fetchUrl` values secret: holding one grants nothing without the signature of a peer it was sent to.
 
 The serving server MUST NOT redirect a blob fetch to another origin, because only the server that issued the `fetchUrl` can check the grant, and a fetching server does not follow such a redirect ({{ssrf}}).
 
@@ -636,7 +636,7 @@ Method name: `Peer/groupUpdate`
   - `"addMembers"` — One or more members were added to the group.
   - `"removeMembers"` — One or more members were removed from the group.
   - `"updateRoles"` — One or more members' roles within the group were changed.
-  - `"updateMetadata"` — The group's `name`, `description`, or `avatarBlobId` was changed.
+  - `"updateMetadata"` — The group's `name`, `description`, or avatar (`avatarBlobId` in {{JMAP-CHAT}}) was changed.
   - `"leave"` — The sender is voluntarily departing the group. Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list without requiring admin authorization. This is equivalent to `"removeMembers"` with `removedMemberIds: [senderUserId]` but does not require admin role.
   - `"close"` — The sender, the group's last admin, is departing while other members remain, which closes the group ({{JMAP-CHAT}}). Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list and set the local Chat record's `closedAt`. The sending server sends `"close"` in place of `"leave"`.
 
@@ -658,8 +658,8 @@ Method name: `Peer/groupUpdate`
 `description` (String, optional):
 : Updated group description. MAY be present for `"create"` or `"updateMetadata"` actions.
 
-`avatarBlobId` (String, optional):
-: Updated group avatar blob ID. MAY be present for `"create"` or `"updateMetadata"` actions. For `"create"`, the receiver MAY fetch this blob from the sending server.
+`avatar` (Object\|null, optional):
+: The group avatar image. MAY be present for `"create"` or `"updateMetadata"` actions. An Object carries the `contentType`, `size`, and `sha256` fields of an Attachment ({{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob, with a signed request ({{blob-fetch}}). For `"updateMetadata"`, `null` removes the group avatar; absent leaves it unchanged.
 
 ### Receiver Behavior
 
@@ -667,7 +667,9 @@ For all actions other than `"create"` and `"leave"`, the receiving server MUST v
 
 Once the local Chat record has `closedAt` set, the receiving server MUST reject every subsequent `Peer/groupUpdate` for that chat with `forbidden`.
 
-On success, the receiving server updates its local Chat record to reflect the change indicated by `action`.
+After the authorization and `closedAt` checks above succeed, and only then, if `avatar` is an Object, the receiving server validates `contentType` and `size` per Attachment in {{JMAP-CHAT}}, fetches the blob from `fetchUrl` with a signed request ({{blob-fetch}}), and verifies the byte count against `size` and the content against `sha256`, as in step 11 of {{new-message-validation}}. The avatar is best-effort: if the fetch or any of these checks fails, the receiving server still applies the rest of the request, and leaves the Chat without an avatar (for `"create"`) or with its current avatar (for `"updateMetadata"`). It MAY try the fetch again later. A failed avatar never causes the request to be rejected, because rejection is permanent ({{error-handling}}) and the avatar is cosmetic. See {{ssrf}} for restrictions on `fetchUrl` targets.
+
+On success, the receiving server updates its local Chat record to reflect the change indicated by `action`. When `avatar` is an Object and its fetch and checks succeeded, it stores the fetched blob and sets the Chat's `avatarBlobId` to the local blobId; when `avatar` is `null`, it removes `avatarBlobId`.
 
 ### Response
 
@@ -812,7 +814,7 @@ Message ordering is receiver-determined: each server assigns `receivedAt` indepe
 
 Cross-server references to a message use its `senderMsgId` (see {{outbound-preparation}}). A sending server MAY include the optional `lastSeenSenderMsgId` causal hint in a `message` payload. A receiving server MAY store the hint and MAY use it, or expose it to clients, to order the display of messages that arrive out of causal order, for example placing a message after the message it names. The hint MUST NOT change `receivedAt`, MUST NOT be used for expiry or rate-limit calculations, and MUST NOT cause rejection; a hint that does not resolve to a known message MUST be ignored.
 
-### Error Handling
+### Error Handling {#error-handling}
 
 Errors in Peer/* methods follow the standard JMAP method-level error format ({{RFC8620}} Section 3.6.2). Error types used: `invalidArguments` (permanent — do not retry), `forbidden` (permanent — do not retry), `rateLimited` (transient — retry after backoff), `serverFail` (transient — retry with exponential backoff). HTTP-level 5xx responses or timeouts are treated as transient failures. Error responses MAY include a `description` field for debugging but SHOULD NOT disclose private information such as block status.
 

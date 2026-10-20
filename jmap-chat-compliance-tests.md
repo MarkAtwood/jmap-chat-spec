@@ -39,7 +39,7 @@ Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or
 **Common failure:** Missing `identity`, `login`, `firstSeenAt`, or `lastSeenAt`.
 
 ### 1.3 ChatContact federation fields
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 5
+**Spec:** draft-atwood-jmap-chat-federation-00 §ChatContact Type Extensions for Federation
 **Severity:** MUST (serverUrl), SHOULD (directAddress) | **Round:** 1
 
 **Test:** After a federated message delivery, call `ChatContact/get` for the sender. Verify `serverUrl` is populated with the peer's base URL. Verify `directAddress` is populated if the peer advertised `ownerDirectAddress`.
@@ -53,7 +53,7 @@ Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or
 **Common failure:** Field named `deleted` with boolean type instead of `deletedAt` with UTCDate.
 
 ### 1.5 ReadPosition has server-assigned id
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, RFC 8620 Section 5.1
+**Spec:** draft-atwood-jmap-chat-00 §ReadPosition (`id`), RFC 8620 Section 5.1
 **Severity:** MUST | **Round:** 1
 
 **Test:** Set a read position via `ReadPosition/set`. Call `ReadPosition/get` with `ids: null`. Verify each object has an `id` field (server-assigned, distinct from chatId).
@@ -97,7 +97,7 @@ Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or
 ## 2. Wire Format
 
 ### 2.1 Message body and bodyType are separate top-level fields
-**Spec:** draft-atwood-jmap-chat-00 Section 4.11
+**Spec:** draft-atwood-jmap-chat-00 §Message (`body`, `bodyType`)
 **Severity:** MUST | **Round:** 3
 
 **Test:** Call `Message/set` create with:
@@ -129,13 +129,13 @@ Verify this succeeds. If the server expects `body` to be a nested object `{"cont
 Verify this works. If the server expects `memberIds` for direct chats, it violates the spec.
 
 ### 2.4 Chat/set create duplicate direct returns alreadyExists
-**Spec:** draft-atwood-jmap-chat-00 Section 4.10
+**Spec:** draft-atwood-jmap-chat-00 §Creating a Direct Chat
 **Severity:** MUST | **Round:** 3
 
 **Test:** Create a direct chat with contactId X. Try to create another with the same contactId. Verify the error is `alreadyExists` (not `invalidProperties`) and includes `existingId`.
 
 ### 2.5 chatName absent for direct chats in push
-**Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatMessageEntry (`chatName`)
 **Severity:** MUST | **Round:** 3
 
 **Test:** Generate a push payload for a direct chat message. Verify `chatName` key is absent from the JSON (not present as `null`).
@@ -153,25 +153,25 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Session-level capability contains the properties that should only be at account level.
 
 ### 3.2 Session-level push capability is empty object
-**Spec:** draft-atwood-jmap-chat-push-00 Section 2
+**Spec:** draft-atwood-jmap-chat-push-00 §Session-Level Capability Object
 **Severity:** MUST | **Round:** 3
 
 **Test:** Verify `capabilities["urn:ietf:params:jmap:chat:push"]` at session level is `{}`. Push properties (maxSnippetBytes, supportedUrgencyValues, maxMessagesPerPush) belong at account level.
 
 ### 3.3 Account-level push capability populated
-**Spec:** draft-atwood-jmap-chat-push-00 Section 3.2
+**Spec:** draft-atwood-jmap-chat-push-00 §Account-Level Capability Object
 **Severity:** MUST | **Round:** 3
 
 **Test:** Verify `accountCapabilities["urn:ietf:params:jmap:chat:push"]` contains `maxSnippetBytes` (UnsignedInt), `supportedUrgencyValues` (String[]), and optionally `maxMessagesPerPush`.
 
 ### 3.4 RFC 8887 WebSocket capability present
-**Spec:** draft-atwood-jmap-chat-wss-00 Section 3
+**Spec:** draft-atwood-jmap-chat-wss-00 §Capability
 **Severity:** MUST | **Round:** 3
 
 **Test:** Verify `capabilities["urn:ietf:params:jmap:websocket"]` exists with `url` (String) and `supportsPush` (Boolean). This is SEPARATE from `urn:ietf:params:jmap:chat:websocket` (which must be `{}`).
 
 ### 3.5 Account-level role field
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 4
+**Spec:** draft-atwood-jmap-chat-federation-00 §Account-Level Capability
 **Severity:** MUST | **Round:** 2
 
 **Test:** Verify `accountCapabilities["urn:ietf:params:jmap:chat"]` contains `role` field. Value is `"owner"` for normal accounts, `"peer"` for peer-provisioned accounts.
@@ -217,7 +217,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Send `Message/set` create with attachment `filename: "../../../etc/passwd"`. Verify rejection.
 
 ### 4.4 BroadcastMention scope validation
-**Spec:** draft-atwood-jmap-chat-00 Section 4.5
+**Spec:** draft-atwood-jmap-chat-00 §BroadcastMention
 **Severity:** MUST | **Round:** 3
 
 **Test:** Send `Message/set` create with `broadcastMentions: [{"scope": "invalid"}]`. Verify rejection.
@@ -247,13 +247,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** In a channel chat, send a message with broadcastMentions from a user lacking `mention_broadcast` permission. Verify `forbidden` error.
 
 ### 4.8 Channel send permission check
-**Spec:** draft-atwood-jmap-chat-00 Section 5.3
+**Spec:** draft-atwood-jmap-chat-00 §Creating a Message
 **Severity:** MUST | **Round:** 3
 
 **Test:** In a channel chat, send a message from a user lacking `send` permission. Verify rejection.
 
 ### 4.9 Channel view permission check
-**Spec:** draft-atwood-jmap-chat-00 Section 5.3
+**Spec:** draft-atwood-jmap-chat-00 §Message/query
 **Severity:** MUST | **Round:** 5
 
 **Test:** Call `Message/get` for messages in a channel where the caller lacks `view` permission. Verify messages are not returned (treated as notFound).
@@ -271,7 +271,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Create two CustomEmojis with the same `name` in the same Space. Verify the second returns `alreadyExists`.
 
 ### 4.12 CustomEmoji name regex
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16
+**Spec:** draft-atwood-jmap-chat-00 §CustomEmoji (`name`)
 **Severity:** MUST | **Round:** 3
 
 **Test:** Create CustomEmoji with `name: "invalid name!"`. Verify rejection.
@@ -303,7 +303,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Implementation raises an error for unrecognized permission strings.
 
 ### 5.3 Peer/* methods role-gated on /jmap endpoint
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 4
+**Spec:** draft-atwood-jmap-chat-federation-00 §Server-to-Server Methods
 **Severity:** MUST | **Round:** 4
 
 **Test:** Authenticate as a normal (owner) account. Call `Peer/deliver` via `/jmap`. Verify `forbidden` error. Peer methods must only be accessible to peer-role accounts.
@@ -325,31 +325,31 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 ## 6. Push Notifications
 
 ### 6.1 ChatPushConfig field names
-**Spec:** draft-atwood-jmap-chat-push-00 Section 3.1
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatPushConfig
 **Severity:** MUST | **Round:** 1
 
 **Test:** Create a PushSubscription with `chatPush` containing `kinds` (not `chatKindFilter`), `chatIds` (not `chatIdFilter`), `urgency`, `properties`. Verify acceptance.
 
 ### 6.2 ChatMessagePush.accountId required
-**Spec:** draft-atwood-jmap-chat-push-00 Section 4.1
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatMessagePush (`accountId`)
 **Severity:** MUST | **Round:** 1
 
 **Test:** Generate a push payload. Verify it contains `accountId` at top level.
 
 ### 6.3 ChatMessageEntry required fields
-**Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatMessageEntry
 **Severity:** MUST | **Round:** 1
 
 **Test:** Generate a push payload. Verify each entry contains `chatKind`, `sentAt`, `senderDisplayName`. For channel chats, verify `spaceId` and `spaceName` are present.
 
 ### 6.4 Properties filtering
-**Spec:** draft-atwood-jmap-chat-push-00 Section 3.1
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatPushConfig (`properties`)
 **Severity:** MUST | **Round:** 3
 
 **Test:** Set `properties: ["messageId", "chatId"]` in ChatPushConfig. Generate push. Verify only those fields appear in entries (plus conditional fields like bodySnippet when not encrypted).
 
 ### 6.5 Urgency resolution uses base urgency
-**Spec:** draft-atwood-jmap-chat-push-00 Section 6.1
+**Spec:** draft-atwood-jmap-chat-push-00 §Urgency
 **Severity:** MUST | **Round:** 1
 
 **Test:** Set `urgency: "low"` in config. Send a message without mentions. Verify push urgency is `"low"` (not hardcoded `"normal"`).
@@ -363,7 +363,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Only "everyone" and "here" bypass mute; "admins" incorrectly suppressed. A deployment-defined "always honor mute" preference (MAY) also suppresses; run this test with it off.
 
 ### 6.7 Rich body push mentions come from the arrays
-**Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatMessageEntry (`hasMention`)
 **Severity:** MUST | **Round:** 12
 
 **Test:** Send a message with `bodyType: "application/jmap-chat-rich"` and `mentions: [{"id": "<accountId>"}]`, where `<accountId>` is the receiving account's accountId. Verify `hasMention: true` in push.
@@ -373,7 +373,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Parsing spans for mentions instead of reading `Message.mentions`.
 
 ### 6.8 senderDisplayName resolution chain
-**Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatMessageEntry (`senderDisplayName`)
 **Severity:** MUST | **Round:** 1
 
 **Test:** For a channel chat, verify resolution order: SpaceMember.nick -> ChatContact.displayName -> login -> identity. For direct/group: ChatContact.displayName -> login -> identity.
@@ -385,13 +385,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Set `muteUntil` to a time in the past. Send a message. Verify push is NOT suppressed (mute has lapsed).
 
 ### 6.10 PushSubscription/set validates urgency
-**Spec:** draft-atwood-jmap-chat-push-00 Section 3.1
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatPushConfig (`urgency`)
 **Severity:** MUST | **Round:** 3
 
 **Test:** Call `PushSubscription/set` create with `chatPush.urgency: "invalid"`. Verify an `invalidProperties` SetError whose `properties` names the `urgency` path (not `invalidArguments`).
 
 ### 6.11 Absent chatPush delivers StateChange
-**Spec:** draft-atwood-jmap-chat-push-00 PushSubscription Extension (`chatPush`); RFC 8620 Section 7.1
+**Spec:** draft-atwood-jmap-chat-push-00 §PushSubscription Extension (`chatPush`); RFC 8620 Section 7.1
 **Severity:** MUST | **Round:** spec change (content-free push)
 
 **Test:** Create a PushSubscription with no `chatPush` property. Send a message to the owner. Verify the payload is a `StateChange` as defined in RFC 8620 Section 7.1: `@type` is `"StateChange"`, `changed` maps the account id to an object containing a `Message` state string, and the payload contains no `messages` array or other message metadata. Call `Message/changes` with a `sinceState` from before the send. Verify the returned `newState` equals that `Message` state and that the new message id appears in `created`.
@@ -423,7 +423,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Deliver a message via `Peer/deliver`. Verify a state change is recorded for `Message` data type so EventSource/WebSocket subscribers get notified.
 
 ### 7.3 Peer/deliver SpaceBan returns String receivedMsgId
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.1.1
+**Spec:** draft-atwood-jmap-chat-federation-00 §New Message Validation step 4, §Peer/deliver Response (`receivedMsgId`)
 **Severity:** MUST | **Round:** 19
 
 **Test:** Deliver a message from a banned sender. Verify `receivedMsgId` in the response is a String (ULID), not `null`.
@@ -431,7 +431,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Returns `null` for silently dropped messages.
 
 ### 7.4 Peer/deliver edit validates steps 3-7
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.1.3
+**Spec:** draft-atwood-jmap-chat-federation-00 §Edit and Reaction Validation
 **Severity:** MUST | **Round:** 3
 
 **Test:** Send a `Peer/deliver` edit from a blocked sender. Verify silent drop. Send edit to a channel where sender lacks `send` permission. Verify rejection.
@@ -443,7 +443,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]`. Query the DB. Verify the mention is stored.
 
 ### 7.6 Peer/receipt preserves existing fields
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
+**Spec:** draft-atwood-jmap-chat-federation-00 §Peer/receipt Request Arguments
 **Severity:** MUST | **Round:** 13
 
 **Test:** Call `Peer/receipt` with only `deliveredAt`. Then call again with only `readAt`. Verify both values are preserved in the delivery receipt (the second call does NOT null out deliveredAt).
@@ -451,7 +451,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** INSERT OR REPLACE clobbers previously-stored fields.
 
 ### 7.7 deviceDeliveredAt suppressed when receiptSharing=false
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
+**Spec:** draft-atwood-jmap-chat-federation-00 §Peer/receipt Receiver Behavior
 **Severity:** SHOULD | **Round:** 10
 
 **Test:** Set receiptSharing=false for a sender. Call `Peer/receipt` with `deliveredAt` and `deviceDeliveredAt`. Verify `deviceDeliveredAt` is NOT stored (it's privacy-sensitive).
@@ -555,13 +555,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 ## 8. WebSocket
 
 ### 8.1 ChatPresenceEvent null vs absent semantics
-**Spec:** draft-atwood-jmap-chat-wss-00 Section 6.4
+**Spec:** draft-atwood-jmap-chat-wss-00 §ChatPresenceEvent
 **Severity:** MUST | **Round:** 3
 
 **Test:** Send a presence update with `statusText: null` (explicit clear) vs omitting `statusText` (no change). Verify the server emits the key with `null` value in the first case and omits the key in the second.
 
 ### 8.2 Typing membership re-verified at delivery time
-**Spec:** draft-atwood-jmap-chat-wss-00 Section 6.3, Section 8.2
+**Spec:** draft-atwood-jmap-chat-wss-00 §ChatTypingEvent, §Ephemeral Event Authorization
 **Severity:** SHOULD | **Round:** 4
 
 **Test:** User A starts typing. Before the event is delivered, remove user B from the chat. Verify B does NOT receive the typing event.
@@ -573,13 +573,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Same pattern: a user has `receiveTypingIndicators: false` at the moment of delivery (not just at subscription time). Verify they don't receive typing events.
 
 ### 8.4 Block status re-checked at delivery for typing and presence
-**Spec:** draft-atwood-jmap-chat-wss-00 Section 8.2
+**Spec:** draft-atwood-jmap-chat-wss-00 §Ephemeral Event Authorization
 **Severity:** SHOULD | **Round:** 4
 
 **Test:** Block a contact AFTER a typing event is dispatched but BEFORE it reaches the connection. Verify the blocked contact's typing event is dropped.
 
 ### 8.5 ChatPresenceEvent includes statusEmoji and lastActiveAt
-**Spec:** draft-atwood-jmap-chat-wss-00 Section 6.4
+**Spec:** draft-atwood-jmap-chat-wss-00 §ChatPresenceEvent
 **Severity:** MUST | **Round:** 2
 
 **Test:** Update presence with statusEmoji and lastActiveAt. Verify both fields appear in the ChatPresenceEvent delivered via WebSocket.
@@ -589,7 +589,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 ## 9. Scheduling and Lifecycle
 
 ### 9.1 burnOnRead immediate hard-delete
-**Spec:** draft-atwood-jmap-chat-00 Section 4.11
+**Spec:** draft-atwood-jmap-chat-00 §Message (`burnOnRead`)
 **Severity:** MUST | **Round:** 6
 
 **Test:** Create a message with `burnOnRead: true`. Mark it as read (set `readAt`). Immediately query `Message/get` for that id. Verify it is GONE (hard-deleted, not tombstoned).
@@ -663,7 +663,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 ## 12. PushSubscription
 
 ### 12.1 PushSubscription/get, /set, /changes exist
-**Spec:** draft-atwood-jmap-chat-push-00 Section 3.1, RFC 8620 Section 7.2
+**Spec:** draft-atwood-jmap-chat-push-00 §PushSubscription Extension, RFC 8620 Section 7.2
 **Severity:** MUST | **Round:** 2
 
 **Test:** Call `PushSubscription/set` create with `url` and `chatPush`. Verify success. Call `/get` and `/changes`.
@@ -709,7 +709,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Common failure:** Returns `null` for silently-dropped messages, violating the String type constraint.
 
 ### 13.5 Peer/receipt preserves previously-stored fields
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
+**Spec:** draft-atwood-jmap-chat-federation-00 §Peer/receipt Request Arguments
 **Severity:** MUST | **Round:** 13 (rediscovered 19)
 
 **Test:** Call `Peer/receipt` with only `deliveredAt`. Then call again with only `readAt` (no `deliveredAt`). Verify BOTH values are preserved in the delivery receipt — the second call must NOT null out the previously-stored `deliveredAt`.
@@ -733,7 +733,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Common failure:** Gate only on the create path, or gating on spans.
 
 ### 13.8 Push ignores rich body spans
-**Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
+**Spec:** draft-atwood-jmap-chat-push-00 §ChatMessageEntry (`hasMention`)
 **Severity:** MUST | **Round:** 12
 
 **Test:** Send a message with `bodyType: "application/jmap-chat-rich"`, body `{"spans": [{"type": "mention", "userId": "<accountId>"}, {"type": "broadcast", "scope": "everyone"}]}`, and empty `mentions` and `broadcastMentions`. Verify `hasMention: false` and `mentionScopes: []` in the push notification.
