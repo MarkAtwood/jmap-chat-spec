@@ -424,6 +424,10 @@ connection.
   `"SceneObjectEvent"`, and `"SceneInteractionEvent"`.
   Default: `null`.
 
+- **`id`** (String, optional): A client-specified identifier for
+  this message.  A `RequestError` caused by this message carries
+  this value as its `requestId` ({{RFC8887}} Section 4.3.4).
+
 ### Example
 
 ~~~json
@@ -458,7 +462,10 @@ The JMAP WebSocket protocol does not define an explicit acknowledgment
 frame for stream-enable messages.  Following the same pattern as
 `WebSocketPushEnable` ({{RFC8887}}), the server processes the request
 silently on success.  The client infers success from the absence of a
-`RequestError` frame.  If the server cannot honor the request -- for
+`RequestError` frame.  A client that sends several control messages
+in succession SHOULD give each an `id` so that it can attribute any
+`RequestError` to the message that caused it.  If the server cannot
+honor the request -- for
 example, because `eventTypes` contains only unrecognized values -- it
 responds with a `RequestError` (see the error response example below).
 
@@ -551,6 +558,7 @@ Client sends:
 ~~~json
 {
   "@type": "SceneStreamEnable",
+  "id": "e1",
   "regionIds": ["01J5ABC0000000000000000001"],
   "eventTypes": ["SceneFooBarEvent"]
 }
@@ -567,6 +575,7 @@ Server responds:
 ~~~json
 {
   "@type": "RequestError",
+  "requestId": "e1",
   "type": "urn:ietf:params:jmap:error:invalidArguments",
   "detail": "eventTypes contains no recognized values"
 }
