@@ -138,7 +138,7 @@ A moderator sends `VTCRecording/set` with a `create` containing only `callId`:
   "accountId": "moderator-account",
   "create": {
     "r0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB"
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0"
     }
   }
 }, "0"]]
@@ -163,7 +163,7 @@ On success, the server:
   "accountId": "moderator-account",
   "created": {
     "r0": {
-      "id": "01J4XP2SN9RXVU1SSEGIUT6GH",
+      "id": "01J4XP2SN9RXVV1SSEGJVT6GH0",
       "state": "recording",
       "startedAt": "2026-06-06T14:30:00Z",
       "initiatedBy": "user:moderator@example.com",
@@ -238,7 +238,7 @@ A moderator sends `VTCRecording/set` with an `update` setting `state` to
 [["VTCRecording/set", {
   "accountId": "moderator-account",
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "paused"
     }
   }
@@ -262,7 +262,7 @@ A moderator sends `VTCRecording/set` with an `update` setting `state` back to
 [["VTCRecording/set", {
   "accountId": "moderator-account",
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "recording"
     }
   }
@@ -303,7 +303,7 @@ A moderator sends `VTCRecording/set` with an `update` setting `state` to
 [["VTCRecording/set", {
   "accountId": "moderator-account",
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "stopped"
     }
   }
@@ -368,8 +368,8 @@ Example of a completed VTCRecording object:
 
 ```json
 {
-  "id": "01J4XP2SN9RXVU1SSEGIUT6GH",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "id": "01J4XP2SN9RXVV1SSEGJVT6GH0",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "state": "available",
   "startedAt": "2026-06-06T14:30:00Z",
   "stoppedAt": "2026-06-06T15:02:17Z",
@@ -417,7 +417,7 @@ A moderator sends `VTCRecording/set` with a `destroy`:
 ```json
 [["VTCRecording/set", {
   "accountId": "moderator-account",
-  "destroy": ["01J4XP2SN9RXVU1SSEGIUT6GH"]
+  "destroy": ["01J4XP2SN9RXVV1SSEGJVT6GH0"]
 }, "4"]]
 ```
 
@@ -463,8 +463,8 @@ mandatory consent signal.
 ```json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
   "initiatedBy": "user:moderator@example.com"
 }
@@ -778,7 +778,7 @@ appropriate indicator.
 [["VTCRecording/query", {
   "accountId": "participant-account",
   "filter": {
-    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "state": "recording"
   }
 }, "0"],
@@ -881,7 +881,7 @@ All filter properties are combined with logical AND. Default sort:
 [["VTCRecording/query", {
   "accountId": "user-account",
   "filter": {
-    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "state": "available"
   }
 }, "0"],
@@ -933,7 +933,7 @@ Request:
   "accountId": "alice-account",
   "create": {
     "r0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB"
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0"
     }
   }
 }, "0"]]
@@ -944,8 +944,8 @@ Both Alice and Bob receive via WebSocket:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
   "initiatedBy": "user:alice@example.com"
 }
@@ -961,7 +961,7 @@ Request:
 [["VTCRecording/set", {
   "accountId": "alice-account",
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "paused"
     }
   }
@@ -973,8 +973,8 @@ Both receive:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "paused",
   "initiatedBy": "user:alice@example.com"
 }
@@ -990,7 +990,7 @@ Request:
 [["VTCRecording/set", {
   "accountId": "alice-account",
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "recording"
     }
   }
@@ -1002,8 +1002,8 @@ Both receive:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
   "initiatedBy": "user:alice@example.com"
 }
@@ -1019,7 +1019,7 @@ Request:
 [["VTCRecording/set", {
   "accountId": "alice-account",
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "stopped"
     }
   }
@@ -1031,8 +1031,8 @@ Both receive:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "stopped",
   "initiatedBy": "user:alice@example.com"
 }
@@ -1061,7 +1061,7 @@ Alice's client fetches the updated recording:
 ```json
 [["VTCRecording/get", {
   "accountId": "alice-account",
-  "ids": ["01J4XP2SN9RXVU1SSEGIUT6GH"]
+  "ids": ["01J4XP2SN9RXVV1SSEGJVT6GH0"]
 }, "4"]]
 ```
 
@@ -1071,8 +1071,8 @@ Response:
 [["VTCRecording/get", {
   "accountId": "alice-account",
   "list": [{
-    "id": "01J4XP2SN9RXVU1SSEGIUT6GH",
-    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+    "id": "01J4XP2SN9RXVV1SSEGJVT6GH0",
+    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "state": "available",
     "startedAt": "2026-06-06T14:30:00Z",
     "stoppedAt": "2026-06-06T15:02:17Z",

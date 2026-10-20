@@ -242,7 +242,7 @@ Servers SHOULD rate-limit `ChatMessagePush` delivery per `PushSubscription`. Whe
   "messages": [
     {
       "messageId": "01J3YKZQP5MWVT8PPBEHTJ3HX",
-      "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
+      "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
       "chatKind": "channel",
       "chatName": "general",
       "spaceId": "01J2WKZQM3LVST7OOBDHSI2GW",
@@ -271,7 +271,7 @@ The following variant shows the payload when the same channel message also tags 
   "messages": [
     {
       "messageId": "01J3YKZQP5MWVT8PPBEHTJ3HX",
-      "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
+      "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
       "chatKind": "channel",
       "chatName": "general",
       "spaceId": "01J2WKZQM3LVST7OOBDHSI2GW",

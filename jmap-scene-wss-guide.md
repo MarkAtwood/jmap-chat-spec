@@ -486,7 +486,7 @@ subscribes to both:
 ```json
 {
   "@type": "VTCStreamEnable",
-  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
   "eventTypes": null
 }
 ```

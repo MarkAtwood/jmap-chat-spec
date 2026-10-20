@@ -210,14 +210,14 @@ Then, using the `activeCallId` from the response:
     "accountId": "acct1",
     "create": {
       "p0": {
-        "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+        "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
         "joinMethod": "webrtc"
       }
     }
   }, "2"],
   ["VTCCall/get", {
     "accountId": "acct1",
-    "ids": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+    "ids": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
     "properties": ["joinUri", "joinPassword"]
   }, "3"]
 ]
@@ -312,7 +312,7 @@ not the `id` field, to be robust against servers that assign non-userId ids:
   },
   "vtcParticipant": {
     "id": "user:alice@example.com",
-    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "userId": "user:alice@example.com",
     "displayName": "Alice Chen",
     "mediaState": {
@@ -560,7 +560,7 @@ when the avatar enters a zone and switches the user's VTC call.
   "worldState": {
     "com.example.zone": {
       "type": "breakout",
-      "vtcCallId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "vtcCallId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "radius": 8.0
     }
   }
@@ -628,7 +628,7 @@ server creates a SceneObject representing the shared screen:
   "worldState": {
     "com.example.screenshare": {
       "participantUserId": "user:alice@example.com",
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "mediaTrackKind": "screen"
     }
   }
@@ -695,7 +695,7 @@ Send both subscription messages after connecting:
 ```json
 {
   "@type": "VTCStreamEnable",
-  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
   "eventTypes": null
 }
 ```
@@ -889,14 +889,14 @@ Alice clicks "Enter Room" in the client.
     "accountId": "acct1",
     "create": {
       "p0": {
-        "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+        "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
         "joinMethod": "webrtc"
       }
     }
   }, "2"],
   ["VTCCall/get", {
     "accountId": "acct1",
-    "ids": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+    "ids": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
     "properties": ["joinUri", "joinPassword"]
   }, "3"]
 ]
@@ -920,7 +920,7 @@ and to `joinUri` for WebRTC audio/video.
 ```json
 {
   "@type": "VTCStreamEnable",
-  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
   "eventTypes": null
 }
 ```
@@ -955,7 +955,7 @@ Shortly after:
 ```json
 {
   "@type": "VTCParticipantEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "user:bob@example.com",
   "event": "joined",
   "role": "participant",
@@ -1008,7 +1008,7 @@ Other clients receive:
 ```json
 {
   "@type": "VTCParticipantEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "user:alice@example.com",
   "event": "left",
   "role": "participant",

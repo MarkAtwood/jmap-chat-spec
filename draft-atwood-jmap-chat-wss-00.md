@@ -239,7 +239,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 ~~~json
 {
   "@type": "ChatTypingEvent",
-  "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
+  "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
   "senderId": "c8xq2m",
   "typing": true
 }
@@ -349,7 +349,7 @@ WS_DATA
     "accountId": "u1",
     "create": {
       "m1": {
-        "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
+        "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
         "body": "Hello!",
         "bodyType": "text/plain",
         "sentAt": "2026-04-26T12:00:00Z"
@@ -361,7 +361,7 @@ WS_DATA
                                   WS_DATA
                                   {
                                     "@type": "ChatTypingEvent",
-                                    "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX",
+                                    "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
                                     "senderId": "c8xq2m",
                                     "typing": true
                                   }
