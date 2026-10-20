@@ -20,57 +20,92 @@ normative:
   RFC2119:
   RFC8174:
   RFC8620:
+  RFC8030:
+  RFC9749:
   ULID:
-    title: Universally Unique Lexicographically Sortable Identifier
+    title: "Universally Unique Lexicographically Sortable Identifier"
     target: https://github.com/ulid/spec
   GLTF:
     title: "glTF 2.0 Specification"
-    target: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
     author:
       org: Khronos Group
-    date: 2021
+    date: 2021-10-11
+    target: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
+    annotation: "Version 2.0.1."
+  FIPS180-4:
+    title: "Secure Hash Standard (SHS)"
+    author:
+      org: National Institute of Standards and Technology
+    seriesinfo:
+      FIPS: PUB 180-4
+      DOI: 10.6028/NIST.FIPS.180-4
+    date: 2015-08
+  WGS84:
+    title: "World Geodetic System 1984, Its Definition and Relationships with Local Geodetic Systems"
+    author:
+      org: National Geospatial-Intelligence Agency
+    seriesinfo:
+      NGA.STND: 0036_1.0.0_WGS84
+    date: 2014-07-08
 
 informative:
   RFC6455:
   RFC8887:
+  RFC9562:
+  DID-CORE:
+    title: "Decentralized Identifiers (DIDs) v1.0"
+    author:
+      - fullname: Manu Sporny
+        role: editor
+      - fullname: Amy Guy
+        role: editor
+      - fullname: Markus Sabadello
+        role: editor
+      - fullname: Drummond Reed
+        role: editor
+    seriesinfo:
+      W3C: REC-did-core-20220719
+    date: 2022-07-19
+    target: https://www.w3.org/TR/2022/REC-did-core-20220719/
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
   JMAP-VTC:
-    title: JMAP for Video/Voice Teleconferencing
+    title: "JMAP for Video/Voice Teleconferencing"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-00
     date: 2026
   JMAP-CHAT-WSS:
-    title: JMAP Chat over WebSocket
+    title: "JMAP Chat over WebSocket"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-wss-00
     date: 2026
   JMAP-SCENE-WSS:
-    title: JMAP Scene over WebSocket
+    title: "JMAP Scene over WebSocket"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-scene-wss-00
     date: 2026
   JMAP-METADATA:
-    title: JMAP Metadata
+    title: "JMAP Object Metadata"
+    author:
+      - fullname: Mauro De Gennaro
     seriesinfo:
       Internet-Draft: draft-ietf-jmap-metadata-04
-    date: 2026
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-metadata/
+    date: 2026-10-19
 
 --- abstract
 
-This document defines JMAP Scene, a JMAP capability ({{RFC8620}}) for managing three-dimensional spatial environments. It defines the `urn:ietf:params:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a coordinate system convention; and a visibility contract between server and client.
+This document defines JMAP Scene, a JMAP capability ({{RFC8620}}) for managing three-dimensional spatial environments. It defines the `urn:ietf:params:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a `SceneObject/interact` method for object interactions; a coordinate system convention; and a visibility contract between server and client.
 
 The specification models spatial *state* — what objects exist, where they are, and who is present — without prescribing the rendering technology or simulation protocol. Actual real-time position synchronization, physics, and rendering travel through a deployment-chosen simulation stack; the JMAP server is a spatial state database, not a rendering engine.
 
@@ -99,7 +134,7 @@ When `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is advertised alongside `urn:ie
 - **Proximity chat** may be modeled as a Chat per region or as ephemeral events on the Chat's WebSocket connection ({{JMAP-CHAT-WSS}}).
 - **Access control** may be inherited from the Space/channel permission model.
 
-Without JMAP Chat, the Scene capability is fully functional as a standalone spatial state manager. Regions have no chat binding, and the text communication features above are unavailable. Clients SHOULD inform the user when a region has multiple avatars but no communication capability is available.
+Without JMAP Chat, the Scene capability is fully functional as a standalone spatial state manager. Regions have no chat binding, and the text communication features above are unavailable. A client can tell the user when a region has multiple avatars but no communication capability is available.
 
 ## Relationship to JMAP VTC (optional) {#vtc-binding}
 
@@ -116,7 +151,17 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 `Number[N]` denotes a JSON array of exactly N Number values. `Number[3]` represents a spatial coordinate triple `[x, y, z]`; `Number[4]` represents a quaternion `[x, y, z, w]`.
 
-Terminology from {{RFC8620}} is used throughout.
+Terminology from {{RFC8620}} is used throughout. The term "userId" refers to the authenticated user identity string provided by the transport layer, equivalent to `ChatContact.identity` when {{JMAP-CHAT}} is present. It is not a `ChatContact.id`, which is a server-assigned identifier local to the JMAP Chat server.
+
+## Accounts {#account-model}
+
+A SceneRegion and every SceneObject and SceneAvatar in it live in exactly one JMAP account: the account in which the region was created (the "hosting account"). A SceneAsset lives in the account in which it was created.
+
+Other users reach a region's records by accessing the hosting account as a shared account ({{RFC8620}} Section 1.6.2): the Session lists it among the accounts the user can access, with `isPersonal` set to `false`. A server gives a user access to the hosting account when the user may enter at least one of its regions. Per-region access control ({{access-control}}) still applies inside the account.
+
+Every `accountId` in a Scene method call, response, or push notification is the id of the hosting account (for SceneAsset, the account that holds the asset).
+
+The "region owner" is the user named by the region's `ownerId`.
 
 # Coordinate System {#coordinate-system}
 
@@ -141,7 +186,7 @@ The identity orientation (no rotation) is `[0, 0, 0, 1]`.
 
 Quaternions are used because they are the minimal non-degenerate parameterization of 3D rotation, avoid gimbal lock, interpolate smoothly (slerp), and match glTF 2.0 and all major physics engines. The spec does not use Euler angles or axis-angle representations on the wire.
 
-Clients SHOULD send unit quaternions. Servers MAY reject quaternions whose magnitude deviates from 1.0 by more than a deployment-defined epsilon with an `invalidProperties` SetError naming the quaternion property (e.g., `orientation`). If the server does not reject the value, it MUST normalize the quaternion to unit length before storage.
+Clients SHOULD send unit quaternions. Servers MAY reject quaternions whose magnitude deviates from 1.0 by more than a deployment-defined epsilon with an `invalidProperties` SetError naming the quaternion property (e.g., `orientation`). If the server does not reject the value, it MUST normalize the quaternion to unit length before storage. A quaternion with zero magnitude or a non-finite component cannot be normalized; the server MUST reject it with an `invalidProperties` SetError naming the property.
 
 ## Scale
 
@@ -180,6 +225,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:scene"]` is a JSON objec
 `maxAssetSizeBytes` (UnsignedInt|null):
 : Maximum asset file size in bytes. `null` means no limit.
 
+`supportsSceneAsset` (Boolean):
+: `true` if the server supports the SceneAsset methods ({{scene-asset-methods}}) on this account. When `false`, a call to any SceneAsset method returns an `unknownMethod` error ({{RFC8620}} Section 3.6.2).
+
 # Data Types
 
 Data types are defined in dependency order: embedded sub-types and referenced types precede the types that reference them.
@@ -209,21 +257,24 @@ This describes a 1000m x 210m x 1000m region.
 
 A SceneAsset is metadata about a visual or audio resource stored as a JMAP blob. It is a top-level JMAP data type.
 
-SceneAsset provides queryable metadata for assets referenced by SceneObject and SceneAvatar. Deployments that do not need asset management beyond raw blob references MAY omit support for SceneAsset methods; in that case, SceneObject and SceneAvatar fields reference blobIds directly.
+SceneAsset provides queryable metadata for assets referenced by SceneObject and SceneAvatar. Deployments that do not need asset management beyond raw blob references MAY omit support for SceneAsset methods and advertise `supportsSceneAsset: false` ({{capability}}). SceneObject and SceneAvatar always reference blobIds directly (`visualRef`), whether or not a SceneAsset describes the blob.
 
 `id` (String, immutable, server-set):
 : A ULID {{ULID}} assigned at creation.
 
 `accountId` (String, server-set):
-: The account that owns this asset.
+: The account that holds this asset.
+
+`ownerId` (String, immutable, server-set):
+: The userId of the user who created this asset.
 
 `blobId` (String, immutable):
 : The JMAP blob reference for the asset file. The blob is uploaded via the standard JMAP upload mechanism ({{RFC8620}} Section 6.1).
 
 `assetUri` (String|null):
-: An optional deployment-provided URI for retrieving the asset, typically a CDN endpoint. When present, clients SHOULD prefer `assetUri` over the JMAP blob download path for performance. Peer-supplied; MUST be treated as untrusted (see {{asset-uri-untrusted}}).
+: An optional deployment-provided URI for retrieving the asset, typically a CDN endpoint. When present, clients SHOULD prefer `assetUri` over the JMAP blob download path for performance. Peer-supplied and untrusted; see {{asset-uri-untrusted}}.
 
-`mediaType` (String):
+`mediaType` (String, immutable):
 : The media type of the asset (e.g., `"model/gltf-binary"`, `"image/png"`, `"audio/mpeg"`).
 
 `name` (String|null):
@@ -233,14 +284,14 @@ SceneAsset provides queryable metadata for assets referenced by SceneObject and 
 : File size in bytes.
 
 `sha256` (String|null):
-: SHA-256 hash of the asset file, lowercase hexadecimal. Clients MAY use this for cache validation.
+: SHA-256 {{FIPS180-4}} hash of the asset file, lowercase hexadecimal. Clients MAY use this for cache validation.
 
 `createdAt` (UTCDate, immutable, server-set):
 : Time the asset was created.
 
 ### Preferred Asset Format {#preferred-asset-format}
 
-glTF 2.0 ({{GLTF}}) is the preferred and mandatory-to-implement visual asset format. The IANA media type `model/gltf-binary` (.glb) MUST be listed in `supportedVisualTypes`; servers SHOULD also support `model/gltf+json` (.gltf).
+glTF 2.0 ({{GLTF}}) is the preferred and mandatory-to-implement visual asset format. The IANA media type `model/gltf-binary` (.glb) is always listed in `supportedVisualTypes` (see {{capability}}); servers SHOULD also support `model/gltf+json` (.gltf).
 
 glTF 2.0 is the baseline because:
 
@@ -264,7 +315,10 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 : A ULID assigned at creation.
 
 `accountId` (String, server-set):
-: The account that owns this region.
+: The hosting account of this region ({{account-model}}).
+
+`ownerId` (String, immutable, server-set):
+: The userId of the user who created this region. "Region owner" in the permission rules of this document means this user.
 
 `name` (String):
 : Human-readable name for the region (e.g., `"Gallery East Wing"`, `"Main Plaza"`).
@@ -273,16 +327,16 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 : Optional description of the region.
 
 `bounds` (SceneBounds):
-: The spatial extent of the region. Objects and avatars within this region SHOULD have positions inside these bounds. Servers MAY clamp positions that fall outside bounds or MAY reject them with an `invalidProperties` SetError naming `position`.
+: The spatial extent of the region. Objects and avatars within this region SHOULD have positions inside these bounds. Servers MAY clamp positions that fall outside bounds or MAY reject them with an `invalidProperties` SetError naming `position`. This check uses the stored `position` value; for a SceneObject with a non-null `parentId`, that value is relative to the parent.
 
 `environment` (Object|null):
 : Deployment-defined environment settings for the region (e.g., sky, lighting, gravity, fog). Opaque to the JMAP Scene specification; clients that understand the deployment's environment schema MAY use it. Clients MUST ignore unrecognized keys.
 
 `simulationUri` (String|null):
-: The real-time simulation layer endpoint for this region. Opaque to the JMAP server. May be a WebSocket ({{RFC6455}}) URL, a WebRTC signaling endpoint, a custom UDP endpoint, or any other simulation entry point. Peer-supplied; MUST be treated as untrusted (see {{simulation-uri-untrusted}}). `null` when the region has no real-time simulation layer (static scene, offline viewing). When the JMAP Scene WebSocket capability ({{JMAP-SCENE-WSS}}) is present, the JMAP WebSocket ({{RFC8887}}) carries discrete spatial events independently of `simulationUri`.
+: The real-time simulation layer endpoint for this region. Opaque to the JMAP server. May be a WebSocket ({{RFC6455}}) URL, a WebRTC signaling endpoint, a custom UDP endpoint, or any other simulation entry point. Peer-supplied and untrusted; see {{simulation-uri-untrusted}}. `null` when the region has no real-time simulation layer (static scene, offline viewing). When the JMAP Scene WebSocket capability ({{JMAP-SCENE-WSS}}) is present, the JMAP WebSocket ({{RFC8887}}) carries discrete spatial events independently of `simulationUri`.
 
 `inputUri` (String|null):
-: An optional high-frequency bidirectional input/response channel endpoint, separate from `simulationUri`. Intended for experiences that require I/O rates significantly above the simulation tick rate. Inbound: flight simulator control surfaces (HOTAS, rudder pedals), racing simulator wheel/pedal axes, VR hand/finger tracking, or other high-frequency HID devices. Outbound: force feedback, haptic rumble, indicator lights, cockpit instrument servos, and other actuator commands. The separate channel prevents high-frequency I/O traffic from starving avatar position synchronization, spatial events, and VTC media on the simulation channel. Same trust model as `simulationUri`: peer-supplied, opaque to the JMAP server, MUST be treated as untrusted (see {{simulation-uri-untrusted}}). `null` when the region does not require a dedicated input channel (the common case; standard keyboard/mouse input travels via `simulationUri`).
+: An optional high-frequency bidirectional input/response channel endpoint, separate from `simulationUri`. Intended for experiences that require I/O rates significantly above the simulation tick rate. Inbound: flight simulator control surfaces (HOTAS, rudder pedals), racing simulator wheel/pedal axes, VR hand/finger tracking, or other high-frequency HID devices. Outbound: force feedback, haptic rumble, indicator lights, cockpit instrument servos, and other actuator commands. The separate channel prevents high-frequency I/O traffic from starving avatar position synchronization, spatial events, and VTC media on the simulation channel. Same trust model as `simulationUri`: peer-supplied, opaque to the JMAP server, and untrusted (see {{simulation-uri-untrusted}}). `null` when the region does not require a dedicated input channel (the common case; standard keyboard/mouse input travels via `simulationUri`).
 
 `spawnPosition` (Number[3]):
 : Default position where new avatars appear when entering the region. Default: `[0, 0, 0]`.
@@ -302,30 +356,30 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 A GeoAnchor object has the following fields:
 
 `referenceFrame` (String|null):
-: Identifies the coordinate reference frame for this anchor. `null` is Earth WGS84 (the default). When non-null, the value identifies an alternative reference frame. Recognized forms include:
+: Identifies the coordinate reference frame for this anchor. `null` is Earth WGS 84 {{WGS84}} (the default). When non-null, the value identifies an alternative reference frame. Recognized forms include:
 
-  - `null` — Earth, WGS84 ellipsoid. The coordinate fields (`latitude`, `longitude`, `altitude`) use standard WGS84 interpretation.
+  - `null` — Earth, WGS 84 ellipsoid. The coordinate fields (`latitude`, `longitude`, `altitude`) use standard WGS 84 interpretation.
   - A URL (e.g., `"https://maps.example.com/worlds/middle-earth"`) — a map or scene server that defines the reference frame. The server at that URL is authoritative for the coordinate system's geometry and semantics.
-  - A DID (e.g., `"did:web:example.com:worlds:arrakis"`) — a decentralized identifier for a reference frame. The DID document MAY contain service endpoints for resolution and map data.
-  - A URN UUID (e.g., `"urn:uuid:550e8400-e29b-41d4-a716-446655440000"`) — an opaque identifier for a shared coordinate system, useful when multiple servers agree on a coordinate frame without centralized hosting.
+  - A DID {{DID-CORE}} (e.g., `"did:web:example.com:worlds:arrakis"`) — a decentralized identifier for a reference frame. The DID document MAY contain service endpoints for resolution and map data.
+  - A URN UUID {{RFC9562}} (e.g., `"urn:uuid:550e8400-e29b-41d4-a716-446655440000"`) — an opaque identifier for a shared coordinate system, useful when multiple servers agree on a coordinate frame without centralized hosting.
   - A DNS name (e.g., `"mars.example.com"`) — resolved via well-known conventions defined by the deployment.
   - A reverse-domain identifier (e.g., `"com.example.starfield.planet-jemison"`) — deployment-specific reference frame using the same extensibility convention as `viewHint`.
 
-  Clients that do not recognize the `referenceFrame` value MUST NOT attempt to render the region in AR mode. Clients SHOULD fall back to rendering the region as a standalone virtual environment (ignoring the anchor) and SHOULD inform the user that the geographic context is unavailable.
+  Clients that do not recognize the `referenceFrame` value SHOULD NOT attempt to render the region in AR mode. Such a client can instead render the region as a standalone virtual environment (ignoring the anchor) and tell the user that the geographic context is unavailable.
 
 `latitude` (Number):
-: Latitude in decimal degrees on the reference frame's geoid or surface model. For Earth WGS84: range -90.0 to 90.0. For other reference frames: interpretation is defined by the reference frame.
+: Latitude in decimal degrees on the reference frame's geoid or surface model. For Earth WGS 84: range -90.0 to 90.0. For other reference frames: interpretation is defined by the reference frame.
 
 `longitude` (Number):
-: Longitude in decimal degrees on the reference frame's geoid or surface model. For Earth WGS84: range -180.0 to 180.0. For other reference frames: interpretation is defined by the reference frame.
+: Longitude in decimal degrees on the reference frame's geoid or surface model. For Earth WGS 84: range -180.0 to 180.0. For other reference frames: interpretation is defined by the reference frame.
 
 `altitude` (Number|null):
-: Altitude in meters above the reference frame's datum. For Earth WGS84: meters above the WGS84 ellipsoid. `null` if altitude is unknown or not applicable; clients SHOULD treat `null` as surface level at the given latitude/longitude.
+: Altitude in meters above the reference frame's datum. For Earth WGS 84: meters above the WGS 84 ellipsoid. `null` if altitude is unknown or not applicable; clients SHOULD treat `null` as surface level at the given latitude/longitude.
 
 `heading` (Number):
-: Clockwise rotation in degrees from the reference frame's North (or equivalent polar direction) that maps to the region's positive Z axis. Default: `0` (positive Z = North). A heading of `90` means positive Z points East (or the reference frame's equivalent).
+: The direction of the region's negative Z axis, in degrees clockwise from the reference frame's North (or equivalent polar direction), viewed from above. Default: `0` (negative Z points North). A heading of `90` means negative Z points East and positive X points South (or the reference frame's equivalents).
 
-When `referenceFrame` is `null` (Earth WGS84), the region's coordinate axes are: positive X points East, positive Z points North, positive Y points up. This is consistent with the spec's Y-up convention.
+When `referenceFrame` is `null` (Earth WGS 84) and `heading` is `0`, the region's coordinate axes are: positive X points East, positive Y points up, and positive Z points South (North is negative Z). This frame is right-handed and Y-up, as {{coordinate-system}} requires. A non-zero `heading` rotates the X and Z axes together about the Y axis.
 
 Example — an AR region anchored to a park in Seattle (Earth):
 
@@ -390,7 +444,10 @@ Example — a region anchored to a DID-identified world:
 SceneObjects within any anchored region are positioned in meters relative to the anchor point, regardless of reference frame.
 
 `accessPolicy` (String):
-: Who may enter this region. Values: `"public"` (any authenticated user), `"invite"` (only users explicitly granted access), `"space"` (members of the bound Space, when {{JMAP-CHAT}} is present). Default: `"public"`.
+: Who may enter this region. Values: `"public"` (any authenticated user), `"invite"` (the users listed in `invitedUserIds`), `"space"` (members of the bound Space, when {{JMAP-CHAT}} is present). Default: `"public"`. See {{access-control}}.
+
+`invitedUserIds` (String\[\]):
+: The userIds admitted to the region when `accessPolicy` is `"invite"`. Default: `[]`. The region owner and users with deployment-defined administrative privileges may update it. The server returns the list only to callers who may update the region; for every other caller, the server returns `[]`. The list has no effect while `accessPolicy` is not `"invite"`.
 
 `createdAt` (UTCDate, immutable, server-set):
 : Time the region was created.
@@ -417,7 +474,7 @@ The following fields are present only when the corresponding companion capabilit
 `activeCallId` (String|null):
 : When `urn:ietf:params:jmap:vtc` is present: the id of an active VTCCall ({{JMAP-VTC}}) bound to this region. `null` if no call is active. When the VTCCall referenced by `activeCallId` transitions to state `"ended"`, the server MUST clear this field to `null` and emit a `StateChange` for the SceneRegion type. This update is a side effect of the VTCCall state transition.
 
-When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat also has an `activeCallId` field (per {{JMAP-CHAT}}), the two fields SHOULD reference the same VTCCall. If they diverge (e.g., due to independent client updates), the SceneRegion's `activeCallId` is authoritative for spatial audio binding and the Chat's `activeCallId` is authoritative for the text-channel call banner. Clients SHOULD treat divergence as transient and prefer the SceneRegion's value for in-region UI.
+When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat also has an `activeCallId` field (per {{JMAP-CHAT}}), the two fields SHOULD reference the same VTCCall. If they diverge (e.g., due to independent client updates), the SceneRegion's `activeCallId` is authoritative for spatial audio binding and the Chat's `activeCallId` is authoritative for the text-channel call banner.
 
 ### Example
 
@@ -425,6 +482,7 @@ When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat 
 {
   "id": "01J5ABC0000000000000000001",
   "accountId": "account-xyz",
+  "ownerId": "user:curator@example.com",
   "name": "Gallery East Wing",
   "description": "Contemporary sculpture exhibition",
   "bounds": {
@@ -442,6 +500,7 @@ When a SceneRegion has both `chatId` and `activeCallId` set, and the bound Chat 
   "spawnOrientation": [0, 0, 0, 1],
   "activeAvatarCount": 3,
   "accessPolicy": "public",
+  "invitedUserIds": [],
   "createdAt": "2026-06-01T10:00:00Z",
   "updatedAt": "2026-06-05T14:30:00Z",
   "worldState": null,
@@ -515,7 +574,7 @@ SceneObjects form a scene graph: each object has a position, orientation, and sc
 
 ~~~json
 {
-  "id": "01J5OBJ0000000000000000001",
+  "id": "01J5QBJ0000000000000000001",
   "regionId": "01J5ABC0000000000000000001",
   "parentId": null,
   "name": "Sculpture: Convergence",
@@ -548,13 +607,13 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 ### SceneAvatar Object Fields
 
 `id` (String, immutable, server-set):
-: Opaque server-assigned identifier. For authenticated users, the server SHOULD use the userId as the id within a given region.
+: A ULID assigned at creation, unique within the account like any JMAP id. A user has at most one SceneAvatar record per region; the server reuses it when the user re-enters ({{scene-avatar-reenter}}). Clients find a user's record with the `userId` filter of `SceneAvatar/query`.
 
 `regionId` (String, immutable):
 : The SceneRegion this avatar is in.
 
-`userId` (String, server-set):
-: The authenticated user identity string.
+`userId` (String, immutable, server-set):
+: The userId ({{conventions-and-definitions}}) of the user this avatar represents.
 
 `displayName` (String):
 : Display name for this avatar.
@@ -569,13 +628,13 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 : Blob reference for the avatar's visual representation. `null` when the avatar has no custom visual (deployment provides a default).
 
 `visualType` (String|null):
-: Media type of the avatar visual. MUST be present when `visualRef` is non-null.
+: Media type of the avatar visual. MUST be present when `visualRef` is non-null. MUST be null when `visualRef` is null.
 
 `joinedAt` (UTCDate, server-set):
-: Time this avatar entered the region.
+: Time this avatar most recently entered the region.
 
 `leftAt` (UTCDate|null):
-: Time this avatar left the region. `null` if currently present.
+: Time this avatar left the region. `null` if currently present. The server records the value: a client update that sets `leftAt` to a non-null value signals the intent to leave, and the server stores its own current time instead of the supplied value ({{scene-avatar-leave}}).
 
 `worldState` (Object|null):
 : Deployment-defined avatar state (e.g., animation, equipped items, status). Opaque to the spec; the server stores and relays without interpretation.
@@ -584,7 +643,7 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 
 ~~~json
 {
-  "id": "user:alice@example.com",
+  "id": "01J5AVA0000000000000000001",
   "regionId": "01J5ABC0000000000000000001",
   "userId": "user:alice@example.com",
   "displayName": "Alice Chen",
@@ -603,7 +662,7 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 
 # Methods
 
-## SceneAsset Methods
+## SceneAsset Methods {#scene-asset-methods}
 
 ### SceneAsset/get
 
@@ -627,7 +686,11 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 Optional: `name` (String), `assetUri` (String), `sha256` (String).
 
-The server sets `id`, `accountId`, `size`, and `createdAt`.
+The server sets `id`, `accountId`, `ownerId`, `size`, and `createdAt`.
+
+`update` supports patching `name`, `assetUri`, and `sha256`. All other properties are immutable or server-set.
+
+`destroy` removes the SceneAsset record only. SceneObject and SceneAvatar records that reference the same blob through `visualRef` are unaffected, because they reference the blobId, not the SceneAsset. The blob itself follows the blob lifetime rules of {{RFC8620}} Section 6.
 
 Example create:
 
@@ -680,6 +743,7 @@ Response:
         "a0": {
           "id": "01J5AST0000000000000000001",
           "accountId": "acct-001",
+          "ownerId": "user:curator@example.com",
           "size": 2483712,
           "createdAt": "2026-06-06T10:05:00Z"
         }
@@ -769,13 +833,13 @@ Response:
 
 | Condition | Description |
 |---|---|
-| Attempting to change immutable fields (`blobId`, `id`, `createdAt`) | These fields are immutable after creation. |
+| Attempting to change a property other than `name`, `assetUri`, or `sha256` | `id`, `accountId`, `ownerId`, `blobId`, `mediaType`, `size`, and `createdAt` are immutable or server-set. |
 
 **`forbidden`**:
 
 | Condition | Description |
 |---|---|
-| Caller does not own the asset and lacks admin privileges | Only the asset owner or an admin may modify asset metadata. |
+| Caller is not the asset's `ownerId` and lacks admin privileges | Only the asset owner or an admin may modify asset metadata. |
 
 **`notFound`**:
 
@@ -807,7 +871,7 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 : Filter by media type.
 
 `name` (String, optional):
-: Substring match on asset name. Servers that do not support substring matching MUST return `unsupportedFilter`.
+: Substring match on asset name.
 
 `createdAfter` (UTCDate, optional):
 : Assets created at or after this timestamp.
@@ -819,7 +883,7 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
 All filter properties are combined with logical AND. An asset must match every specified filter property to appear in the result set.
 
-If a client provides a filter property the server does not support, the server MUST return an `unsupportedFilter` error.
+If a client provides a filter property the server does not support, the server returns an `unsupportedFilter` error ({{RFC8620}} Section 5.5).
 
 Sort properties: `createdAt`, `name`, `size`. Default sort: `createdAt` descending.
 
@@ -850,7 +914,7 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-The server MUST return `notFound` for regions the authenticated user does not have access to (see {{access-control}}).
+Regions the authenticated user does not have access to are reported in `notFound` (see {{access-control}}).
 
 Example response (abbreviated):
 
@@ -900,6 +964,7 @@ Response:
         {
           "id": "01J5ABC0000000000000000001",
           "accountId": "acct-001",
+          "ownerId": "user:curator@example.com",
           "name": "Gallery East Wing",
           "description": "Contemporary sculpture exhibition",
           "bounds": {
@@ -917,6 +982,7 @@ Response:
           "spawnOrientation": [0, 0, 0, 1],
           "activeAvatarCount": 3,
           "accessPolicy": "public",
+          "invitedUserIds": [],
           "createdAt": "2026-06-01T10:00:00Z",
           "updatedAt": "2026-06-05T14:30:00Z",
           "chatId": "01J5CHAT000000000000000099",
@@ -927,6 +993,7 @@ Response:
         {
           "id": "01J5ABC0000000000000000002",
           "accountId": "acct-001",
+          "ownerId": "user:curator@example.com",
           "name": "Design Review Room",
           "description": null,
           "bounds": {
@@ -940,6 +1007,10 @@ Response:
           "spawnOrientation": [0, 0, 0, 1],
           "activeAvatarCount": 0,
           "accessPolicy": "invite",
+          "invitedUserIds": [
+            "user:alice@example.com",
+            "user:bob@example.com"
+          ],
           "createdAt": "2026-06-02T08:00:00Z",
           "updatedAt": "2026-06-02T08:00:00Z",
           "chatId": null,
@@ -972,9 +1043,9 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `worldState` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `invitedUserIds` (String\[\]), `worldState` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
 
-The server sets `id`, `accountId`, `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
+The server sets `id`, `accountId`, `ownerId` (to the caller's userId), `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
 Example create:
 
@@ -988,7 +1059,11 @@ Example create:
         "max": [20, 8, 20]
       },
       "spawnPosition": [0, 0, 5],
-      "accessPolicy": "invite"
+      "accessPolicy": "invite",
+      "invitedUserIds": [
+        "user:alice@example.com",
+        "user:bob@example.com"
+      ]
     }
   }
 }
@@ -996,7 +1071,7 @@ Example create:
 
 The server MUST return `forbidden` when `mayCreateRegion` is `false`. The server MUST return `overQuota` when `maxRegionsPerAccount` would be exceeded. The server MUST return `invalidProperties` naming `bounds` when `bounds.min` components are not less than or equal to corresponding `bounds.max` components.
 
-When `chatId`, `spaceId`, or `channelId` is set to a non-null value, the server MUST verify that the referenced object exists and the caller has access to it. The server MUST return `invalidProperties` naming the binding property (`chatId`, `spaceId`, or `channelId`) if the referenced object does not exist or the caller cannot access it.
+When a create or an update sets `chatId`, `spaceId`, or `channelId` to a non-null value, the server SHOULD verify that the referenced object exists and the caller has access to it, and that a non-null `channelId` is a channel of the Space named by `spaceId`. The server SHOULD return `invalidProperties` naming the binding property (`chatId`, `spaceId`, or `channelId`) if a check fails. The rules for `accessPolicy` `"space"` in {{scene-region-create-errors}} apply to the region as it would be after the create or update: for example, an update that sets `spaceId` to `null` while `accessPolicy` is `"space"` fails with `invalidProperties` naming `spaceId`.
 
 Example create request with full JMAP envelope:
 
@@ -1045,6 +1120,7 @@ Response:
         "r0": {
           "id": "01J5REG0000000000000000003",
           "accountId": "acct-001",
+          "ownerId": "user:curator@example.com",
           "activeAvatarCount": 0,
           "createdAt": "2026-06-06T09:15:00Z",
           "updatedAt": "2026-06-06T09:15:00Z"
@@ -1062,11 +1138,11 @@ Response:
 
 #### Updating a Region
 
-`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, `worldState`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
+`update` supports patching: `name`, `description`, `bounds`, `environment`, `simulationUri`, `inputUri`, `viewHint`, `geoAnchor`, `spawnPosition`, `spawnOrientation`, `accessPolicy`, `invitedUserIds`, `worldState`, and the optional binding fields (`chatId`, `spaceId`, `channelId`, `activeCallId`).
 
-When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, (b) its state is not `"ended"`, and (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidProperties` naming `activeCallId` if the VTCCall does not exist or is ended, and `forbidden` if the caller lacks access.
+When `activeCallId` is set to a non-null value, the server MUST verify that: (a) the referenced VTCCall exists, and (b) its state is not `"ended"`; and SHOULD verify that (c) the caller is a participant in or moderator of the referenced call, or has deployment-defined administrative privileges. The server MUST return `invalidProperties` naming `activeCallId` if the VTCCall does not exist or is ended, and SHOULD return `forbidden` if the caller lacks access.
 
-The server MUST return `forbidden` when the caller is not the region owner and does not have deployment-defined administrative privileges.
+The server SHOULD return `forbidden` when the caller is not the region owner and does not have deployment-defined administrative privileges. The validation rules for create, including the binding checks above, apply to updates.
 
 Example update -- patch a region's accessPolicy and bounds:
 
@@ -1112,11 +1188,11 @@ Response:
 }
 ~~~
 
-#### Destroying a Region
+#### Destroying a Region {#scene-region-destroy}
 
-`destroy` removes the SceneRegion and all contained SceneObject and SceneAvatar records. Active avatars are ejected (their `leftAt` is set to the current time). The server MUST return `forbidden` when the caller is not the region owner.
+`destroy` removes the SceneRegion and all SceneObject and SceneAvatar records in it; `SceneObject/changes` and `SceneAvatar/changes` report those records as destroyed. The server SHOULD return `forbidden` when the caller is not the region owner and does not have deployment-defined administrative privileges.
 
-If the destroyed SceneRegion had a non-null `activeCallId`, the server MUST NOT automatically end the referenced VTCCall. The VTCCall continues independently; its participants are unaffected. The server SHOULD deliver a `StateChange` for the VTCCall type so that clients can detect the loss of the spatial context. Deployments that want region destruction to end the call MUST implement this as application logic outside the base protocol.
+If the destroyed SceneRegion had a non-null `activeCallId`, the server MUST NOT automatically end the referenced VTCCall. The VTCCall continues independently; its participants are unaffected. Deployments that want region destruction to end the call can implement this as application logic outside the base protocol.
 
 Example destroy:
 
@@ -1158,7 +1234,7 @@ Response:
 
 #### SetError Conditions
 
-##### Create Errors
+##### Create Errors {#scene-region-create-errors}
 
 **`invalidProperties`** (`properties` lists each offending property) -- missing or malformed required fields:
 
@@ -1166,15 +1242,17 @@ Response:
 |---|---|
 | `name` is missing or empty | `name` is a required String field. |
 | `bounds` is missing | `bounds` (SceneBounds) is required at creation. |
-| `bounds.min[i] > bounds.max[i]` for any component | Each component of `min` MUST be less than or equal to the corresponding component of `max`. |
-| `bounds.min` or `bounds.max` is not a 3-element numeric array | Position arrays MUST be `[x, y, z]` Numbers. |
+| `bounds.min[i] > bounds.max[i]` for any component | Each component of `min` must be less than or equal to the corresponding component of `max` (see {{scene-bounds}}). |
+| `bounds.min` or `bounds.max` is not a 3-element numeric array | Position arrays are `[x, y, z]` Numbers. |
 | `accessPolicy` is not one of `"public"`, `"invite"`, `"space"` | Unrecognized access-policy values are invalid. |
 | `viewHint` contains a value the server considers invalid | While clients tolerate unknown viewHint values, the server MAY reject nonsensical values at write time. Standard values: `"3d"`, `"2d-topdown"`, `"2d-side"`, `"ar"`, or reverse-domain extensions. |
 | `spawnPosition` is not a valid 3-element numeric array | Position must be `[x, y, z]` finite Numbers. |
-| `spawnOrientation` is not a valid unit quaternion | Quaternion must be `[x, y, z, w]` with magnitude within epsilon of 1.0. |
+| `spawnOrientation` is not a valid quaternion | Quaternion must be `[x, y, z, w]` with finite components and non-zero magnitude; a server that rejects non-unit values also rejects a magnitude outside its epsilon (see {{coordinate-system}}). |
 | `environment` contains values the server rejects | When the server validates environment sub-fields (deployment-defined schema), invalid field types or values trigger this error. |
 | `accessPolicy` is `"space"` but `urn:ietf:params:jmap:chat` is not in the server's capabilities | `accessPolicy "space" requires urn:ietf:params:jmap:chat`. |
 | `accessPolicy` is `"space"` but `spaceId` is null | `accessPolicy "space" requires spaceId`. |
+| `chatId`, `spaceId`, or `channelId` fails the binding checks | See the binding checks above. |
+| `invitedUserIds` is not an array of Strings | `invitedUserIds` is a String\[\]. |
 
 **`forbidden`** -- authorization failures:
 
@@ -1215,7 +1293,7 @@ Example error response -- invalidProperties (bounds validation):
 
 **`invalidProperties`** (`properties` lists each offending property) -- malformed patch values:
 
-Same field-level validations as create apply: `bounds.min >= bounds.max`, invalid `accessPolicy`, invalid `viewHint`, non-unit `spawnOrientation`, malformed `environment` fields.
+Same validations as create apply to the region as it would be after the update: a `bounds.min` component greater than the corresponding `bounds.max` component, invalid `accessPolicy`, invalid `viewHint`, invalid `spawnOrientation`, malformed `environment` fields, the `accessPolicy` `"space"` rules (including clearing `spaceId` while `accessPolicy` is `"space"`), and the binding checks. Attempting to change `id`, `accountId`, `ownerId`, `activeAvatarCount`, `createdAt`, or `updatedAt` is also invalid.
 
 **`forbidden`** -- authorization failures:
 
@@ -1236,7 +1314,7 @@ Same field-level validations as create apply: `bounds.min >= bounds.max`, invali
 
 | Condition | Description |
 |---|---|
-| Caller is not the region owner | Only the region owner may destroy a region. |
+| Caller is not the region owner and lacks administrative privileges | Only the region owner or an admin may destroy a region. |
 
 **`notFound`**:
 
@@ -1251,7 +1329,7 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 #### Filter Properties
 
 `name` (String, optional):
-: Substring match on region name. Servers that do not support substring matching MUST return `unsupportedFilter`.
+: Substring match on region name.
 
 `accessPolicy` (String, optional):
 : Exact match on access policy. One of `"public"`, `"invite"`, or `"space"`.
@@ -1273,9 +1351,9 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 
 #### Filter Validation
 
-All filter properties are combined with logical AND. A region must match every specified filter property to appear in the result set. The query MUST only return regions the authenticated user has access to (see {{access-control}}).
+All filter properties are combined with logical AND. A region must match every specified filter property to appear in the result set. The query SHOULD only return regions the authenticated user has access to (see {{access-control}}).
 
-If a client provides a filter property the server does not support, the server MUST return an `unsupportedFilter` error. If a client provides an invalid value for `accessPolicy` (not one of the defined values), the server MUST return `invalidArguments`.
+If a client provides a filter property the server does not support, the server returns an `unsupportedFilter` error ({{RFC8620}} Section 5.5). If a client provides an invalid value for `accessPolicy` (not one of the defined values), the server MUST return `invalidArguments`.
 
 Sort properties: `createdAt`, `name`, `activeAvatarCount`. Default sort: `createdAt` descending.
 
@@ -1346,7 +1424,7 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-The server MUST return `notFound` for objects in regions the authenticated user does not have access to.
+Objects in regions the authenticated user does not have access to are reported in `notFound` (see {{access-control}}).
 
 Example request and response -- request two objects by id:
 
@@ -1359,8 +1437,8 @@ Request:
     ["SceneObject/get", {
       "accountId": "acct-001",
       "ids": [
-        "01J5OBJ0000000000000000001",
-        "01J5OBJ0000000000000000002"
+        "01J5QBJ0000000000000000001",
+        "01J5QBJ0000000000000000002"
       ]
     }, "o0"]
   ]
@@ -1377,7 +1455,7 @@ Response:
       "state": "state-obj-33",
       "list": [
         {
-          "id": "01J5OBJ0000000000000000001",
+          "id": "01J5QBJ0000000000000000001",
           "regionId": "01J5ABC0000000000000000001",
           "parentId": null,
           "name": "Sculpture: Convergence",
@@ -1400,7 +1478,7 @@ Response:
           }
         },
         {
-          "id": "01J5OBJ0000000000000000002",
+          "id": "01J5QBJ0000000000000000002",
           "regionId": "01J5ABC0000000000000000001",
           "parentId": null,
           "name": "Info Kiosk",
@@ -1469,7 +1547,7 @@ Example create:
 }
 ~~~
 
-The server MUST return `forbidden` when `mayCreateObject` is `false`. The server MUST return `overQuota` when `maxObjectsPerRegion` would be exceeded. The server MUST return `notFound` when `regionId` does not exist or the caller does not have access. The server MUST return `invalidProperties` naming `visualType` when `visualType` is not in `supportedVisualTypes`. The server MUST return `invalidProperties` naming `visualRef` and `visualType` when `visualRef` is present but `visualType` is absent, or vice versa. The server MUST return `invalidProperties` naming `parentId` when `parentId` references a SceneObject in a different region.
+The server MUST return `forbidden` when `mayCreateObject` is `false`. The server MUST return `overQuota` when `maxObjectsPerRegion` would be exceeded. The server MUST return `notFound` when `regionId` does not exist, and SHOULD return `notFound` (not `forbidden`) when the caller does not have access to the region (see {{access-control}}). The server MUST return `invalidProperties` naming `visualType` when `visualType` is not in `supportedVisualTypes`. The server MUST return `invalidProperties` naming `visualRef` and `visualType` when `visualRef` is present but `visualType` is absent, or vice versa. The server MUST return `invalidProperties` naming `parentId` when `parentId` references a SceneObject in a different region.
 
 Example create request with full JMAP envelope:
 
@@ -1515,7 +1593,7 @@ Response:
       "newState": "state-obj-34",
       "created": {
         "o0": {
-          "id": "01J5OBJ0000000000000000003",
+          "id": "01J5QBJ0000000000000000003",
           "ownerId": "user:curator@example.com",
           "createdAt": "2026-06-06T10:00:00Z",
           "updatedAt": "2026-06-06T10:00:00Z"
@@ -1540,7 +1618,7 @@ Example update (move an object):
 ~~~json
 {
   "update": {
-    "01J5OBJ0000000000000000001": {
+    "01J5QBJ0000000000000000001": {
       "position": [15.0, 0, -5.0],
       "orientation": [0, 1, 0, 0]
     }
@@ -1548,7 +1626,7 @@ Example update (move an object):
 }
 ~~~
 
-The server MUST return `forbidden` when the caller is not the object's owner and does not have deployment-defined edit privileges for the region.
+The server SHOULD return `forbidden` when the caller is not the object's owner and does not have deployment-defined edit privileges for the region (see {{access-control}}).
 
 Example update request with full JMAP envelope -- move an object:
 
@@ -1559,7 +1637,7 @@ Example update request with full JMAP envelope -- move an object:
     ["SceneObject/set", {
       "accountId": "acct-001",
       "update": {
-        "01J5OBJ0000000000000000001": {
+        "01J5QBJ0000000000000000001": {
           "position": [15.0, 0, -5.0]
         }
       }
@@ -1579,7 +1657,7 @@ Response:
       "newState": "state-obj-35",
       "created": null,
       "updated": {
-        "01J5OBJ0000000000000000001": null
+        "01J5QBJ0000000000000000001": null
       },
       "destroyed": null,
       "notCreated": null,
@@ -1592,7 +1670,7 @@ Response:
 
 #### Destroying an Object
 
-`destroy` removes the SceneObject and all its children (objects whose `parentId` references this object, recursively). The server MUST return `forbidden` when the caller is not the object's owner and does not have deployment-defined edit privileges.
+`destroy` removes the SceneObject and all its children (objects whose `parentId` references this object, recursively). The server SHOULD return `forbidden` when the caller is not the object's owner and does not have deployment-defined edit privileges (see {{access-control}}).
 
 Example destroy -- children are also destroyed recursively:
 
@@ -1603,7 +1681,7 @@ Example destroy -- children are also destroyed recursively:
     ["SceneObject/set", {
       "accountId": "acct-001",
       "destroy": [
-        "01J5OBJ0000000000000000003"
+        "01J5QBJ0000000000000000003"
       ]
     }, "o0"]
   ]
@@ -1622,7 +1700,7 @@ Response:
       "created": null,
       "updated": null,
       "destroyed": [
-        "01J5OBJ0000000000000000003"
+        "01J5QBJ0000000000000000003"
       ],
       "notCreated": null,
       "notUpdated": null,
@@ -1642,8 +1720,8 @@ Response:
 |---|---|
 | `regionId` is missing | `regionId` is required; it identifies the containing SceneRegion. |
 | `position` is missing | `position` is required at creation. |
-| `position` contains NaN or Infinity | Position components MUST be finite Numbers. |
-| `orientation` is not a unit quaternion | Magnitude must be within epsilon of 1.0. NaN or Infinity components are rejected. |
+| `position` contains NaN or Infinity | Position components must be finite Numbers. |
+| `orientation` is not a valid quaternion | Components must be finite and the magnitude non-zero; a server that rejects non-unit values also rejects a magnitude outside its epsilon (see {{coordinate-system}}). |
 | `scale` contains non-finite Numbers | Scale factors must be finite. |
 | `physicsMode` is not one of `"static"`, `"dynamic"`, `"kinematic"`, `"none"` | Unrecognized physics-mode values are invalid. |
 | `visualType` is not in `supportedVisualTypes` | The media type must appear in the account-level capability. |
@@ -1657,7 +1735,6 @@ Response:
 | Condition | Description |
 |---|---|
 | `mayCreateObject` is `false` | The account-level capability denies object creation. |
-| Caller is not a member of the target region | The user must have access to the region to place objects in it. For `"invite"` regions, this means explicit invitation; for `"space"` regions, Space membership. |
 
 **`notFound`** -- referenced entities do not exist:
 
@@ -1686,7 +1763,7 @@ Example error response -- notFound (regionId does not exist):
   "notCreated": {
     "o0": {
       "type": "notFound",
-      "description": "regionId does not reference an accessible SceneRegion."
+      "description": "regionId is not an accessible SceneRegion."
     }
   },
   "notUpdated": null,
@@ -1698,7 +1775,7 @@ Example error response -- notFound (regionId does not exist):
 
 **`invalidProperties`** (`properties` lists each offending property):
 
-Same field-level validations as create: non-finite position/orientation, invalid `physicsMode`, `visualRef`/`visualType` mismatch, circular `parentId`, excess hierarchy depth.
+Same field-level validations as create: non-finite position, invalid orientation, invalid `physicsMode`, `visualRef`/`visualType` mismatch, circular `parentId`, excess hierarchy depth.
 
 **`forbidden`**:
 
@@ -1724,7 +1801,7 @@ Example error response -- forbidden (non-owner modifying another user's object):
   "destroyed": null,
   "notCreated": null,
   "notUpdated": {
-    "01J5OBJ0000000000000000001": {
+    "01J5QBJ0000000000000000001": {
       "type": "forbidden",
       "description": "Caller is not the object owner, region owner, or an administrator."
     }
@@ -1759,13 +1836,13 @@ This method supports spatial query filters that enable clients to retrieve objec
 : The region to query. Servers MUST return `invalidArguments` when this property is absent.
 
 `name` (String, optional):
-: Full-text search over object name. Servers that do not support full-text search MUST return `unsupportedFilter`.
+: Full-text search over object name.
 
 `visualType` (String, optional):
 : Exact match on the visual media type (e.g., `"model/gltf-binary"`).
 
-`ownerId` (Id, optional):
-: Filter to objects owned by this userId.
+`ownerId` (String, optional):
+: Filter to objects owned by the user with this userId.
 
 `interactable` (Boolean, optional):
 : When `true`, filter to objects with `interactable: true`. When `false`, filter to non-interactable objects.
@@ -1793,11 +1870,13 @@ Servers MUST support the following spatial filter properties. These are the mand
   - `min` (Number[3], required): Minimum corner `[x, y, z]`.
   - `max` (Number[3], required): Maximum corner `[x, y, z]`. Each component MUST be greater than or equal to the corresponding component of `min`.
 
+Spatial filters compare the stored `position` value as-is. For an object with a non-null `parentId`, that value is relative to the parent ({{scene-object}}), so nested objects match on parent-relative coordinates, not on their position in the region.
+
 #### Filter Validation
 
 All filter properties are combined with logical AND. An object must match every specified filter property to appear in the result set.
 
-If `regionId` is absent, the server MUST return `invalidArguments`. If `physicsMode` contains a value not in the defined set, the server MUST return `invalidArguments`. If `withinRadius.radius` is zero or negative, the server MUST return `invalidArguments`.
+If `physicsMode` contains a value not in the defined set, the server MUST return `invalidArguments`. If `withinRadius.radius` is zero or negative, or if any `withinBounds.min` component is greater than the corresponding `withinBounds.max` component, the server MUST return `invalidArguments`.
 
 Sort properties: `createdAt`, `name`. Default sort: `createdAt` ascending.
 
@@ -1838,8 +1917,8 @@ Response:
       "canCalculateChanges": true,
       "position": 0,
       "ids": [
-        "01J5OBJ0000000000000000002",
-        "01J5OBJ0000000000000000001"
+        "01J5QBJ0000000000000000002",
+        "01J5QBJ0000000000000000001"
       ],
       "total": 2
     }, "o0"]
@@ -1883,8 +1962,8 @@ Response:
       "canCalculateChanges": true,
       "position": 0,
       "ids": [
-        "01J5OBJ0000000000000000001",
-        "01J5OBJ0000000000000000002"
+        "01J5QBJ0000000000000000001",
+        "01J5QBJ0000000000000000002"
       ],
       "total": 2
     }, "o0"]
@@ -1896,13 +1975,107 @@ Response:
 
 Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
+### SceneObject/interact {#scene-object-interact}
+
+`SceneObject/interact` submits one or more interactions (click, grab, release, activate, or a deployment-defined action) with interactable objects. It works over HTTP and, as a `Request`, over the JMAP WebSocket ({{RFC8887}}). Interactions are ephemeral: the method does not change any record or state string. The response follows the shape of `/set` ({{RFC8620}} Section 5.3) so that failures are reported as standard SetErrors.
+
+The method takes the following arguments:
+
+`accountId` (Id):
+: The hosting account of the regions.
+
+`interactions` (Id\[SceneInteraction\]):
+: A map from a client-chosen id to a SceneInteraction object, defined below.
+
+A SceneInteraction object has the following properties:
+
+`regionId` (Id):
+: The SceneRegion containing the object.
+
+`objectId` (Id):
+: The SceneObject being interacted with.
+
+`action` (String):
+: The interaction type, with the same values as the `action` property of `SceneInteractionEvent` ({{JMAP-SCENE-WSS}}): `"click"`, `"grab"`, `"release"`, `"activate"`, or a deployment-specific value in reverse-domain notation.
+
+`data` (Object|null):
+: Action-specific payload, opaque to this specification. Default: `null`.
+
+The response has the following arguments:
+
+`accountId` (Id):
+: The account used for the call.
+
+`accepted` (Id\[\]|null):
+: The client ids of the interactions the server accepted, or `null` if none.
+
+`notAccepted` (Id\[SetError\]|null):
+: A map from client id to a SetError for each interaction the server did not accept, or `null` if none.
+
+For each interaction, the server checks that the caller has an active SceneAvatar (`leftAt` is `null`) in `regionId` and that `objectId` identifies a SceneObject in that region with `interactable: true`. SetError types:
+
+| Type | Condition |
+|---|---|
+| `notFound` | The region or object does not exist, the caller has no access to it ({{access-control}}), or the object is outside the caller's visibility set ({{visibility-contract}}). |
+| `forbidden` | The caller has no active SceneAvatar in the region, or the object has `interactable: false`. |
+| `rateLimit` | The caller has exceeded a deployment-defined interaction rate. |
+| `invalidProperties` | A property is missing or has the wrong type; `properties` names it. |
+
+For each accepted interaction, when {{JMAP-SCENE-WSS}} is supported, the server delivers a `SceneInteractionEvent` carrying the interaction and the caller's userId to the WebSocket subscribers of the region, as {{JMAP-SCENE-WSS}} specifies. {{JMAP-SCENE-WSS}} also lets a client send the interaction as a WebSocket frame, which has lower overhead but returns no result; a client that needs to know whether an interaction was accepted uses this method.
+
+Example request:
+
+~~~json
+{
+  "using": ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:scene"],
+  "methodCalls": [
+    ["SceneObject/interact", {
+      "accountId": "acct-001",
+      "interactions": {
+        "i0": {
+          "regionId": "01J5ABC0000000000000000001",
+          "objectId": "01J5QBJ0000000000000000002",
+          "action": "click",
+          "data": null
+        },
+        "i1": {
+          "regionId": "01J5ABC0000000000000000001",
+          "objectId": "01J5QBJ0000000000000000003",
+          "action": "grab",
+          "data": {"hand": "left"}
+        }
+      }
+    }, "x0"]
+  ]
+}
+~~~
+
+Response (the second object has `interactable: false`):
+
+~~~json
+{
+  "methodResponses": [
+    ["SceneObject/interact", {
+      "accountId": "acct-001",
+      "accepted": ["i0"],
+      "notAccepted": {
+        "i1": {
+          "type": "forbidden",
+          "description": "The object is not interactable."
+        }
+      }
+    }, "x0"]
+  ]
+}
+~~~
+
 ## SceneAvatar Methods
 
 ### SceneAvatar/get
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-The server MUST return `notFound` for avatars in regions the authenticated user does not have access to.
+Avatars in regions the authenticated user does not have access to are reported in `notFound` (see {{access-control}}).
 
 ### SceneAvatar/changes
 
@@ -1912,7 +2085,7 @@ Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
-#### Entering a Region
+#### Entering a Region {#scene-avatar-enter}
 
 A user enters a region by calling `SceneAvatar/set` with a `create`:
 
@@ -1921,7 +2094,7 @@ A user enters a region by calling `SceneAvatar/set` with a `create`:
 
 Optional: `displayName` (String), `visualRef` (String), `visualType` (String), `worldState` (Object).
 
-The server sets `id`, `userId`, `position` (to the region's `spawnPosition`), `orientation` (to the region's `spawnOrientation`), `joinedAt`, and `leftAt` (to `null`). If `displayName` is not supplied by the client, the server sets it from the user profile or ChatContact when {{JMAP-CHAT}} is present.
+The server sets `id`, `userId` (to the caller's userId), `position` (to the region's `spawnPosition`), `orientation` (to the region's `spawnOrientation`), `joinedAt`, and `leftAt` (to `null`). If `displayName` is not supplied by the client, the server sets it from the user profile or ChatContact when {{JMAP-CHAT}} is present.
 
 Example create:
 
@@ -1943,7 +2116,7 @@ The server responds:
 {
   "created": {
     "av0": {
-      "id": "user:alice@example.com",
+      "id": "01J5AVA0000000000000000001",
       "regionId": "01J5ABC0000000000000000001",
       "userId": "user:alice@example.com",
       "displayName": "Alice Chen",
@@ -1956,7 +2129,7 @@ The server responds:
 }
 ~~~
 
-The server MUST return `notFound` when `regionId` does not reference an existing SceneRegion (this error is also used when the caller lacks access, to prevent region-id enumeration; see Access Control). The server MUST return `forbidden` when the region exists and the caller is identified but denied by policy: `accessPolicy` is `"invite"` and the caller has not been granted access, or `"space"` and the caller is not a member of the bound Space. The server MUST return `overQuota` when `maxAvatarsPerRegion` would be exceeded.
+The server MUST return `notFound` when `regionId` does not reference an existing SceneRegion. The server SHOULD also return `notFound` when the caller has no access to the region under its `accessPolicy` (for example, an `"invite"` region whose `invitedUserIds` does not list the caller, or a `"space"` region whose Space the caller is not a member of), so that the response does not reveal that the region exists ({{access-control}}). The server MUST return `overQuota` when `maxAvatarsPerRegion` would be exceeded.
 
 Example create request with full JMAP envelope:
 
@@ -1990,7 +2163,7 @@ Response:
       "newState": "state-avatar-21",
       "created": {
         "av0": {
-          "id": "user:alice@example.com",
+          "id": "01J5AVA0000000000000000001",
           "regionId": "01J5ABC0000000000000000001",
           "userId": "user:alice@example.com",
           "displayName": "Alice Chen",
@@ -2013,7 +2186,7 @@ Response:
 }
 ~~~
 
-When the user already has an active SceneAvatar (with `leftAt: null`) in the same region, the server MUST NOT create a duplicate and MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) in `notCreated` with `existingId` set to the id of the current avatar record (see {{scene-avatar-create-errors}}). When the user has an active SceneAvatar in a different region, the server MUST set `leftAt` on the previous avatar before creating the new one (a user is present in at most one region at a time).
+When the user already has a SceneAvatar record in the same region, whether present or departed, the server MUST NOT create a second record and MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) in `notCreated` with `existingId` set to the id of that record (see {{scene-avatar-create-errors}}). A user who has left re-enters by updating that record ({{scene-avatar-reenter}}). When the user has an active SceneAvatar in a different region, the server SHOULD set `leftAt` on the previous avatar before creating the new one (a user is present in at most one region at a time); see {{scene-avatar-create-errors}} for the alternative of rejecting the create.
 
 #### Updating Avatar State
 
@@ -2022,7 +2195,7 @@ A user calls `SceneAvatar/set` to update their own avatar:
 ~~~json
 {
   "update": {
-    "user:alice@example.com": {
+    "01J5AVA0000000000000000001": {
       "visualRef": "blob-avatar-alice-formal",
       "visualType": "model/gltf-binary",
       "worldState": {
@@ -2033,7 +2206,7 @@ A user calls `SceneAvatar/set` to update their own avatar:
 }
 ~~~
 
-The server MUST return `forbidden` if the caller's userId does not match the SceneAvatar record's userId. Users MUST NOT update other users' avatars.
+The server SHOULD return `forbidden` if the caller's userId does not match the SceneAvatar record's userId, except for the eject case (see {{avatar-permissions}}).
 
 Position and orientation updates via `SceneAvatar/set` are permitted but are expected to be infrequent (e.g., teleporting to a bookmark). Continuous position synchronization is handled by the simulation layer.
 
@@ -2046,7 +2219,7 @@ Example update -- teleport to a bookmark position:
     ["SceneAvatar/set", {
       "accountId": "acct-001",
       "update": {
-        "user:alice@example.com": {
+        "01J5AVA0000000000000000001": {
           "position": [25.0, 0, -12.3],
           "orientation": [0, 0.924, 0, 0.383]
         }
@@ -2067,7 +2240,7 @@ Response:
       "newState": "state-avatar-22",
       "created": null,
       "updated": {
-        "user:alice@example.com": null
+        "01J5AVA0000000000000000001": null
       },
       "destroyed": null,
       "notCreated": null,
@@ -2078,21 +2251,23 @@ Response:
 }
 ~~~
 
-#### Leaving a Region
+#### Leaving a Region {#scene-avatar-leave}
 
-A user leaves by calling `SceneAvatar/set` with an update setting `leftAt`:
+A user leaves by calling `SceneAvatar/set` with an update setting `leftAt`. The server records its own current time as `leftAt`; the value the client supplies only signals the intent to leave. The same applies when a region owner or administrator ejects the user ({{avatar-permissions}}).
 
 ~~~json
 {
   "update": {
-    "user:alice@example.com": {
+    "01J5AVA0000000000000000001": {
       "leftAt": "2026-06-05T15:45:00Z"
     }
   }
 }
 ~~~
 
-The server MUST return `forbidden` if the caller's userId does not match the SceneAvatar record's userId. The server MUST return `invalidProperties` naming `leftAt` if the avatar has already left (`leftAt` is non-null).
+The server SHOULD return `forbidden` if the caller's userId does not match the SceneAvatar record's userId, unless the caller is the region owner or an administrator ejecting the avatar (see {{avatar-permissions}}). The server MUST return `invalidProperties` naming `leftAt` if the avatar has already left (`leftAt` is non-null).
+
+A server MAY also set `leftAt` when it determines that the user is no longer present, for example when the simulation layer reports a disconnect, the user's WebSocket connection closes, or the user has been inactive for a deployment-defined period. How the server detects this is deployment-defined.
 
 Example leave request with full JMAP envelope:
 
@@ -2103,7 +2278,7 @@ Example leave request with full JMAP envelope:
     ["SceneAvatar/set", {
       "accountId": "acct-001",
       "update": {
-        "user:alice@example.com": {
+        "01J5AVA0000000000000000001": {
           "leftAt": "2026-06-06T11:45:00Z"
         }
       }
@@ -2123,7 +2298,7 @@ Response:
       "newState": "state-avatar-23",
       "created": null,
       "updated": {
-        "user:alice@example.com": null
+        "01J5AVA0000000000000000001": null
       },
       "destroyed": null,
       "notCreated": null,
@@ -2134,9 +2309,19 @@ Response:
 }
 ~~~
 
-#### Reconnecting
+#### Re-entering a Region {#scene-avatar-reenter}
 
-When a user who has left (non-null `leftAt`) re-enters the same region, the server MUST update the existing SceneAvatar record rather than creating a new one: clear `leftAt` to `null`, update `joinedAt` to the current time, and set `position` to `spawnPosition`. This ensures a single continuous identity.
+A user who has left (has a non-null `leftAt`) re-enters the same region by updating their existing SceneAvatar record to set `leftAt` to `null`. The server sets `joinedAt` to the current time, `position` to the region's `spawnPosition`, and `orientation` to the region's `spawnOrientation`. `displayName`, `visualRef`, `visualType`, and `worldState` keep their values unless the same update patches them. The access checks and errors for entering a region ({{scene-avatar-create-errors}}) apply. A `create` for a user who already has a record in the region fails with `alreadyExists` ({{scene-avatar-enter}}). Reusing the record keeps a single continuous identity across visits; `SceneAvatar/changes` reports the record as updated.
+
+~~~json
+{
+  "update": {
+    "01J5AVA0000000000000000001": {
+      "leftAt": null
+    }
+  }
+}
+~~~
 
 #### SetError Conditions
 
@@ -2147,23 +2332,28 @@ When a user who has left (non-null `leftAt`) re-enters the same region, the serv
 | Condition | Description |
 |---|---|
 | `regionId` is missing | `regionId` is required to specify which region to enter. |
-| `position` contains non-finite values (if explicitly supplied) | Position, when supplied by the client (e.g., for teleport-on-entry), must contain finite Numbers. Normally the server sets position from `spawnPosition`. |
 | `visualRef` is present but `visualType` is absent (or vice versa) | Both must be present together or both absent. |
 
 **`forbidden`** -- access denied:
 
 | Condition | Description |
 |---|---|
-| Region `accessPolicy` is `"invite"` and user has not been granted access | The invitation mechanism is deployment-defined; without an invitation, entry is denied. |
-| Region `accessPolicy` is `"space"` and user is not a member of the bound Space | Space membership is checked when JMAP Chat is present with `spaceId` set. |
-| User is banned or ejected with a cooldown period still active | Deployment-defined ban/eject policies may temporarily or permanently deny entry. |
-| Caller is creating an avatar record for a different user | Users MUST only create their own avatar. The server sets `userId` from the authenticated identity. |
+| User is banned or ejected with a cooldown period still active | Deployment-defined ban/eject policies may temporarily or permanently deny entry. The user already knows the region exists. |
+| Caller is creating an avatar record for a different user | The server sets `userId` from the authenticated identity, so a user can only create their own avatar. |
 
 **`notFound`** -- region does not exist:
 
 | Condition | Description |
 |---|---|
 | `regionId` does not exist or caller lacks access | Same enumeration-safe access-control rule. |
+| Region `accessPolicy` is `"invite"` and `invitedUserIds` does not list the user | The user has no access to the region ({{access-control}}). |
+| Region `accessPolicy` is `"space"` and user is not a member of the bound Space | Space membership is checked when JMAP Chat is present with `spaceId` set. |
+
+**`alreadyExists`** -- one record per user per region:
+
+| Condition | Description |
+|---|---|
+| The user already has a SceneAvatar record in the region | `existingId` names the record; see {{scene-avatar-enter}}. |
 
 **`overQuota`** -- region capacity:
 
@@ -2171,7 +2361,7 @@ When a user who has left (non-null `leftAt`) re-enters the same region, the serv
 |---|---|
 | `maxAvatarsPerRegion` would be exceeded | The region has reached its concurrent-avatar capacity. |
 
-Example error response -- forbidden (invite-only region):
+Example error response -- notFound (invite-only region that does not list the caller):
 
 ~~~json
 [["SceneAvatar/set", {
@@ -2183,8 +2373,8 @@ Example error response -- forbidden (invite-only region):
   "destroyed": null,
   "notCreated": {
     "av0": {
-      "type": "forbidden",
-      "description": "Region accessPolicy is \"invite\" and the caller has not been granted access."
+      "type": "notFound",
+      "description": "regionId is not an accessible SceneRegion."
     }
   },
   "notUpdated": null,
@@ -2194,11 +2384,9 @@ Example error response -- forbidden (invite-only region):
 
 **One-avatar-per-region constraint:**
 
-When a user already has an active SceneAvatar (`leftAt: null`) in the same region, the server MUST NOT create a duplicate. Instead, the server MUST return an `alreadyExists` SetError in the `notCreated` map with an `existingId` property containing the id of the current avatar record. Clients can then use `SceneAvatar/get` to retrieve the existing avatar's state. A reconnecting client SHOULD treat `alreadyExists` as meaning it has already entered the region and SHOULD use `existingId` as its avatar id rather than retrying the create.
+When a user already has a SceneAvatar record in the same region, the server does not create a duplicate; it returns an `alreadyExists` SetError with `existingId` (see {{scene-avatar-enter}}). Clients can then use `SceneAvatar/get` to retrieve the record. If the record's `leftAt` is non-null, the client re-enters by updating it ({{scene-avatar-reenter}}); otherwise the user is already present, and the client uses `existingId` as its avatar id rather than retrying the create.
 
-When the user has an active avatar in a different region, the server MUST set `leftAt` on the previous avatar (auto-eject) before creating the new one, enforcing the one-region-at-a-time constraint. This is not a SetError; it is implicit auto-eject behavior.
-
-Servers that prefer to reject rather than auto-eject MAY return a `forbidden` SetError with a description indicating the user must leave their current region first. The spec recommends the auto-eject approach.
+When the user has an active avatar in a different region, the server SHOULD set `leftAt` on the previous avatar, as described in {{scene-avatar-enter}}; this is not a SetError. A server that rejects the create instead MAY return a `forbidden` SetError with a description indicating the user must leave their current region first.
 
 ##### Update Errors
 
@@ -2207,13 +2395,14 @@ Servers that prefer to reject rather than auto-eject MAY return a `forbidden` Se
 | Condition | Description |
 |---|---|
 | Setting `leftAt` on an avatar that has already left (`leftAt` is non-null) | The user has already departed; double-leave is invalid. |
-| `position` or `orientation` contains non-finite values | Must be finite Numbers. |
+| `position` contains non-finite values, or `orientation` is not a valid quaternion | See {{coordinate-system}}. |
+| Attempting to change `id`, `regionId`, `userId`, or `joinedAt` | These properties are immutable or server-set. |
 
 **`forbidden`**:
 
 | Condition | Description |
 |---|---|
-| Caller's userId does not match the SceneAvatar's userId | Users MUST NOT update other users' avatars. Exception: region owners and administrators may set `leftAt` on another user's avatar to eject them. |
+| Caller's userId does not match the SceneAvatar's userId | Users may not update other users' avatars. Exception: region owners and administrators may set `leftAt` on another user's avatar to eject them; an eject update patches no other property. |
 
 **`notFound`**:
 
@@ -2223,7 +2412,7 @@ Servers that prefer to reject rather than auto-eject MAY return a `forbidden` Se
 
 ##### Destroy Errors
 
-SceneAvatar records are not destroyed via `/set destroy`. Departure is modeled as an update that sets `leftAt`. Servers MUST return `forbidden` for destroy operations on SceneAvatar.
+SceneAvatar records are not destroyed via `/set destroy`. Departure is modeled as an update that sets `leftAt`. Servers MUST return `forbidden` for destroy operations on SceneAvatar. The server removes SceneAvatar records only when it destroys their region ({{scene-region-destroy}}).
 
 ### SceneAvatar/query
 
@@ -2234,8 +2423,8 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 `regionId` (Id, required):
 : The region to query. Servers MUST return `invalidArguments` when this property is absent.
 
-`userId` (Id, optional):
-: Filter to avatars belonging to this user account.
+`userId` (String, optional):
+: Filter to the avatar of the user with this userId. Combined with `regionId`, this finds a user's record in a region.
 
 `isActive` (Boolean, optional):
 : When `true`, filter to avatars with `leftAt == null` (currently present in the region). When `false`, filter to avatars who have left (`leftAt` is non-null).
@@ -2254,7 +2443,7 @@ Spatial filters:
 
 All filter properties are combined with logical AND. An avatar must match every specified filter property to appear in the result set.
 
-If `regionId` is absent, the server MUST return `invalidArguments`. If `withinRadius.radius` is zero or negative, the server MUST return `invalidArguments`. The query MUST only return avatars in regions the authenticated user has access to.
+If `withinRadius.radius` is zero or negative, or if any `withinBounds.min` component is greater than the corresponding `withinBounds.max` component, the server MUST return `invalidArguments`. The query SHOULD only return avatars in regions the authenticated user has access to.
 
 Sort properties: `joinedAt`, `displayName`. Default sort: `joinedAt` ascending.
 
@@ -2295,8 +2484,8 @@ Response:
       "canCalculateChanges": true,
       "position": 0,
       "ids": [
-        "user:bob@example.com",
-        "user:carol@example.com"
+        "01J5AVB0000000000000000002",
+        "01J5AVC0000000000000000003"
       ],
       "total": 2
     }, "a0"]
@@ -2333,11 +2522,11 @@ The server SHOULD periodically reconcile the simulation layer's state with the J
 - Avatar positions in SceneAvatar records SHOULD be updated from the simulation layer at a deployment-defined interval (RECOMMENDED: every 5-30 seconds). These updates are not real-time; they serve as a fallback for clients that do not have a simulation layer connection.
 - Objects moved by the simulation layer (dynamic physics, scripted movement) SHOULD have their SceneObject position/orientation updated via the standard JMAP state-change mechanism.
 
-Clients connected to the simulation layer SHOULD use simulation-layer positions for rendering and SHOULD treat SceneAvatar and SceneObject positions as stale fallbacks.
+Clients connected to the simulation layer typically use simulation-layer positions for rendering and treat SceneAvatar and SceneObject positions as stale fallbacks.
 
 ## Visibility Contract {#visibility-contract}
 
-The server MUST NOT include a SceneObject in a `SceneObject/get` response or `SceneObject/query` result if the authenticated user does not have access to the object's containing SceneRegion.
+The server SHOULD NOT include a SceneObject in a `SceneObject/get` response or `SceneObject/query` result if the authenticated user does not have access to the object's containing SceneRegion.
 
 The server SHOULD apply visibility filtering to limit the objects returned based on the authenticated user's avatar position within the region. The specific visibility algorithm is deployment-defined:
 
@@ -2345,26 +2534,30 @@ The server SHOULD apply visibility filtering to limit the objects returned based
 - A security-conscious deployment MAY return only objects within a radius of the avatar's last known position.
 - A high-security deployment MAY perform server-side occlusion culling, returning only objects in the avatar's potential visibility set.
 
-The spec does not dictate the algorithm. It requires that the access-control check is enforced (MUST) and that visibility optimization is available as a deployment choice (SHOULD).
+The spec does not dictate the algorithm. It recommends that the access-control check is always enforced and that visibility optimization is available as a deployment choice.
 
-When a client attempts to interact with an object that is no longer within the client's visibility set (e.g., the object moved out of range, or the avatar moved away), the server MAY return `notFound` for JMAP method calls (`SceneObject/set`, `SceneObject/get`) targeting that object, or MAY silently discard the interaction with no error response. Both behaviors are valid. The server MUST NOT return `forbidden`, as that would confirm the object still exists. For interactions delivered via the simulation layer, the simulation layer MAY silently ignore stale targets without generating any JMAP-level error.
+Visibility filtering, here and in {{blocked-contact-spatial}} and {{content-moderation}}, is a server choice and does not change the JMAP state model: each data type has one state string per account ({{RFC8620}} Section 5.1), and `/changes` and `/queryChanges` report changes for the account. A server MAY report an object hidden from the caller in `notFound` from `/get`.
+
+When a client targets an object that is no longer within the client's visibility set (e.g., the object moved out of range, or the avatar moved away), the server MAY return `notFound` for JMAP method calls (`SceneObject/set`, `SceneObject/get`, `SceneObject/interact`) targeting that object. The server SHOULD NOT return `forbidden`, as that would confirm the object still exists. For interactions delivered via the simulation layer, the simulation layer MAY silently ignore stale targets without generating any JMAP-level error.
 
 # Access Control {#access-control}
 
 ## Region Access
 
-`accessPolicy` on SceneRegion determines who may enter:
+A user has access to a region when its `accessPolicy` admits the user, when the user is the region owner, when the user has deployment-defined administrative privileges, or when the user has an active SceneAvatar in it. Access covers both seeing the region with its objects and avatars and entering it. `accessPolicy` on SceneRegion determines who it admits:
 
 `"public"`:
-: Any authenticated user may enter and view objects. The server MAY impose rate limits on entry.
+: Any authenticated user. The server MAY impose rate limits on entry.
 
 `"invite"`:
-: Only users explicitly granted access may enter. The server MUST return `forbidden` for `SceneAvatar/set` create from unauthorized users. The mechanism for granting invitations is deployment-defined.
+: The users whose userIds are listed in `invitedUserIds`. Servers MAY admit users to an `"invite"` region by other mechanisms as well, such as possession of a shared secret, a wallet proof, a PKIX certificate, or an external authorization oracle; such mechanisms are expected to be standardized separately.
 
 `"space"`:
-: When `urn:ietf:params:jmap:chat` is present and `spaceId` is set: only members of the bound Space may enter. The server MUST return `forbidden` for non-members.
+: When `urn:ietf:params:jmap:chat` is present and `spaceId` is set: the members of the bound Space.
 
-Regardless of `accessPolicy`, the server MUST return `notFound` (not `forbidden`) for `SceneRegion/get`, `SceneObject/get`, and `SceneAvatar/get` requests from users who do not have access. This prevents access-policy enumeration.
+The server SHOULD treat a request from a user without access to a region as if the region did not exist: `notFound` for `SceneRegion/get`, `SceneObject/get`, and `SceneAvatar/get`, for `/set` operations that target the region or its records, and for `SceneObject/interact`; and no results from the region in `/query`. Returning `forbidden` would confirm that the region exists.
+
+A change to `accessPolicy` or `invitedUserIds` does not set `leftAt` on avatars already present; the region owner ejects them if that is wanted ({{avatar-permissions}}).
 
 ## Object Permissions
 
@@ -2374,31 +2567,31 @@ SceneObject modifications (update, destroy) are restricted to:
 2. The region owner.
 3. Users with deployment-defined administrative privileges.
 
-All other users MUST receive `forbidden` for `SceneObject/set` updates or destroys targeting objects they do not own.
+The server SHOULD return `forbidden` to all other users for `SceneObject/set` updates or destroys targeting objects they do not own.
 
-## Avatar Permissions
+## Avatar Permissions {#avatar-permissions}
 
-Users may only modify their own SceneAvatar record. The server MUST return `forbidden` for `SceneAvatar/set` updates targeting another user's avatar.
+Users may only modify their own SceneAvatar record, except for the eject case below. The server SHOULD return `forbidden` for any other `SceneAvatar/set` update targeting another user's avatar.
 
-Region owners and administrators MAY eject avatars by setting `leftAt` on another user's SceneAvatar. This is the Scene equivalent of kicking a participant from a VTCCall.
+Region owners and administrators MAY eject avatars by setting `leftAt` on another user's SceneAvatar; the server records its own current time as `leftAt` ({{scene-avatar-leave}}). An eject update patches only `leftAt`. This is the Scene equivalent of kicking a participant from a VTCCall.
 
 # Security Considerations {#security}
 
 ## simulationUri and inputUri Are Untrusted {#simulation-uri-untrusted}
 
-`simulationUri` and `inputUri` are peer-supplied and opaque to the JMAP server. Clients MUST NOT connect to either URI without explicit user initiation. Auto-connecting to a simulation or input endpoint exposes the client to malicious servers.
+`simulationUri` and `inputUri` are peer-supplied and opaque to the JMAP server. Clients SHOULD NOT connect to either URI without explicit user initiation. Auto-connecting to a simulation or input endpoint exposes the client to malicious servers.
 
-Servers MUST NOT fetch, probe, or validate `simulationUri` or `inputUri` values. Doing so exposes the server to SSRF attacks.
+Servers SHOULD NOT fetch, probe, or validate `simulationUri` or `inputUri` values. Doing so exposes the server to SSRF attacks.
 
 ## assetUri Is Untrusted {#asset-uri-untrusted}
 
-`assetUri` on SceneObject and SceneAsset is peer-supplied. Clients MUST validate that `assetUri` uses a permitted scheme (`https:`) before fetching. Clients MUST NOT follow redirects to non-HTTPS endpoints. Fetching a malicious `assetUri` could expose the client to tracking (via unique URLs per user), content injection, or exploit payloads disguised as 3D assets.
+`assetUri` on SceneObject and SceneAsset is peer-supplied. Clients SHOULD validate that `assetUri` uses a permitted scheme (`https:`) before fetching. Clients SHOULD NOT follow redirects to non-HTTPS endpoints. Fetching a malicious `assetUri` could expose the client to tracking (via unique URLs per user), content injection, or exploit payloads disguised as 3D assets.
 
 Clients SHOULD verify asset integrity using the `sha256` field on SceneAsset when available.
 
 ## Asset Parsing
 
-3D asset files (glTF, images, audio) are complex formats with large attack surfaces. Clients MUST parse assets in a sandboxed context. A malformed glTF file MUST NOT be able to escape the rendering sandbox to access local files, network resources, or other browser/OS capabilities.
+3D asset files (glTF, images, audio) are complex formats with large attack surfaces. Clients SHOULD parse assets in a sandboxed context that prevents a malformed glTF file from escaping the rendering sandbox to access local files, network resources, or other browser/OS capabilities.
 
 ## Position Spoofing
 
@@ -2410,11 +2603,15 @@ Deployments that require position integrity SHOULD implement server-side positio
 
 The JMAP server observes who enters which regions, when, for how long, and (at periodic intervals) where they are. This metadata is privacy-sensitive. Deployments requiring spatial privacy SHOULD minimize the frequency of position reconciliation between the simulation layer and the JMAP server.
 
-When a SceneRegion's `activeCallId` references a VTCCall with `e2eeEnabled` set to `true`, the server SHOULD suppress `SceneAvatarEvent` ({{JMAP-SCENE-WSS}}) delivery (enter, leave, and update events) for that region to subscribers who are not participants in the bound VTCCall. This prevents the Scene WebSocket channel from leaking real-time call participant presence metadata that E2EE is designed to protect. Servers that cannot implement this suppression MUST document the limitation.
+When a SceneRegion's `activeCallId` references a VTCCall with `e2eeEnabled` set to `true`, the server SHOULD NOT expose the region's SceneAvatar records to users who are not participants in the bound VTCCall: for such users it SHOULD return `notFound` for `SceneAvatar/get`, exclude the records from `SceneAvatar/query`, and suppress `SceneAvatarEvent` ({{JMAP-SCENE-WSS}}) delivery (`entered`, `left`, and `ejected`). This keeps the Scene data from revealing the call participant presence that E2EE is designed to protect, and matches the participant visibility rule of {{JMAP-VTC}}.
+
+## Physical Location in Anchored Regions {#anchored-location-privacy}
+
+In a region with a non-null `geoAnchor`, and in particular one with `referenceFrame` `null` (Earth), a SceneAvatar `position` is a real person's physical location, and the reconciliation in {{simulation-layer}} records it periodically. Every user who can read the region's avatars can then track that person. For anchored regions, servers SHOULD either not persist reconciled avatar positions or coarsen them before storing them, and SHOULD NOT retain positions of avatars that have left. A server that does persist positions for an anchored region exposes its users' movements to everyone with access to the region and to anyone who obtains the stored data.
 
 ## Object Density as Denial of Service
 
-Without limits, a malicious user could create thousands of objects in a region, overwhelming clients that attempt to render them all. Servers MUST enforce `maxObjectsPerRegion`. Servers SHOULD impose per-user object creation rate limits.
+Without limits, a malicious user could create thousands of objects in a region, overwhelming clients that attempt to render them all. The `maxObjectsPerRegion` cap, enforced through the `overQuota` SetError on `SceneObject/set` create, bounds this. Servers SHOULD impose per-user object creation rate limits.
 
 ## Visibility and Information Leakage
 
@@ -2424,13 +2621,13 @@ SceneObject data returned to a client reveals information about the scene (objec
 
 When `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed with `urn:ietf:params:jmap:scene`, the server has access to the blocking user's ChatContact records and their `blocked` field. The server SHOULD use this information to suppress spatial presence of blocked users:
 
-- SceneAvatar records belonging to a blocked ChatContact SHOULD be excluded from `SceneAvatar/get` responses, `SceneAvatar/query` results, and `SceneAvatar/queryChanges` notifications delivered to the blocking user. The blocked user's avatar still exists in the region; it is simply not visible to the blocking user's client.
+- SceneAvatar records belonging to a blocked ChatContact SHOULD be excluded from `SceneAvatar/get` responses and `SceneAvatar/query` results delivered to the blocking user (see {{visibility-contract}} for how this interacts with `/changes`). The blocked user's avatar still exists in the region; it is simply not visible to the blocking user's client.
 
-- The blocked user MUST NOT learn that they have been blocked from the absence of spatial data. The server MUST NOT return an error, a filtered-result indicator, or any other signal that distinguishes "filtered because blocked" from "not present." From the blocked user's perspective, the blocking user's query behavior is indistinguishable from normal operation.
+- The blocked user SHOULD NOT be able to learn that they have been blocked from the absence of spatial data. The server SHOULD NOT return an error, a filtered-result indicator, or any other signal that distinguishes "filtered because blocked" from "not present." From the blocked user's perspective, the blocking user's query behavior is indistinguishable from normal operation.
 
 - Blocked-contact filtering is applied AFTER the visibility filtering described in {{visibility-contract}}. The server first computes the visibility set for the requesting user's position and access level, then removes any SceneAvatar records whose `userId` corresponds to a ChatContact with `blocked: true` on the requesting user's contact list.
 
-- The `activeAvatarCount` field on SceneRegion is a server-set aggregate. Servers MAY choose to return the true count (which includes blocked users) or a filtered count that excludes blocked users. Either approach leaks some information: a true count reveals the presence of unseen users; a filtered count that changes when a block is applied reveals the act of blocking. Deployments SHOULD document which behavior they implement and SHOULD prefer the true count, since it is consistent for all observers and does not leak per-user blocking decisions.
+- The `activeAvatarCount` field on SceneRegion is a server-set aggregate. Servers MAY choose to return the true count (which includes blocked users) or a filtered count that excludes blocked users. Either approach leaks some information: a true count reveals the presence of unseen users; a filtered count that changes when a block is applied reveals the act of blocking. Deployments can document which behavior they implement; they SHOULD prefer the true count, since it is consistent for all observers and does not leak per-user blocking decisions.
 
 Without `urn:ietf:params:jmap:chat`, there is no blocked-contact list and this filtering does not apply. The Scene capability alone has no concept of blocked users.
 
@@ -2438,11 +2635,11 @@ Without `urn:ietf:params:jmap:chat`, there is no blocked-contact list and this f
 
 SceneObject visual assets (`visualRef`) and SceneAvatar visual assets (`visualRef`) are user-supplied and may contain inappropriate content: offensive 3D models, textures with prohibited imagery, or audio assets with harmful material. Servers SHOULD validate visual assets against deployment-defined content policies before making those assets visible to other users.
 
-Servers MAY defer the visibility of newly created SceneObject records until asset scanning completes. During the scanning interval, the object exists in the JMAP state (the creator can retrieve it via `SceneObject/get`), but the server SHOULD exclude it from `SceneObject/query` results and `SceneObject/queryChanges` notifications delivered to other users. Once scanning completes and the asset passes the content policy, the object becomes visible through normal query and change mechanisms. If the asset fails the content policy, the server SHOULD destroy the object and SHOULD notify the creator via a `SetError` of type `contentPolicy` on a subsequent state-change notification or, if the deployment supports it, via an out-of-band moderation channel.
+Servers MAY defer the visibility of newly created SceneObject records until asset scanning completes. During the scanning interval, the object exists in the JMAP state (the creator can retrieve it via `SceneObject/get`), but the server SHOULD exclude it from `SceneObject/get` and `SceneObject/query` results delivered to other users (see {{visibility-contract}}). Once scanning completes and the asset passes the content policy, the object becomes visible through normal query and change mechanisms. If the asset fails the content policy, the server destroys the object; the creator sees the destruction through `SceneObject/changes`. A deployment can also tell the creator why through an out-of-band moderation channel.
 
-Text fields on SceneRegion and SceneObject — `name`, `worldState`, and any string values within `worldState` — are user-controlled and may contain spam, offensive language, or phishing content. Servers SHOULD apply the same content-policy validation to text fields as to visual assets. Servers MAY reject `SceneRegion/set` or `SceneObject/set` create or update requests that violate text content policies with a `SetError` of type `contentPolicy`.
+Text fields on SceneRegion and SceneObject — `name`, `worldState`, and any string values within `worldState` — are user-controlled and may contain spam, offensive language, or phishing content. Servers SHOULD apply the same content-policy validation to text fields as to visual assets. Servers MAY reject `SceneRegion/set` or `SceneObject/set` create or update requests that violate text or asset content policies with a `SetError` of type `contentPolicy` ({{iana-error}}). This SetError is only for a rejection made while processing the `/set` call.
 
-Rapid `SceneObject/set` create calls can be used as a spam or denial-of-service vector, flooding a region with objects faster than content scanning can process them. Servers SHOULD enforce per-user rate limits on `SceneObject/set` create operations, independent of the `maxObjectsPerRegion` cap. When a rate limit is exceeded, the server SHOULD return a `SetError` of type `rateLimit` and SHOULD include a `retryAfter` property indicating the number of seconds before the client may retry.
+Rapid `SceneObject/set` create calls can be used as a spam or denial-of-service vector, flooding a region with objects faster than content scanning can process them. Servers SHOULD enforce per-user rate limits on `SceneObject/set` create operations, independent of the `maxObjectsPerRegion` cap. When a rate limit is exceeded, the server SHOULD return a `SetError` of type `rateLimit` ({{RFC8620}} Section 5.3).
 
 ## Avatar Identity and Impersonation {#avatar-impersonation}
 
@@ -2452,9 +2649,9 @@ Servers SHOULD enforce at least one of the following mitigations to prevent disp
 
 - **Uniqueness constraints.** The server MAY enforce that no two active SceneAvatar records within the same SceneRegion share the same `displayName`. When a collision is detected, the server SHOULD reject the later `SceneAvatar/set` create with an `invalidProperties` SetError naming `displayName` and a description indicating the name conflict. Alternatively, the server MAY append a disambiguating suffix (e.g., a numeric tag) to the duplicate name.
 
-- **Visual differentiation.** The server MAY provide system-assigned badges, name colors, or other visual metadata (via `worldState` or a deployment-defined mechanism) that distinguish authenticated identity from user-chosen display names. Clients SHOULD render these differentiators prominently.
+- **Visual differentiation.** The server MAY provide system-assigned badges, name colors, or other visual metadata (via `worldState` or a deployment-defined mechanism) that distinguish authenticated identity from user-chosen display names. These differentiators help only when clients render them prominently.
 
-- **Reserved name lists.** The server SHOULD maintain a list of reserved display names that correspond to system roles or administrative functions and MUST reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
+- **Reserved name lists.** The server SHOULD maintain a list of reserved display names that correspond to system roles or administrative functions and SHOULD reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
 
 In deployments where `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed, the server MAY enforce that `SceneAvatar.displayName` matches the user's ChatContact display name. This provides a single authoritative source for display names across chat and spatial contexts, reducing the impersonation surface. When this enforcement is active, `SceneAvatar/set` operations that attempt to set a `displayName` different from the ChatContact display name SHOULD be rejected with an `invalidProperties` SetError naming `displayName`.
 
@@ -2462,17 +2659,17 @@ Avatar visual assets (`visualRef`) present a separate impersonation vector: a us
 
 # Push Notifications {#push}
 
-Servers MUST support the EventSource mechanism defined in {{RFC8620}} Section 7.3.
+Servers provide the EventSource mechanism defined in {{RFC8620}} Section 7.3, as the required Session `eventSourceUrl` ({{RFC8620}} Section 2) implies.
 
 Servers SHOULD also support the push subscription mechanism defined in {{RFC8620}} Section 7.2 for deployments requiring offline and mobile push delivery.
 
-Servers that deliver push subscriptions via Web Push SHOULD also advertise the `urn:ietf:params:jmap:webpush-vapid` capability and authenticate their Web Push messages with a VAPID-signed JWT, consistent with the recommendation in {{JMAP-CHAT}} when that capability is co-deployed.
+Servers that deliver push subscriptions via Web Push SHOULD also advertise the `urn:ietf:params:jmap:webpush-vapid` capability {{RFC9749}} and authenticate their Web Push messages with a VAPID-signed JWT, consistent with the recommendation in {{JMAP-CHAT}} when that capability is co-deployed.
 
 ## State-Change Events {#push-state-change}
 
 All four Scene data types -- SceneRegion, SceneObject, SceneAvatar, and SceneAsset -- participate in the RFC 8620 state-change mechanism ({{RFC8620}} Section 7.1). The IANA registrations in {{iana}} declare "Can use for state change: Yes" for each type.
 
-The server MUST include a state string for each Scene data type in the `StateChange` object delivered to subscribed clients whenever the corresponding data changes. State strings are opaque to clients; a state string changes on any mutation (create, update, or destroy) to any record of that type within the account. Clients MUST NOT parse or interpret state string values; they are meaningful only as arguments to the corresponding `/changes` method.
+As {{RFC8620}} Section 7.1 specifies, the server includes a state string for each Scene data type in the `StateChange` object delivered to subscribed clients whenever the corresponding data changes. State strings are opaque to clients ({{RFC8620}} Section 5.1); a state string changes on any mutation (create, update, or destroy) to any record of that type within the account, and is meaningful only as an argument to the corresponding `/changes` method.
 
 Example `StateChange` event via EventSource:
 
@@ -2481,7 +2678,7 @@ event: state
 data: {"@type":"StateChange","changed":{"account-xyz":{"SceneRegion":"r41a","SceneObject":"o88f2","SceneAvatar":"av03c","SceneAsset":"as7e1"}}}
 ~~~
 
-A single `StateChange` MAY include state strings for a subset of the four types. The server MUST include a type's state string only when that type has changed since the last event delivered to that subscriber. If only SceneAvatar records changed (a user entered or left a region), the server MAY omit the other three types from the payload:
+A single `StateChange` MAY include state strings for a subset of the four types. Per {{RFC8620}} Section 7.1, a type's state string is included only when that type has changed since the last event delivered to that subscriber. If only SceneAvatar records changed (a user entered or left a region), the server MAY omit the other three types from the payload:
 
 ~~~json
 {
@@ -2510,7 +2707,7 @@ When JMAP Chat ({{JMAP-CHAT}}) is co-deployed, a single `StateChange` MAY carry 
 }
 ~~~
 
-Clients SHOULD call the corresponding `/changes` method for each type whose state string differs from the locally cached value. When the server cannot calculate changes, fall back to `/get`.
+Clients call the corresponding `/changes` method for each type whose state string differs from the locally cached value ({{RFC8620}} Section 7.1). When the server cannot calculate changes, fall back to `/get`.
 
 ### State-Change Frequency
 
@@ -2520,21 +2717,23 @@ Scene data types differ significantly in mutation frequency:
 
 - **SceneObject** changes at moderate frequency: object creation, destruction, and position/property updates. The server SHOULD coalesce rapid SceneObject mutations similarly.
 
-- **SceneRegion** and **SceneAsset** change infrequently: region creation, configuration updates, and asset uploads are low-frequency operations. Coalescing is generally unnecessary but remains at the server's discretion.
+- **SceneRegion** changes whenever a user enters or leaves a region, because `activeAvatarCount` changes, in addition to the less frequent region creation and configuration updates. The server SHOULD coalesce rapid SceneRegion mutations in the same way as SceneAvatar mutations.
 
-Real-time avatar and object position synchronization at simulation-layer rates (10+ Hz) MUST NOT generate `StateChange` events at that frequency. The periodic position reconciliation described in {{simulation-layer}} produces JMAP-layer mutations at a much lower rate (every 5-30 seconds); only those reconciliation writes produce state changes. Clients connected to the simulation layer receive real-time positions through the simulation protocol; `StateChange` events for SceneAvatar and SceneObject serve clients that are not connected to the simulation layer or that need to detect structural changes (new avatars, removed objects).
+- **SceneAsset** changes infrequently: asset uploads and metadata updates are low-frequency operations. Coalescing is generally unnecessary but remains at the server's discretion.
 
-When Scene and Chat are co-deployed, the server SHOULD coalesce `StateChange` events across both capabilities to avoid overwhelming Chat-only clients. A `StateChange` containing only SceneAvatar or SceneObject state tokens SHOULD be coalesced within a 1-5 second window. Clients that do not use Scene types SHOULD ignore state tokens for types they do not track, avoiding unnecessary `/changes` calls.
+Real-time avatar and object position synchronization at simulation-layer rates (10+ Hz) SHOULD NOT generate `StateChange` events at that frequency. The periodic position reconciliation described in {{simulation-layer}} produces JMAP-layer mutations at a much lower rate (every 5-30 seconds); only those reconciliation writes produce state changes. Clients connected to the simulation layer receive real-time positions through the simulation protocol; `StateChange` events for SceneAvatar and SceneObject serve clients that are not connected to the simulation layer or that need to detect structural changes (new avatars, removed objects).
+
+When Scene and Chat are co-deployed, the server SHOULD coalesce `StateChange` events across both capabilities to avoid overwhelming Chat-only clients. Clients that do not use Scene types can ignore state tokens for types they do not track, avoiding unnecessary `/changes` calls.
 
 ## Push Urgency {#push-urgency}
 
-When delivering `StateChange` notifications via Web Push, the server SHOULD set the `Urgency` header based on the nature of the change. The following urgency assignments are RECOMMENDED:
+When delivering `StateChange` notifications via Web Push, the server SHOULD set the `Urgency` header ({{RFC8030}} Section 5.3) based on the nature of the change. The following urgency assignments are RECOMMENDED:
 
 `high`:
 : Region destruction (`SceneRegion/set destroy`) when the receiving user has SceneObject records in the destroyed region. The user's objects have been removed as a side effect and the user should be informed promptly.
 
 `normal`:
-: Avatar enter and leave events. A user MAY want to know when someone enters or leaves a region they are present in, particularly for invite-only or low-population regions. Region creation and configuration changes also warrant `normal` urgency when the user is an active participant in the region.
+: Avatar enter and leave events. A user may want to know when someone enters or leaves a region they are present in, particularly for invite-only or low-population regions. Region creation and configuration changes also warrant `normal` urgency when the user is an active participant in the region.
 
 `low`:
 : Object destruction by an administrator (region owner or deployment admin destroying another user's object). This is informational: the owner of the destroyed object should eventually learn that their object was removed, but the notification is not time-sensitive.
@@ -2542,7 +2741,7 @@ When delivering `StateChange` notifications via Web Push, the server SHOULD set 
 `very-low`:
 : SceneAsset changes. Asset metadata updates are administrative bookkeeping and rarely require user attention. SceneObject position and property updates that result from periodic simulation-layer reconciliation also fall into this category; the user is typically connected to the simulation layer and already aware of these changes.
 
-Servers MUST NOT assign `high` urgency to routine position reconciliation updates. A deployment that reconciles avatar positions every 5 seconds and assigns `high` urgency to each reconciliation would rapidly exhaust push infrastructure quotas and trigger OS-level throttling on mobile clients.
+Servers SHOULD NOT assign `high` urgency to routine position reconciliation updates. A deployment that reconciles avatar positions every 5 seconds and assigns `high` urgency to each reconciliation would rapidly exhaust push infrastructure quotas and trigger OS-level throttling on mobile clients.
 
 When a single `StateChange` event covers multiple data types with different recommended urgencies, the server SHOULD use the highest applicable urgency for the combined payload.
 
@@ -2550,12 +2749,13 @@ When a single `StateChange` event covers multiple data types with different reco
 
 Clients create push subscriptions using `PushSubscription/set` as defined in {{RFC8620}} Section 7.2. The `types` property on `PushSubscription` controls which data types generate push notifications for that subscription.
 
-A client that wishes to receive push notifications only for Scene data types SHOULD set `types` to include the desired subset:
+A client that wishes to receive push notifications only for Scene data types sets `types` to include the desired subset:
 
 ~~~json
 [["PushSubscription/set", {
   "create": {
     "ps0": {
+      "deviceClientId": "a889-ffea-910",
       "url": "https://push.example.com/endpoint/scene-abc123",
       "types": ["SceneRegion", "SceneAvatar"],
       "keys": {
@@ -2577,6 +2777,7 @@ When both Scene and Chat capabilities are present, a single `PushSubscription` M
 [["PushSubscription/set", {
   "create": {
     "ps1": {
+      "deviceClientId": "a889-ffea-910",
       "url": "https://push.example.com/endpoint/unified-abc456",
       "types": [
         "Message", "Chat",
@@ -2597,11 +2798,11 @@ When `urn:ietf:params:jmap:scene` and `urn:ietf:params:jmap:chat` are both adver
 
 ### Avatar Enter and Chat Member Join
 
-When a SceneRegion is bound to a Chat via the `chatId` field (see {{chat-binding}}), a user entering the region (SceneAvatar creation) and the corresponding "user joined" event in the bound Chat represent the same logical event: a user has become present. The server MUST still update state for both data types (SceneAvatar and Chat/Message), because clients tracking each type independently require accurate state strings. However, the server SHOULD NOT generate user-facing push notifications for both events when they are consequences of the same user action.
+When a SceneRegion is bound to a Chat via the `chatId` field (see {{chat-binding}}), a user entering the region (SceneAvatar creation) and the corresponding "user joined" event in the bound Chat represent the same logical event: a user has become present. The server still updates state for both data types (SceneAvatar and Chat/Message), as {{RFC8620}} requires for any mutation, because clients tracking each type independently require accurate state strings. However, the server SHOULD NOT generate user-facing push notifications for both events when they are consequences of the same user action.
 
 Specifically:
 
-- If the Chat capability generates a push notification for a "user joined" system message in the bound Chat, the server SHOULD suppress any additional user-facing notification derived from the corresponding SceneAvatar creation. The `StateChange` for SceneAvatar MUST still be delivered (it is a state-tracking mechanism, not a user-facing notification), but the server SHOULD NOT set `Urgency: normal` or higher on the SceneAvatar `StateChange` when a Chat push for the same event has already been delivered or is being delivered concurrently.
+- If the Chat capability generates a push notification for a "user joined" system message in the bound Chat, the server SHOULD suppress any additional user-facing notification derived from the corresponding SceneAvatar creation. The `StateChange` for SceneAvatar is still delivered (see {{push-state-change}}; it is a state-tracking mechanism, not a user-facing notification), but the server SHOULD NOT set `Urgency: normal` or higher on the SceneAvatar `StateChange` when a Chat push for the same event has already been delivered or is being delivered concurrently.
 
 - If the Chat capability does not generate a notification for the join event (because the Chat is muted, or the Chat push subscription does not cover that Chat), the Scene `StateChange` for SceneAvatar proceeds with its normal urgency.
 
@@ -2611,7 +2812,7 @@ The same deduplication logic applies to avatar departure. When a user leaves a r
 
 ### Independent Events
 
-Not all Scene events have Chat analogs. The following Scene events have no Chat counterpart and MUST generate push notifications independently:
+Not all Scene events have Chat analogs. The following Scene events have no Chat counterpart and are not subject to cross-capability deduplication:
 
 - SceneObject creation, modification, or destruction (no Chat equivalent).
 - SceneRegion creation, configuration changes, or destruction (no Chat equivalent unless a system message is posted to the bound Chat, which is deployment-defined).
@@ -2620,7 +2821,7 @@ Not all Scene events have Chat analogs. The following Scene events have no Chat 
 
 ### Server Implementation
 
-The deduplication requirement is a SHOULD, not a MUST, because the server is in the best position to determine whether two state changes represent the same logical event. Servers that do not implement cross-capability deduplication will produce functionally correct but potentially redundant notifications. Clients SHOULD be prepared to receive notifications from both capabilities for the same logical event and SHOULD deduplicate on the client side when possible (for example, by suppressing a "user entered region" notification if a "user joined chat" notification for the same user and bound Chat was received within the preceding 5 seconds).
+The deduplication requirement is a SHOULD, not a MUST, because the server is in the best position to determine whether two state changes represent the same logical event. Servers that do not implement cross-capability deduplication will produce functionally correct but potentially redundant notifications. Clients can therefore receive notifications from both capabilities for the same logical event and can deduplicate on the client side when possible (for example, by suppressing a "user entered region" notification if a "user joined chat" notification for the same user and bound Chat was received within the preceding 5 seconds).
 
 ## Scene Push Does Not Carry Inline Content
 
@@ -2681,6 +2882,25 @@ Can use for state change: Yes
 Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
+## JMAP Error Code Registration {#iana-error}
+
+IANA is requested to register the following entry in the "JMAP Error Codes" registry ({{RFC8620}} Section 9.5):
+
+JMAP Error Code:
+: `contentPolicy`
+
+Intended Use:
+: common
+
+Change Controller:
+: IETF
+
+Reference:
+: This document, {{content-moderation}}
+
+Description:
+: The server rejected the create or update because the content (text or a referenced asset) violates a deployment-defined content policy. Returned as a SetError on `SceneRegion/set` and `SceneObject/set`.
+
 --- back
 
 # Design Influences and Non-Normative Notes
@@ -2716,7 +2936,7 @@ The following design choices were left to deployments rather than prescribed:
 - **2D rendering style.** For regions with `viewHint` of `"2d-topdown"` or `"2d-side"`, the rendering style (pixel art, vector, isometric projection, sprite sheets) is client-defined. The spec provides spatial coordinates and advisory view orientation; visual style is a client concern.
 - **AR experience.** For regions with `viewHint` of `"ar"` and a `geoAnchor`, the entire augmented reality user experience is client-defined. The spec provides geographic anchoring (where in the reference frame) and object positions (where relative to the anchor); everything else is the client's responsibility. This includes: compositing virtual objects onto the camera feed; occlusion, lighting estimation, and shadow casting; surface detection and plane tracking; GPS, visual-inertial odometry, or other tracking mechanisms; drift correction and relocalization; minimap or navigation UI; how to present the experience on phones, AR glasses, heads-up displays, or any other form factor. The spec says where objects are. The client decides how to show them.
 - **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
-- **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments SHOULD follow the color representation convention defined in {{JMAP-CHAT}}, Section 2.1: W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
+- **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments can follow the color representation convention defined in {{JMAP-CHAT}}, Section 2.1: W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
 
 # Complete Lifecycle Examples {#lifecycle-examples}
 
@@ -2737,6 +2957,14 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
   "accounts": {
     "alice-account": {
       "name": "alice@example.com",
+      "isPersonal": true,
+      "isReadOnly": false,
+      "accountCapabilities": {}
+    },
+    "gallery-account": {
+      "name": "Example Gallery",
+      "isPersonal": false,
+      "isReadOnly": false,
       "accountCapabilities": {
         "urn:ietf:params:jmap:scene": {
           "mayCreateRegion": false,
@@ -2748,7 +2976,8 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
           "maxRegionsPerAccount": 10,
           "maxObjectsPerRegion": 5000,
           "maxAvatarsPerRegion": 100,
-          "maxAssetSizeBytes": 52428800
+          "maxAssetSizeBytes": 52428800,
+          "supportsSceneAsset": true
         }
       }
     }
@@ -2759,7 +2988,7 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
 }
 ~~~
 
-Alice's client sees `urn:ietf:params:jmap:scene` is present. She can create objects but not regions. The server supports glTF binary and PNG assets, and allows up to 100 concurrent avatars per region.
+Alice's client sees `urn:ietf:params:jmap:scene` is present. The gallery's regions live in `gallery-account`, which Alice accesses as a shared account ({{account-model}}); all of the following calls use that account. In it she can create objects but not regions. The server supports glTF binary and PNG assets, and allows up to 100 concurrent avatars per region.
 
 ### Step 2: Client queries available regions
 
@@ -2767,7 +2996,7 @@ Alice's client sends `SceneRegion/query` to find public regions with active user
 
 ~~~json
 [["SceneRegion/query", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "filter": {
     "accessPolicy": "public",
     "hasActiveAvatars": true
@@ -2776,7 +3005,7 @@ Alice's client sends `SceneRegion/query` to find public regions with active user
   "limit": 10
 }, "0"],
 ["SceneRegion/get", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "#ids": {
     "resultOf": "0",
     "name": "SceneRegion/query",
@@ -2789,7 +3018,7 @@ Server responds:
 
 ~~~json
 [["SceneRegion/query", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "queryState": "s100",
   "canCalculateChanges": true,
   "position": 0,
@@ -2800,12 +3029,13 @@ Server responds:
   ]
 }, "0"],
 ["SceneRegion/get", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "state": "s101",
   "list": [
     {
       "id": "01JXKR5M0G3QVTA8N2BWFP7Y01",
-      "accountId": "alice-account",
+      "accountId": "gallery-account",
+      "ownerId": "user:curator@example.com",
       "name": "Gallery East Wing",
       "description": "Contemporary sculpture exhibition",
       "bounds": {
@@ -2823,6 +3053,7 @@ Server responds:
       "spawnOrientation": [0, 0, 0, 1],
       "activeAvatarCount": 3,
       "accessPolicy": "public",
+      "invitedUserIds": [],
       "createdAt": "2026-05-01T10:00:00Z",
       "updatedAt": "2026-06-05T14:30:00Z",
       "chatId": null,
@@ -2832,7 +3063,8 @@ Server responds:
     },
     {
       "id": "01JXKR5M0G3QVTA8N2BWFP7Y02",
-      "accountId": "alice-account",
+      "accountId": "gallery-account",
+      "ownerId": "user:curator@example.com",
       "name": "Rooftop Lounge",
       "description": "Social hangout with city skyline",
       "bounds": {
@@ -2850,6 +3082,7 @@ Server responds:
       "spawnOrientation": [0, 0, 0, 1],
       "activeAvatarCount": 1,
       "accessPolicy": "public",
+      "invitedUserIds": [],
       "createdAt": "2026-05-15T08:00:00Z",
       "updatedAt": "2026-06-04T22:10:00Z",
       "chatId": null,
@@ -2870,7 +3103,7 @@ Alice's client sends `SceneAvatar/set` with a `create` to enter the Gallery East
 
 ~~~json
 [["SceneAvatar/set", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "create": {
     "av0": {
       "regionId": "01JXKR5M0G3QVTA8N2BWFP7Y01",
@@ -2885,16 +3118,16 @@ Alice's client sends `SceneAvatar/set` with a `create` to enter the Gallery East
 }, "0"]]
 ~~~
 
-Server responds with the created avatar. The server assigns the id from Alice's userId, sets `displayName` from her user profile, sets `position` and `orientation` from the region's spawn point, and sets `joinedAt` to the current time:
+Server responds with the created avatar. The server assigns a new id, sets `userId` to Alice's userId, sets `displayName` from her user profile, sets `position` and `orientation` from the region's spawn point, and sets `joinedAt` to the current time:
 
 ~~~json
 [["SceneAvatar/set", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "oldState": "s200",
   "newState": "s201",
   "created": {
     "av0": {
-      "id": "user:alice@example.com",
+      "id": "01JXKR7A9MZQ3T5VWC8DHE2F01",
       "regionId": "01JXKR5M0G3QVTA8N2BWFP7Y01",
       "userId": "user:alice@example.com",
       "displayName": "Alice Chen",
@@ -2922,21 +3155,33 @@ The server increments the region's `activeAvatarCount` to 4. Alice's client conn
 
 ### Step 4: Client interacts with an object
 
-Alice walks up to an interactable sculpture and clicks on it. Her client sends a `SceneInteractionEvent` over the WebSocket connection:
+Alice walks up to an interactable sculpture and clicks on it. Her client calls `SceneObject/interact` ({{scene-object-interact}}):
 
 ~~~json
-{
-  "@type": "SceneInteractionEvent",
-  "accountId": "alice-account",
-  "regionId": "01JXKR5M0G3QVTA8N2BWFP7Y01",
-  "objectId": "01JXKR6P4HNTQW29DCEAGM8V05",
-  "userId": "user:alice@example.com",
-  "action": "click",
-  "data": null
-}
+[["SceneObject/interact", {
+  "accountId": "gallery-account",
+  "interactions": {
+    "i0": {
+      "regionId": "01JXKR5M0G3QVTA8N2BWFP7Y01",
+      "objectId": "01JXKR6P4HNTQW29DCEAGM8V05",
+      "action": "click",
+      "data": null
+    }
+  }
+}, "0"]]
 ~~~
 
-The server fans out this event to all other avatars in the region whose visibility set includes the sculpture. Other clients may display a click animation or info panel. The interaction is purely ephemeral and is not persisted.
+Server responds:
+
+~~~json
+[["SceneObject/interact", {
+  "accountId": "gallery-account",
+  "accepted": ["i0"],
+  "notAccepted": null
+}, "0"]]
+~~~
+
+The server delivers a `SceneInteractionEvent` ({{JMAP-SCENE-WSS}}) to the other subscribers of the region whose visibility set includes the sculpture. A client that does not need the result can send the same interaction as a `SceneInteractionEvent` frame over the WebSocket instead. Other clients may display a click animation or info panel. The interaction is purely ephemeral and is not persisted.
 
 ### Step 5: Client updates avatar position
 
@@ -2944,9 +3189,9 @@ Alice teleports to a bookmark position near the back of the gallery. Her client 
 
 ~~~json
 [["SceneAvatar/set", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "update": {
-    "user:alice@example.com": {
+    "01JXKR7A9MZQ3T5VWC8DHE2F01": {
       "position": [35.0, 0, -22.5],
       "orientation": [0, -0.383, 0, 0.924]
     }
@@ -2958,12 +3203,12 @@ Server responds:
 
 ~~~json
 [["SceneAvatar/set", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "oldState": "s201",
   "newState": "s202",
   "created": null,
   "updated": {
-    "user:alice@example.com": null
+    "01JXKR7A9MZQ3T5VWC8DHE2F01": null
   },
   "destroyed": null,
   "notCreated": null,
@@ -2980,25 +3225,25 @@ Alice is done browsing the gallery. Her client sends `SceneAvatar/set` to set `l
 
 ~~~json
 [["SceneAvatar/set", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "update": {
-    "user:alice@example.com": {
+    "01JXKR7A9MZQ3T5VWC8DHE2F01": {
       "leftAt": "2026-06-06T09:47:30Z"
     }
   }
 }, "0"]]
 ~~~
 
-Server responds:
+The server records its own current time as `leftAt` and responds:
 
 ~~~json
 [["SceneAvatar/set", {
-  "accountId": "alice-account",
+  "accountId": "gallery-account",
   "oldState": "s202",
   "newState": "s203",
   "created": null,
   "updated": {
-    "user:alice@example.com": null
+    "01JXKR7A9MZQ3T5VWC8DHE2F01": null
   },
   "destroyed": null,
   "notCreated": null,
@@ -3013,7 +3258,7 @@ The server decrements the region's `activeAvatarCount` to 3. Other clients in th
 {
   "@type": "StateChange",
   "changed": {
-    "alice-account": {
+    "gallery-account": {
       "SceneAvatar": "s203"
     }
   }
@@ -3069,6 +3314,7 @@ Server responds with the created region:
     "r0": {
       "id": "01JXKRBN7KWMPS46GFHDJT9R10",
       "accountId": "admin-account",
+      "ownerId": "user:admin@example.com",
       "name": "Product Launch Hall",
       "description": "Annual product launch event venue",
       "bounds": {
@@ -3077,6 +3323,7 @@ Server responds with the created region:
       },
       "viewHint": "3d",
       "accessPolicy": "public",
+      "invitedUserIds": [],
       "spawnPosition": [0, 0, 50],
       "spawnOrientation": [0, 0, 0, 1],
       "simulationUri": "wss://sim.example.com/regions/launch-hall",
@@ -3208,7 +3455,7 @@ The region now contains three objects: the wall acts as an immovable collider, t
 
 ### Step 3: Admin updates access policy
 
-The event is about to start. The admin restricts the region from public to invite-only so that only approved attendees can enter:
+The event is about to start. The admin restricts the region from public to invite-only and lists the approved attendees:
 
 ~~~json
 [["SceneRegion/set", {
@@ -3216,6 +3463,11 @@ The event is about to start. The admin restricts the region from public to invit
   "update": {
     "01JXKRBN7KWMPS46GFHDJT9R10": {
       "accessPolicy": "invite",
+      "invitedUserIds": [
+        "user:alice@example.com",
+        "user:bob@example.com",
+        "user:carol@example.com"
+      ],
       "description": "Annual product launch event venue (invite only)"
     }
   }
@@ -3240,22 +3492,18 @@ Server responds:
 }, "0"]]
 ~~~
 
-From this point forward, users without an explicit invitation receive `forbidden` when attempting `SceneAvatar/set` create for this region. Users already present are not ejected by the policy change; they remain until they leave or are explicitly ejected.
+From this point forward, users not listed in `invitedUserIds` receive `notFound` when attempting `SceneAvatar/set` create for this region ({{access-control}}). Users already present are not ejected by the policy change; they remain until they leave or are explicitly ejected.
 
 ### Step 4: Admin ejects an avatar
 
-A disruptive user (`user:troll@example.com`) is in the region. The admin ejects them by setting `leftAt` on their SceneAvatar record, with a reason in `worldState`:
+A disruptive user (`user:troll@example.com`) is in the region. The admin finds the user's SceneAvatar with a `SceneAvatar/query` filtered by `regionId` and `userId`, then ejects them by setting `leftAt` on that record. The server records its own current time as `leftAt`:
 
 ~~~json
 [["SceneAvatar/set", {
   "accountId": "admin-account",
   "update": {
-    "user:troll@example.com": {
-      "leftAt": "2026-06-06T10:22:15Z",
-      "worldState": {
-        "ejectReason": "Disruptive behavior",
-        "ejectedBy": "user:admin@example.com"
-      }
+    "01JXKRD2Q8VB6M4TNWZ7CYHG30": {
+      "leftAt": "2026-06-06T10:22:15Z"
     }
   }
 }, "0"]]
@@ -3270,7 +3518,7 @@ Server responds:
   "newState": "s211",
   "created": null,
   "updated": {
-    "user:troll@example.com": null
+    "01JXKRD2Q8VB6M4TNWZ7CYHG30": null
   },
   "destroyed": null,
   "notCreated": null,
@@ -3279,20 +3527,20 @@ Server responds:
 }, "0"]]
 ~~~
 
-The server decrements the region's `activeAvatarCount` and delivers a `StateChange` to the ejected user's connection:
+The server decrements the region's `activeAvatarCount` and delivers a `StateChange` to the ejected user's connection. The ejected user reaches the region through `admin-account` as a shared account, so the `StateChange` names that account:
 
 ~~~json
 {
   "@type": "StateChange",
   "changed": {
-    "troll-account": {
+    "admin-account": {
       "SceneAvatar": "s211"
     }
   }
 }
 ~~~
 
-The ejected user's client fetches the updated SceneAvatar via `SceneAvatar/get`, sees `leftAt` is non-null, and disconnects from the simulation layer. Because the region's `accessPolicy` is now `"invite"`, the ejected user cannot re-enter without a new invitation.
+The ejected user's client calls `SceneAvatar/changes` and then `SceneAvatar/get` for its record. Because the region's `accessPolicy` is now `"invite"` and `invitedUserIds` does not list the ejected user, the user no longer has access to the region ({{access-control}}), so the server reports the record in `notFound`. The client treats this as removal from the region and disconnects from the simulation layer. A re-entry update would also fail with `notFound`.
 
 # Acknowledgements
 
