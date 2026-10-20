@@ -98,7 +98,7 @@ verify both capabilities are present:
 
 - `urn:ietf:params:jmap:websocket` — the WebSocket transport (RFC 8887); provides the
   `url` field containing the `wss://` endpoint
-- `urn:ietf:params:jmap:chat:websocket` — ephemeral event support
+- `urn:jmap:chat:websocket` — ephemeral event support
 
 If the first is absent, WebSocket is unavailable. Clients SHOULD fall back to
 EventSource (SSE) for server-to-client state-change events and `PushSubscription`-based

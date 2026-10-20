@@ -28,13 +28,13 @@ specification:
 ## Overview
 
 `ChatMessagePush` is an extension to the RFC 8620 `PushSubscription` mechanism. When a
-server supports this extension, it advertises the `urn:ietf:params:jmap:chat:push`
+server supports this extension, it advertises the `urn:jmap:chat:push`
 capability. Clients that want inline push payloads add a `chatPush` property to their
 `PushSubscription` objects. The server then delivers `ChatMessagePush` payloads directly
 to the push endpoint instead of (or in addition to) the standard `StateChange` object.
 
 Before registering a `chatPush` configuration, clients SHOULD check the account-level
-capability object for `urn:ietf:params:jmap:chat:push`. It contains:
+capability object for `urn:jmap:chat:push`. It contains:
 
 - `maxSnippetBytes` — the maximum byte length the server will include in `bodySnippet`
 - `supportedUrgencyValues` — the urgency values the server accepts in `ChatPushConfig`
@@ -48,15 +48,16 @@ Clients MUST NOT request an `urgency` or `mentionUrgency` value not in
 `supportedUrgencyValues`; the server will reject the `PushSubscription/set` create or
 update with an `invalidProperties` SetError naming the offending property.
 
-If `urn:ietf:params:jmap:chat:push` is absent from the account capabilities, the server
+If `urn:jmap:chat:push` is absent from the account capabilities, the server
 does not support inline `ChatMessagePush` payloads. Clients MUST fall back to a standard
 RFC 8620 `PushSubscription` without a `chatPush` property. In that case the server
 delivers plain `StateChange` events for the `Message` data type; clients handle them by
 calling `Message/changes` to determine which messages are new — the same flow as the
 rate-limit fallback described below. Clients MUST NOT include a `chatPush` property in
-`PushSubscription/set` calls when the capability is absent; the draft forbids servers to
-include `chatPush` entries for such an account (`draft-atwood-jmap-chat-push-00`
-§PushSubscription Extension) and defines no error code for the request.
+`PushSubscription/set` calls when the capability is absent; the server rejects a create
+or update carrying a `chatPush` entry for such an account with an `invalidProperties`
+SetError naming the entry (e.g., `chatPush/<id>`) and stores no change
+(`draft-atwood-jmap-chat-push-00` §PushSubscription Extension).
 
 ### When the server does not send a push
 
@@ -260,11 +261,12 @@ as `sinceState` (`draft-atwood-jmap-chat-push-00` §ChatMessagePush).
 
 ## Payload size
 
-The draft defines no truncation. The `properties` list is authoritative (the server
-returns exactly the requested fields), and every matching message gets a push
-(`draft-atwood-jmap-chat-push-00` §ChatPushConfig, §Delivery). Keep payloads within the
-platform size limit (see the platform delivery guide for per-platform limits) without
-dropping fields or entries:
+The server keeps each `ChatMessagePush` within the push platform's payload size limit,
+which is implementation-defined (see the platform delivery guide for per-platform
+limits). If a single `ChatMessageEntry` does not fit, the server SHOULD shorten or omit
+that entry's `bodySnippet`; if it still does not fit, the server delivers a `StateChange`
+for the `Message` data type in place of a `ChatMessagePush` for that message
+(`draft-atwood-jmap-chat-push-00` §Batching and Retry). Avoid reaching that fallback:
 
 - Bound the snippet: `bodySnippet` is the only large variable field, and
   `maxSnippetBytes` caps it. Choose `maxSnippetBytes` so that one entry with every
@@ -275,7 +277,7 @@ dropping fields or entries:
   always permitted.
 
 A client receiving a `ChatMessageEntry` with no `bodySnippet` (for example, because
-`properties` omitted it) SHOULD display a generic "new message" notification and fetch
+`properties` omitted it or the server dropped it to fit the platform limit) SHOULD display a generic "new message" notification and fetch
 full content via `Message/changes` on next foreground wake — the same behavior as when
 `encrypted: true`.
 

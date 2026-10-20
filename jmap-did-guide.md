@@ -51,7 +51,7 @@ identifier derived from W3C Decentralized Identifiers (DID Core). It complements
 | Portability | Not portable | Portable across servers |
 | Key material | None | DID document contains public keys |
 
-The capability identifier is `urn:ietf:params:jmap:did`. When a server
+The capability identifier is `urn:jmap:did`. When a server
 advertises it, every account gains a `did` binding in the account-level
 capability object, and consuming JMAP specifications may add DID-bearing
 properties to their data types.
@@ -401,8 +401,14 @@ capability can be enabled.
 **What the spec defines.** DID-bearing properties are server-set, recorded
 at object creation from the account binding, and immutable afterward. A DID
 migration does not change them, and signatures on an object verify against the
-DID recorded on it (draft §The `did` Property). The server MUST reject client
-attempts to set them.
+DID recorded on it (draft §The `did` Property). The server MUST reject a
+client create that includes them or an update that changes them.
+
+The draft separates these from **DID-referencing** properties, which hold the
+DID of another party (a peer, participant, organizer, or a sender as seen by a
+recipient). Those are set as the consuming spec defines, not from the binding,
+and are not trusted until verified (Section 5). This section covers
+DID-bearing properties only.
 
 **What you must decide.** How to record the DID at creation.
 
@@ -419,16 +425,19 @@ simpler.
 
 ### 4.2 Rejecting client-supplied DIDs
 
-**What the spec defines.** Servers MUST reject create/update requests that
-include DID-bearing properties with `invalidProperties`.
+**What the spec defines.** Clients omit DID-bearing properties on create; an
+update may include one only with its current value (RFC 8620 Section 5.3).
+Servers MUST reject a create that includes a DID-bearing property, or an
+update that changes one, with an `invalidProperties` SetError naming the
+property. An update that repeats the current value is accepted.
 
 **What you must decide.** Nothing — this is mandatory. But note:
 
 - Validate at the JMAP method handler level, not at the database level. A
   database constraint is a safety net, not a substitute for returning a clean
   JMAP error.
-- Return `invalidArguments` with a description that names the offending
-  property. Do not silently strip it.
+- Return the `invalidProperties` SetError with the offending property in
+  `properties`. Do not silently strip it.
 
 ---
 
@@ -506,8 +515,9 @@ For `did:webvh`:
 
 **What the spec defines.** When objects originate from a different server
 (federated messages, cross-server calendar invitations, shared files), the
-DID-bearing property enables verification without trusting the originating
-server (draft §Cross-Server Verification).
+originating server's DID-bearing value arrives as a DID-referencing value,
+which the client can verify without trusting the originating server (draft
+§Cross-Server Verification).
 
 **What you must decide.** How to present cross-server identity to the user.
 
@@ -623,28 +633,34 @@ new authentication. Objects SHOULD retain the revoked DID for provenance
 
 ### 7.1 General pattern
 
-When your JMAP server implements both `urn:ietf:params:jmap:did` and a
+When your JMAP server implements both `urn:jmap:did` and a
 consuming specification (Mail, Calendars, Contacts, FileNode, Chat, VTC,
 Scene), the DID capability adds properties to the consuming specification's
-data types. The pattern is always the same:
+data types. A property is either DID-bearing (the owning account's own DID,
+from the binding) or DID-referencing (another party's DID, set as the
+consuming spec defines and verified before it is trusted). The sections
+below label each. For DID-bearing properties the pattern is always the same:
 
 1. Identify which data types are DID-bearing (defined by the consuming spec).
 2. For each DID-bearing type, identify which account binding the DID derives
    from (usually the object's `accountId`).
 3. At creation time, record the owning account's current DID on the object
    (Section 4.1). Return the recorded value in responses.
-4. On create/update, reject any client-supplied DID-bearing properties.
+4. Reject a create that includes a DID-bearing property, or an update that
+   changes one; accept an update that repeats the current value.
 
 ### 7.2 JMAP Mail
 
-**Email objects.** Add `senderDid` — the DID of the authenticated sender.
+**Email objects.** Add `senderDid` — the DID of the authenticated sender
+(DID-bearing on the sender's own copy, DID-referencing as received).
 
 For locally-originated mail, `senderDid` is the DID bound to the sender's account
 when the Email was created; a later DID migration does not change it. For inbound mail from external servers, `senderDid` is `null` unless
 the originating server provides a DID attestation via a mail header or
 out-of-band mechanism. Do not fabricate a DID for external senders.
 
-**Identity objects.** Add `did` — the DID bound to this sending identity.
+**Identity objects.** Add `did` — the DID bound to this sending identity
+(DID-bearing).
 
 **Interaction with DKIM/SPF/DMARC:** DID-based sender identity is orthogonal
 to DNS-based email authentication. They verify different things:
@@ -663,10 +679,11 @@ independently.
 
 ### 7.3 JMAP Calendars
 
-**CalendarEvent objects.** Add `organizerDid` for the event organizer and
-optionally `delegateDid` for delegate-created events.
+**CalendarEvent objects.** Add `organizerDid` for the event organizer
+(DID-bearing on the organizer's copy, DID-referencing on an invitee's copy) and
+optionally `delegateDid` for delegate-created events (DID-referencing).
 
-**Participant objects.** Add `did` for each participant.
+**Participant objects.** Add `did` for each participant (DID-referencing).
 
 **Invitation verification:** When a user receives a calendar invitation from
 an unfamiliar organizer, the client can resolve `organizerDid` and verify the
@@ -676,7 +693,8 @@ organizer's server is not trusted.
 
 ### 7.4 JMAP Contacts
 
-**ContactCard objects.** Add `did` as a stable cross-server identifier.
+**ContactCard objects.** Add `did` as a stable cross-server identifier
+(DID-referencing).
 
 **Deduplication:** When a user has contacts on multiple JMAP servers, matching
 `did` values identify the same person without heuristic matching on name,
@@ -688,7 +706,7 @@ immediately blockable on Server B without re-identifying them.
 
 ### 7.5 JMAP File Storage
 
-**FileNode objects.** Add `ownerDid` for the file owner.
+**FileNode objects.** Add `ownerDid` for the file owner (DID-bearing).
 
 **Combined with JMAP CID:** A FileNode with `sha256` (from JMAP CID) and
 `ownerDid` (from JMAP DID) creates a verifiable content-addressed ownership
@@ -701,9 +719,10 @@ claimed owner matches the DID on the source server's FileNode.
 
 ### 7.6 JMAP Chat
 
-**Message objects.** Add `senderDid` for the message sender.
+**Message objects.** Add `senderDid` for the message sender (DID-bearing on
+the sender's own copy, DID-referencing as received).
 
-**ChatContact objects.** Add `did` for the contact.
+**ChatContact objects.** Add `did` for the contact (DID-referencing).
 
 **Federation:** In federated chat, `senderDid` enables recipient-side
 verification. The recipient's client resolves the sender's DID document and
@@ -718,7 +737,8 @@ that supports JMAP DID.
 
 ### 7.7 JMAP VTC
 
-**VTCParticipant objects.** Add `did` for the call participant.
+**VTCParticipant objects.** Add `did` for the call participant
+(DID-referencing).
 
 **Call verification:** In calls that span server boundaries (federated calls,
 SFU-mediated calls), `did` enables each participant to verify the identity of
@@ -727,7 +747,7 @@ participant's DID document and verifies the key material.
 
 ### 7.8 JMAP Scene
 
-**SceneAvatar objects.** Add `did` for the avatar owner.
+**SceneAvatar objects.** Add `did` for the avatar owner (DID-referencing).
 
 **SceneObject objects.** Add `ownerDid` for the object creator.
 
@@ -770,8 +790,8 @@ per-server-DID usage patterns. Document the privacy implications of each.
 
 ### 8.2 DID in responses to other users
 
-DID-bearing properties are returned to any client that can read the object. This
-means:
+DID-bearing and DID-referencing properties are returned to any client that can
+read the object. This means:
 
 - Every participant in a chat room can see every other participant's DID.
 - Every visitor to a Scene region can see every avatar's DID.
@@ -810,7 +830,7 @@ determine which method is used for each account.
 
 ## 10. Operational checklist
 
-Before enabling `urn:ietf:params:jmap:did` in production:
+Before enabling `urn:jmap:did` in production:
 
 - [ ] Binding strategy selected and implemented (Section 3.1)
 - [ ] Account table extended with DID column (Section 3.2)

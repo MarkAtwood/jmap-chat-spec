@@ -266,7 +266,7 @@ Chat wire surface MUST remain identical whether or not the IdP is wired up.
 ### 1.4 Slow-mode exemption beyond `manage_channels`
 
 **What the spec leaves open.** The main draft (near {#chat} anchor)
-softened `slowModeSeconds` to require a `rateLimited` error for non-exempt
+softened `slowModeSeconds` to require a `rateLimit` SetError for non-exempt
 senders but make the exemption clause itself a SHOULD: servers SHOULD exempt
 members holding `"manage_channels"`, and deployments MAY define additional
 exempt principals.

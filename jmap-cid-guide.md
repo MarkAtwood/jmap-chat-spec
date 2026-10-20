@@ -56,7 +56,7 @@ identifier computed as the SHA-256 digest of the raw blob bytes. It complements
 | Portability | Not portable across servers | Portable; same bytes produce same hash everywhere |
 | Purpose | Server-internal blob reference | Integrity verification, deduplication, cross-server correlation |
 
-The capability identifier is `urn:ietf:params:jmap:cid`. When a server
+The capability identifier is `urn:jmap:cid`. When a server
 advertises it, the upload response gains a `sha256` field and (if JMAP FileNode
 is also supported) FileNode objects gain a `sha256` property.
 
@@ -173,7 +173,7 @@ an empty input). To compare:
 
 ### 3.1 Server implementation
 
-**What the spec defines.** When `urn:ietf:params:jmap:cid` is advertised, the
+**What the spec defines.** When `urn:jmap:cid` is advertised, the
 upload response (RFC 8620 Section 6.1) is extended with `sha256`. The server
 MUST compute the digest from the bytes as received and MUST NOT advertise the
 capability if it transforms blob content before storage.
@@ -196,7 +196,7 @@ capability if it transforms blob content before storage.
 - *Content transformation prohibition*: if your server performs antivirus
   scanning, image transcoding, metadata stripping, or any other byte-level
   transformation before storage, the stored bytes differ from the uploaded
-  bytes. You MUST NOT advertise `urn:ietf:params:jmap:cid` in this case. If
+  bytes. You MUST NOT advertise `urn:jmap:cid` in this case. If
   you scan but store originals unchanged, you may advertise it.
 
 **Recommended starting point.** Compute SHA-256 in a streaming fashion during
@@ -284,7 +284,7 @@ against known hashes) is available immediately with no additional API.
 
 ### 5.1 FileNode `sha256` property
 
-**What the spec defines.** When both `urn:ietf:params:jmap:cid` and the
+**What the spec defines.** When both `urn:jmap:cid` and the
 JMAP FileNode capability are advertised, FileNode objects include a `sha256`
 property. It is `null` for directories and for legacy file FileNodes created
 before the capability was enabled. For all other file FileNodes, it MUST be
