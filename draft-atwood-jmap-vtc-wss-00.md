@@ -201,6 +201,11 @@ user is not a current participant, that entry is silently ignored.
 If all entries are ignored (or `callIds` is an empty array), the
 subscription is effectively empty: no events will be delivered.
 
+VTCCall ids are unique only within an account.  An id listed in
+`callIds` matches that id in every account the authenticated user
+can access; clients use the `accountId` of each event to tell the
+accounts apart.
+
 The server does not acknowledge `VTCStreamEnable`.  As with
 `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure
 produces a `RequestError`.  A client that sends several control
@@ -281,6 +286,13 @@ ephemeral event types defined by {{JMAP-VTC}}:
 | `VTCActiveSpeakerEvent` | per-call     | Active speaker changed               |
 | `VTCUnmuteRequestEvent` | per-call     | Moderator requests participant unmute|
 | `VTCRecordingStateEvent`| per-call     | Recording started, paused, or stopped|
+
+When delivered over the WebSocket, every event in this table
+carries an `accountId` (String) property in addition to the
+properties defined in {{JMAP-VTC}}: the id of the account that
+contains the VTCCall.  This applies whether the event is delivered
+through `VTCStreamEnable` or through `ChatStreamEnable`
+({{chat-wss-interop}}).
 
 Per-user events (`VTCRingEvent`, `VTCCallEndEvent`) are delivered
 based on the authenticated user's identity and are not scoped to
@@ -479,6 +491,7 @@ Server delivers a participant-join event:
 ~~~json
 {
   "@type": "VTCParticipantEvent",
+  "accountId": "abc123",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "event": "joined",
@@ -494,6 +507,7 @@ A participant mutes their microphone:
 ~~~json
 {
   "@type": "VTCMediaStateEvent",
+  "accountId": "abc123",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "mediaState": {
@@ -512,6 +526,7 @@ The active speaker changes:
 ~~~json
 {
   "@type": "VTCActiveSpeakerEvent",
+  "accountId": "abc123",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "01J4XNZRM8QWVT0RRDFJVS5EF0"
 }
@@ -524,6 +539,7 @@ A moderator starts recording:
 ~~~json
 {
   "@type": "VTCRecordingStateEvent",
+  "accountId": "abc123",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
