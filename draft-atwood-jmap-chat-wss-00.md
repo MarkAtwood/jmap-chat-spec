@@ -186,9 +186,9 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 : MUST be `"ChatStreamEnable"`.
 
 `dataTypes` (String[]):
-: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`; companion specifications MAY register additional values. Currently registered companion values: `"vtc"` for in-call events defined by {{JMAP-VTC-WSS}}, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}.
+: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`. It also defines two companion values: `"vtc"` for in-call events defined by {{JMAP-VTC-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:scene:websocket`.
 
-> **Implementation Note:** The `"vtc"` dataType in ChatStreamEnable is a convenience alias. When present, the Chat WSS server delegates VTC event delivery to the VTC WSS event pipeline. The Chat WSS implementation SHOULD treat this as an opaque delegation — it activates VTC event delivery for the connection without the Chat WSS layer needing to understand VTC event semantics. When `urn:ietf:params:jmap:vtc:websocket` is not present in the server's capabilities, the server MUST silently ignore `"vtc"` in `dataTypes` (per the general unrecognized-value rule).
+> **Implementation Note:** The `"vtc"` and `"scene"` dataTypes in ChatStreamEnable are convenience aliases. When one is present, the Chat WSS server delegates event delivery to the VTC WSS or Scene WSS event pipeline. The Chat WSS implementation SHOULD treat this as an opaque delegation — it activates the companion's event delivery for the connection without the Chat WSS layer needing to understand the companion's event semantics. When the companion capability is not present in the server's capabilities, the server MUST silently ignore the value in `dataTypes` (per the general unrecognized-value rule).
 
 `chatIds` (String[]|null):
 : Applicable when `"typing"` is in `dataTypes`. An explicit list of Chat ids for which typing events are requested, or `null` to receive typing events for all Chats of which the owner is a current member. Ignored if `"typing"` is not in `dataTypes`.
@@ -205,7 +205,7 @@ A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscrip
 
 The server does not send an explicit acknowledgment for `ChatStreamEnable`. As with `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure produces a `RequestError`. A client that sends several control messages in succession SHOULD give each an `id` so that it can attribute any `RequestError` to the message that caused it.
 
-If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"` or `"presence"`), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
+If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"`, `"presence"`, or a companion value whose capability the server advertises), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
 
 > **Note:** When a companion capability (e.g., `urn:ietf:params:jmap:vtc:websocket`) is not present, its corresponding `dataTypes` value (e.g., `"vtc"`) is treated as unrecognized and silently ignored. Clients SHOULD check the server's capability list before relying on companion dataTypes, as no error feedback is provided for absent capabilities.
 
