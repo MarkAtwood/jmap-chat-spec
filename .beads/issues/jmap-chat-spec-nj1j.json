@@ -2,11 +2,15 @@
   "id": "jmap-chat-spec-nj1j",
   "title": "chat-filenode: rights gaps in role table",
   "description": "Pre-existing, found by ak09 review: (1) manage_channels has mayDelete on the tree root but creating the root needs manage_space; (2) no role gets mayModifyContent on the root; (3) mayShare meaning undefined since non-members SHOULD NOT get access whatever the ACL says; (4) under filenode -17 an onExists overwrite needs mayDelete, so a send member cannot overwrite even their own uploads.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "task",
+  "assignee": "agent",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T21:54:15.221073163Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T21:54:15.221073163Z"
+  "updated_at": "2026-10-20T21:59:11.628325587Z",
+  "started_at": "2026-10-20T21:58:43.055274249Z",
+  "closed_at": "2026-10-20T21:59:11.628325587Z",
+  "close_reason": "Root delete needs manage_space; inapplicable flags false; no mayShare (shareWith rejected on Space trees); no per-uploader rights documented."
 }
