@@ -166,7 +166,7 @@ For a new deployment: WebRTC with an SFU, a TURN server on port 443 (to
 traverse restrictive firewalls), and mediasoup or LiveKit as the SFU
 implementation. Generate `joinUri` as a stable room URL with the VTCCall ULID
 as the room identifier. This combination handles 2-to-50 participant calls
-without MCU complexity, gives you E2EE options via Insertable Streams, and
+without MCU complexity, gives you E2EE options via WebRTC Encoded Transform, and
 maps naturally to the browser and mobile WebRTC APIs.
 
 For enterprise deployments requiring PSTN interoperability: deploy a SIP trunk
@@ -404,8 +404,8 @@ out of scope for the spec.
 ### What you must decide
 
 - **Whether to support E2EE at all** in the first version.
-- **Which E2EE mechanism** to use at the media layer: WebRTC Insertable
-  Streams / Encoded Transform, SFrame (RFC 9605), or a proprietary approach.
+- **Which E2EE mechanism** to use at the media layer: WebRTC Encoded
+  Transform, SFrame (RFC 9605), or a proprietary approach.
 - **Key agreement protocol**: how participants derive a shared key — Static
   Diffie-Hellman, MLS (RFC 9420), Signal Double Ratchet, or a simpler
   symmetric key distribution by the server.
@@ -475,9 +475,9 @@ only be met by server-side media access, and SHOULD return a descriptive
 | System | E2EE mechanism | Key agreement |
 |---|---|---|
 | Signal (desktop calling) | DTLS with authenticated fingerprints | X3DH + Double Ratchet (for fingerprint authentication) |
-| Jitsi Meet (E2EE mode) | WebRTC Insertable Streams | OlmKit / custom ECDH |
+| Jitsi Meet (E2EE mode) | WebRTC Encoded Transform | OlmKit / custom ECDH |
 | Zoom E2EE | Proprietary | Zoom-managed key tree |
-| Element Calls (Matrix) | WebRTC Insertable Streams | MLS via Matrix |
+| Element Calls (Matrix) | WebRTC Encoded Transform | MLS via Matrix |
 
 ### Recommended starting point
 
@@ -486,7 +486,7 @@ requirement. Set `e2eeEnabled: false` as the default and leave the field
 read-only for participants. This avoids the complexity of key management and
 the recording/gateway constraints.
 
-When adding E2EE: use WebRTC Insertable Streams on the media side and MLS for
+When adding E2EE: use WebRTC Encoded Transform on the media side and MLS for
 key agreement. Store the full hex-encoded SHA-256 of the public key in
 `e2eeFingerprint`; display it as 4-6 words from a standardized word list
 for voice verification. Implement TOFU fingerprint verification in the client.

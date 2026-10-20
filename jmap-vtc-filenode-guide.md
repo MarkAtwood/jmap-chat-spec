@@ -251,7 +251,7 @@ auto-generated artifacts (meeting notes, transcripts) after the session.
 - How to surface recording and shared-file links to participants who were not in the
   call but have access to the Space (e.g., a Space member who missed the meeting).
 - Content addressing: whether to use JMAP CID (content-addressable identifiers, when
-  available from `draft-ietf-jmap-blob`) for stable recording references.
+  the server supports `draft-atwood-jmap-cid-00`) for stable recording references.
 
 ### Considerations
 
@@ -277,7 +277,7 @@ auto-generated artifacts (meeting notes, transcripts) after the session.
   participants only), unless the call was marked private or confidential at creation
   time. For Space-bound calls, the default broadens from the participant-only model
   in §2 to all Space members, since the call occurred in a shared context.
-- *JMAP CID*: when `draft-ietf-jmap-blob` content-addressable identifiers are available,
+- *JMAP CID*: when `draft-atwood-jmap-cid-00` content-addressable identifiers are available,
   use CIDs for recording references in addition to FileNode ids. A CID is stable
   across blob moves and storage migration; a FileNode id is stable for the lifetime
   of the FileNode object. Both are useful; CIDs add robustness for long-lived
@@ -339,4 +339,4 @@ When both VTC and JMAP Chat are present:
 | Chat message attachment with `filenodeId` | `draft-atwood-jmap-chat-filenode-00` |
 | Space role to FileNode permission mapping | `draft-atwood-jmap-chat-filenode-00` {#permissions} |
 | VTC capability overview and call lifecycle | `draft-atwood-jmap-vtc-00` §3–§6 |
-| JMAP blob content-addressable identifiers | `draft-ietf-jmap-blob` |
+| JMAP blob content-addressable identifiers | `draft-atwood-jmap-cid-00` |

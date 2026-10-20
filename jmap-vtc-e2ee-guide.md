@@ -87,8 +87,8 @@ encrypted payloads (they operate on RTP header extensions, not frame content).
 
 SFrame encrypts individual media frames with a symmetric key and a frame
 counter. It is transport-agnostic: it works over WebRTC, raw UDP, or
-any packetization scheme. SFrame provides a cleaner layering than Insertable
-Streams because the encryption is defined independently of the WebRTC API.
+any packetization scheme. SFrame provides a cleaner layering than WebRTC
+Encoded Transform because the encryption is defined independently of the WebRTC API.
 
 **Practical status.** SFrame is standards-track (RFC 9605, published 2024) but
 library support is still maturing. The reference implementations are:
@@ -100,10 +100,10 @@ library support is still maturing. The reference implementations are:
 SFrame does not define key management. It takes a symmetric key and a key ID
 as input. You need MLS or another key agreement protocol underneath.
 
-**When to prefer SFrame over raw Insertable Streams.** If you need E2EE
+**When to prefer SFrame over raw WebRTC Encoded Transform.** If you need E2EE
 across heterogeneous transports (e.g., WebRTC for browsers and a native RTP
 path for mobile), SFrame gives you one encryption format for both. If you are
-WebRTC-only, Insertable Streams with a custom encryption function is simpler
+WebRTC-only, WebRTC Encoded Transform with a custom encryption function is simpler
 to deploy today.
 
 ### What does not work for E2EE
@@ -258,7 +258,7 @@ between the endpoint and the gateway — the same hop-by-hop limitation as SIP.
 
 | Scenario | E2EE possible? | Action |
 |---|---|---|
-| All participants are WebRTC | Yes | Full E2EE via Insertable Streams + MLS |
+| All participants are WebRTC | Yes | Full E2EE via WebRTC Encoded Transform + MLS |
 | All participants are native app | Yes | Full E2EE via SFrame + MLS |
 | Mix of WebRTC and native | Yes | SFrame for interop, or per-transport encryption with shared MLS key |
 | Any PSTN participant | Only up to the gateway | Gateway joins as a disclosed key-holding participant, or reject |
@@ -557,7 +557,7 @@ If you do implement it, consider a phased rollout:
 ### Phase 1: 1:1 ring calls only
 
 - Ephemeral X25519 key agreement (no MLS needed)
-- Insertable Streams with AES-GCM encryption
+- WebRTC Encoded Transform with AES-GCM encryption
 - SHA-256 fingerprints with TOFU
 - `e2eeEnabled: true` disables recording and gateway dial-in/out (key-holding
   participants come in Phase 4)
@@ -594,8 +594,8 @@ implements.
 When both `urn:ietf:params:jmap:vtc` and `urn:ietf:params:jmap:chat` are
 deployed, there are two independent E2EE domains:
 
-1. **Media E2EE** (this guide): encrypted audio/video frames via Insertable
-   Streams or SFrame, keyed by MLS or ephemeral DH. Controlled by
+1. **Media E2EE** (this guide): encrypted audio/video frames via WebRTC
+   Encoded Transform or SFrame, keyed by MLS or ephemeral DH. Controlled by
    `VTCCall.e2eeEnabled`.
 
 2. **Chat E2EE** ({{JMAP-CHAT}} §E2EE): encrypted message bodies, keyed by

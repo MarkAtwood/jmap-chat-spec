@@ -239,7 +239,7 @@ signal this to clients.
 
 Jitsi Meet's SIP gateway (Jigasi) creates a conference participant for each SIP
 leg when the INVITE is answered. It stores the SIP call ID and negotiated codec
-in the participant's metadata. DTMF is relayed as INFO messages or RFC 2833
+in the participant's metadata. DTMF is relayed as INFO messages or RFC 4733
 RTP events; hold/resume maps to re-INVITE SDP changes.
 
 Cisco Webex represents each SIP participant with a SIP URI identity and shows
@@ -439,7 +439,7 @@ low-frequency control operations (send a DTMF, initiate a transfer). It is not
 a high-throughput channel. Do not attempt to stream audio metadata or frequent
 codec-renegotiation events through this mechanism.
 
-DTMF timing matters. RFC 2833 / RFC 4733 carries DTMF as RTP events with
+DTMF timing matters. RFC 4733 carries DTMF as RTP events with
 duration. If your application layer needs duration (e.g., for IVR
 disambiguation between short and long presses), include `duration` in the
 signal `data`. If it does not, omit it to keep the signal compact.
@@ -753,7 +753,7 @@ abuse.
    `"h323"`.
 
 3. **PSTN caller ID verification.** PSTN caller ID (ANI/CLID) is spoofable.
-   STIR/SHAKEN (RFC 8224 / RFC 8226) provides a signed attestation of calling
+   STIR/SHAKEN (RFC 8224 / RFC 8226 / RFC 8588) provides a signed attestation of calling
    number authenticity, but carrier support is not universal (it is mandated
    in the US and Canada but not globally). Options:
    - Accept caller ID as display-only, with no trust implication.
@@ -835,7 +835,7 @@ Zoom requires a meeting PIN for PSTN dial-in and displays "Phone User X" for
 unverified callers. Dial-out is restricted to specific plan tiers and geographies.
 
 Enterprise SIP deployments typically use IP allow-listing plus SIP Digest
-authentication. Carrier SIP trunks use mutual TLS and RFC 8224 STIR/SHAKEN
+authentication. Carrier SIP trunks use mutual TLS and RFC 8224 / RFC 8588 STIR/SHAKEN
 where available.
 
 ### Recommended starting point

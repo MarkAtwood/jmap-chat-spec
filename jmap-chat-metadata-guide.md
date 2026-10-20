@@ -4,7 +4,7 @@ For server and client implementers considering `draft-ietf-jmap-metadata`
 integration with `draft-atwood-jmap-chat-00`.
 Covers namespace design, suggested keys, and deployment considerations.
 
-Read `draft-ietf-jmap-metadata-03` and `draft-atwood-jmap-chat-00` first. This
+Read `draft-ietf-jmap-metadata-04` and `draft-atwood-jmap-chat-00` first. This
 guide does not re-state normative requirements; it covers what the specs leave
 to implementations and offers patterns and starting points.
 
