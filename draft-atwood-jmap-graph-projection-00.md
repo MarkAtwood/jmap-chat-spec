@@ -160,6 +160,7 @@ Each source object is represented by exactly one GraphNode in the projected Grap
 - `objectUri`: the source object's object URI ({{object-uri-property}}).
 - `annotations`: `{}`.
 - `blobId` and `mediaType`: `null`, even when the source object refers to a blob.
+- `uri`: `null`; the source object is named by `objectUri` ({{object-uri-property}}), not by `uri`.
 - `created` and `updated`: the time the node was added to the projection.
 - `createdBy` and `updatedBy`: `null`.
 

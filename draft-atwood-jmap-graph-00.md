@@ -19,10 +19,18 @@ author:
 normative:
   RFC2119:
   RFC8174:
+  RFC3986:
   RFC8620:
   RFC9670:
 
 informative:
+  JMAP-OBJECT-URI:
+    title: "JMAP Object URIs"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-object-uri-00
+    date: 2026
   RFC6901:
   WAVE-FED:
     title: "Google Wave Federation Protocol Over XMPP"
@@ -71,7 +79,7 @@ The following are out of scope for this revision. Each may be addressed by a sep
 - **Low-latency transport.** Changes are announced by standard JMAP push ({{RFC8620}} Section 7). A WebSocket companion is left to a future document.
 - **Federation** of Graphs between servers.
 - **End-to-end encryption.** In this revision, all graph data is visible to the server.
-- **Edges between Graphs.**
+- **Edges between Graphs.** A node can instead stand for a resource outside its Graph, by URI ({{links}}), which links Graphs, and anything else on the web, without cross-graph edges.
 - **Application profiles** that assign meaning to edge types and annotation keys.
 
 # Conventions and Definitions
@@ -183,6 +191,9 @@ A GraphNode is a vertex in a Graph. A GraphNode object has the following propert
 `mediaType` (String|null, default: `null`):
 : The media type of the content identified by `blobId`. When `blobId` is not `null` and `mediaType` is `null`, the content is treated as `application/octet-stream`.
 
+`uri` (String|null, default: `null`):
+: A URI ({{RFC3986}}) of a resource outside the Graph that this node stands for, or `null`. See {{links}}. The server rejects a value that is not a URI with an `invalidProperties` SetError naming `uri`, and does not otherwise interpret it.
+
 `created` (UTCDate, server-set):
 : When the node was created.
 
@@ -222,7 +233,7 @@ A GraphEdge is a directed link from one node to another in the same Graph. A Gra
 
 Any number of edges, of the same or different types, may connect the same pair of nodes in either direction. An edge's `fromId` and `toId` may be changed by an update; this is how an application moves a node to a new parent in a tree-shaped convention, for example.
 
-# Methods
+# Methods {#methods}
 
 All methods in this section are the standard methods of {{RFC8620}} Section 5, with the additions and restrictions given here. Each data type has its own state string and is a valid type name in a StateChange object ({{RFC8620}} Section 7.1).
 
@@ -323,6 +334,18 @@ The following sort properties are supported: `created`, `updated`.
 This document defines no traversal method. A client walks the graph one hop at a time: a GraphEdge/query with `fromId` (or `toId`) set to every node in the current frontier returns all edges leaving (or entering) that frontier, and a GraphEdge/get on the result yields the next frontier. Because `fromId` and `toId` accept an array, each hop costs one query regardless of how many nodes the frontier holds.
 
 Within a single request, a GraphEdge/get can take its `ids` from the preceding GraphEdge/query by result reference ({{RFC8620}} Section 3.7). The next hop's filter cannot be built by result reference, because a result reference replaces a whole top-level argument and `fromId` sits inside `filter`; each further hop is therefore a further request.
+
+# Links Outside the Graph {#links}
+
+An edge connects two nodes of the same Graph. To link to something outside the Graph, an application creates a node whose `uri` names it and draws ordinary edges to that node. The node stands for the outside resource within the Graph: several edges can point to it, and it can carry its own annotations and content.
+
+Any URI may be used. For example, an `https` URI can name a web page or a resource on another server, and a JMAP object URI ({{JMAP-OBJECT-URI}}) such as `jmap:graphnode:A2:N9` can name a node in another Graph, or any other JMAP object, on the same server.
+
+Links follow the model of the web, not of the Graph's own edges:
+
+- **No integrity.** The server neither checks that the target exists when `uri` is written, nor updates or removes the node when the target goes away. A link to a missing target is normal; resolving it fails, like a web page that returns 404.
+- **No dereferencing by the server.** The server never fetches, resolves, or traverses `uri`. The structural filters ({{methods}}) and traversal ({{traversal}}) stop at the node that holds it. A client that follows a link does so itself, with the user's own credentials, and how it resolves a URI depends on the URI's scheme.
+- **The link belongs to its Graph.** A link is data in the Graph that holds it. The owner of the target is not asked and is not notified.
 
 # Examples
 
@@ -427,11 +450,17 @@ This method call (one entry of a request's `methodCalls`) changes a single annot
 
 Access is granted per Graph through `shareWith` ({{RFC9670}}). Servers SHOULD evaluate the requesting user's rights on the Graph for every method call that reads or changes the Graph or its contents. A Graph the user may not read SHOULD be indistinguishable from one that does not exist: `notFound` on `/get` and on `/set` update or destroy, absence from `/query` results, and the `invalidProperties` errors described above rather than `forbidden`.
 
-There is no finer-grained access control. An application that needs some nodes visible to fewer users than others places them in a separate Graph. Edges between Graphs are excluded from this revision partly so that an edge cannot disclose the existence of a node its reader may not see.
+There is no finer-grained access control. An application that needs some nodes visible to fewer users than others places them in a separate Graph. Edges between Graphs are excluded from this revision partly so that an edge cannot disclose the existence of a node its reader may not see. Links by URI ({{links}}) do not disclose it either: the server does not check the target, so a link reveals only the URI its author wrote, and a reader who follows it does so with the reader's own rights.
 
 ## Untrusted Data
 
 Annotation values, edge types, node content, and `mediaType` are supplied by any user with `mayWrite` and are untrusted. Clients SHOULD validate any value they interpret, and SHOULD treat `mediaType` as a claim rather than a guarantee when rendering content.
+
+## Links to Outside Resources
+
+A node's `uri` is supplied by a user with `mayWrite` and is untrusted. Because the server never dereferences it, it cannot be used to make the server send requests to arbitrary hosts. Clients SHOULD treat a URI as untrusted before following it, SHOULD NOT follow one without the user's intent, and SHOULD apply the same checks as for any untrusted link, including for URI schemes that run code or open other applications.
+
+A URI can itself carry information: a JMAP object URI, for example, contains an account id and an object id ({{JMAP-OBJECT-URI}}). Writing a URI into a Graph discloses it to every user who can read the Graph.
 
 ## Attribution
 
@@ -488,6 +517,16 @@ Can use for state change: Yes
 Capability: `urn:ietf:params:jmap:graph`
 Specification document: This document.
 
+## JMAP Object URI Type Registrations
+
+IANA is requested to register the following entries in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}):
+
+| Type Name | Data Type | Reference |
+|---|---|---|
+| graph | Graph | This document |
+| graphnode | GraphNode | This document |
+| graphedge | GraphEdge | This document |
+
 --- back
 
 # Design Influences and Non-Normative Notes
@@ -507,6 +546,12 @@ The following were left to applications or future documents rather than prescrib
 - **Ordering.** Applications store sort keys as annotations; fractional indexing (string keys chosen to sort between their neighbors) suits concurrent insertion.
 - **Search and traversal queries** beyond the structural filters in this document.
 - **Content formats** for node blobs, and fine-grained concurrent editing of them.
+
+## Why Links Are Nodes
+
+A link to something outside the Graph could instead be an edge whose target is a URI. Making it a node keeps the one integrity rule intact: every edge connects two nodes of its Graph, so destroying a node, the structural filters, and traversal all work unchanged. It also gives the outside resource a single place in the Graph that many edges can share and that can be annotated.
+
+Links deliberately give up integrity. Cross-graph and cross-server edges are hard because they require agreement between owners on who owns an edge, what happens when its target is destroyed, and what an edge reveals. A link requires none of this: like a hyperlink, it may point to something that no longer exists, and finding that out is the reader's job.
 
 # Acknowledgements
 
