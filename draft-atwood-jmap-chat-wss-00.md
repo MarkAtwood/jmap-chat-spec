@@ -3,6 +3,7 @@ title: JMAP Chat over WebSocket
 abbrev: JMAP Chat WebSocket
 docname: draft-atwood-jmap-chat-wss-00
 category: std
+updates: 8887
 stream: IETF
 
 ipr: trust200902
@@ -94,9 +95,16 @@ These do not correspond to persistent state changes and carry no state token. A 
 
 ## Relationship to RFC 8887
 
-This document is strictly additive to {{RFC8887}}. Implementations MUST support {{RFC8887}} as a prerequisite. All RFC 8887 requirements for authentication, handshake, message framing, out-of-order request handling, push notification enabling and disabling, and error handling apply unchanged.
+Implementations MUST support {{RFC8887}} as a prerequisite. Except as updated in {{rfc8887-update}}, all RFC 8887 requirements for authentication, handshake, message framing, out-of-order request handling, push notification enabling and disabling, and error handling apply unchanged.
 
-{{RFC8887}} Section 4.2 states that "other message types MUST NOT be transmitted over this connection," enumerating exactly the message types it defines. This document defines additional message types ({{chat-stream-enable}}, {{chat-stream-disable}}, {{chat-typing-event}}, {{chat-presence-event}}) that are transmitted over the same WebSocket connection. Advertising the `urn:ietf:params:jmap:chat:websocket` capability in the JMAP Session object ({{RFC8620}} Section 2) constitutes the negotiation event that permits these additional message types. A client that has read the Session object and observed this capability has pre-agreed to their use; the RFC 8887 Section 4.2 restriction applies only within the scope of the base RFC 8887 protocol and does not constrain extensions that are explicitly negotiated via the Session capabilities mechanism.
+## Update to RFC 8887 {#rfc8887-update}
+
+{{RFC8887}} Section 4.2 states that "other message types MUST NOT be transmitted over this connection," and Section 4.3 limits client-to-server messages to Request, WebSocketPushEnable, and WebSocketPushDisable objects and server-to-client messages to Response, Problem Details, and StateChange objects. This document updates {{RFC8887}} to relax both restrictions as follows:
+
+- A JMAP capability advertised in the Session object ({{RFC8620}} Section 2) MAY define additional WebSocket message types, each identified by its `@type` value.
+- A server MUST NOT send an additional server-to-client message type unless the client has enabled it using a control message defined by the same capability.
+
+Under this rule, the `urn:ietf:params:jmap:chat:websocket` capability defines the message types in {{chat-stream-enable}}, {{chat-stream-disable}}, {{chat-typing-event}}, and {{chat-presence-event}}. Companion documents such as {{JMAP-VTC-WSS}} and {{JMAP-SCENE-WSS}} define further message types under the same rule.
 
 ## Relationship to JMAP Chat
 

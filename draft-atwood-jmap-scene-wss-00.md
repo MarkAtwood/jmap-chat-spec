@@ -3,6 +3,7 @@ title: JMAP Scene over WebSocket
 abbrev: JMAP Scene WebSocket
 docname: draft-atwood-jmap-scene-wss-00
 category: std
+updates: 8887
 stream: IETF
 
 ipr: trust200902
@@ -102,6 +103,28 @@ events by including `"scene"` in the `dataTypes` array of a
 Scene without JMAP Chat.  This document provides a standalone
 subscription mechanism for that case and a finer-grained,
 region-scoped alternative for deployments that have both.
+
+## Update to RFC 8887 {#rfc8887-update}
+
+{{RFC8887}} Section 4.2 states that "other message types MUST NOT
+be transmitted over this connection," and Section 4.3 limits the
+message types each side may send.  This document updates
+{{RFC8887}} to relax both restrictions as follows:
+
+- A JMAP capability advertised in the Session object ({{RFC8620}}
+  Section 2) MAY define additional WebSocket message types, each
+  identified by its `@type` value.
+
+- A server MUST NOT send an additional server-to-client message
+  type unless the client has enabled it using a control message
+  defined by the same capability.
+
+This is the same rule stated in {{JMAP-CHAT-WSS}}; it is restated
+here so that this document stands alone.  Under it, the
+`urn:ietf:params:jmap:scene:websocket` capability defines
+`SceneStreamEnable`, `SceneStreamDisable`, and the event types in
+{{event-types}}.  Except as updated here, all {{RFC8887}}
+requirements apply unchanged.
 
 # Conventions Used in This Document
 
