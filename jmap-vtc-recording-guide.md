@@ -56,14 +56,14 @@ section 2).
 ### Access control
 
 All current and past participants of the associated VTCCall may retrieve
-VTCRecording objects via `VTCRecording/get`. The server MUST return `notFound`
+VTCRecording objects via `VTCRecording/get`. The server SHOULD return `notFound`
 for recording ids belonging to calls the authenticated user has no access to.
 When the call carries a `chatId`, `spaceId`, or `channelId` binding,
 VTCRecording visibility is inherited from the parent VTCCall
 (see spec, Access Control).
 
 Only participants with `role: "moderator"` on the associated VTCCall may
-create, update, or destroy VTCRecording objects. Non-moderators MUST receive
+create, update, or destroy VTCRecording objects. Non-moderators SHOULD receive
 `forbidden`.
 
 ---
@@ -179,12 +179,14 @@ On success, the server:
 
 ### Error conditions
 
-The server MUST return an error for the create in each of these cases:
+The server returns an error for the create in each of these cases. The spec makes
+the `supportsRecording` and call-state checks MUST and the moderator and E2EE
+checks SHOULD:
 
 | Condition | Error type | Why |
 |---|---|---|
 | Caller is not a moderator | `forbidden` | Only moderators may start recordings. |
-| `e2eeEnabled: true` on the call and the recording would need server-side media access | `forbidden` | The server must not access plaintext media in an E2EE call. A disclosed key-holding recorder that joins as a participant is allowed (see below). |
+| `e2eeEnabled: true` on the call and the recording would need server-side media access | `forbidden` | The server should not access plaintext media in an E2EE call. A disclosed key-holding recorder that joins as a participant is allowed (see below). |
 | `supportsRecording` is `false` | `forbidden` | The account does not support recording. |
 | Call is not in state `"active"` | `invalidProperties` (`callId`) | You cannot record a call that has not started or has already ended. |
 | Storage quota exceeded | `overQuota` | Deployment-defined; see section 9. |
@@ -319,9 +321,9 @@ This works from either `"recording"` or `"paused"` state. The server:
 
 ### Auto-stop on call end
 
-When a VTCCall transitions to `"ended"`, the server MUST stop all active
-recordings for that call. Any VTCRecording in `"recording"` or `"paused"`
-state is transitioned to `"stopped"`, with `stoppedAt` set and
+When a VTCCall transitions to `"ended"`, the server MUST stop every recording
+for that call (`draft-atwood-jmap-vtc-00`, "Ending a Call"). Any VTCRecording
+in `"recording"` or `"paused"` state is transitioned to `"stopped"`, with `stoppedAt` set and
 `VTCRecordingStateEvent` delivered. The server then proceeds with the normal
 processing pipeline.
 
@@ -428,21 +430,21 @@ A moderator sends `VTCRecording/set` with a `destroy`:
    to the server's standard blob lifecycle. The spec does not guarantee
    immediate deletion of the blob; the server MAY defer blob cleanup to a
    garbage-collection cycle.
-3. If the recording was in `"recording"` or `"paused"` state, the server SHOULD
-   stop the active capture before removing the metadata. Deliver a
-   `VTCRecordingStateEvent` with `state: "stopped"` before the destroy
-   completes.
+3. If the recording was in `"recording"` or `"paused"` state, the server first
+   stops the active capture and delivers a `VTCRecordingStateEvent` with
+   `state: "stopped"`, then removes the metadata (`draft-atwood-jmap-vtc-00`,
+   "Destroying a Recording").
 
 ### Permission requirements
 
-The server MUST return `forbidden` when the caller is not a moderator on the
+The server SHOULD return `forbidden` when the caller is not a moderator on the
 associated call. Non-moderators cannot destroy recordings.
 
 ### Blob lifecycle after destroy
 
 The blob referenced by `blobId` may still be referenced by other objects (for
 example, a FileNode object linking to the same blob). The server MUST NOT delete
-the blob if other references exist. When no references remain, the server
+the blob if other references exist (RFC 8620 blob lifecycle). When no references remain, the server
 applies its standard blob retention policy.
 
 For deployments using FileNode integration (see section 9), destroying the
@@ -456,13 +458,18 @@ moderator must destroy both the VTCRecording and the associated FileNode.
 
 ### The event
 
-Every recording state change MUST produce a `VTCRecordingStateEvent` delivered
-to all participants in the call via their WebSocket connections. This is a
-mandatory consent signal.
+The server SHOULD deliver a `VTCRecordingStateEvent` to all participants in the
+call on every recording state change (`draft-atwood-jmap-vtc-00`,
+"VTCRecording/set"). This is the consent signal. It reaches only
+clients with an active VTC WebSocket subscription, but for a call the
+subscription covers it is delivered even if the subscription's `eventTypes`
+omits it (`draft-atwood-jmap-vtc-wss-00`). When delivered over the WebSocket,
+the event carries the `accountId` of the account that contains the VTCCall.
 
 ```json
 {
   "@type": "VTCRecordingStateEvent",
+  "accountId": "moderator-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
@@ -485,11 +492,11 @@ and re-fetch via `VTCRecording/get`.
 
 ### Delivery timing
 
-The server MUST deliver the `VTCRecordingStateEvent` before returning the
-`VTCRecording/set` response. This ensures that all participants are notified
-of the recording state change at least as early as the moderator receives
-confirmation that the operation succeeded. Do not defer event delivery to a
-background queue.
+The spec does not order the `VTCRecordingStateEvent` relative to the
+`VTCRecording/set` response, and WebSocket event delivery is best-effort order
+(`draft-atwood-jmap-vtc-wss-00`, "Event Ordering"). Dispatching the event promptly, rather than
+from a deferred background queue, keeps the consent signal close in time to the
+moderator's confirmation.
 
 ### Client UI on receiving a VTCRecordingStateEvent
 
@@ -550,8 +557,8 @@ SHOULD implement one of:
    includes a mandatory consent acknowledgment. Participants who do not
    acknowledge cannot join.
 
-The spec's position: the signaling mechanism (the event) MUST be present
-regardless of jurisdiction. What the deployment does with the signal is
+The spec's position: the server SHOULD send the signal (the event), and the
+signal does not depend on jurisdiction. What the deployment does with the signal is
 deployment-defined.
 
 ---
@@ -669,11 +676,11 @@ produces roughly 500 MB to 1 GB. Deployments MUST plan for this:
   or file size. Stop the recording automatically when the limit is reached,
   transitioning to `"stopped"` and delivering the appropriate event.
 - **Retention policy.** Define how long `"available"` recordings persist. Purge
-  recording blobs after a configurable period (30, 60, 90 days). When purging,
-  set `blobId` to `null` on the VTCRecording and transition to `"failed"` (or
-  a deployment-defined `"expired"` extension state). Do not destroy the
-  VTCRecording metadata itself if the VTCCall record still exists; the object
-  is a historical record of the recording event.
+  recordings after a configurable period (30, 60, 90 days). The recording
+  state set is closed and `"available"` is terminal, so an expired recording
+  cannot move to another state; purge it by destroying the VTCRecording. The
+  blob then follows the server's standard blob lifecycle (RFC 8620). If
+  you need a historical record of the recording event, keep it in your audit log.
 
 ---
 
@@ -700,8 +707,8 @@ When a recording fails mid-capture:
    all participants so the recording indicator is removed.
 3. The server attempts to salvage whatever media was captured. If a partial
    file is recoverable, it proceeds through `"processing"` to `"available"`
-   with a partial recording. If nothing is recoverable, it transitions to
-   `"failed"`.
+   with a partial recording. If nothing is recoverable, it transitions
+   through `"processing"` to `"failed"`.
 
 ### Processing failures
 
@@ -769,21 +776,21 @@ on StateChange for VTCRecording:
 ### Handling late-joining participants
 
 A participant who joins a call where recording is already active will not
-receive the original `VTCRecordingStateEvent`. The client MUST query
-`VTCRecording/query` with `callId` and `state: "recording"` (or
-`state: "paused"`) on join to discover active recordings and display the
-appropriate indicator.
+receive the original `VTCRecordingStateEvent`. On joining, a client SHOULD
+check `VTCRecording/query` (`draft-atwood-jmap-vtc-00`, "VTCRecording/set").
+Query with `callId` and `state: "recording"` (or `state: "paused"`) to discover
+active recordings and display the appropriate indicator.
 
 ```json
 [["VTCRecording/query", {
-  "accountId": "participant-account",
+  "accountId": "moderator-account",
   "filter": {
     "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "state": "recording"
   }
 }, "0"],
 ["VTCRecording/get", {
-  "accountId": "participant-account",
+  "accountId": "moderator-account",
   "#ids": {
     "resultOf": "0",
     "name": "VTCRecording/query",
@@ -806,8 +813,9 @@ follows:
 
 1. Configure the server to automatically create a VTCRecording when a VTCCall
    transitions to `"active"`.
-2. The auto-created recording uses a system userId as `initiatedBy` (or the
-   call initiator's userId, depending on deployment policy).
+2. `initiatedBy` is server-set to the userId of the participant who started
+   the recording. For a server-started recording, which userId the server
+   records (for example, the call initiator's) is deployment-defined.
 3. The `VTCRecordingStateEvent` is delivered normally, so all participants are
    notified.
 4. The join flow includes a mandatory consent acknowledgment. The client
@@ -829,10 +837,10 @@ Implement retention as a server-side background job that:
 
 1. Queries for VTCRecording objects with `state: "available"` and `stoppedAt`
    older than the retention period.
-2. Deletes the blob.
-3. Sets `blobId: null` and transitions the VTCRecording state to `"failed"`
-   (or a deployment-defined `"expired"` extension state).
-4. Delivers a `StateChange` notification.
+2. Destroys each such VTCRecording (`"available"` is terminal, so there is
+   no expired state to move it to). The blob follows the server's standard
+   blob lifecycle (RFC 8620).
+3. Delivers a `StateChange` notification.
 
 ### Audit trails
 
@@ -879,14 +887,14 @@ All filter properties are combined with logical AND. Default sort:
 
 ```json
 [["VTCRecording/query", {
-  "accountId": "user-account",
+  "accountId": "moderator-account",
   "filter": {
     "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "state": "available"
   }
 }, "0"],
 ["VTCRecording/get", {
-  "accountId": "user-account",
+  "accountId": "moderator-account",
   "#ids": {
     "resultOf": "0",
     "name": "VTCRecording/query",
@@ -944,6 +952,7 @@ Both Alice and Bob receive via WebSocket:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
+  "accountId": "alice-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
@@ -973,6 +982,7 @@ Both receive:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
+  "accountId": "alice-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "paused",
@@ -1002,6 +1012,7 @@ Both receive:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
+  "accountId": "alice-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
@@ -1031,6 +1042,7 @@ Both receive:
 ```json
 {
   "@type": "VTCRecordingStateEvent",
+  "accountId": "alice-account",
   "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "stopped",

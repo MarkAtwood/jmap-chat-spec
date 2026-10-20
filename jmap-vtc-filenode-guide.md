@@ -69,13 +69,16 @@ organized as FileNode objects rather than transient blob attachments.
 - *FileNode-backed sharing* gives the file a persistent identity, a visible name, a
   parent folder, and query-ability. The presenter creates a FileNode in a call-scoped
   folder; participants receive the FileNode id (via a Chat message or a VTC-specific
-  signal); all call participants can fetch it by id. After the call, the file remains
+  signal); any Space member with `"view"` can fetch it by id. After the call, the file remains
   accessible under the same FileNode id. Better for slides, reference documents, and
   any content participants may want later.
-- *Access control*: the simplest model is to inherit access from the call's bound
-  Space or Chat. Current Space members who were call participants can access shared
-  files; non-participants cannot. Moderators should be able to remove a shared file
-  mid-call.
+- *Access control*: a Space file tree is governed entirely by Space membership and
+  role permissions (`draft-atwood-jmap-chat-filenode-00` {#permissions}). Every
+  current Space member with `"view"` can read files in it, whether or not they were
+  in the call; former members cannot. There is no per-participant restriction inside
+  a Space file tree. If files must be limited to call participants, use transient blob
+  attachments instead. Removing a shared file mid-call needs Delete access
+  (`"manage_channels"`); a call moderator without it cannot.
 - *Call-scoped folder* (a FileNode folder created when the call starts, named by the
   call's id or subject, parented to the Space's file tree) keeps per-call artifacts
   organized and makes post-call browsing natural. Create the folder lazily (when the
@@ -109,14 +112,15 @@ Use **FileNode-backed sharing** when both `urn:ietf:params:jmap:vtc` and
    Space's file tree, named `"Call: <subject or callId>"`, parented to the Space root.
    Store the folder's `id` on the call (deployment-side; not a VTC wire field).
 2. The presenter uploads the file as a FileNode in that folder. Send the FileNode id
-   to other participants via a Chat message attachment (using `filenodeId` per the
-   filenode chat spec) or, when Chat is not present, via a deployment-defined
-   out-of-band channel.
-3. Access control: inherit from the Space's FileNode permission model. Only current
-   and past Space members who have `"member"` role or above can read files in the
-   call folder.
-4. Moderators MAY destroy individual FileNodes during the call to retract a shared
-   file.
+   to other participants via a Chat message attachment using `filenodeId` (per
+   `draft-atwood-jmap-chat-filenode-00`) in the call's channel Chat (`channelId`).
+   `filenodeId` is accepted only in a channel Chat of the same Space, so a call bound
+   only by `chatId` uses a `blobId` attachment instead. When Chat is not present, use
+   a deployment-defined out-of-band channel.
+3. Access control: inherit from the Space's FileNode permission model. Current Space
+   members with `"view"` can read files in the call folder; former members cannot.
+4. Members with `"manage_channels"` can destroy individual FileNodes during the call
+   to retract a shared file.
 5. After the call ends, retain the call folder and its contents indefinitely (or per
    the Space's configured file-retention policy). Do not auto-delete.
 
@@ -129,7 +133,7 @@ via Chat message. Document the fallback behavior in the deployment's user-facing
 
 ### What the spec leaves open
 
-`draft-atwood-jmap-vtc-00` §5.3 (VTCRecording/set) states that when recording state
+`draft-atwood-jmap-vtc-00` §5.3.3 (VTCRecording/set) states that when recording state
 transitions from `"stopped"` through `"processing"` to `"available"`, the server sets
 `blobId` to a JMAP blob reference for the recording file. The spec does not define how
 or where that blob is stored, how it is organized, how access control is enforced beyond
@@ -172,12 +176,15 @@ the VTCRecording's own visibility rules, or what metadata is attached to it beyo
   carry participant list, call start/end timestamps, codec, and track count. Do not
   attempt to carry this in the recording blob's MIME type or filename alone.
 - *Access control*: the simplest correct model for ad-hoc calls (no Space context) is:
-  anyone who was a participant in the call (has a VTCParticipant record with `leftAt`
-  not null or `joinedAt` not null) can read the recording FileNode. Space admins can
-  always read recordings in the Space. Non-participants cannot. Moderators can destroy
-  a recording FileNode (which also removes the blob reference, but does not destroy the
-  VTCRecording metadata object — that remains as an audit record with `blobId` set to
-  null). For Space-bound calls, see §3 for the broader default access model.
+  anyone who was a participant in the call (has a VTCParticipant record with
+  `joinedAt` not null; ring decliners and lobby rejects have only `leftAt` set) can
+  read the recording FileNode. Space admins can always read recordings in the Space.
+  Non-participants cannot. Moderators can destroy a recording FileNode, but that does
+  not change the VTCRecording: `"available"` is terminal and its `blobId` stays set
+  (`draft-atwood-jmap-vtc-00` §4.6), so the blob stays reachable through VTCRecording.
+  To remove the recording, also destroy the VTCRecording; the blob then follows the
+  server's standard blob lifecycle (§5.3.3). For Space-bound calls, see §3 for the
+  broader default access model.
 - *Retention policy*: recordings are large. Auto-deletion after N days (configurable;
   default 90 days is a reasonable starting point for most deployments — the base
   implementer guide suggests 30 days as a more conservative default; FileNode-backed
@@ -215,9 +222,10 @@ Use **FileNode-backed recordings** when both capabilities are present. Concrete 
    `"<YYYY-MM-DD> <subject or callId>.<ext>"` where `ext` is derived from
    VTCRecording.mediaType.
 2. Set VTCRecording.blobId to the same blob that backs the FileNode's content.
-3. Access control: grant read access to all VTCParticipant records associated with the
-   call (resolved at the moment the recording becomes available). Space admins inherit
-   write access (including destroy) via the Space's FileNode permission model.
+3. Access control: in the Space file tree, read access follows Space membership
+   (`"view"`), not call participation (`draft-atwood-jmap-chat-filenode-00`
+   {#permissions}). Members with `"manage_channels"` or `"manage_space"` can destroy
+   it. Keep recordings that must be participant-only out of the Space file tree.
 4. Attach a sidecar `<same-name>.json` FileNode in the same call folder, containing
    a deployment-defined JSON object with: `callId`, `startedAt`, `endedAt`,
    `participants` (list of `{userId, displayName, joinedAt, leftAt}`), `duration`,
@@ -225,9 +233,10 @@ Use **FileNode-backed recordings** when both capabilities are present. Concrete 
 5. Retention: default 90-day auto-delete (the base implementer guide suggests 30 days
    as a more conservative default; FileNode-backed deployments typically use longer
    retention because structured metadata enables better lifecycle management). Implement
-   as a background job that destroys the FileNode (and sidecar) after 90 days from
-   `stoppedAt`, preserving the VTCRecording metadata object with `blobId` set to null
-   as an audit record.
+   as a background job that destroys the FileNode (and sidecar) and the VTCRecording
+   after 90 days from `stoppedAt`. An `"available"` VTCRecording always carries its
+   `blobId`, so it cannot serve as a blob-less audit record; keep any audit record
+   outside VTCRecording.
 
 ---
 
@@ -264,19 +273,22 @@ auto-generated artifacts (meeting notes, transcripts) after the session.
 - *Chat message format*: the JMAP Chat Message body carries the summary as human-readable
   text. FileNode references go in the `attachments` array using `filenodeId` per the
   filenode chat spec, giving clients the information needed to render inline previews
-  and download links. Do not embed raw blob URLs in the message body; use `filenodeId`
-  references so access control is enforced on download.
+  and download links. `filenodeId` works only in a channel Chat of the same Space, so
+  post the summary to the call's `channelId`; for a call bound only by `chatId`, use
+  `blobId` attachments. Do not embed raw blob URLs in the message body.
 - *Transcripts and meeting notes*: if the deployment generates a transcript or
   AI-generated notes, store them as FileNodes in the call's folder (alongside the
   recording and shared files). Reference them in the post-call summary message. This
   keeps all post-call artifacts in one browsable location.
 - *Non-participant access*: Space members who were not in the call can see the call
   folder under the Space's file tree (subject to the Space's FileNode permission model)
-  and can read the post-call summary message in the Chat. Recording FileNodes SHOULD
-  be accessible to all Space members by default (not restricted to original
-  participants only), unless the call was marked private or confidential at creation
-  time. For Space-bound calls, the default broadens from the participant-only model
-  in §2 to all Space members, since the call occurred in a shared context.
+  and can read the post-call summary message in the Chat. Recording FileNodes in the
+  Space file tree are readable by all Space members with `"view"`, not only original
+  participants, because file-tree access follows Space membership. VTCCall has no
+  private or confidential flag; a deployment that needs a restricted recording keeps
+  it out of the Space file tree (blob-only via VTCRecording, whose visibility follows
+  the VTCCall). For Space-bound calls, the default broadens from the participant-only
+  model in §2 to all Space members, since the call occurred in a shared context.
 - *JMAP CID*: when `draft-atwood-jmap-cid-00` content-addressable identifiers are available,
   use CIDs for recording references in addition to FileNode ids. A CID is stable
   across blob moves and storage migration; a FileNode id is stable for the lifetime
@@ -303,7 +315,7 @@ auto-generated artifacts (meeting notes, transcripts) after the session.
 When both VTC and JMAP Chat are present:
 
 1. When VTCCall transitions to `"ended"`, post a system-actor Chat message to the
-   bound Chat. Message body (plain text): `"Call ended — [duration]. [N] participants."`.
+   call's channel Chat (`channelId`). Message body (plain text): `"Call ended — [duration]. [N] participants."`.
    If a recording is available (VTCRecording.state is `"available"` or `"processing"`),
    append: `"Recording: [FileNode name]."`. List files shared during the call (from
    the call's FileNode folder) as `filenodeId` attachments.
@@ -312,10 +324,9 @@ When both VTC and JMAP Chat are present:
    summary is sent without the recording link, with a note that processing is in
    progress).
 3. All files in the call's FileNode folder (recordings, shared files, transcripts, notes)
-   are readable by all Space members with `"member"` role or above by default. If the
-   call had `lobbyEnabled: true` and some participants were rejected, those users do
-   not gain access to call files simply by being Space members — enforce based on
-   actual admission status.
+   are readable by all current Space members with `"view"`. Lobby admission does not
+   change this: a Space member rejected from the lobby can still read the folder. If
+   that is unacceptable, keep those files out of the Space file tree.
 4. When `calendarEventId` is present, update the CalendarEvent's description field
    with a plain-text link to the recording FileNode after processing completes.
 5. Do not send post-call emails outside the JMAP surface; the Chat summary message is
@@ -328,9 +339,9 @@ When both VTC and JMAP Chat are present:
 
 | Topic | See also |
 |---|---|
-| VTC recording lifecycle | `draft-atwood-jmap-vtc-00` §5.3 (VTCRecording/set) |
-| VTCRecording data type fields | `draft-atwood-jmap-vtc-00` §4.5 |
-| Recording consent notification | `draft-atwood-jmap-vtc-00` §7.3 |
+| VTC recording lifecycle | `draft-atwood-jmap-vtc-00` §5.3.3 (VTCRecording/set) |
+| VTCRecording data type fields | `draft-atwood-jmap-vtc-00` §4.6 {#vtc-recording} |
+| Recording consent notification | `draft-atwood-jmap-vtc-00` §10.3 {#recording-consent} |
 | E2EE and recording (key-holding recorders) | `draft-atwood-jmap-vtc-00` End-to-End Encrypted Calls; VTCCall `e2eeEnabled` |
 | JMAP FileNode data model | `draft-ietf-jmap-filenode` |
 | FileNode storage backend choice | `jmap-chat-filenode-guide.md` §1 |

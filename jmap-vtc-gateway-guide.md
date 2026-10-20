@@ -175,14 +175,22 @@ unhold, re-INVITE). It does not define how SIP INVITE maps to participant
 creation, how BYE maps to participant departure, or how SDP offer/answer flows
 through `gatewayData`. Those mappings are your gateway's job.
 
+The spec also defines no dial-in path for creating a VTCParticipant. A
+client `VTCParticipant/set` create leaves `userId` and `joinedAt` to the
+server (both are server-set), and the only gateway create it defines is
+moderator dial-out (§Gateway Dial-Out). How an inbound call becomes a
+participant record is deployment-defined. The SIP, PSTN, and H.323 dial-in
+steps in this guide assume the gateway is server-side infrastructure that
+writes participant records inside the server, not a JMAP client.
+
 ### What you must decide
 
 1. **Participant identity: SIP URI or authenticated user.** When a SIP
    endpoint registers with your gateway, you may or may not be able to
-   associate the SIP identity with a JMAP userId. If you can, set `userId`
-   on the VTCParticipant and the participant appears as an authenticated
-   user. If you cannot (an external SIP peer with no JMAP account), set
-   `userId` to `null` and populate `displayName` from the SIP From header and
+   associate the SIP identity with a JMAP userId. If you can, the server
+   records that `userId` on the VTCParticipant and the participant appears as
+   an authenticated user. If you cannot (an external SIP peer with no JMAP
+   account), the server records `userId` as `null` and you populate `displayName` from the SIP From header and
    `gatewayData` with the SIP URI.
 
 2. **When to create the VTCParticipant.** Options:
@@ -190,9 +198,9 @@ through `gatewayData`. Those mappings are your gateway's job.
      as "connecting" in the UI.
    - On ACK (after the call is established). The participant only appears
      once media is flowing.
-   The spec sets `joinedAt` when the participant joins. Creating the record
-   on INVITE with `joinedAt: null` and setting `joinedAt` on ACK is the most
-   accurate model.
+   `joinedAt` is server-set and records when the participant joins. Having
+   the server create the record on INVITE with `joinedAt: null` and set
+   `joinedAt` on ACK is the most accurate model.
 
 3. **SDP handling.** The spec does not carry SDP; `joinUri` points to the
    media endpoint. For a SIP gateway, your gateway conducts the SDP
@@ -248,7 +256,12 @@ participants from WebRTC users.
 
 ### Recommended starting point
 
-Map the SIP dialog lifecycle to VTCParticipant as follows:
+Map the SIP dialog lifecycle to VTCParticipant as follows. The INVITE and
+ACK rows for inbound calls are server-side, deployment-defined actions (see
+"What the spec leaves open"); for dial-out, the server creates the record
+and sets `joinedAt` itself (§Gateway Dial-Out). `endReason` exists only on
+VTCCall, so a failed or abandoned dial leg is recorded as `leftAt` plus
+`gatewayData.failureReason`:
 
 | SIP event          | VTCParticipant action                            |
 |--------------------|--------------------------------------------------|
@@ -258,9 +271,9 @@ Map the SIP dialog lifecycle to VTCParticipant as follows:
 | re-INVITE (resume) | emit VTCGatewaySignal `signal: "unhold"`         |
 | REFER received     | emit VTCGatewaySignal `signal: "refer"`          |
 | BYE received       | update: set `leftAt` to current time             |
-| CANCEL received    | update: set `leftAt`, `endReason: "cancelled"`   |
-| 603 Decline        | update: set `leftAt`, `endReason: "declined"`    |
-| 486 Busy Here      | update: set `leftAt`, `endReason: "declined"`    |
+| CANCEL received    | update: set `leftAt`, `gatewayData.failureReason: "cancelled"` |
+| 603 Decline        | update: set `leftAt`, `gatewayData.failureReason: "declined"`  |
+| 486 Busy Here      | update: set `leftAt`, `gatewayData.failureReason: "busy"`      |
 
 Populate `gatewayData` on the VTCParticipant with the SIP URI and negotiated
 codec at a minimum:
@@ -295,11 +308,12 @@ verification works, and how to handle DTMF relay are not prescribed.
      recurring meetings).
    - Scheduled calls use a per-meeting PIN valid only during the meeting window.
 
-2. **Dial-in flow.** The typical PSTN dial-in flow is:
+2. **Dial-in flow.** The spec defines no dial-in creation path (see Section
+   2), so this flow is deployment-defined. A typical PSTN dial-in flow is:
    a. Caller dials the advertised `dialInNumbers` address.
    b. IVR prompts for a conference PIN.
    c. Gateway matches the PIN to a VTCCall via `gatewayPin`.
-   d. Gateway creates a VTCParticipant with `joinMethod: "pstn"`, `userId: null`,
+   d. The server, on the gateway's behalf, creates a VTCParticipant with `joinMethod: "pstn"`, `userId: null`,
       `displayName` derived from caller ID (or "Unknown Caller").
    e. Gateway bridges the RTP stream into the conference mix.
    Implement step (c) as a lookup against active VTCCalls by `gatewayPin`.
@@ -308,9 +322,10 @@ verification works, and how to handle DTMF relay are not prescribed.
 3. **Dial-out flow.** A moderator initiates dial-out via `VTCParticipant/set`
    create with `joinMethod: "pstn"` and `gatewayData: {"dialNumber":
    "+14155559876"}`. Your gateway receives this via the VTC server's call to
-   your gateway API, dials the number, and when the call is answered, sets
-   `joinedAt` on the participant. If the call is not answered, sets `leftAt`
-   and records the failure reason in `gatewayData`.
+   your gateway API and dials the number. When the call is answered, the
+   server sets `joinedAt` on the participant. If the call fails or is not
+   answered, the server sets `leftAt` and records the failure reason in
+   `gatewayData` (§Gateway Dial-Out).
 
 4. **Caller ID mapping.** The PSTN caller ID (CLID/ANI) is unreliable and
    spoofable. Your gateway should:
@@ -425,11 +440,11 @@ inbound-only versus bidirectional. Deployments define all of that.
    the handling for each signal in your vocabulary.
 
 4. **Signal delivery to non-gateway participants.** VTCGatewaySignal events are
-   ephemeral WebSocket events. All participants subscribed to VTC events on the
-   call will receive them. If your signal vocabulary contains
-   protocol-sensitive data (SIP URIs, raw DTMF digits), decide whether to
-   suppress delivery to non-moderator participants or to accept that all
-   participants can see gateway activity.
+   ephemeral WebSocket events. By default they are delivered only to
+   participants with `moderator` role; a deployment may explicitly permit
+   broader delivery (JMAP VTC over WebSocket, §Event Authorization). If your signal
+   vocabulary contains protocol-sensitive data (SIP URIs, raw DTMF digits),
+   weigh that before permitting delivery to non-moderator participants.
 
 ### Considerations
 
@@ -731,7 +746,7 @@ immediate requirement.
 The spec notes that gateway participant identities (`displayName`, `gatewayData`)
 are derived from the external protocol's identity mechanisms and are "trivially
 spoofable on their respective networks" (see `Gateway Participant Identity` in
-the spec). It requires that clients visually distinguish gateway participants
+the spec). It says clients can visually distinguish gateway participants
 from authenticated JMAP users. It requires that outbound gateway signals be
 restricted to moderators. It does not define how to authenticate gateway
 connections, how to prevent PSTN caller ID spoofing, or how to prevent billing
@@ -739,15 +754,16 @@ abuse.
 
 ### What you must decide
 
-1. **Visual distinction in client UI.** The spec requires clients to
+1. **Visual distinction in client UI.** The spec says clients can
    distinguish gateway participants from authenticated users. Define a UI
    convention: a phone icon, a "PSTN" badge, a different avatar style. Apply
    it consistently. Do not rely on `displayName` alone; a spoofed caller ID
    can produce a `displayName` identical to a trusted participant.
 
 2. **Gateway connection authentication.** Your gateway server connects to
-   your JMAP server to create and update VTCParticipants and emit
-   VTCGatewaySignals. Authenticate this connection with a service account
+   your JMAP server to create and update gateway VTCParticipants and emit
+   VTCGatewaySignals. The spec defines no interface for this; it is a
+   deployment-defined, server-side channel, not a JMAP client session. Authenticate this connection with a service account
    token or mTLS client certificate. Never allow unauthenticated writes to
    VTCParticipant records claiming a `joinMethod` of `"pstn"`, `"sip"`, or
    `"h323"`.
@@ -789,12 +805,12 @@ abuse.
 7. **Signal injection.** The spec requires that outbound gateway signals sent
    via the `pendingSignal` mechanism be restricted to moderators. Enforce this
    at the JMAP server level: non-moderators attempting to patch `pendingSignal`
-   into `gatewayData` MUST receive `forbidden`. Your gateway must also validate
+   into `gatewayData` SHOULD receive `forbidden`. Your gateway must also validate
    that received outbound signals are well-formed for its protocol before
    executing them. Do not execute an arbitrary SIP URI from a `refer` signal
    without validating that the URI is within an acceptable domain.
 
-8. **Gateways in E2EE calls.** When `e2eeEnabled` is `true`, the server MUST
+8. **Gateways in E2EE calls.** When `e2eeEnabled` is `true`, the server SHOULD
    NOT access plaintext media itself (`draft-atwood-jmap-vtc-00` End-to-End
    Encrypted Calls). A gateway can bridge an E2EE call only as a disclosed
    key-holding participant: it has a VTCParticipant record for as long as it

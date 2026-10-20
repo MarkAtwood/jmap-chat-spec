@@ -50,12 +50,12 @@ protocol surface on the VTC side.
 
 The sections below walk through each delegated feature: how to create and
 manage the Chat binding, how to use it for text chat, how captions and
-reactions attach to the Chat's WebSocket stream, how lobby communication works,
+reactions are carried as Messages in the bound Chat, how lobby communication works,
 and how to keep presence state consistent between the VTC and Chat layers.
 
 ---
 
-## 2. Auto-creating call Chats
+## 2. Binding and creating call Chats
 
 ### The chatId binding
 
@@ -65,35 +65,40 @@ field is set, the Chat identified by that id is the call's dedicated in-call
 text channel. Everything that would otherwise require a VTC-native chat
 mechanism is handled there instead.
 
-A caller creating a ring call, room call, or scheduled call MAY supply an
-existing `chatId`. When no `chatId` is supplied, the server SHOULD auto-create
-a new Chat and record the resulting id on the VTCCall. This is the recommended
-path for most call types: it ensures every call has a chat channel ready before
-the first participant joins.
+A caller creating a ring call, room call, or scheduled call may supply a
+`chatId`. When `chatId` is omitted, the call has no text backchannel
+(`draft-atwood-jmap-vtc-00` Section "Relationship to JMAP Chat"); the VTC spec
+does not have the server create a Chat on the caller's behalf. To give a call
+in-call chat, create or select the Chat first and pass its id as `chatId`. The
+caller must be a member of that Chat (`draft-atwood-jmap-vtc-00`, VTCCall/set
+create rules).
 
 ### Choosing a Chat kind
 
-When auto-creating a Chat for a call, choose the Chat `kind` based on the
-call's context:
+When creating or selecting a Chat for a call, choose the Chat `kind` based on
+the call's context:
 
-- **Ring calls (1:1):** Create a `kind: "direct"` Chat between the two
-  participants. This is a Chat-layer operation: the server looks up whether a
-  `kind: "direct"` Chat already exists with `contactId` equal to the `id` of
-  the ChatContact whose `identity` is the target participant's userId, and if
-  so MUST reuse it (the Chat spec requires
-  deduplication of direct chats). The call's messages appear alongside the
-  existing conversation history.
+- **Ring calls (1:1):** Use the `kind: "direct"` Chat whose `contactId` is
+  the `id` of the ChatContact whose `identity` is the target participant's
+  userId. If none exists, create one. `Chat/set` create of a direct Chat for a
+  contact that already has one fails with `alreadyExists` and an `existingId`
+  (`draft-atwood-jmap-chat-00`, Chat/set), so direct chats are never
+  duplicated. The call's messages appear alongside the existing conversation
+  history.
 
 - **Ring calls (group) and room calls without a Space context:** Create a
-  `kind: "group"` Chat with initial `memberIds` matching the VTCParticipant
-  list: for each participant, the `id` of the ChatContact whose `identity` is
-  that participant's userId, or the accountId for the account owner. Give
-  the group chat a `name` derived from the call `subject` if one is set.
+  `kind: "group"` Chat whose initial `memberIds` lists the other
+  participants: for each, the `id` of the ChatContact whose `identity` is that
+  participant's userId. The creator is added automatically and is not listed
+  (`draft-atwood-jmap-chat-00`, Chat/set). `name` is required for group
+  chats; derive it from the call `subject` when one is set.
 
 - **Room calls and scheduled calls inside a Space:** Use the existing channel
-  Chat (`kind: "channel"`) for the Space. Set `channelId` on the VTCCall to
-  that channel's id. Do not create a new Chat; the call is scoped to the
-  channel's existing conversation.
+  Chat (`kind: "channel"`) for the Space. Set both `chatId` and `channelId`
+  on the VTCCall to that channel's id, plus `spaceId`. `chatId` is what binds
+  in-call text and drives `Chat.activeCallId`; `channelId` alone does not. Do
+  not create a new Chat; the call is scoped to the channel's existing
+  conversation.
 
 - **Ephemeral room calls (huddles, ad-hoc rooms):** Create a `kind: "group"`
   Chat and set `messageExpirySeconds` to a short window (e.g., 86400 seconds)
@@ -102,23 +107,25 @@ call's context:
 
 ### Membership sync
 
-When the Chat is auto-created for a call, its initial membership should match
-the initial VTCParticipant list. Ongoing, the server SHOULD keep membership in
-sync as participants join and leave:
+When a Chat is created for a call, its initial membership should match the
+initial VTCParticipant list. Joining a call that has a `chatId` binding
+requires membership in the bound Chat: a non-member gets `notFound`
+(`draft-atwood-jmap-vtc-00`, Joining a Room or Scheduled Call). Membership
+therefore has to come first:
 
-- When a VTCParticipant with a `userId` joins the call (i.e., `joinedAt` is
-  set), add the `id` of the ChatContact whose `identity` is that userId (or
-  the accountId, when that userId is the account owner's `ownerUserId`) via
-  the `addMembers` patch key on `Chat/set` update if they are not already a
-  member.
+- Before a user with a `userId` joins, add the `id` of the ChatContact whose
+  `identity` is that userId via the `addMembers` patch key on `Chat/set`
+  update if they are not already a member. Adding them when `joinedAt` is set
+  is too late; the join would already have failed.
 - When a VTCParticipant leaves and will not rejoin (i.e., `leftAt` is set and
   the call has ended), the server MAY leave them as a member so they can
   read the post-call chat history, or remove them immediately depending on
   deployment policy.
 - Gateway participants (PSTN, SIP, H.323) who have no `userId` cannot be Chat
   members. Do not attempt to add them.
-- Lobby participants (discussed in Section 6) require special handling; do not
-  add them to the main call Chat until they are admitted.
+- Lobby participants (discussed in Section 6) are members of the bound Chat
+  like anyone else: they need membership to join, and the VTC spec uses the
+  bound Chat for lobby communication.
 
 ### Chat lifecycle and the call lifecycle
 
@@ -210,152 +217,102 @@ creation time.
 
 ---
 
-## 4. Live captions via ephemeral events
+## 4. Live captions
 
-### Why ephemeral, not messages
+### Captions are Messages
 
-Live captions from a speech-to-text engine produce high-frequency, rapidly
-superseded text fragments. Storing each caption fragment as a `Message` would
-flood the chat history with noise: hundreds of low-value intermediate
-transcription results per minute, each requiring storage, delivery,
-`StateChange` fan-out, and client-side `Message/changes` retrieval. The chat
-log would be unreadable.
+Live captions and transcription are delivered as Messages in the bound Chat,
+with `senderId` providing speaker attribution
+(`draft-atwood-jmap-vtc-00` Section "Relationship to JMAP Chat"). Neither the
+VTC spec nor `draft-atwood-jmap-chat-wss-00` defines an ephemeral event type
+for captions. A deployment that wants a separate ephemeral caption stream is
+building a deployment-specific extension, not part of the protocol, and
+clients of other deployments will not understand it.
 
-The correct delivery path is ephemeral WebSocket events. The
-`draft-atwood-jmap-chat-wss-00` spec defines a `ChatStreamEnable` message that
-accepts a `dataTypes` array. The `"vtc"` value is registered by the VTC spec
-for in-call events (`draft-atwood-jmap-chat-wss-00` Section on ChatStreamEnable,
-`draft-atwood-jmap-vtc-00` Section on In-Call Ephemeral Events). Caption events
-travel on this channel: they are delivered immediately, not persisted, and
-silently dropped on reconnect.
+The transcription engine itself (Whisper, Vosk, cloud ASR, or other) is
+entirely deployment-defined.
 
-### Enabling the caption stream
+### Keeping caption volume manageable
 
-The client sends a `ChatStreamEnable` message on the same WebSocket connection
-it uses for chat:
+A speech-to-text engine produces high-frequency, rapidly superseded text
+fragments. Posting every interim result as a Message would flood the chat
+history: hundreds of low-value intermediate results per minute, each requiring
+storage, delivery, `StateChange` fan-out, and client-side `Message/changes`
+retrieval. Practical patterns:
 
-```json
-{
-  "@type": "ChatStreamEnable",
-  "dataTypes": ["typing", "presence", "vtc"],
-  "chatIds": null,
-  "contactIds": null
-}
-```
-
-Including `"vtc"` in `dataTypes` opts the connection into VTC-scoped ephemeral
-events for calls the authenticated user is participating in, including caption
-events.
-
-### Caption event format
-
-The VTC spec does not define a rigid caption event schema beyond the common
-ephemeral event envelope. A caption event SHOULD carry at minimum:
-
-- `@type`: a deployment-defined string, e.g., `"VTCCaptionEvent"`
-- `callId`: the VTCCall id
-- `chatId`: the bound Chat id (allows the client to scope display)
-- `senderId`: the VTCParticipant.userId of the speaker (for attribution)
-- `text`: the caption fragment as UTF-8 text
-- `isFinal`: Boolean — `false` for interim results, `true` for a committed
-  segment
-- `language` (optional): BCP 47 language tag if the ASR engine provides it
-
-Interim results (`isFinal: false`) should replace the previous caption for the
-same `senderId` in the UI. Final results (`isFinal: true`) may be appended to
-a running caption display or used to synthesize a post-call transcript stored
-as a Message in the bound Chat.
+- Post committed segments (a sentence or a speaker turn), not interim results.
+- Coalesce rapid segments from the same speaker on the server before posting.
+- Mark caption Messages clearly (e.g., with a `bodyType` or metadata field
+  indicating "transcript") so clients can render them in a caption strip and
+  distinguish them from participant-typed messages.
+- If captions should not outlive the call, plan retention with
+  `messageExpirySeconds` at Chat creation time (Section 2).
 
 ### Speaker attribution
 
-`senderId` carries a `VTCParticipant.userId`, the authenticated identity
-string. It is not a `ChatContact.id`: look up the ChatContact whose `identity`
-equals it, and use that ChatContact's `displayName` or `login` field to label
-the speaker in the caption UI. When it equals the account's `ownerUserId`, the
-speaker is the account owner, who has no ChatContact.
+Message `senderId` is a local id: the `id` of the ChatContact whose
+`identity` is the speaker's `VTCParticipant.userId`, or the accountId when the
+speaker is the account owner. Use that ChatContact's `displayName` or `login`
+field to label the speaker in the caption UI.
 
-For speakers who joined via gateway (no `userId`), use the
-`VTCParticipant.displayName` field instead.
+For speakers who joined via gateway (no `userId`, so no ChatContact), the
+deployment decides how to attribute the caption Message, for example posting
+it from a system or bot ChatContact and including the
+`VTCParticipant.displayName` in the text.
+
+### The "vtc" dataType is not a caption stream
+
+`draft-atwood-jmap-chat-wss-00` (Section "Enabling Ephemeral Push") defines
+`"vtc"` as a companion `dataTypes` value in `ChatStreamEnable`. It is
+recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`
+(and `urn:ietf:params:jmap:chat:websocket`); otherwise it is silently ignored.
+It subscribes the connection to the VTC in-call events defined by
+`draft-atwood-jmap-vtc-wss-00` (participant, media, and call-state events), not
+to captions. Caption Messages arrive through the normal Message path.
 
 ### Accessibility considerations
 
 Live captions serve participants who are deaf or hard of hearing, who are in
 noisy environments, or who are consuming the call in a language that benefits
 from a text parallel. Treat captions as a first-class feature, not an
-afterthought. Recommendations:
-
-- Caption events SHOULD be delivered on the WebSocket regardless of whether
-  the participant has explicitly enabled captions in the UI. Let the client
-  decide whether to render them. Server-side suppression removes the option.
-- Final caption segments SHOULD be stored as Messages in the bound Chat after
-  the call ends, attributed to the speaker, to provide a searchable transcript.
-  Message `senderId` is a local id: the `id` of the ChatContact whose
-  `identity` is the speaker's userId, or the accountId when the speaker is the
-  account owner.
-  Mark them clearly (e.g., with a `bodyType` or metadata field indicating
-  "transcript") so they are distinguishable from participant-typed messages.
-- Rate-limit caption delivery to avoid flooding the WebSocket. Coalesce rapid
-  interim results on the server before fan-out. One event per speaker per
-  300–500 ms is a practical floor for readable captions.
+afterthought. Because captions are Messages in the bound Chat, they are
+delivered to every member regardless of whether the participant has enabled
+captions in the UI; the client decides whether to render them. They also form
+a searchable transcript after the call without any extra step.
 
 ---
 
 ## 5. In-call reactions
 
 In-call emoji reactions — the "raise hand", "clap", "heart" buttons in
-Zoom/Meet — have two distinct use cases with different persistence
-requirements. Use different mechanisms for each.
+Zoom/Meet — are reactions on Messages in the bound Chat
+(`draft-atwood-jmap-vtc-00` Section "Relationship to JMAP Chat"). No draft
+defines an ephemeral reaction event.
 
-### Persistent reactions: Reaction objects on Messages
+### Adding a reaction
 
-A participant reacting to a specific Message in the in-call chat should use
-the standard Reaction mechanism: `Reaction/set create` with the target
-`messageId`, an `emoji`, and a `sentAt` timestamp. The client supplies a ULID
-as the reaction id. This produces a permanent record of who reacted to what,
-visible in the post-call chat history, and rendered by any JMAP Chat client
-without VTC-specific logic.
+A participant adds a reaction with a `Message/set` update on the target
+Message that patches `reactions/<senderReactionId>` with an `emoji` and a
+`sentAt` timestamp; the client supplies a ULID as the `senderReactionId`
+(`draft-atwood-jmap-chat-00`, Adding and Removing Reactions). This produces a
+permanent record of who reacted to what, visible in the post-call chat
+history, and rendered by any JMAP Chat client without VTC-specific logic.
 
-This is the right path for reactions that are contextually tied to a message
-(thumbs-up on a question, checkmark on a decision).
-
-### Ephemeral float reactions: ephemeral events
+### Float reactions
 
 "Applause" reactions and emoji floats — the visual effect where emojis drift
-up the screen when many participants react simultaneously — are not tied to any
-specific Message. They are audience sentiment signals with a lifespan of a few
-seconds. Storing each one as a Reaction on a synthetic Message would pollute
-the chat history with hundreds of individually meaningless records.
+up the screen when many participants react at once — are not tied to any
+particular participant-typed Message. The VTC spec still carries them as
+Message reactions; which Message they attach to (for example, the
+call-started system message) is a deployment choice. The client renders a
+float animation when a new reaction arrives on that Message during the call.
 
-Use ephemeral events instead. Deliver float reactions as VTC-scoped ephemeral
-events on the bound Chat's WebSocket stream, alongside caption events:
+A deployment that wants unpersisted float reactions on the WebSocket is
+building a deployment-specific extension, not part of the protocol.
 
-```json
-{
-  "@type": "VTCReactionEvent",
-  "callId": "01J3XKZ...",
-  "chatId": "01J3XKY...",
-  "senderId": "user:alice@example.com",
-  "emoji": "👏",
-  "sentAt": "2026-06-05T14:23:01Z"
-}
-```
-
-These events are not persisted. If the client misses them (disconnect,
-reconnect), that is acceptable — a missed applause animation is not a
-functional loss.
-
-### Recommendation
-
-Use **ephemeral events** for float reactions and visual audience sentiment
-signals. Use **Reaction objects** for per-message reactions in the chat panel.
-Do not conflate the two: a Reaction on a Message implies semantic attachment to
-that message's content; a float reaction is ambient sentiment that happens to
-occur at a moment in time.
-
-If your deployment wants to retain a summary of reaction activity for post-call
-analytics (e.g., "42 clap reactions at timestamp 14:23"), synthesize a single
-summary Message or metadata record at call end, not one record per reaction
-event.
+If your deployment wants a summary of reaction activity for post-call
+analytics (e.g., "42 clap reactions at 14:23"), derive it from the reaction
+records rather than adding new records.
 
 ---
 
@@ -364,75 +321,45 @@ event.
 ### The lobby scenario
 
 When `VTCCall.lobbyEnabled` is `true`, participants who join the call enter a
-waiting room. Their `VTCParticipant.lobbyState` is `"waiting"` until a
-moderator admits them. During this wait, they may need to communicate with the
-host — to announce themselves, clarify their name, or ask when the call will
-start.
+waiting room. Their `VTCParticipant.lobbyState` is `"waiting"` and `joinedAt`
+stays `null` until a moderator admits them; rejection sets `leftAt`
+(`draft-atwood-jmap-vtc-00`, Joining a Room or Scheduled Call). During this
+wait, they may need to communicate with the host — to announce themselves,
+clarify their name, or ask when the call will start.
 
-The main call Chat is not appropriate for lobby participants: they have not
-been admitted to the call yet, and full visibility into the call's chat
-history before admission may not be desired.
+### The bound Chat is the lobby channel
 
-### Separate lobby Chat vs. restricted access
+Lobby communication uses the bound Chat: lobby participants can message
+moderators before being admitted (`draft-atwood-jmap-vtc-00` Section
+"Relationship to JMAP Chat"). No separate lobby Chat is needed. A waiting
+participant is already a member of the bound Chat, because joining a
+Chat-bound call requires it (Section 2).
 
-Two approaches are practical:
+A waiting participant is not counted in `activeParticipantCount` and does not
+receive VTC in-call events. Chat delivery is unaffected: they see the bound
+Chat's Messages like any other member.
 
-**Option A: Separate lobby Chat.** Create a second `kind: "group"` Chat for
-lobby participants. When a moderator creates the call, also create a lobby Chat.
-Note: the VTC spec does not define a field on VTCCall to store the lobby Chat
-id. Use `urn:ietf:params:jmap:metadata` on the VTCCall object to store it
-(e.g., key `"com.example.lobbyChat"` with the Chat id as value), or maintain
-the binding in your server's internal state. Add lobby participants to the
-lobby Chat when their `lobbyState` is set to `"waiting"`. When they are
-admitted, add them to the main call Chat via `Chat/set` update with the
-`addMembers` patch key. They now see both conversations in their client.
-
-The lobby Chat's membership is: waiting participants + moderators. This allows
-moderators to communicate with waiting participants and allows waiting
-participants to see each other (or not, depending on whether you want
-participant-to-participant lobby chat). To prevent waiting participants from
-messaging each other — allowing them to message moderators only — use a channel
-`kind: "channel"` with a Space permission model that restricts `"send"` to
-moderators and removes it from other members.
-
-**Option B: Restricted view of the main call Chat.** Do not create a separate
-Chat. Instead, structure the main call Chat as a Space channel and use
-`ChannelPermission` objects to restrict what waiting participants can see (e.g.,
-deny `"view_history"` for the lobby SpaceRole). This is more complex to
-implement correctly and is not recommended unless your deployment already uses
-Space channels as the primary call chat structure. Note: this approach requires
-a containing Space to exist for the call.
-
-For most deployments, Option A is simpler and more correct. The lobby Chat is
-ephemeral infrastructure; set `messageExpirySeconds` to a short window so it
-clears automatically.
+The bound Chat's history is visible to waiting participants as Chat members.
+If that is not acceptable for a given call, the choice is made when the Chat is
+selected or created (Section 2), for example by binding a Chat created for the
+call rather than a long-lived one. A separate lobby Chat or per-lobby access
+restriction is a deployment-specific extension, not part of the protocol.
 
 ### Host broadcast to waiting participants
 
-A moderator wanting to broadcast a message to all waiting participants (e.g.,
-"We'll start in 5 minutes") sends a Message to the lobby Chat. If the lobby
-Chat is a `kind: "group"`, this is a standard group message. If it is a
-channel with a `"send"` restriction on participants, the moderator's SpaceRole
-permits sending while participants can only read.
-
-`BroadcastMention` with `scope: "everyone"` is available for group and channel
-Chats and will notify all current members of the lobby Chat. This is the
-appropriate tool for time-sensitive broadcast messages to waiting participants.
+A moderator wanting to address waiting participants (e.g., "We'll start in 5
+minutes") sends a Message to the bound Chat. `BroadcastMention` with
+`scope: "everyone"` notifies all members of the Chat, admitted or not.
 
 ### Transitioning on admission
 
 When a moderator admits a waiting participant (`lobbyState` transitions from
-`"waiting"` to `"admitted"`):
+`"waiting"` to `"admitted"`), the server sets `joinedAt`. No Chat membership
+change is needed; the participant was already a member of the bound Chat. The
+client switches from its lobby view to the in-call view and keeps showing the
+same chat panel.
 
-1. Add the `id` of the ChatContact whose `identity` is the participant's
-   userId (or the accountId, when the participant is the account owner) to
-   the main call Chat's `members` list via `Chat/set`.
-2. Optionally remove them from the lobby Chat, or leave them in both.
-3. The client should switch the UI focus from the lobby chat panel to the main
-   call chat panel.
-
-The `VTCParticipant.lobbyState` transition is the authoritative signal; the
-Chat membership change follows from it.
+The `VTCParticipant.lobbyState` transition is the authoritative signal.
 
 ---
 
@@ -495,7 +422,7 @@ the Chat account, but it introduces state that must be reliably cleaned up.
 ### Do-not-disturb coordination
 
 A user who has set `PresenceStatus.presence` to `"busy"` is signaling
-do-not-disturb intent. The VTC server SHOULD respect this when deciding whether
+do-not-disturb intent. A deployment can take this into account when deciding whether
 to deliver ring notifications: the blocked-sender suppression rule
 (`draft-atwood-jmap-vtc-00` Section on Blocked-Sender Suppression) applies to
 blocked contacts; a `"busy"` presence does not itself block rings unless your
@@ -522,13 +449,13 @@ the first call with a full-screen incoming-call UI.
 | Feature | VTC spec reference | Chat spec reference |
 |---|---|---|
 | `chatId` binding on VTCCall | Section 4, Optional Binding Fields | Chat object, `activeCallId` field |
-| Auto-creating Chat | VTCCall/set, room call creation | Chat/set, Creating a Group Chat |
+| Creating a call Chat | VTCCall/set create (`chatId`) | Chat/set group create; Space/set `addChannels` for channels |
 | activeCallId banner | Section 4, Chat binding fields | Chat object, `activeCallId` field |
 | In-call text messages | Section 3, Chat Delegation | Message/set |
 | Read positions and unread counts | (via Chat) | ReadPosition, Chat.unreadCount |
-| Caption/reaction ephemeral events | In-Call Ephemeral Events section | ChatStreamEnable, `dataTypes: ["vtc"]` |
-| Persistent reactions | (via Chat) | Reaction, Message.reactions map |
-| Lobby Chat | VTCParticipant.lobbyState | Chat/set group or channel |
+| Live captions | Relationship to JMAP Chat | Message/set in the bound Chat |
+| In-call reactions | Relationship to JMAP Chat | Reaction, Message.reactions map |
+| Lobby communication | Relationship to JMAP Chat; VTCParticipant.lobbyState | The bound Chat |
 | Presence on join/leave | (server policy) | PresenceStatus/set |
 | Notification muting | (server policy) | Chat.muted or client-side |
 | Call banner signal | VTCCall.state → active | Chat.activeCallId (server-set) |
