@@ -53,7 +53,7 @@ informative:
 This document defines a WebSocket binding for the ephemeral in-call
 events specified by JMAP for Video/Voice Teleconferencing
 ({{JMAP-VTC}}).  It registers the
-`urn:ietf:params:jmap:vtc:websocket` capability and introduces
+`urn:jmap:vtc:websocket` capability and introduces
 `VTCStreamEnable` and `VTCStreamDisable` control messages that give
 clients call-scoped, event-type-scoped subscription over a JMAP
 WebSocket connection ({{RFC8887}}).
@@ -69,7 +69,7 @@ call state: `VTCRingEvent`, `VTCCallEndEvent`, `VTCGatewaySignal`,
 are fire-and-forget signals — not persisted as JMAP objects — that
 drive in-call user interfaces.
 
-When the server advertises both `urn:ietf:params:jmap:chat:websocket`
+When the server advertises both `urn:jmap:chat:websocket`
 ({{JMAP-CHAT-WSS}}) and the capability defined here, clients can
 subscribe to VTC events by including `"vtc"` in the `dataTypes`
 array of a `ChatStreamEnable` message.  However, a deployment can offer JMAP
@@ -94,7 +94,7 @@ message types each side may send.  This document updates
 
 This is the same rule stated in {{JMAP-CHAT-WSS}}; it is restated
 here so that this document stands alone.  Under it, the
-`urn:ietf:params:jmap:vtc:websocket` capability defines
+`urn:jmap:vtc:websocket` capability defines
 `VTCStreamEnable`, `VTCStreamDisable`, and the WebSocket delivery of
 the event types listed in {{event-types}}.  Except as updated here,
 all {{RFC8887}} requirements apply unchanged.
@@ -109,10 +109,10 @@ they appear in all capitals, as shown here.
 
 # Capability {#capability}
 
-## urn:ietf:params:jmap:vtc:websocket
+## urn:jmap:vtc:websocket
 
 Servers supporting this specification MUST add a property named
-`urn:ietf:params:jmap:vtc:websocket` to the JMAP Session object
+`urn:jmap:vtc:websocket` to the JMAP Session object
 capabilities.  The value of this property is an empty JSON object
 `{}`.
 
@@ -124,7 +124,7 @@ the client.
 
 This capability is distinct from `urn:ietf:params:jmap:websocket`
 ({{RFC8887}}), which advertises the WebSocket transport itself, and
-from `urn:ietf:params:jmap:vtc` ({{JMAP-VTC}}), which advertises
+from `urn:jmap:vtc` ({{JMAP-VTC}}), which advertises
 the VTC data model and methods.
 
 ### Session Object Example
@@ -136,8 +136,8 @@ the VTC data model and methods.
       "url": "wss://vtc.example.com/jmap/ws/",
       "supportsPush": true
     },
-    "urn:ietf:params:jmap:vtc": {},
-    "urn:ietf:params:jmap:vtc:websocket": {}
+    "urn:jmap:vtc": {},
+    "urn:jmap:vtc:websocket": {}
   }
 }
 ~~~
@@ -393,8 +393,8 @@ re-establish its subscription.
 
 # Interoperability with JMAP Chat WebSocket {#chat-wss-interop}
 
-When a server advertises both `urn:ietf:params:jmap:chat:websocket`
-({{JMAP-CHAT-WSS}}) and `urn:ietf:params:jmap:vtc:websocket`
+When a server advertises both `urn:jmap:chat:websocket`
+({{JMAP-CHAT-WSS}}) and `urn:jmap:vtc:websocket`
 (this document), two subscription paths exist for VTC ephemeral
 events:
 
@@ -680,7 +680,7 @@ announcements.
 IANA is requested to register the following entry in the "JMAP
 Capabilities" registry defined in {{RFC8620}} Section 9.4:
 
-- **Capability Name:** `urn:ietf:params:jmap:vtc:websocket`
+- **Capability Name:** `urn:jmap:vtc:websocket`
 - **Intended Use:** common
 - **Change Controller:** IETF
 - **Specification document:** This document.

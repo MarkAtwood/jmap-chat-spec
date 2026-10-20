@@ -113,11 +113,11 @@ informative:
 
 --- abstract
 
-This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) plus the embedded VTCMediaState object; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
+This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) plus the embedded VTCMediaState object; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
 
 The specification models call *state* — who is in a call, what state the call is in, and how to join it — without prescribing the media transport. Actual voice and video media travel through a deployment-chosen stack (WebRTC, SIP/RTP, or any other media framework); the JMAP server is a call-state database, not a media server.
 
-The capability is standalone (`urn:ietf:params:jmap:vtc`). When JMAP Chat ({{JMAP-CHAT}}) is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars ({{JMAP-CALENDARS}}) is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
+The capability is standalone (`urn:jmap:vtc`). When JMAP Chat ({{JMAP-CHAT}}) is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars ({{JMAP-CALENDARS}}) is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
 
 --- middle
 
@@ -148,7 +148,7 @@ Protocol-specific signaling beyond the core lifecycle — call transfer (SIP REF
 
 ## Relationship to JMAP Chat (recommended) {#chat-delegation}
 
-Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:ietf:params:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
+Deployments SHOULD advertise `urn:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
 
 - **In-call text chat** is the Chat bound via `chatId`. When `chatId` is supplied, the call is bound to that Chat for in-call text messaging; when omitted, the call has no text backchannel. Messages sent to the bound Chat appear as in-call chat.
 - **In-call reactions** (emoji floats) are reactions on Messages in the bound Chat.
@@ -156,7 +156,7 @@ Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongsi
 - **Lobby communication** uses the bound Chat: lobby participants can message moderators before being admitted.
 - **Scheduled-call invitees** are derived from the Space membership (for Space-bound calls) or the CalendarEvent invitees (for calendar-bound calls).
 - **Access control** is inherited from the Space/channel permission model (see {{access-control}}).
-- **Active call banner** is signaled via the `activeCallId` field on Chat (see {{JMAP-CHAT}}).
+- **Active call banner** is signaled via the `activeCallId` and `activeCallAccountId` fields on Chat (see {{JMAP-CHAT}}).
 
 The existing `urn:jmap:chat:cap:vtc` Endpoint and MessageAction type URIs defined in {{JMAP-CHAT}} provide the integration point in the other direction: a chat message can carry a VTC action whose `uri` points to the call's `joinUri`.
 
@@ -164,7 +164,7 @@ Without JMAP Chat, the VTC capability is fully functional as a standalone call-s
 
 ## Relationship to JMAP Scene (optional)
 
-When `urn:ietf:params:jmap:scene` ({{JMAP-SCENE}}) is also advertised, SceneRegion objects MAY carry an `activeCallId` field referencing a VTCCall. This binding enables spatial audio: the Scene simulation layer can use SceneAvatar positions to spatialize VTC audio for participants in the region. The VTC capability itself is unaware of Scene; the binding is defined entirely in {{JMAP-SCENE}} and is optional. Without JMAP Scene, calls have no spatial component.
+When `urn:jmap:scene` ({{JMAP-SCENE}}) is also advertised, SceneRegion objects MAY carry an `activeCallId` field referencing a VTCCall. This binding enables spatial audio: the Scene simulation layer can use SceneAvatar positions to spatialize VTC audio for participants in the region. The VTC capability itself is unaware of Scene; the binding is defined entirely in {{JMAP-SCENE}} and is optional. Without JMAP Scene, calls have no spatial component.
 
 ## Relationship to JMAP Calendars (optional)
 
@@ -178,15 +178,15 @@ Terminology from {{RFC8620}} is used throughout. The term "userId" refers to the
 
 # Capability {#capability}
 
-Servers supporting this specification MUST advertise the `urn:ietf:params:jmap:vtc` capability in the JMAP Session object.
+Servers supporting this specification MUST advertise the `urn:jmap:vtc` capability in the JMAP Session object.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:vtc"]` at the session level is an empty JSON object `{}`.
+The value of `capabilities["urn:jmap:vtc"]` at the session level is an empty JSON object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:jmap:vtc"]` is a JSON object with the following fields:
 
 `mayCreateCall` (Boolean):
 : `true` if the authenticated user may create new VTCCall objects.
@@ -322,7 +322,7 @@ VTCParticipant ids are ordinary server-assigned JMAP ids, unique within the call
 `id` (String, immutable, server-set):
 : Opaque server-assigned identifier.
 
-`callId` (String, immutable except for the breakout-room assignment in {{participant-moderator-actions}}):
+`callId` (String, immutable):
 : The id of the VTCCall this participant belongs to.
 
 `userId` (String|null, immutable, server-set):
@@ -361,14 +361,17 @@ VTCParticipant ids are ordinary server-assigned JMAP ids, unique within the call
 `speakerTimeMs` (UnsignedInt, server-set):
 : Cumulative milliseconds of talk time for this participant, tracked by the server or media layer. Servers that cannot track speaker time MUST set this to `0`. For calls with `e2eeEnabled: true`, see {{e2ee-active-speaker}}.
 
-`kickedBy` (String|null, server-set):
-: The userId of the moderator who removed this participant from the call. `null` if the participant left voluntarily or is still in the call.
+`kickedBy` (String|null):
+: The userId of the moderator who removed this participant from the call. The server sets it on a kick; a moderator may clear it to `null`, and no other client update is accepted. While it is non-null the participant cannot rejoin the call ({{reconnection}}). `null` if the participant was never kicked or a moderator has cleared the kick.
 
 `e2eeFingerprint` (String|null):
 : When the call has `e2eeEnabled: true`: the participant's public key fingerprint for E2EE verification, as reported by the media layer. Clients can display this for out-of-band verification (e.g., reading the fingerprint aloud). The format is media-layer-defined. `null` when E2EE is not active or the participant has not yet completed key exchange.
 
 `unmuteRequested` (Boolean):
 : `true` when a moderator has requested that this participant unmute. Cleared to `false` when the participant unmutes or explicitly dismisses the request. Default: `false`.
+
+`breakoutCallId` (String|null):
+: The id of a child breakout-room VTCCall to which a moderator has assigned this participant (see {{participant-moderator-actions}}). Only moderators set it; non-moderators SHOULD receive `forbidden`, as for other moderator-only fields. The participant's client responds by joining that call through the normal join path. Default: `null`.
 
 ## VTCCall {#vtc-call}
 
@@ -451,13 +454,13 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 The following fields are present only when the corresponding companion capability is advertised on the same account:
 
 `chatId` (String|null):
-: When `urn:ietf:params:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this call. `null` if the call has no chat binding. Same-account only.
+: When `urn:jmap:chat` is present: the id of a Chat ({{JMAP-CHAT}}) associated with this call. `null` if the call has no chat binding. Same-account only.
 
 `spaceId` (String|null):
-: When `urn:ietf:params:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this call. `null` if the call has no Space context.
+: When `urn:jmap:chat` is present: the id of a Space ({{JMAP-CHAT}}) associated with this call. `null` if the call has no Space context.
 
 `channelId` (String|null):
-: When `urn:ietf:params:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the call is Space-wide or has no channel context.
+: When `urn:jmap:chat` is present: the id of a channel Chat within the Space. `null` if the call is Space-wide or has no channel context.
 
 When a Space or channel Chat referenced by `spaceId` or `channelId` is destroyed, the server MUST clear the corresponding field to `null` on all VTCCalls that reference it. This is a side effect of the Space or Chat destruction and changes VTCCall state ({{RFC8620}} Section 7).
 
@@ -613,7 +616,7 @@ VTCCall/set manages call lifecycle: creating calls, ending calls, and updating c
 
 When creating a VTCCall with a `chatId` that is already referenced by another VTCCall in `"active"` or `"ringing"` state, the server MUST return an `invalidProperties` SetError naming `chatId`, with description "A call is already active on this Chat." This ensures that `Chat.activeCallId` is unambiguous and at most one call is active per Chat at any time.
 
-The following checks apply to every `create`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` does not resolve to a Chat object, the server MUST return `invalidProperties` naming `chatId`. The server SHOULD return the same error when the caller is not a member of that Chat, so that the response does not reveal that the Chat exists. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server SHOULD return `forbidden` if the caller lacks the `"start_call"` permission in the bound Space or channel.
+The following checks apply to every `create`. When `chatId` is supplied but `urn:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` does not resolve to a Chat object, the server MUST return `invalidProperties` naming `chatId`. The server SHOULD return the same error when the caller is not a member of that Chat, so that the response does not reveal that the Chat exists. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server SHOULD return `forbidden` if the caller lacks the `"start_call"` permission in the bound Space or channel.
 
 #### Creating a Ring Call
 
@@ -758,7 +761,9 @@ Participants with `role: "moderator"` MAY use `VTCCall/set` to perform the follo
 : Create a new VTCCall with `parentCallId` set to the current call's id. The server adds the new call's id to the parent's `breakoutRoomIds`.
 
 **Close a breakout room:**
-: Transition a child VTCCall to `"ended"`. The server removes its id from the parent's `breakoutRoomIds`.
+: Transition a child VTCCall to `"ended"`. The server removes its id from the parent's `breakoutRoomIds` and resets to `null` any `breakoutCallId` on the parent call's participants that names it.
+
+Participants are assigned to breakout rooms with the VTCParticipant `breakoutCallId` property ({{participant-moderator-actions}}).
 
 **Toggle lobby:**
 : Patch `lobbyEnabled` between `true` and `false`.
@@ -779,10 +784,10 @@ Filter properties:
 : Filter to calls initiated by this userId.
 
 `chatId` (String, optional):
-: Filter to calls associated with this Chat. Only valid when `urn:ietf:params:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
+: Filter to calls associated with this Chat. Only valid when `urn:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
 
 `spaceId` (String, optional):
-: Filter to calls associated with this Space. Only valid when `urn:ietf:params:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
+: Filter to calls associated with this Space. Only valid when `urn:jmap:chat` is present; servers MUST return `unsupportedFilter` otherwise.
 
 `hasParticipant` (String, optional):
 : Filter to calls in which this userId is or was a participant.
@@ -904,13 +909,14 @@ The server responds with the complete VTCParticipant record:
       "speakerTimeMs": 0,
       "kickedBy": null,
       "e2eeFingerprint": null,
-      "unmuteRequested": false
+      "unmuteRequested": false,
+      "breakoutCallId": null
     }
   }
 }
 ~~~
 
-The server SHOULD return `notFound` if the `callId` does not exist or the caller does not have access to it. When `urn:ietf:params:jmap:chat` is present, callers without access include a caller who lacks `"view"` permission on the channel of a Space-bound call, a caller who is not a member of the Chat bound by `chatId`, and a caller whom the call initiator has blocked (`ChatContact.blocked` is `true` on the initiator's contact record for the caller). Using `notFound` for all of these keeps the response from revealing that the call exists or that the caller is blocked. The server MUST return `invalidProperties` naming `callId` if the call is in state `"ended"`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the account already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
+The server SHOULD return `notFound` if the `callId` does not exist or the caller does not have access to it. When `urn:jmap:chat` is present, callers without access include a caller who lacks `"view"` permission on the channel of a Space-bound call, a caller who is not a member of the Chat bound by `chatId`, and a caller whom the call initiator has blocked (`ChatContact.blocked` is `true` on the initiator's contact record for the caller). Using `notFound` for all of these keeps the response from revealing that the call exists or that the caller is blocked. The server MUST return `invalidProperties` naming `callId` if the call is in state `"ended"`. If the call's `activeParticipantCount` has reached `maxParticipantsPerCall`, the server MUST return `overQuota`. If the account already has `maxConcurrentCalls` active calls, the server MUST return `overQuota`.
 
 #### Declining a Ring Call
 
@@ -968,7 +974,7 @@ The server SHOULD return `forbidden` if a caller who is not a moderator on the c
 
 #### Reconnecting {#reconnection}
 
-A participant who has left (has a non-null `leftAt`) re-joins the same call by updating their existing VTCParticipant record to set `leftAt` to `null`. The server sets `joinedAt` to the current time, clears `kickedBy`, and preserves `role` and `speakerTimeMs`; the access checks, errors, and lobby rules for joining ({{joining}}) apply. A `create` for a user who already has a record in the call fails with an `alreadyExists` SetError ({{RFC8620}} Section 5.4) whose `existingId` names that record. Reusing the record keeps a single continuous participant identity across disconnections.
+A participant who has left (has a non-null `leftAt`) re-joins the same call by updating their existing VTCParticipant record to set `leftAt` to `null`. The server sets `joinedAt` to the current time and preserves `role` and `speakerTimeMs`; the access checks, errors, and lobby rules for joining ({{joining}}) apply. A participant who was kicked cannot rejoin: if the record's `kickedBy` is non-null, the server SHOULD reject the update with `forbidden`. The rejoin succeeds only after a moderator clears `kickedBy` to `null`. A `create` for a user who already has a record in the call fails with an `alreadyExists` SetError ({{RFC8620}} Section 5.4) whose `existingId` names that record. Reusing the record keeps a single continuous participant identity across disconnections.
 
 #### Participant-Level Moderator Actions {#participant-moderator-actions}
 
@@ -982,7 +988,7 @@ Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipan
   {: #ask-to-unmute}
 
 **Kick a participant:**
-: Update the target's `leftAt`. The server records its own current time as `leftAt` and sets `kickedBy` to the moderator's userId.
+: Update the target's `leftAt`. The server records its own current time as `leftAt` and sets `kickedBy` to the moderator's userId. The target cannot rejoin the call until a moderator updates the target's `kickedBy` to `null` ({{reconnection}}). Clients can set `kickedBy` only to `null`; any other value is rejected as for a server-set property ({{RFC8620}} Section 5.3).
 
 **Admit a lobby participant:**
 : Update the target's `lobbyState` from `"waiting"` to `"admitted"`. The server sets the target's `joinedAt` to the current time.
@@ -994,7 +1000,7 @@ Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipan
 : Update a participant's `role` between `"moderator"` and `"participant"`. A moderator MUST NOT revoke their own moderator role if they are the last moderator; the server MUST reject this with `forbidden`.
 
 **Assign to a breakout room:**
-: Update a participant's `callId` from the parent call to a child breakout-room call. This is the only update that `callId` accepts. The server does not move the record: it sets `leftAt` on the parent-call entry and creates (or reconnects) a VTCParticipant record on the child call. The server MUST return `invalidProperties` naming `callId` if the target `callId` is not a child of the participant's current call.
+: Update the participant's `breakoutCallId` on their parent-call record to the id of a child breakout-room call, or to `null` to withdraw the assignment. The server MUST return `invalidProperties` naming `breakoutCallId` if a non-null value is not in the parent call's `breakoutRoomIds`. The assigned participant's client joins the child call through the normal join path ({{joining}}, or {{reconnection}} if it already has a record there) and leaves the parent call by setting its own `leftAt` on the parent-call record.
 
 Example — admitting a lobby participant and muting another:
 
@@ -1049,6 +1055,10 @@ Example create (PSTN dial-out):
 ~~~
 
 Non-moderators SHOULD receive `forbidden` for dial-out creates. The server MUST return `invalidProperties` naming `joinMethod` when `joinMethod` does not match any VTCGateway `protocol` whose `supportsDialOut` is `true`. The server MUST return `invalidProperties` naming `callId` when the call is in state `"ended"`. When the call has `e2eeEnabled: true`, a dial-out whose gateway cannot join as a disclosed key-holding participant is rejected with `forbidden`, as {{e2ee-media-participants}} requires.
+
+#### Gateway Dial-In {#dial-in}
+
+Protocol gateways are server-side infrastructure. When an external caller reaches a call through a gateway, the server creates a VTCParticipant in the call identified by the caller's `gatewayPin` or dial-in address ({{dial-in-entry}}). The record has `joinMethod` set to the gateway protocol, `userId` set to `null`, and `displayName` derived from the caller's identity (for example, PSTN caller ID). The interface between a gateway and the server is deployment-defined and out of scope for this specification.
 
 ### VTCParticipant/query
 
@@ -1496,7 +1506,7 @@ Example — moderator sends outbound SIP REFER (call transfer) via `VTCParticipa
 
 ## In-Call Ephemeral Events {#in-call-events}
 
-The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events via `VTCStreamEnable` ({{JMAP-VTC-WSS}}), or by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message ({{JMAP-CHAT-WSS}}), which requires the server to advertise both `urn:ietf:params:jmap:chat:websocket` and `urn:ietf:params:jmap:vtc:websocket`. These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
+The following ephemeral WebSocket events carry real-time in-call state changes to connected clients. They are delivered over the same WebSocket connection as VTCRingEvent and VTCCallEndEvent. Clients subscribe to these events via `VTCStreamEnable` ({{JMAP-VTC-WSS}}), or by including `"vtc"` in the `dataTypes` array of a `ChatStreamEnable` message ({{JMAP-CHAT-WSS}}), which requires the server to advertise both `urn:jmap:chat:websocket` and `urn:jmap:vtc:websocket`. These events are not persisted; they supplement JMAP `StateChange` notifications for VTCParticipant to provide low-latency UI updates.
 
 ### VTCParticipantEvent
 
@@ -1638,7 +1648,7 @@ The `accountId` of every method call on a VTC data type, of `VTCCallPush` ({{vtc
 
 ## Chat-Bound Calls {#chat-bound-calls}
 
-When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:ietf:params:jmap:chat` is present, access control is inherited from JMAP Chat's permission model:
+When a VTCCall carries a `chatId`, `spaceId`, or `channelId` binding and `urn:jmap:chat` is present, access control is inherited from JMAP Chat's permission model:
 
 - **Visibility:** A call is visible to members of the bound Chat or Space channel. Non-members SHOULD receive `notFound` for `VTCCall/get` and `VTCParticipant/get` requests on the call. For calls with `e2eeEnabled: true`, participant records are further restricted per {{e2ee-participant-visibility}}.
 - **Join permission:** In a Space-bound call, participants who can `"view"` the channel MAY join an existing call even without the `"start_call"` permission (see {{JMAP-CHAT}}); `"start_call"` gates call creation, not joining.
@@ -1728,7 +1738,7 @@ VTCGatewaySignal events ({{gateway-signal}}) carry opaque protocol-specific data
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:vtc`
+: `urn:jmap:vtc`
 
 Intended Use:
 : common
@@ -1749,25 +1759,25 @@ IANA is requested to register the following entries in the "JMAP Data Types" reg
 Type Name: VTCCall
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:ietf:params:jmap:vtc`
+Capability: `urn:jmap:vtc`
 Specification document: This document.
 
 Type Name: VTCParticipant
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:ietf:params:jmap:vtc`
+Capability: `urn:jmap:vtc`
 Specification document: This document.
 
 Type Name: VTCRecording
 Can reference blobs: Yes
 Can use for state change: Yes
-Capability: `urn:ietf:params:jmap:vtc`
+Capability: `urn:jmap:vtc`
 Specification document: This document.
 
 Type Name: VTCLivestream
 Can reference blobs: No
 Can use for state change: Yes
-Capability: `urn:ietf:params:jmap:vtc`
+Capability: `urn:jmap:vtc`
 Specification document: This document.
 
 --- back
@@ -2015,7 +2025,7 @@ This example shows a room call with lobby mode in a Space channel.
 }, "0"]]
 ~~~
 
-The call is immediately `"active"`. Because it is bound by `spaceId` and `channelId` rather than `chatId`, no Chat's `activeCallId` changes; a call created with a `chatId` would also set that Chat's `activeCallId` ({{JMAP-CHAT}}).
+The call is immediately `"active"`. Because it is bound by `spaceId` and `channelId` rather than `chatId`, no Chat's `activeCallId` changes; a call created with a `chatId` would also set that Chat's `activeCallId` and `activeCallAccountId` ({{JMAP-CHAT}}).
 
 ### Step 2: Guest joins and enters lobby
 
