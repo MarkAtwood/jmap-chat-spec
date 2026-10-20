@@ -63,7 +63,7 @@ embedding it in the platform envelope. The canonical payload is:
 {
   "@type": "VTCCallPush",
   "accountId": "a1b2c3",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "callType": "ring",
   "initiatorId": "user:alice@example.com",
   "initiatorDisplayName": "Alice Chen",
@@ -159,7 +159,7 @@ Body (the outer APNs payload; `VTCCallPush` is embedded in `aps` or a custom key
   "jmap-vtc-push": {
     "@type": "VTCCallPush",
     "accountId": "a1b2c3",
-    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+    "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
     "callType": "ring",
     "initiatorId": "user:alice@example.com",
     "initiatorDisplayName": "Alice Chen",
@@ -255,7 +255,7 @@ FCM REST v1 payload:
       "ttl": "45s"
     },
     "data": {
-      "jmap-vtc-push": "{\"@type\":\"VTCCallPush\",\"accountId\":\"a1b2c3\",\"callId\":\"01J4XKZQN4MWVT8PPBEHTJ3AB\",\"callType\":\"ring\",\"initiatorId\":\"user:alice@example.com\",\"initiatorDisplayName\":\"Alice Chen\",\"subject\":null,\"mediaTypes\":[\"audio\",\"video\"],\"joinUri\":\"https://meet.example.com/room/xkzq\",\"chatId\":null,\"spaceId\":null}"
+      "jmap-vtc-push": "{\"@type\":\"VTCCallPush\",\"accountId\":\"a1b2c3\",\"callId\":\"01J4XKZQN4MWVT8PPBEHTJ3AB0\",\"callType\":\"ring\",\"initiatorId\":\"user:alice@example.com\",\"initiatorDisplayName\":\"Alice Chen\",\"subject\":null,\"mediaTypes\":[\"audio\",\"video\"],\"joinUri\":\"https://meet.example.com/room/xkzq\",\"chatId\":null,\"spaceId\":null}"
     }
   }
 }
@@ -368,7 +368,7 @@ Decrypted payload (what the service worker receives):
 {
   "@type": "VTCCallPush",
   "accountId": "a1b2c3",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "callType": "ring",
   "initiatorId": "user:alice@example.com",
   "initiatorDisplayName": "Alice Chen",

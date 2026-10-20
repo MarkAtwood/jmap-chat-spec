@@ -896,7 +896,7 @@ client typically subscribes to both:
 ~~~json
 {
   "@type": "VTCStreamEnable",
-  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
   "eventTypes": null
 }
 ~~~
@@ -941,7 +941,9 @@ Host: scene.example.com
 Upgrade: websocket
 Connection: Upgrade
 Authorization: Bearer eyJ0eXAi...
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 Sec-WebSocket-Protocol: jmap
+Sec-WebSocket-Version: 13
 ~~~
 
 ## Enable State-Change Push

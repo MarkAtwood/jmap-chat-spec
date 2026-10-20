@@ -528,7 +528,7 @@ Example response (properties abridged):
 
 ~~~json
 {
-  "id": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "id": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "callType": "ring",
   "state": "active",
   "createdAt": "2026-06-05T14:30:00Z",
@@ -609,7 +609,7 @@ The server creates VTCParticipant records for each target and for the initiator,
 {
   "created": {
     "c0": {
-      "id": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "id": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "state": "ringing",
       "initiatorId": "user:bob@example.com",
       "createdAt": "2026-06-05T14:30:00Z",
@@ -696,7 +696,7 @@ Example update:
 ~~~json
 {
   "update": {
-    "01J4XKZQN4MWVT8PPBEHTJ3AB": {
+    "01J4XKZQN4MWVT8PPBEHTJ3AB0": {
       "state": "ended"
     }
   }
@@ -825,7 +825,7 @@ Example create (joining a room call):
 {
   "create": {
     "p0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "joinMethod": "webrtc"
     }
   }
@@ -839,7 +839,7 @@ The server responds with the complete VTCParticipant record:
   "created": {
     "p0": {
       "id": "user:alice@example.com",
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "userId": "user:alice@example.com",
       "displayName": "Alice Chen",
       "role": "participant",
@@ -989,7 +989,7 @@ Example create (PSTN dial-out):
 {
   "create": {
     "g0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "joinMethod": "pstn",
       "gatewayData": {"dialNumber": "+14155559876"},
       "displayName": "Alice (mobile)"
@@ -1065,7 +1065,7 @@ Example create:
 {
   "create": {
     "r0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB"
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0"
     }
   }
 }
@@ -1088,7 +1088,7 @@ Example update (stop recording):
 ~~~json
 {
   "update": {
-    "01J4XP2SN9RXVU1SSEGIUT6GH": {
+    "01J4XP2SN9RXVV1SSEGJVT6GH0": {
       "state": "stopped"
     }
   }
@@ -1169,7 +1169,7 @@ Example create:
 {
   "create": {
     "s0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "streamUri": "rtmp://live.example.com/ingest",
       "streamKey": "sk_live_abc123def456",
       "platform": "youtube"
@@ -1279,7 +1279,7 @@ Example `VTCCallPush` payload:
 {
   "@type": "VTCCallPush",
   "accountId": "alice-account",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "callType": "ring",
   "initiatorId": "user:bob@example.com",
   "initiatorDisplayName": "Bob Martinez",
@@ -1307,7 +1307,7 @@ Example content-free `VTCCallPush` payload:
 {
   "@type": "VTCCallPush",
   "accountId": "alice-account",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "callType": "ring"
 }
 ~~~
@@ -1367,7 +1367,7 @@ Example — call answered on another device:
 ~~~json
 {
   "@type": "VTCCallEndEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "endReason": "answered_elsewhere"
 }
 ~~~
@@ -1415,7 +1415,7 @@ Example — inbound DTMF from a PSTN participant:
 ~~~json
 {
   "@type": "VTCGatewaySignal",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "gw-pstn-14155559876",
   "protocol": "pstn",
   "signal": "dtmf",
@@ -1776,7 +1776,7 @@ Server responds:
   "accountId": "bob-account",
   "created": {
     "c0": {
-      "id": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+      "id": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
       "state": "ringing",
       "initiatorId": "user:bob@example.com",
       "createdAt": "2026-06-05T14:30:00Z",
@@ -1796,7 +1796,7 @@ Alice's iOS device receives a VoIP push with the `VTCCallPush` payload and prese
 ~~~json
 {
   "@type": "VTCRingEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "initiatorId": "user:bob@example.com",
   "mediaTypes": ["audio", "video"],
   "joinUri": "https://meet.example.com/room/xkz"
@@ -1823,7 +1823,7 @@ The server sets `joinedAt`, transitions the VTCCall to `"active"`, and delivers 
 ~~~json
 {
   "@type": "VTCCallEndEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "endReason": "answered_elsewhere"
 }
 ~~~
@@ -1839,7 +1839,7 @@ Bob's client sends `VTCRecording/set`:
   "accountId": "bob-account",
   "create": {
     "r0": {
-      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB"
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0"
     }
   }
 }, "2"]]
@@ -1850,8 +1850,8 @@ Both participants receive a `VTCRecordingStateEvent` via WebSocket:
 ~~~json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
   "initiatedBy": "user:bob@example.com"
 }
@@ -1879,7 +1879,7 @@ Bob receives via WebSocket:
 ~~~json
 {
   "@type": "VTCMediaStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
   "participantId": "user:alice@example.com",
   "mediaState": {
     "audio": false,
@@ -1898,7 +1898,7 @@ Bob's client sends `VTCCall/set`:
 [["VTCCall/set", {
   "accountId": "bob-account",
   "update": {
-    "01J4XKZQN4MWVT8PPBEHTJ3AB": {
+    "01J4XKZQN4MWVT8PPBEHTJ3AB0": {
       "state": "ended"
     }
   }

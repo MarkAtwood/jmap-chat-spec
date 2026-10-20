@@ -157,7 +157,7 @@ ephemeral VTC event subscription on the current WebSocket connection.
 ~~~json
 {
   "@type": "VTCStreamEnable",
-  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
   "eventTypes": ["VTCParticipantEvent", "VTCMediaStateEvent",
                   "VTCActiveSpeakerEvent"]
 }
@@ -408,7 +408,9 @@ Host: vtc.example.com
 Upgrade: websocket
 Connection: Upgrade
 Authorization: Bearer eyJ0eXAi...
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 Sec-WebSocket-Protocol: jmap
+Sec-WebSocket-Version: 13
 ~~~
 
 ## Enable State-Change Push
@@ -429,7 +431,7 @@ Client subscribes to events for a specific call:
 ~~~json
 {
   "@type": "VTCStreamEnable",
-  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB"],
+  "callIds": ["01J4XKZQN4MWVT8PPBEHTJ3AB0"],
   "eventTypes": null
 }
 ~~~
@@ -441,8 +443,8 @@ Server delivers a participant-join event:
 ~~~json
 {
   "@type": "VTCParticipantEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "event": "joined",
   "displayName": "Alice Chen",
   "role": "participant"
@@ -456,8 +458,8 @@ A participant mutes their microphone:
 ~~~json
 {
   "@type": "VTCMediaStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "participantId": "01J4XMVQK7NRYS9PPCEHTK4CD0",
   "mediaState": {
     "audio": false,
     "video": true,
@@ -474,8 +476,8 @@ The active speaker changes:
 ~~~json
 {
   "@type": "VTCActiveSpeakerEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "participantId": "01J4XNZRM8QWUT0RRDFIUS5EF"
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "participantId": "01J4XNZRM8QWVT0RRDFJVS5EF0"
 }
 ~~~
 
@@ -486,8 +488,8 @@ A moderator starts recording:
 ~~~json
 {
   "@type": "VTCRecordingStateEvent",
-  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB",
-  "recordingId": "01J4XP2SN9RXVU1SSEGIUT6GH",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "recordingId": "01J4XP2SN9RXVV1SSEGJVT6GH0",
   "state": "recording",
   "initiatedBy": "user:bob@example.com"
 }
