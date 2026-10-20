@@ -1253,7 +1253,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 
 `update` supports the following patch keys:
 
-`name`, `description`, `iconBlobId`:
+`name`, `description`, `iconBlobId`, `isPublic`, `isPubliclyPreviewable`:
 : Metadata fields. Require `"manage_space"` permission.
 
 `addRoles` (Object[]):
