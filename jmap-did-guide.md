@@ -420,7 +420,7 @@ simpler.
 ### 4.2 Rejecting client-supplied DIDs
 
 **What the spec defines.** Servers MUST reject create/update requests that
-include DID-bearing properties with `invalidArguments`.
+include DID-bearing properties with `invalidProperties`.
 
 **What you must decide.** Nothing — this is mandatory. But note:
 
@@ -533,7 +533,7 @@ with unverified identities; the verification indicator is informational.
 new keys in the DID document, same DID. Key rotation needs no JMAP-layer
 action. A DID migration is a change of the bound DID. On migration the server
 MUST update the account capability object, new objects carry the new DID,
-existing objects keep the DID recorded at creation, and the server SHOULD set
+existing objects keep the DID recorded at creation, and the server MUST set
 `previousDid` (draft §Key Rotation, §DID Migration).
 
 **What you must decide.**
@@ -593,7 +593,7 @@ new sessions, and terminate live presence for suspended accounts
 
 ### 6.3 Revocation
 
-**What the spec defines.** The server MUST terminate all sessions and prevent
+**What the spec defines.** The server SHOULD terminate all sessions and prevent
 new authentication. Objects SHOULD retain the revoked DID for provenance
 (draft §Revocation).
 

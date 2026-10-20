@@ -137,10 +137,10 @@ their account holds an irrevocable governance role.
 ### 1.2 Group-chat bootstrap role assignment
 
 **What the spec leaves open.** Group chats use a closed two-role enum
-(`ChatMember.role`: `"admin" | "member"`). The spec makes the bootstrap-role
-assignment server-defined: the creator does not *have* to receive `"admin"`
-automatically. The wire contract is the role enum and the admin-action list,
-not the initial-seat policy.
+(`ChatMember.role`: `"admin" | "member"`). The spec has the server add the
+creator with a role sufficient to administer the chat (chat draft, `Chat/set`
+group create), which in this enum means `"admin"`. What stays open is the
+policy around that seat: who else starts as admin, and succession.
 
 **What you must decide.**
 
@@ -190,7 +190,7 @@ by refusing the leave; it is a client prompt.
 
 **Recommended starting point.**
 
-The creator SHOULD automatically receive the `"admin"` role. Clients SHOULD
+The creator receives the `"admin"` role, as the spec requires. Clients SHOULD
 confirm before the last admin leaves, stating that the group will close, and
 SHOULD offer to promote a successor first. Deployments SHOULD avoid
 admin-less open groups by refusing to let the last admin demote themselves
@@ -288,11 +288,11 @@ exempt principals.
 - Exempt principals that appear as ordinary members can create the
   appearance of unfair treatment ("why is X sending so often during
   slow-mode?"). Some products tag exempt senders visibly; others don't.
-- Federated peers don't have visibility into your slow-mode setting. The
-  rate limit applies at the local-sender level (`Chat/typing` and message
-  creation on the originating server); incoming `Peer/deliver` messages
-  arrive regardless of your local slow-mode. This is correct: the peer's
-  local user is subject to *their* server's slow-mode, not yours.
+- Federated peers don't have visibility into your slow-mode setting, but
+  the channel's host server enforces it: a `Peer/deliver` into a slow-mode
+  channel from a non-exempt sender is rejected with `rateLimited`
+  (federation draft, `Peer/deliver` step 6). Remote senders are subject to
+  the channel's slow-mode, not only their own server's.
 - Bots and automated systems benefit from exemption when they post
   high-volume notifications (e.g., CI status, monitoring alerts) and from
   rate limiting when they could spam.
@@ -310,9 +310,9 @@ exempt principals.
 Deployments SHOULD exempt server admins and dedicated moderator roles from
 slow-mode by default. Automated systems that emit important notifications
 (CI, on-call alerts) SHOULD be exempt; general-purpose chatbots that could
-spam SHOULD be rate-limited normally. Deployments MUST NOT exempt federated
-`Peer/deliver` messages at the receiver side; the rate limit applies at the
-original sender's server.
+spam SHOULD be rate-limited normally. Federated `Peer/deliver` messages are
+not exempt as a class; the receiving server applies slow-mode to them per
+the federation draft's `Peer/deliver` step 6.
 
 Deployments SHOULD NOT visually tag exempt senders unless the product has a
 specific trust-and-safety reason to make moderator status visible. The
@@ -767,7 +767,7 @@ similarly impl-defined.
 
 **What the spec leaves open.** The federation draft's §Persistent Queue
 section expresses durability as an outcome rather than a prescribed
-mechanism: "Outbound messages MUST be durable across local server
+mechanism: "Outbound messages SHOULD be durable across local server
 restart prior to delivery confirmation; the specific mechanism (persistent
 outbox, write-through queue, transactional store with the local message-store
 write, replicated in-memory queue backed by an upstream broker with
@@ -793,7 +793,8 @@ at-least-once delivery, etc.) is implementation-defined."
   scales horizontally; adds operational complexity; useful if you're
   already running one for other purposes.
 - *In-memory* queue with snapshot-on-graceful-shutdown: NOT durable across
-  crashes. Don't use this for federation outbound — the spec MUST is real.
+  crashes. Don't use this for federation outbound — the spec's durability SHOULD
+  exists for exactly this case.
 - *At-least-once* means receivers may see duplicates and must dedup. The
   federation `senderMsgId` is designed for this (federation draft,
   §Peer/deliver idempotency key).
@@ -1140,7 +1141,7 @@ multiple servers."
 - **Total retry duration**: 24 hours (after which the message MUST be
   marked `deliveryState: "failed"`).
 - **Jitter**: ±20% of the computed interval (multiplied by a uniform
-  random factor in [0.8, 1.2]). Implementations MUST apply jitter per the
+  random factor in [0.8, 1.2]). Implementations SHOULD apply jitter per the
   federation draft's §Retry and Backoff.
 - **Backoff schedule**: exponential with base 2, capped at the maximum
   (so 5s → 10s → 20s → 40s → 80s → 160s → 300s [cap] → 300s ...).
@@ -1173,7 +1174,7 @@ added. Per-scope opt-out (mute `@here` but not
 
 The main draft now codifies this bypass in the `Chat.muted` definition and
 adds a Security Considerations subsection on broadcast-mention abuse vectors,
-including the rule that a receiving server MUST NOT use the sending server's
+including the rule that a receiving server SHOULD NOT use the sending server's
 send-time recipient set for elevation decisions. The opt-out mechanism
 remains deployment-defined.
 

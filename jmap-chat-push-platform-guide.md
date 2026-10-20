@@ -5,7 +5,7 @@ details specific to `draft-atwood-jmap-chat-push-00`. Read that guide first — 
 authentication, request format, urgency mapping, error handling, and size limits for every
 supported platform. This document covers only what changes when the payload is a
 `ChatMessagePush` object: how to embed it in each platform's envelope, how to derive
-urgency from `ChatPushConfig`, and how to truncate oversized payloads.
+urgency from `ChatPushConfig`, and how to keep payloads within platform size limits.
 
 ---
 
@@ -54,8 +54,9 @@ RFC 8620 `PushSubscription` without a `chatPush` property. In that case the serv
 delivers plain `StateChange` events for the `Message` data type; clients handle them by
 calling `Message/changes` to determine which messages are new — the same flow as the
 rate-limit fallback described below. Clients MUST NOT include a `chatPush` property in
-`PushSubscription/set` calls when the capability is absent; the server will reject the
-call with `invalidArguments`.
+`PushSubscription/set` calls when the capability is absent; the draft forbids servers to
+include `chatPush` entries for such an account (`draft-atwood-jmap-chat-push-00`
+§PushSubscription Extension) and defines no error code for the request.
 
 ### When the server does not send a push
 
@@ -64,7 +65,10 @@ The server suppresses `ChatMessagePush` delivery in these cases:
 - The message was stored before the `PushSubscription` was created.
 - The sender is the account owner (push is for inbound messages only).
 - The account is no longer a member of the chat at delivery time.
-- The chat is muted (`Chat.muted: true` or within an active `muteUntil` period).
+- The chat is muted (`Chat.muted: true` or within an active `muteUntil` period), unless
+  a broadcast mention targets the account owner (see `draft-atwood-jmap-chat-00`
+  §Chat.muted).
+- The sender's ChatContact has `blocked: true` on the owner's contact list.
 
 When the delivery rate exceeds the server's rate limit, the server MAY fall back to a
 plain `StateChange` for the `Message` data type. Clients receiving a `StateChange` on a
@@ -90,7 +94,7 @@ subscription with `chatPush` configured MUST handle it the same way as any other
 ### FCM and ADM
 
 `data` map values MUST be strings. Servers MUST serialize `ChatMessagePush` as JSON and
-place it under `"jmap-push"`:
+place it under an application-defined key; this guide uses `"jmap-push"`:
 
 ```json
 "data": {
@@ -118,7 +122,8 @@ payload={url_encoded_ChatMessagePush_json}
 
 ### APNs
 
-Servers MUST embed `ChatMessagePush` inline as a JSON object under `"jmap-push"`.
+Servers MUST embed `ChatMessagePush` inline as a JSON object under an
+application-defined key; this guide uses `"jmap-push"`.
 
 **Background push** (opportunistic delivery, no user-visible notification until the app
 wakes):
@@ -245,44 +250,34 @@ compatibility for future scope additions).
 ## The `state` field
 
 `ChatMessagePush.state` is the `Message` state token for the account after all messages
-in the payload have been applied.
-Clients SHOULD update their locally cached `Message` state token on receipt. Using this value as `sinceState` in a subsequent `Message/changes`
-call will not re-surface messages already present in the payload.
+in the payload have been applied. It also covers Message changes the payload does not
+carry (the owner's own messages, and messages excluded by `ChatPushConfig`, mute, or
+block), so clients SHOULD NOT replace their cached `Message` state with it. If `state`
+differs from the cached state, the client calls `Message/changes` with its cached state
+as `sinceState` (`draft-atwood-jmap-chat-push-00` §ChatMessagePush).
 
 ---
 
-## Payload truncation
+## Payload size
 
-When a `ChatMessagePush` payload exceeds the platform size limit (see the platform
-delivery guide for per-platform limits), servers SHOULD drop fields from
-`ChatMessageEntry` objects in this order until the payload fits:
+The draft defines no truncation. The `properties` list is authoritative (the server
+returns exactly the requested fields), and every matching message gets a push
+(`draft-atwood-jmap-chat-push-00` §ChatPushConfig, §Delivery). Keep payloads within the
+platform size limit (see the platform delivery guide for per-platform limits) without
+dropping fields or entries:
 
-1. `bodySnippet` — the largest variable field; drop first
-2. `spaceId` — opaque identifier with no display value
-3. `sentAt` — display nicety; the recipient's local clock is close enough
-4. `spaceName`
-5. `chatName`
-6. `senderDisplayName`
+- Bound the snippet: `bodySnippet` is the only large variable field, and
+  `maxSnippetBytes` caps it. Choose `maxSnippetBytes` so that one entry with every
+  supported property fits the smallest limit among the platforms the server delivers to.
+- Split batches: when a batch does not fit, put fewer entries in each `ChatMessagePush`
+  and deliver additional payloads for the rest, as the draft requires when
+  `maxMessagesPerPush` is reached (§Batching and Retry). A single-entry payload is
+  always permitted.
 
-This truncation order applies when these fields are present in the payload (whether
-delivered by default or because the client requested them via `properties`). If the
-`ChatPushConfig` specifies a `properties` list that excludes some of these fields, they
-will already be absent and SHOULD be skipped in the sequence.
-
-Servers MUST NOT drop: `@type`, `accountId`, `state` (on the outer object), `messageId`,
-`chatId`, `chatKind`, `senderId`, `hasMention`, `mentionScopes`, `encrypted`. (For an
-encrypted message `hasMention` and `mentionScopes` are absent from the start, because
-the server cannot see mentions inside the ciphertext.)
-
-A client receiving a `ChatMessageEntry` with no `bodySnippet` SHOULD display a generic
-"new message" notification and fetch full content via `Message/changes` on next
-foreground wake — the same behavior as when `encrypted: true`.
-
-If the payload still exceeds the limit after all droppable fields are removed from every
-entry (typically due to a large batch), servers SHOULD drop entries from the end of the
-`messages` array, keeping the first entry. If a single minimal entry still exceeds the
-platform limit, servers MUST fall back to a plain `StateChange` for that subscription
-rather than sending an invalid or oversized payload.
+A client receiving a `ChatMessageEntry` with no `bodySnippet` (for example, because
+`properties` omitted it) SHOULD display a generic "new message" notification and fetch
+full content via `Message/changes` on next foreground wake — the same behavior as when
+`encrypted: true`.
 
 ---
 
