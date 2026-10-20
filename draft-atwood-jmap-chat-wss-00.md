@@ -24,7 +24,7 @@ normative:
   RFC8620:
   RFC8887:
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
@@ -34,35 +34,21 @@ normative:
 informative:
   RFC9325:
   JMAP-CHAT-FED:
-    title: JMAP Chat Federation
+    title: "JMAP Chat Federation"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
-  JMAP-VTC:
-    title: JMAP for Video/Voice Teleconferencing
-    author:
-      fullname: Mark Atwood
-    seriesinfo:
-      Internet-Draft: draft-atwood-jmap-vtc-00
-    date: 2026
   JMAP-VTC-WSS:
-    title: JMAP VTC over WebSocket
+    title: "JMAP VTC over WebSocket"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-wss-00
     date: 2026
-  JMAP-SCENE:
-    title: JMAP Scene
-    author:
-      fullname: Mark Atwood
-    seriesinfo:
-      Internet-Draft: draft-atwood-jmap-scene-00
-    date: 2026
   JMAP-SCENE-WSS:
-    title: JMAP Scene over WebSocket
+    title: "JMAP Scene over WebSocket"
     author:
       fullname: Mark Atwood
     seriesinfo:
@@ -138,11 +124,11 @@ Example Session object fragment:
 
 # Authentication and Identity {#authentication}
 
-{{JMAP-CHAT}} requires the transport layer to supply a stable, opaque user identity string for each connection. When JMAP Chat is used over a WebSocket connection, this identity is established at the WebSocket handshake per {{RFC8887}} Section 4.2. The identity string supplied by the server's authentication layer for the HTTP request that initiates the handshake becomes the `ownerUserId` for the duration of the WebSocket connection.
+{{JMAP-CHAT}} requires the transport layer to supply a stable, opaque user identity string for each connection. When JMAP Chat is used over a WebSocket connection, this identity is established at the WebSocket handshake per {{RFC8887}} Section 4.1. The identity string supplied by the server's authentication layer for the HTTP request that initiates the handshake becomes the `ownerUserId` for the duration of the WebSocket connection.
 
-Servers MUST NOT accept JMAP Chat requests over a WebSocket connection that was not successfully authenticated. If the authentication credentials expire during a WebSocket session, the server MUST either treat subsequent requests as unauthenticated or close the WebSocket connection with a Close frame status code of 1008 (Policy Violation). {{RFC8887}} Section 4.2 makes the 1008 status code optional ("MAY"); this document makes it mandatory when closing, so that clients can reliably detect and recover from credential expiry on a long-lived chat connection.
+Servers SHOULD NOT accept JMAP Chat requests over a WebSocket connection that was not successfully authenticated. The credential-expiry rules of {{RFC8887}} Section 4.2 apply. If the server closes the connection when credentials expire, it SHOULD use Close frame status code 1008 (Policy Violation), which {{RFC8887}} leaves optional, so that clients can reliably detect and recover from credential expiry on a long-lived chat connection.
 
-Ephemeral events are pushed, not requested, so treating subsequent requests as unauthenticated does not by itself stop them. A server that does not close the connection when credentials expire MUST NOT deliver further ephemeral events on that connection.
+Ephemeral events are pushed, not requested, so treating subsequent requests as unauthenticated does not by itself stop them. A server that does not close the connection when credentials expire SHOULD NOT deliver further ephemeral events on that connection.
 
 Because a single authenticated WebSocket connection authorizes a continuous stream of JMAP Chat operations, credential theft has broader impact than in the per-request HTTP model. Implementations SHOULD use short-lived credentials (e.g., OAuth 2.0 Bearer tokens with short expiry) and SHOULD support credential refresh by closing and re-establishing the connection with fresh credentials.
 
@@ -168,7 +154,7 @@ State-change push notifications for JMAP Chat data types work without modificati
 - `"SpaceBan"` — new or updated SpaceBan objects
 - `"SpaceInvite"` — new or updated SpaceInvite objects
 
-Upon receiving a `StateChange` for a Chat data type, clients SHOULD issue the corresponding `/changes` call to retrieve updated objects. On `cannotCalculateChanges`, clients MUST fall back to `/get`.
+Upon receiving a `StateChange` for a Chat data type, clients SHOULD issue the corresponding `/changes` call to retrieve updated objects. On `cannotCalculateChanges`, clients fall back to `/get` ({{RFC8620}} Section 5.2).
 
 The `pushState` token mechanism defined in {{RFC8887}} Section 4.3.5.1 applies to Chat data types and enables clients to catch up on missed changes after reconnection without issuing a full `/changes` sweep.
 
@@ -176,7 +162,7 @@ The `pushState` token mechanism defined in {{RFC8887}} Section 4.3.5.1 applies t
 
 Ephemeral chat events — typing indicators and real-time presence updates from other contacts — do not correspond to persistent state changes and carry no state token. They are delivered as additional server-to-client text frames over the WebSocket connection when ephemeral push has been enabled by the client.
 
-Ephemeral event frames are interleaved with `StateChange` and `Response` frames on the same WebSocket connection and SHOULD be processed independently. No ordering relationship is guaranteed between ephemeral event frames and `Response` or `StateChange` frames. Clients MUST NOT assume causal ordering between them. Receiving a `ChatTypingEvent` or `ChatPresenceEvent` SHOULD NOT cause the client to update any locally cached state token or issue any JMAP method call.
+Ephemeral event frames are interleaved with `StateChange` and `Response` frames on the same WebSocket connection and SHOULD be processed independently. No ordering relationship is guaranteed between ephemeral event frames and `Response` or `StateChange` frames. Receiving a `ChatTypingEvent` or `ChatPresenceEvent` SHOULD NOT cause the client to update any locally cached state token or issue any JMAP method call.
 
 ## Enabling Ephemeral Push {#chat-stream-enable}
 
@@ -186,9 +172,9 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 : MUST be `"ChatStreamEnable"`.
 
 `dataTypes` (String[]):
-: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`. It also defines two companion values: `"vtc"` for in-call events defined by {{JMAP-VTC-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:scene:websocket`.
+: A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`. It also defines two companion values: `"vtc"` for the VTC events (ring and in-call) defined by {{JMAP-VTC-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:scene:websocket`.
 
-> **Implementation Note:** The `"vtc"` and `"scene"` dataTypes in ChatStreamEnable are convenience aliases. When one is present, the Chat WSS server delegates event delivery to the VTC WSS or Scene WSS event pipeline. The Chat WSS implementation SHOULD treat this as an opaque delegation — it activates the companion's event delivery for the connection without the Chat WSS layer needing to understand the companion's event semantics. When the companion capability is not present in the server's capabilities, the server MUST silently ignore the value in `dataTypes` (per the general unrecognized-value rule).
+> **Implementation Note:** The `"vtc"` and `"scene"` dataTypes in ChatStreamEnable are convenience aliases. When one is present, the Chat WSS server delegates event delivery to the VTC WSS or Scene WSS event pipeline. The Chat WSS implementation treats this as an opaque delegation — it activates the companion's event delivery for the connection without the Chat WSS layer needing to understand the companion's event semantics. When the companion capability is not present in the server's capabilities, the value in `dataTypes` is silently ignored under the unrecognized-value rule below.
 
 `chatIds` (String[]|null):
 : Applicable when `"typing"` is in `dataTypes`. An explicit list of Chat ids for which typing events are requested, or `null` to receive typing events for all Chats of which the owner is a current member. Ignored if `"typing"` is not in `dataTypes`.
@@ -262,13 +248,13 @@ Delivered to the client when another participant begins or stops typing in a Cha
 }
 ~~~
 
-Servers MUST NOT persist `ChatTypingEvent` messages. Servers SHOULD rate-limit outbound typing events per sender per chat: no more than one `ChatTypingEvent` per sender per chat per 3 seconds SHOULD be delivered; events above this rate MAY be silently dropped. This rate limit is consistent with the `Chat/typing` inbound rate limit defined in {{JMAP-CHAT}} and the `Peer/typing` rate limit defined in {{JMAP-CHAT-FED}}.
+As for all typing events in {{JMAP-CHAT}} (see Chat/typing Server Behavior), servers do not persist `ChatTypingEvent` messages. Servers SHOULD rate-limit outbound typing events per sender per chat: no more than one `ChatTypingEvent` per sender per chat per 3 seconds SHOULD be delivered; events above this rate MAY be silently dropped. This rate limit is consistent with the `Chat/typing` inbound rate limit defined in {{JMAP-CHAT}} and the `Peer/typing` rate limit defined in {{JMAP-CHAT-FED}}.
 
-For direct and group Chats, servers MUST check each recipient's `receiveTypingIndicators` field (defined in {{JMAP-CHAT}} (see Chat/typing Server Behavior)) before delivery. If `receiveTypingIndicators` is `false`, the server MUST silently drop the `ChatTypingEvent` and MUST NOT deliver it to any of that owner's WebSocket connections. The sender is not notified. This check does not apply to channel Chats.
+For direct and group Chats, the `receiveTypingIndicators` check of {{JMAP-CHAT}} (see Chat/typing Server Behavior) applies before delivery: if the recipient's `receiveTypingIndicators` is `false`, the `ChatTypingEvent` is silently dropped and is not delivered to any of that owner's WebSocket connections. The sender is not notified. This check does not apply to channel Chats.
 
-Servers MUST verify at delivery time that the owner remains a current member of the identified Chat. If the owner is no longer a member, the event MUST be dropped silently.
+Servers SHOULD verify at delivery time that the owner remains a current member of the identified Chat. If the owner is no longer a member, the event SHOULD be dropped silently.
 
-Servers MUST NOT deliver a `ChatTypingEvent` whose `senderId` corresponds to a ChatContact that is `blocked` on the recipient's ChatContact record. The sender is not notified. This parallels the message-suppression rule for blocked contacts in {{JMAP-CHAT}} Security Considerations and prevents a blocked user from leaking presence or attention patterns to a recipient who has explicitly chosen to ignore them.
+The blocked-sender check of {{JMAP-CHAT}} (see Chat/typing Server Behavior) applies: a `ChatTypingEvent` whose `senderId` corresponds to a ChatContact that is `blocked` on the recipient's ChatContact record is not delivered. The sender is not notified. This parallels the message-suppression rule for blocked contacts in {{JMAP-CHAT}} Security Considerations and prevents a blocked user from leaking presence or attention patterns to a recipient who has explicitly chosen to ignore them.
 
 ## ChatPresenceEvent {#chat-presence-event}
 
@@ -286,16 +272,16 @@ Delivered to the client when a ChatContact's presence state changes and that con
 `presence` (String):
 : The updated presence state: `"online"`, `"away"`, `"busy"`, or `"offline"`.
 
-When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST deliver `"offline"` in outbound `ChatPresenceEvent` frames. The `"invisible"` value MUST NOT appear in events delivered to other users; it is an internal state that controls suppression only.
+`"invisible"` is not a value of this field. The server reports a contact whose presence is `"invisible"`, whether that contact is a local user whose `PresenceStatus.presence` is `"invisible"` or a ChatContact whose recorded `presence` is `"invisible"`, as `"offline"`.
 
 `lastActiveAt` (UTCDate, optional):
 : Updated last-active timestamp, if known.
 
 `statusText` (String|null, optional):
-: Updated custom status text. `null` explicitly clears the field. If absent, the client SHOULD treat the existing value as unchanged.
+: Updated custom status text. `null` explicitly clears the field. If absent, the existing value is unchanged.
 
 `statusEmoji` (String|null, optional):
-: Updated status emoji. `null` explicitly clears the field. If absent, the client SHOULD treat the existing value as unchanged.
+: Updated status emoji. `null` explicitly clears the field. If absent, the existing value is unchanged.
 
 ~~~json
 {
@@ -311,7 +297,7 @@ When the owner's `PresenceStatus.presence` is `"invisible"`, the server MUST del
 
 Servers SHOULD rate-limit outbound `ChatPresenceEvent` messages per contact: no more than one `ChatPresenceEvent` per contact per 30 seconds SHOULD be delivered; events above this rate MAY be silently dropped, but the most recent presence state SHOULD be delivered when the rate window reopens, so that a dropped transition does not leave the recipient with stale presence. This rate limit is consistent with the `Peer/subscribePresence` delivery rate defined in {{JMAP-CHAT-FED}}.
 
-Servers MUST NOT deliver `ChatPresenceEvent` for a contact whose `blocked` field is `true` on the owner's ChatContact record for that contact.
+As for the presence push event in {{JMAP-CHAT}}, a `ChatPresenceEvent` is not delivered for a contact whose `blocked` field is `true` on the owner's ChatContact record for that contact.
 
 # Handling Unknown Message Types {#unknown-types}
 
@@ -428,24 +414,22 @@ WS_CLOSE
 
 All security considerations for WebSocket ({{RFC6455}} Section 10), JMAP ({{RFC8620}} Section 8), and JMAP Chat ({{JMAP-CHAT}} Security Considerations) apply without modification.
 
-The TLS requirements of {{RFC8887}} Section 5.1 apply: the WebSocket connection MUST use TLS 1.2 or later, following the recommendations in BCP 195 {{?RFC9325}}. Servers SHOULD support TLS 1.3 or later.
+The TLS requirements of {{RFC8887}} Section 5.1 and the recommendations of BCP 195 {{?RFC9325}} apply.
 
 ## Ephemeral Event Authorization
 
-Servers MUST verify authorization at the time of each ephemeral event delivery, not only at the time `ChatStreamEnable` is received, since membership and block status can change while the connection is open:
+Servers SHOULD verify authorization at the time of each ephemeral event delivery, not only at the time `ChatStreamEnable` is received, since membership and block status can change while the connection is open. The checks so evaluated at delivery time are:
 
-- `ChatTypingEvent` MUST only be delivered for Chats in which the owner is a current member at delivery time.
-- `ChatTypingEvent` MUST NOT be delivered to a recipient whose Chat record (for a direct or group Chat) has `receiveTypingIndicators: false` at delivery time.
-- `ChatTypingEvent` MUST NOT be delivered when the sender (`senderId`) corresponds to a ChatContact whose `blocked` field is `true` on the recipient's ChatContact record at delivery time.
-- `ChatPresenceEvent` MUST NOT be delivered for ChatContacts whose `blocked` field is `true` at delivery time.
+- for `ChatTypingEvent`, current membership of the owner in the Chat, the recipient's `receiveTypingIndicators` (direct and group Chats), and the blocked-sender check ({{chat-typing-event}});
+- for `ChatPresenceEvent`, the blocked-contact check ({{chat-presence-event}}).
 
 ## Rate Limiting
 
-The per-sender, per-chat rate limit for `ChatTypingEvent` ({{chat-typing-event}}) and the per-contact rate limit for `ChatPresenceEvent` ({{chat-presence-event}}) SHOULD be enforced server-side. Without these limits, a malicious peer could send typing or presence updates at high frequency and exhaust server fan-out resources or flood client connections with ephemeral traffic.
+The per-sender, per-chat rate limit for `ChatTypingEvent` ({{chat-typing-event}}) and the per-contact rate limit for `ChatPresenceEvent` ({{chat-presence-event}}) are server-side limits. Without them, a malicious peer could send typing or presence updates at high frequency and exhaust server fan-out resources or flood client connections with ephemeral traffic.
 
 ## Ephemeral Event Scope Isolation
 
-Servers MUST ensure that ephemeral events for one owner's subscription are never delivered to another owner's WebSocket connection. Each WebSocket connection has exactly one authenticated identity, and all ephemeral event filtering and delivery MUST be scoped to that identity.
+Servers SHOULD ensure that ephemeral events for one owner's subscription are never delivered to another owner's WebSocket connection. Each WebSocket connection has exactly one authenticated identity, and all ephemeral event filtering and delivery SHOULD be scoped to that identity.
 
 # IANA Considerations {#iana}
 
