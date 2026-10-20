@@ -181,7 +181,7 @@ The Session object MAY include an `ownerDirectAddress` field (see {{session-exte
 
 A peer is a domain. A server authenticates to a peer by signing each HTTP request with a key that its peer domain publishes; the receiving server verifies the signature and so learns which peer domain sent the request. Every server MUST support the baseline mechanism ({{request-signing}} through {{key-publication}}). Publishing the signing keys in DNSSEC-signed DNS ({{dnssec-keys}}) is RECOMMENDED where DNSSEC is available, and mutual TLS with a DANE-verified client certificate ({{mutual-tls}}) is OPTIONAL. Neither replaces the request signature.
 
-Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide a JMAP account in the resulting session that carries the `urn:ietf:params:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
+Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide a JMAP account in the resulting session that carries the `urn:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
 
 Before granting peer-role access, the local server checks that the `ownerUserId` advertised at the authenticated peer domain is bound to that domain, and rejects the request if it is not ({{identity-binding}}).
 
@@ -258,7 +258,7 @@ The peer identity is the `identity` of the peer's ChatContact on the local serve
 
 # Account-Level Capability {#account-capability}
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object. This document defines the following field within that object, which is relevant to federation:
+The value of `accountCapabilities["urn:jmap:chat"]` is a JSON object. This document defines the following field within that object, which is relevant to federation:
 
 `role` (String):
 : Either `"owner"` or `"peer"`. An account with `role: "owner"` has full access to all JMAP Chat methods. An account with `role: "peer"` is granted access only to the Peer/* methods defined in this document. Callers authenticated as a peer and operating against an account where `role` is `"peer"` MUST receive `forbidden` for any method not listed in {{peer-methods}}.
@@ -303,7 +303,7 @@ Servers MAY include the following additional field:
 
 # Server-to-Server Methods {#peer-methods}
 
-The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
+The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
 
 All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the peer identity of the calling server. Servers MUST validate all such fields identically against the peer identity.
 
@@ -408,7 +408,7 @@ Before storing a new message, the server MUST perform the following steps in ord
 3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id or resolve a mismatch per {{direct-chat-race}}; otherwise create a new Chat record with this chatId and set `contactId` to the sender's ChatContact `id` (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat. If the group chat's `closedAt` is set, or the channel's Space has `closedAt` set ({{JMAP-CHAT}}), reject with `forbidden`.
 4. For channel chats: verify that no active SpaceBan exists for the sender in the Space containing the identified channel. If a SpaceBan exists, silently drop the message and return success.
 5. For channel chats: verify that the sender holds the `"send"` permission in the identified channel per the Space permission resolution defined in {{JMAP-CHAT}}. If the sender lacks `"send"`, reject with `forbidden`.
-6. For channel chats where the channel's `slowModeSeconds` is non-zero: verify that the sender is not rate-limited by the slow-mode policy. If the sender's last accepted message in this channel was received within `slowModeSeconds` seconds and the sender is not exempt, reject with `rateLimited`. Servers SHOULD exempt senders holding the `"manage_channels"` permission, and deployments MAY exempt others (see `slowModeSeconds` in {{JMAP-CHAT}}).
+6. For channel chats where the channel's `slowModeSeconds` is non-zero: verify that the sender is not rate-limited by the slow-mode policy. If the sender's last accepted message in this channel was received within `slowModeSeconds` seconds and the sender is not exempt, reject the `Peer/deliver` call with the method-level error `rateLimited`. Servers SHOULD exempt senders holding the `"manage_channels"` permission, and deployments MAY exempt others (see `slowModeSeconds` in {{JMAP-CHAT}}).
 7. Confirm the sender is not blocked by the owner. If `blocked` is `true` on the sender's ChatContact record, silently drop the message and return success (to avoid disclosing block status to the sender).
 8. Validate `body` byte length against `maxBodyBytes`; reject with `invalidArguments` if exceeded. For plaintext `bodyType` values, also validate UTF-8 encoding. For encrypted `bodyType` values (e.g., `"application/mls-ciphertext"`), `body` is opaque ciphertext; servers MUST NOT parse or transform it beyond byte-length checking.
 9. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type SHOULD include it in `supportedBodyTypes`.
@@ -894,7 +894,7 @@ IANA is requested to add the following entries to the "Underscored and Globally 
 | TXT | _jmap-peer | This document, {{dnssec-keys}} |
 | TLSA | _jmap-peer | This document, {{mutual-tls}} |
 
-This document requests no other IANA registrations. The `urn:ietf:params:jmap:chat` capability URI is registered by {{JMAP-CHAT}}. This document extends the semantics of that capability by defining the `role: "peer"` account capability value and the Peer/* server-to-server methods; no additional capability URI is required.
+This document requests no other IANA registrations. The `urn:jmap:chat` capability URI is registered by {{JMAP-CHAT}}. This document extends the semantics of that capability by defining the `role: "peer"` account capability value and the Peer/* server-to-server methods; no additional capability URI is required.
 
 --- back
 

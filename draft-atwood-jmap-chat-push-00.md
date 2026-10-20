@@ -81,15 +81,15 @@ Terminology from {{RFC8620}} and {{JMAP-CHAT}} is used throughout.
 
 # Capability {#capability}
 
-Servers supporting this specification advertise the `urn:ietf:params:jmap:chat:push` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also present.
+Servers supporting this specification advertise the `urn:jmap:chat:push` capability in the JMAP Session object. This capability is meaningful only when `urn:jmap:chat` is also present.
 
 ## Session-Level Capability Object
 
-The value of `capabilities["urn:ietf:params:jmap:chat:push"]` at the session level is an empty object `{}`.
+The value of `capabilities["urn:jmap:chat:push"]` at the session level is an empty object `{}`.
 
 ## Account-Level Capability Object
 
-The value of `accountCapabilities["urn:ietf:params:jmap:chat:push"]` is a JSON object with the following fields:
+The value of `accountCapabilities["urn:jmap:chat:push"]` is a JSON object with the following fields:
 
 `maxSnippetBytes` (UnsignedInt):
 : Maximum byte length of the `bodySnippet` field in a `ChatMessageEntry`. Servers MUST truncate body snippets to this length before including them in the payload. Truncation MUST occur on a UTF-8 character boundary.
@@ -107,7 +107,7 @@ This document extends the `PushSubscription` object defined in {{RFC8620}} Secti
 `chatPush` (Id[ChatPushConfig], optional):
 : A map of accountId to `ChatPushConfig` object. When present for an account, the server delivers `ChatMessagePush` payloads to the push endpoint for new inbound messages in that account that match the configuration. When absent or null for an account, the server delivers standard `StateChange` notifications for that account without inline message content.
 
-Servers MUST NOT include `chatPush` entries for accounts whose `accountCapabilities` does not include `urn:ietf:params:jmap:chat:push`.
+If a `PushSubscription/set` create or update includes a `chatPush` entry for an account whose `accountCapabilities` does not include `urn:jmap:chat:push`, the server MUST return an `invalidProperties` SetError whose `properties` names the offending entry (e.g., `chatPush/<id>`) and MUST NOT store the subscription change.
 
 ## ChatPushConfig {#chat-push-config}
 
@@ -230,6 +230,8 @@ Servers SHOULD deliver at most one `ChatMessagePush` per message per `PushSubscr
 
 If multiple new messages arrive in quick succession, servers MAY include multiple `ChatMessageEntry` objects in the `messages` array of a single `ChatMessagePush` rather than delivering a separate payload per message. The `maxMessagesPerPush` bound ({{capability}}) applies; if more matching messages are pending than the limit allows, the server MUST deliver additional `ChatMessagePush` payloads to cover the remainder.
 
+Servers keep each `ChatMessagePush` within the push platform's payload size limit, which is implementation-defined. If a single `ChatMessageEntry` does not fit, the server SHOULD shorten or omit that entry's `bodySnippet`; if the entry still does not fit, the server delivers a `StateChange` for the `Message` data type in place of a `ChatMessagePush` for that message.
+
 ## Rate Limiting and Fallback
 
 Servers SHOULD rate-limit `ChatMessagePush` delivery per `PushSubscription`. When the delivery rate exceeds an implementation-defined threshold, the server MAY fall back to delivering a plain `StateChange` for the `Message` data type. Clients receiving a `StateChange` on a `PushSubscription` for which `chatPush` is configured MUST handle it identically to an unaugmented `StateChange`: by calling `Message/changes` to determine which messages are new.
@@ -329,7 +331,7 @@ Push payloads are generated and delivered by the receiving server. In federated 
 IANA is requested to register the following entry in the "JMAP Capabilities" registry:
 
 Capability Name:
-: `urn:ietf:params:jmap:chat:push`
+: `urn:jmap:chat:push`
 
 Intended Use:
 : common
