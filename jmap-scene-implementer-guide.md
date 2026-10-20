@@ -66,7 +66,7 @@ normative protocol specification:
 
 ### What the spec leaves open
 
-The spec requires advertising `urn:ietf:params:jmap:scene` in the JMAP
+The spec requires advertising `urn:jmap:scene` in the JMAP
 Session object (section 4). The session-level capability value is an empty
 object `{}`. The account-level capability object carries quota limits,
 permission flags, and the `supportedVisualTypes` array. The spec does not
@@ -119,12 +119,12 @@ Example session response:
 ```json
 {
   "capabilities": {
-    "urn:ietf:params:jmap:scene": {}
+    "urn:jmap:scene": {}
   },
   "accounts": {
     "account-xyz": {
       "accountCapabilities": {
-        "urn:ietf:params:jmap:scene": {
+        "urn:jmap:scene": {
           "mayCreateRegion": true,
           "mayCreateObject": true,
           "supportedVisualTypes": ["model/gltf-binary"],
@@ -195,7 +195,7 @@ userId have access to this regionId?" in the `SceneAvatar/set create` handler
 and in every get/query handler that checks region access.
 
 **Access policy: `"space"`.** This policy only functions when
-`urn:ietf:params:jmap:chat` is co-deployed and `spaceId` is set on the
+`urn:jmap:chat` is co-deployed and `spaceId` is set on the
 region. The server resolves membership by querying the Space's member list.
 If JMAP Chat is not present and a region is created with `accessPolicy:
 "space"`, the server MUST reject the create with `invalidProperties` (there
@@ -233,7 +233,9 @@ might include:
 convention** (spec appendix, referencing `draft-atwood-jmap-chat-00`
 section 2.1). The preferred representation is the W3C
 Design Tokens Community Group color token format (`{"$type": "color",
-"$value": "..."}` in CSS Color Level 4 syntax). When Design Tokens are not
+"$value": {...}}`, where `$value` is a Design Tokens color object with
+`colorSpace`, `components`, and optional `alpha` and `hex`, not a CSS color
+string). When Design Tokens are not
 practical, use CAM16 uniform color space coordinates (`[J, a, b]` or
 `[J, M, h]`). As a baseline fallback, sRGB hex strings (e.g., `"#87CEEB"`)
 are acceptable. Servers MUST accept all three representations and preserve
@@ -566,7 +568,7 @@ seconds as a starting point). Serialize avatar creation per user
 to prevent race conditions. Source `displayName` from the user profile or
 ChatContact when JMAP Chat is co-deployed (spec section 6.4: "the server
 sets `displayName` from the user profile or ChatContact when
-`urn:ietf:params:jmap:chat` is present"). The client MAY supply
+`urn:jmap:chat` is present"). The client MAY supply
 `displayName` in the create request, but the server is the authoritative
 source.
 
@@ -1042,7 +1044,7 @@ caller the region owner? Is caller an admin? If none, return `forbidden`.
 
 ### Blocked-contact spatial presence filtering
 
-When `urn:ietf:params:jmap:chat` is co-deployed, the server has access to
+When `urn:jmap:chat` is co-deployed, the server has access to
 each user's ChatContact records and their `blocked` field. Spec section 9.8
 defines how blocking affects spatial queries:
 
@@ -1469,7 +1471,7 @@ region configuration changes, object creation or destruction. It is the
 wrong channel for continuous position updates. Avatar position changes at
 simulation rates (10+ Hz) MUST travel through the simulation layer behind
 `simulationUri` — not through JMAP push. If the JMAP Scene WebSocket
-capability (`urn:ietf:params:jmap:scene:websocket`) is deployed, discrete
+capability (`urn:jmap:scene:websocket`) is deployed, discrete
 events such as avatar entry/exit and object placement can also travel over
 the JMAP WebSocket as ephemeral `SceneAvatarEvent` and `SceneObjectEvent`
 frames (see the WSS spec), giving lower latency than the

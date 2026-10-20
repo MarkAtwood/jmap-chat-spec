@@ -29,7 +29,7 @@ screen share on a virtual monitor, and leave.
 
 ### When to advertise both
 
-Advertise `urn:ietf:params:jmap:vtc` alongside `urn:ietf:params:jmap:scene` when your
+Advertise `urn:jmap:vtc` alongside `urn:jmap:scene` when your
 deployment includes both a call-state manager and a spatial state server on the same
 account. The two capabilities are independent — a deployment can run either without the
 other — but the integration features described in this guide only activate when both are
@@ -47,17 +47,17 @@ A session advertising both capabilities looks like this:
       "url": "wss://jmap.example.com/ws",
       "supportsPush": true
     },
-    "urn:ietf:params:jmap:scene": {},
-    "urn:ietf:params:jmap:vtc": {},
-    "urn:ietf:params:jmap:scene:websocket": {},
-    "urn:ietf:params:jmap:vtc:websocket": {}
+    "urn:jmap:scene": {},
+    "urn:jmap:vtc": {},
+    "urn:jmap:scene:websocket": {},
+    "urn:jmap:vtc:websocket": {}
   },
   "accounts": {
     "acct1": {
       "name": "alice@example.com",
       "isPersonal": true,
       "accountCapabilities": {
-        "urn:ietf:params:jmap:scene": {
+        "urn:jmap:scene": {
           "mayCreateRegion": true,
           "mayCreateObject": true,
           "supportedVisualTypes": ["model/gltf-binary"],
@@ -66,7 +66,7 @@ A session advertising both capabilities looks like this:
           "maxAvatarsPerRegion": 50,
           "maxAssetSizeBytes": null
         },
-        "urn:ietf:params:jmap:vtc": {
+        "urn:jmap:vtc": {
           "mayCreateCall": true,
           "supportsRingCalls": false,
           "supportsRoomCalls": true,
@@ -93,7 +93,7 @@ Breakout room support is valuable for sub-region voice isolation (section 7).
 
 ### Feature detection
 
-Clients MUST check for `urn:ietf:params:jmap:vtc` in `accountCapabilities` before
+Clients MUST check for `urn:jmap:vtc` in `accountCapabilities` before
 rendering any voice or video UI in the 3D environment. Do not assume VTC is present
 because your deployment has it — the same client code must work against deployments
 that have not yet deployed calling.
@@ -107,7 +107,7 @@ that have not yet deployed calling.
 `SceneRegion.activeCallId` is a `String|null` field on the SceneRegion object. It is
 the id of a VTCCall that is currently active and bound to this region. The spec says:
 
-> When `urn:ietf:params:jmap:vtc` is present: the id of an active VTCCall bound to
+> When `urn:jmap:vtc` is present: the id of an active VTCCall bound to
 > this region. `null` if no call is active.
 
 This field is the primary integration point between Scene and VTC. When a user enters a
@@ -517,8 +517,10 @@ your avatar from one area to another switches your voice channel.
 ### Modeling with VTC breakout rooms
 
 The VTC spec supports breakout rooms as parent/child VTCCall relationships. The parent
-call's `breakoutRoomIds` lists the child call ids. A moderator can assign participants
-to breakout rooms via `VTCParticipant/set update` on the participant's `callId`.
+call's `breakoutRoomIds` lists the child call ids. A moderator assigns a participant
+to a breakout room by setting `breakoutCallId` on the participant's parent-call record
+via `VTCParticipant/set update`; the participant's client then joins the child call
+through the normal join path (`callId` itself is immutable).
 
 For Scene integration, each breakout room corresponds to a spatial sub-region. There
 are two modeling approaches:
@@ -738,7 +740,7 @@ The VTC subscription for the existing call continues uninterrupted.
 
 ### Unified subscription via ChatStreamEnable
 
-If the deployment also has `urn:ietf:params:jmap:chat:websocket`, a single
+If the deployment also has `urn:jmap:chat:websocket`, a single
 `ChatStreamEnable` can subscribe to all ephemeral event types:
 
 ```json
@@ -1050,12 +1052,12 @@ When implementing the Scene-VTC integration, your server must:
   (if the server creates them).
 - Return `notFound` for `VTCCall/get` and `VTCParticipant/get` to users who are not
   present in the bound SceneRegion (when region access control should gate call access).
-- Advertise both `urn:ietf:params:jmap:scene` and `urn:ietf:params:jmap:vtc` under
+- Advertise both `urn:jmap:scene` and `urn:jmap:vtc` under
   `accountCapabilities` for accounts that have both capabilities.
 
 When implementing on the client side, your client must:
 
-- Check `urn:ietf:params:jmap:vtc` in `accountCapabilities` before showing voice/video
+- Check `urn:jmap:vtc` in `accountCapabilities` before showing voice/video
   UI in the 3D environment.
 - Check `activeCallId` on SceneRegion to determine whether voice is available.
 - Only open `joinUri` after explicit user action — never automatically.

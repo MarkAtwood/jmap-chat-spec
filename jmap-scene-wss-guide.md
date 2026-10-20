@@ -125,11 +125,11 @@ verify the required capabilities are present:
 
 - `urn:ietf:params:jmap:websocket` — the WebSocket transport (RFC 8887); provides the
   `url` field containing the `wss://` endpoint
-- `urn:ietf:params:jmap:scene` — the Scene data model and methods
-- `urn:ietf:params:jmap:scene:websocket` — ephemeral Scene event support
+- `urn:jmap:scene` — the Scene data model and methods
+- `urn:jmap:scene:websocket` — ephemeral Scene event support
 
 If `urn:ietf:params:jmap:websocket` is absent, WebSocket is unavailable. If
-`urn:ietf:params:jmap:scene:websocket` is absent but the first two are present, the
+`urn:jmap:scene:websocket` is absent but the first two are present, the
 WebSocket transport works and the Scene data types are available via standard JMAP
 methods, but ephemeral Scene events are not supported; clients MUST NOT send
 `SceneStreamEnable` in that case.
@@ -143,8 +143,8 @@ Example Session object:
       "url": "wss://scene.example.com/jmap/ws/",
       "supportsPush": true
     },
-    "urn:ietf:params:jmap:scene": {},
-    "urn:ietf:params:jmap:scene:websocket": {}
+    "urn:jmap:scene": {},
+    "urn:jmap:scene:websocket": {}
   }
 }
 ```
@@ -439,8 +439,8 @@ should not fill client logs.
 
 ### Convenience path: ChatStreamEnable with "scene"
 
-When the server advertises `urn:ietf:params:jmap:chat:websocket`,
-`urn:ietf:params:jmap:scene:websocket`, and `urn:ietf:params:jmap:vtc:websocket`,
+When the server advertises `urn:jmap:chat:websocket`,
+`urn:jmap:scene:websocket`, and `urn:jmap:vtc:websocket`,
 clients can subscribe to Scene and VTC events through `ChatStreamEnable` by including
 `"scene"` and `"vtc"` in `dataTypes`:
 
@@ -640,7 +640,7 @@ Clients MUST handle both arriving and MUST NOT treat them as duplicates.
 
 ### Blocked-sender suppression
 
-When the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is available for the
+When the JMAP Chat capability (`urn:jmap:chat`) is available for the
 receiving account and the originating user is on the recipient's blocked list
 (`ChatContact.blocked` is `true`), the server SHOULD silently drop all Scene ephemeral
 events originating from that user before delivery. This applies to all three event types:

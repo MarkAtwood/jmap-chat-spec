@@ -1150,7 +1150,7 @@ Scene builds on RFC 8620's existing infrastructure:
 
 - *Authentication.* JMAP has it. Scene does not invent a new auth system.
 - *Capability negotiation.* JMAP has it. Scene advertises
-  `urn:ietf:params:jmap:scene` in the Session object.
+  `urn:jmap:scene` in the Session object.
 - *Method dispatch.* JMAP has it. `SceneRegion/get`, `SceneObject/set`,
   `SceneAvatar/query` are standard JMAP methods.
 - *State synchronization.* JMAP has it. `/changes` and `/queryChanges` provide
