@@ -23,9 +23,18 @@ normative:
   DID-CORE:
     title: "Decentralized Identifiers (DIDs) v1.0"
     author:
-      org: W3C
-    target: https://www.w3.org/TR/did-core/
-    date: 2022
+      - fullname: Manu Sporny
+        role: editor
+      - fullname: Amy Guy
+        role: editor
+      - fullname: Markus Sabadello
+        role: editor
+      - fullname: Drummond Reed
+        role: editor
+    seriesinfo:
+      W3C: REC-did-core-20220719
+    date: 2022-07-19
+    target: https://www.w3.org/TR/2022/REC-did-core-20220719/
   DID-WEBVH:
     title: "The did:webvh DID Method v1.0"
     author:
@@ -33,58 +42,88 @@ normative:
     target: https://identity.foundation/didwebvh/v1.0/
 
 informative:
+  RFC7515:
   RFC8621:
   RFC8984:
-  JMAP-CONTACTS:
-    title: "JMAP for Contacts"
+  RFC9421:
+  RFC9610:
+  JMAP-CALENDARS:
+    title: "JSON Meta Application Protocol (JMAP) for Calendars"
     author:
-      fullname: Bron Gondwana
+      - fullname: Neil Jenkins
+      - fullname: Michael Douglass
     seriesinfo:
-      RFC: "9610"
-    date: 2024
-    target: https://www.rfc-editor.org/rfc/rfc9610
+      Internet-Draft: draft-ietf-jmap-calendars-33
+    date: 2026-10-13
   JMAP-FILENODE:
-    title: JMAP File Storage Extension
+    title: "JMAP File Storage extension"
     author:
-      fullname: Bron Gondwana
+      - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-16
-    date: 2026
-    target: https://datatracker.ietf.org/doc/draft-ietf-jmap-filenode/
+      Internet-Draft: draft-ietf-jmap-filenode-17
+    date: 2026-10-18
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
   JMAP-VTC:
-    title: JMAP for Video Teleconferencing
+    title: "JMAP for Video/Voice Teleconferencing"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-00
     date: 2026
   JMAP-SCENE:
-    title: JMAP Scene
+    title: "JMAP for Scenes"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-scene-00
     date: 2026
   JMAP-CID:
-    title: JMAP Blob Content Identifiers
+    title: "JMAP Blob Content Identifiers"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-cid-00
     date: 2026
+  DID-WEB:
+    title: "did:web Method Specification"
+    author:
+      - fullname: Michael Prorock
+        role: editor
+      - fullname: Oliver Terbu
+        role: editor
+    target: https://w3c-ccg.github.io/did-method-web/
+    annotation: "W3C Credentials Community Group unofficial draft."
+  DID-KEY:
+    title: "The did:key Method v0.9"
+    author:
+      - fullname: Dave Longley
+      - fullname: Dmitri Zagidulin
+      - fullname: Manu Sporny
+    target: https://w3c-ccg.github.io/did-key-spec/
+    annotation: "W3C Credentials Community Group draft report."
   VC-DATA-MODEL:
     title: "Verifiable Credentials Data Model v2.0"
     author:
-      org: W3C
-    target: https://www.w3.org/TR/vc-data-model-2.0/
-    date: 2024
+      - fullname: Manu Sporny
+        role: editor
+      - fullname: Ted Thibodeau Jr
+        role: editor
+      - fullname: Ivan Herman
+        role: editor
+      - fullname: Gabe Cohen
+        role: editor
+      - fullname: Michael B. Jones
+        role: editor
+    seriesinfo:
+      W3C: REC-vc-data-model-2.0-20250515
+    date: 2025-05-15
+    target: https://www.w3.org/TR/2025/REC-vc-data-model-2.0-20250515/
 
 --- abstract
 
@@ -105,7 +144,7 @@ This document bridges the two by defining a JMAP capability that binds each acco
 - Clients MAY verify the server's DID attestation independently.
 - DID lifecycle events (key rotation, DID migration, suspension, revocation) have defined effects on the JMAP session.
 
-The capability is horizontal infrastructure. It does not define new data types or methods. It extends existing JMAP objects with identity metadata, the same way {{JMAP-CID}} extends blob uploads with integrity metadata. Any JMAP specification — mail ({{RFC8621}}), calendars ({{RFC8984}}), contacts ({{JMAP-CONTACTS}}), file storage ({{JMAP-FILENODE}}), chat ({{JMAP-CHAT}}), video conferencing ({{JMAP-VTC}}), spatial environments ({{JMAP-SCENE}}), or any future JMAP capability — may declare which of its data types carry DID-derived properties.
+The capability is horizontal infrastructure. It does not define new data types or methods. It extends existing JMAP objects with identity metadata, the same way {{JMAP-CID}} extends blob uploads with integrity metadata. Any JMAP specification — mail ({{RFC8621}}), calendars ({{JMAP-CALENDARS}}), contacts ({{RFC9610}}), file storage ({{JMAP-FILENODE}}), chat ({{JMAP-CHAT}}), video conferencing ({{JMAP-VTC}}), spatial environments ({{JMAP-SCENE}}), or any future JMAP capability — may declare which of its data types carry DID-derived properties.
 
 ## Conventions Used in This Document
 
@@ -147,13 +186,13 @@ The value of `accountCapabilities["urn:ietf:params:jmap:did"]` is a JSON object 
 : The DID bound to this account. This is the canonical, globally resolvable identifier for the account holder. The value MUST be a valid DID as defined in {{DID-CORE}} Section 3.1.
 
 `didDocumentUri` (String|null):
-: A URI where the DID document can be fetched. For `did:web` this is derivable from the DID itself; for `did:webvh` it is the URL of the DID log (`did.jsonl`), also derivable from the DID ({{DID-WEBVH}}), and a log fetched from this URI is resolved as defined in {{did-webvh}}, like one fetched from the method-derived URL. The witness proofs file (`did-witness.json`) always comes from the method-derived URL ({{DID-WEBVH}}), even when this URI served the log. For `did:key` the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method. When `didDocumentUri` is non-null but unreachable (network error, HTTP 4xx/5xx), clients SHOULD fall back to standard method-specific resolution for the DID. The `didDocumentUri` is a convenience hint, not a binding constraint.
+: A URI where the DID document can be fetched. For `did:web` ({{DID-WEB}}) this is derivable from the DID itself; for `did:webvh` it is the URL of the DID log (`did.jsonl`), also derivable from the DID ({{DID-WEBVH}}), and a log fetched from this URI is resolved as defined in {{did-webvh}}, like one fetched from the method-derived URL. The witness proofs file (`did-witness.json`) always comes from the method-derived URL ({{DID-WEBVH}}), even when this URI served the log. For `did:key` ({{DID-KEY}}) the document is constructed from the DID. Servers MAY provide this as a convenience; `null` means the client should resolve the DID document using the standard resolution mechanism for the DID method. When `didDocumentUri` is non-null but unreachable (network error, HTTP 4xx/5xx), clients SHOULD fall back to standard method-specific resolution for the DID. The `didDocumentUri` is a convenience hint, not a binding constraint.
 
 `previousDid` (String|null):
 : The DID bound to this account immediately before the most recent DID migration ({{migration}}). The server retains it for a deployment-defined transition period after the migration. `null` when no migration has occurred or the transition period has expired.
 
 `keyCustody` (String|null):
-: Who holds the private keys for the verification methods in the bound DID's `authentication` verification relationship. `"server"` means the server, or a party operating on its behalf, holds at least one of those private keys. `"user"` means the server holds none of them. `null` means the server does not disclose custody; clients and peers MUST NOT infer `"user"` from `null`. See {{binding}}.
+: Who holds the private keys for the verification methods in the bound DID's `authentication` verification relationship. `"server"` means the server, or a party operating on its behalf, holds at least one of those private keys. `"user"` means the server holds none of them. `null` means the server does not disclose custody; clients and peers SHOULD NOT infer `"user"` from `null`. See {{binding}}.
 
 Example:
 
@@ -183,14 +222,13 @@ The server is authoritative for the mapping between an accountId and a DID. This
 - **Self-registration.** The user presents a DID and proves control of the corresponding private key (e.g., by signing a challenge). The server records the binding after verification.
 - **Server-generated.** The server generates a `did:key` from a keypair it controls, on behalf of the user. This is the simplest deployment model but provides no user-sovereign key control.
 
-When the server, or a party operating on its behalf, holds a private key for the bound DID's `authentication` verification relationship (as in the server-generated model), the server can produce signatures indistinguishable from the user's, and the DID gives no assurance independent of the server ({{server-generated-keys}}). Such a server MUST NOT set `keyCustody` to `"user"` or otherwise represent the binding as verifiable independently of the server, and SHOULD set `keyCustody` to `"server"` ({{account-capability}}) so that clients and federated peers can choose a trust level. The server-generated model is NOT RECOMMENDED outside employer-managed deployments ({{employer-managed}}).
+When the server, or a party operating on its behalf, holds a private key for the bound DID's `authentication` verification relationship (as in the server-generated model), the server can produce signatures indistinguishable from the user's, and the DID gives no assurance independent of the server ({{server-generated-keys}}). Such a server cannot set `keyCustody` to `"user"` ({{account-capability}}), SHOULD NOT otherwise represent the binding as verifiable independently of the server, and SHOULD set `keyCustody` to `"server"` so that clients and federated peers can choose a trust level. The server-generated model is NOT RECOMMENDED outside employer-managed deployments ({{employer-managed}}).
 
 Regardless of mechanism, the server MUST ensure that:
 
 1. Each account is bound to exactly one DID at any given time.
-2. The DID is a valid DID as defined in {{DID-CORE}}.
-3. The binding is reflected in the account-level capability object ({{account-capability}}).
-4. Changes to the binding (DID migration, revocation) are propagated as defined in {{lifecycle}}.
+2. The binding is reflected in the account-level capability object ({{account-capability}}).
+3. Changes to the binding (DID migration, revocation) are propagated as defined in {{lifecycle}}.
 
 # The `did` Property {#did-property}
 
@@ -206,15 +244,15 @@ Properties that reference the DID of an entity other than the owning account (e.
 
 All DID-bearing properties share these semantics:
 
-- **Server-set.** Clients MUST NOT include DID-bearing properties in create or update operations. Servers MUST reject such requests with a SetError of type `invalidProperties`, listing the DID-bearing property name in the `properties` array.
+- **Server-set.** Clients omit DID-bearing properties when creating objects, as {{RFC8620}} Section 1.1 requires for server-set properties; an update can include one only with its current value ({{RFC8620}} Section 5.3). Servers MUST reject a create that includes a DID-bearing property, or an update that changes one, with a SetError of type `invalidProperties`, listing the DID-bearing property name in the `properties` array.
 - **Recorded at creation.** The value is the DID bound to the relevant account when the object was created, and the server records it with the object. A later DID migration ({{migration}}) does not change it.
 - **Immutable.** The value never changes after creation, neither as a result of object mutation nor as a result of a change to the account-to-DID binding.
 
 Signatures and other attestations on an object verify against the DID recorded on that object, not against the account's current DID.
 
-## Consuming Specification Obligations
+## What Consuming Specifications Define
 
-A consuming specification that designates a data type as DID-bearing MUST document:
+A consuming specification that designates a data type as DID-bearing needs to define:
 
 1. Which data type gains DID-bearing properties, and the property names.
 2. Which identity each property represents and from which account binding it is taken.
@@ -251,7 +289,9 @@ The following are non-normative illustrations of how JMAP specifications could d
 
 **Identity** — `did` (role: ownership). The DID bound to the sending identity. When a user has multiple JMAP identities (e.g., personal and work email addresses), each identity MAY be bound to the same or different DIDs.
 
-### JMAP Calendars ({{RFC8984}})
+### JMAP Calendars ({{JMAP-CALENDARS}})
+
+CalendarEvent and Participant are defined by {{JMAP-CALENDARS}}; their data format is JSCalendar ({{RFC8984}}).
 
 **CalendarEvent** — `organizerDid` (role: authorship). The DID of the event organizer. Enables cross-server invitation verification: an invitee can verify that the invitation was issued by the claimed organizer without trusting the calendar server that delivered it.
 
@@ -259,7 +299,7 @@ The following are non-normative illustrations of how JMAP specifications could d
 
 **Participant** — `did` (role: participation). The DID of a calendar event participant. Enables deduplication of participants across servers (two servers may have different accountIds for the same person, but the DID is the same).
 
-### JMAP Contacts ({{JMAP-CONTACTS}})
+### JMAP Contacts ({{RFC9610}})
 
 **ContactCard** — `did` (role: contact identity). A stable, globally resolvable identifier for the person or organization described by the contact. Enables contact deduplication across servers, portable block/allow lists, and cross-server contact lookup.
 
@@ -270,8 +310,6 @@ The following are non-normative illustrations of how JMAP specifications could d
 ### JMAP Chat ({{JMAP-CHAT}})
 
 **Message** — `senderDid` (role: authorship). The DID of the message sender. Enables cross-server sender verification: a recipient on Server B can verify that a federated message from Server A was authored by the claimed DID without trusting Server A.
-
-**ChatContact** — `did` (role: contact identity). Enables portable block lists: blocking a DID rather than a server-local contactId means the block is effective across servers.
 
 ### JMAP VTC ({{JMAP-VTC}})
 
@@ -291,11 +329,11 @@ Clients receiving a `did` value on a JMAP object MAY verify the server's attesta
 
 1. Resolve the DID to a DID document using the standard resolution mechanism for the DID method ({{DID-CORE}} Section 7).
 2. Extract the authentication verification method from the DID document.
-3. Verify that the server has demonstrated control of a key listed in the DID document's `authentication` verification relationship. For `did:web` where the JMAP server's domain matches the DID's domain component, successful TLS-authenticated retrieval of the DID document provides implicit domain binding. This implicit binding does not apply to `did:webvh`, because the host serving the DID log need not hold any key in it. For all other cases, the server MUST present a signed assertion (e.g., a JWS or HTTP Message Signature) that validates against the DID document's authentication key.
+3. Verify that the server has demonstrated control of a key listed in the DID document's `authentication` verification relationship. For `did:web` where the JMAP server's domain matches the DID's domain component, successful TLS-authenticated retrieval of the DID document provides implicit domain binding. This implicit binding does not apply to `did:webvh`, because the host serving the DID log need not hold any key in it. For all other cases, the server MUST present a signed assertion (e.g., a JWS ({{RFC7515}}) or HTTP Message Signature ({{RFC9421}})) that validates against the DID document's authentication key.
 
 Verification is OPTIONAL. In a single-operator deployment where the client trusts the server, verification adds overhead with no security benefit. In a federated or zero-trust deployment, verification allows clients to detect a compromised or dishonest server that claims a DID it does not control.
 
-A client that performs verification and detects a mismatch SHOULD treat the `did` value as unverified and SHOULD surface the discrepancy to the user. The client SHOULD NOT silently discard the object or terminate the session; the mismatch may indicate a configuration error rather than an attack.
+A client that performs verification and detects a mismatch SHOULD treat the `did` value as unverified and can surface the discrepancy to the user. The client SHOULD NOT silently discard the object or terminate the session; the mismatch may indicate a configuration error rather than an attack.
 
 ## Cross-Server Verification
 
@@ -340,8 +378,8 @@ A `did:webvh` DID whose log enables portability can move to a new domain or path
 When a DID migration occurs:
 
 1. The server MUST update the account-level capability object ({{account-capability}}) to reflect the new DID. This changes the Session resource `state`, which clients observe through `sessionState` in method responses ({{RFC8620}} Section 3.4).
-2. Objects created after the migration carry the new DID. The server MUST NOT change DID-bearing property values on existing objects ({{did-property}}).
-3. The server SHOULD set `previousDid` on the account-level capability object to the DID that was bound before the migration, to help clients that cached the old DID update their records.
+2. Objects created after the migration carry the new DID. DID-bearing property values on existing objects are unchanged ({{did-property}}).
+3. The server MUST set `previousDid` on the account-level capability object to the DID that was bound before the migration ({{account-capability}}), to help clients that cached the old DID update their records.
 
 ## Suspension {#suspension}
 
@@ -362,9 +400,9 @@ A DID revocation is a permanent, irreversible deactivation. The DID document is 
 
 When a DID is revoked:
 
-1. The server MUST terminate all active sessions for the account.
-2. The server MUST prevent the account from authenticating new sessions.
-3. The server SHOULD mark the account's objects as orphaned. The `did` property on those objects SHOULD return the revoked DID (not `null`) so that provenance history is preserved.
+1. The server SHOULD terminate all active sessions for the account.
+2. The server SHOULD prevent the account from authenticating new sessions.
+3. The server SHOULD mark the account's objects as orphaned. The `did` property on those objects continues to return the revoked DID, not `null` ({{did-property}}), so that provenance history is preserved.
 4. The server MAY delete the account and its objects after a deployment-defined retention period, subject to legal and compliance requirements.
 
 # Security Considerations {#security}
@@ -381,7 +419,7 @@ A user who presents the same DID to multiple JMAP servers enables those servers 
 
 Users who require unlinkability across servers SHOULD use different DIDs for different servers. `did:key` supports this naturally: a user can generate a fresh keypair for each server. However, this sacrifices cross-server identity continuity — the user is a different identity on each server.
 
-Deployments MUST document their DID correlation properties so users can make informed choices. A deployment that requires a single DID across all servers (e.g., an enterprise deployment) should disclose this requirement at enrollment time.
+Users can make informed choices only if they know a deployment's DID correlation properties, which the protocol does not expose. A deployment that requires a single DID across all servers (e.g., an enterprise deployment) should disclose this requirement at enrollment time.
 
 ## DID Method Security
 
@@ -393,7 +431,7 @@ The security properties of the `did` field depend entirely on the DID method use
 
 ## Phishing via `did:web` and `did:webvh`
 
-A `did:web` DID is anchored to a domain name. An attacker who registers a visually similar domain (e.g., `did:web:examp1e.com` vs. `did:web:example.com`) can create DIDs that appear legitimate to users who do not inspect the domain carefully. The same applies to the domain component of a `did:webvh` DID: the SCID does not help, because an attacker can create a new log with its own SCID under the look-alike domain. Clients displaying `did:web` or `did:webvh` identities SHOULD highlight the domain component and SHOULD warn users when a domain is visually similar to a domain they have previously trusted.
+A `did:web` DID is anchored to a domain name. An attacker who registers a visually similar domain (e.g., `did:web:examp1e.com` vs. `did:web:example.com`) can create DIDs that appear legitimate to users who do not inspect the domain carefully. The same applies to the domain component of a `did:webvh` DID: the SCID does not help, because an attacker can create a new log with its own SCID under the look-alike domain. Clients displaying `did:web` or `did:webvh` identities can highlight the domain component and warn users when a domain is visually similar to a domain they have previously trusted.
 
 ## Revoked DID Reuse
 
@@ -401,7 +439,7 @@ DID methods that allow identifier reuse after revocation create a risk: a new co
 
 ### Server-Generated DID Key Pairs {#server-generated-keys}
 
-When the server generates a `did:key` on behalf of a user and retains the private key (as in the server-generated binding model), the DID provides no cryptographic assurance independent of the server itself. The server can produce signatures indistinguishable from those of the user. {{binding}} requires such servers not to represent the binding as user-verifiable and to disclose custody through `keyCustody`. Client verification ({{verification}}) provides no benefit in this model because the server trivially controls the signing key. Deployments that require DID verification to provide security guarantees independent of the server MUST use binding mechanisms where the private key is held exclusively by the user or by an independent identity provider.
+When the server generates a `did:key` on behalf of a user and retains the private key (as in the server-generated binding model), the DID provides no cryptographic assurance independent of the server itself. The server can produce signatures indistinguishable from those of the user. {{binding}} requires such servers not to represent the binding as user-verifiable and to disclose custody through `keyCustody`. Client verification ({{verification}}) provides no benefit in this model because the server trivially controls the signing key. Only binding mechanisms where the private key is held exclusively by the user or by an independent identity provider let DID verification provide security guarantees independent of the server.
 
 # IANA Considerations {#iana}
 

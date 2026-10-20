@@ -24,18 +24,27 @@ normative:
   DID-CORE:
     title: "Decentralized Identifiers (DIDs) v1.0"
     author:
-      org: W3C
-    target: https://www.w3.org/TR/did-core/
-    date: 2022
+      - fullname: Manu Sporny
+        role: editor
+      - fullname: Amy Guy
+        role: editor
+      - fullname: Markus Sabadello
+        role: editor
+      - fullname: Drummond Reed
+        role: editor
+    seriesinfo:
+      W3C: REC-did-core-20220719
+    date: 2022-07-19
+    target: https://www.w3.org/TR/2022/REC-did-core-20220719/
   JMAP-CHAT:
-    title: JMAP for Chat
+    title: "JMAP for Chat"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-00
     date: 2026
   JMAP-DID:
-    title: JMAP Decentralized Identifiers
+    title: "JMAP Decentralized Identifiers"
     author:
       fullname: Mark Atwood
     seriesinfo:
@@ -44,30 +53,58 @@ normative:
 
 informative:
   JMAP-CHAT-FED:
-    title: JMAP Chat Federation
+    title: "JMAP Chat Federation"
     author:
       fullname: Mark Atwood
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
-    target: https://datatracker.ietf.org/doc/draft-atwood-jmap-chat-federation/
+  RFC8032:
   RFC9421:
   DID-WEB:
     title: "did:web Method Specification"
+    author:
+      - fullname: Michael Prorock
+        role: editor
+      - fullname: Oliver Terbu
+        role: editor
     target: https://w3c-ccg.github.io/did-method-web/
+    annotation: "W3C Credentials Community Group unofficial draft."
   DID-KEY:
-    title: "The did:key Method v0.7"
-    target: https://w3c-ccg.github.io/did-method-key/
+    title: "The did:key Method v0.9"
+    author:
+      - fullname: Dave Longley
+      - fullname: Dmitri Zagidulin
+      - fullname: Manu Sporny
+    target: https://w3c-ccg.github.io/did-key-spec/
+    annotation: "W3C Credentials Community Group draft report."
   DID-PLC:
     title: "did:plc Method Specification"
+    author:
+      org: Bluesky Social PBC
+    date: 2025-12
     target: https://web.plc.directory/spec/v0.1/did-plc
+    annotation: "Version v0.3.0 (December 2025), served at the v0.1 URL path."
   DID-WEBVH:
     title: "The did:webvh DID Method v1.0"
+    author:
+      org: Decentralized Identity Foundation
     target: https://identity.foundation/didwebvh/v1.0/
+  DID-EXTENSIONS:
+    title: "Decentralized Identifier Extensions"
+    author:
+      - fullname: Manu Sporny
+        role: editor
+      - fullname: Markus Sabadello
+        role: editor
+    seriesinfo:
+      W3C: NOTE-did-extensions-20251211
+    date: 2025-12-11
+    target: https://www.w3.org/TR/2025/NOTE-did-extensions-20251211/
 
 --- abstract
 
-This document defines JMAP Chat DID, a companion specification to JMAP Chat ({{JMAP-CHAT}}) that specifies how Decentralized Identifiers ({{DID-CORE}}) are used as JMAP Chat ChatContact identities and as authentication principals between federated peers. The integration is intentionally minimal: it specifies which DID methods MUST be supported, how DID URIs interact with the opaque ChatContact `identity` property in {{JMAP-CHAT}}, and the high-level requirement for DID-based federation authentication. The concrete signature mechanism, resolution caching strategy, DID-document conventions, and DID-provisioning workflow are all deployment-defined. The integration is optional: deployments that do not advertise this capability remain fully functional and interoperable with the rest of the JMAP Chat corpus.
+This document defines JMAP Chat DID, a companion specification to JMAP Chat ({{JMAP-CHAT}}) that specifies how Decentralized Identifiers ({{DID-CORE}}) are used as JMAP Chat ChatContact identities and as authentication principals between federated peers. The integration is intentionally minimal: it specifies mandatory-to-implement DID methods, how DID URIs interact with the opaque ChatContact `identity` property in {{JMAP-CHAT}}, and the high-level requirement for DID-based federation authentication. The concrete signature mechanism, resolution caching strategy, DID-document conventions, and DID-provisioning workflow are all deployment-defined. The integration is optional: deployments that do not advertise this capability remain fully functional and interoperable with the rest of the JMAP Chat corpus.
 
 --- middle
 
@@ -93,7 +130,7 @@ This document does not redefine ChatContact, does not introduce new JMAP methods
 - A normative authentication requirement for federated peers that present DID-form identities, layered onto the {{JMAP-CHAT-FED}} authentication model.
 - A reaffirmation of the textual mention form for DID URIs already noted in {{JMAP-CHAT}}.
 
-Implementations of this specification MUST also implement {{JMAP-CHAT}}. A deployment that supports JMAP Chat but does not resolve any DID method MUST NOT advertise the capability defined here.
+Implementations of this specification MUST also implement {{JMAP-CHAT}}.
 
 ## Relationship to JMAP DID
 
@@ -103,7 +140,7 @@ This document builds normatively on {{JMAP-DID}}. A server advertising `urn:ietf
 
 {{DID-CORE}} is the normative source of truth for DID URI syntax, the DID Document data model, and verification-method semantics. This document does not redefine any of these. It does:
 
-- Constrain which DID methods a conforming JMAP Chat server MUST be able to resolve.
+- Constrain which DID methods a conforming JMAP Chat server must be able to resolve ({{methods}}).
 - Layer a JMAP-Chat-specific signaling capability on top of {{DID-CORE}}.
 - Require that federation authentication verify a signature against a public key bound to the requesting DID per its DID Document; the specific verification-method selection rule is deployment-defined within the bounds of {{DID-CORE}}.
 
@@ -141,7 +178,7 @@ This list is mandatory-to-implement. A server that cannot resolve any one of the
 
 Support for `did:webvh` ({{DID-WEBVH}}) is RECOMMENDED but not mandatory-to-implement. `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, keys from the `did:web` DID Document are treated as defined in {{JMAP-DID}} and {{DID-WEBVH}}: a key not present in the verified `did:webvh` log carries none of the log's guarantees.
 
-Servers MAY additionally support any other DID method registered in the W3C DID Methods registry or otherwise specified. Support for additional methods is advertised by including the method name in the `supportedMethods` array ({{capability}}).
+Servers MAY additionally support any other DID method listed in the W3C DID Extensions registry ({{DID-EXTENSIONS}}) or otherwise specified. Support for additional methods is advertised by including the method name in the `supportedMethods` array ({{capability}}).
 
 This specification does not foreclose any DID method. Future companion specifications MAY raise additional methods to mandatory-to-implement status for specific deployment contexts; this document does not.
 
@@ -152,7 +189,7 @@ This specification does not foreclose any DID method. Future companion specifica
 {{JMAP-CHAT}} establishes that the ChatContact `identity` property holds the stable, opaque identity string supplied by the authentication layer, and that DID URIs are a permissible form of that string. `ChatContact.id` is a server-assigned Id local to each server and is not a DID. This specification reaffirms that:
 
 - A server advertising `urn:ietf:params:jmap:chat:did` MAY return ChatContact records whose `identity` property is a DID URI.
-- A server MUST treat a DID-form `identity` as opaque per {{JMAP-CHAT}}; the wire-level semantics of ChatContact are unchanged.
+- A server treats a DID-form `identity` as opaque per {{JMAP-CHAT}}; the wire-level semantics of ChatContact are unchanged.
 - A ChatContact whose `identity` is a DID URI imposes no special handling on JMAP Chat methods beyond what is specified elsewhere in this document for federation authentication and resolution.
 
 ## Optional `did` field {#did-field}
@@ -162,15 +199,15 @@ ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous c
 `did` (String, optional):
 : A DID URI ({{DID-CORE}}) bound to this ChatContact for cryptographic purposes. When present, the DID's verification methods are the authoritative source of public-key material for verifying signatures attributed to this ChatContact. When absent, no DID is bound to this ChatContact; cryptographic identity is derived from the authentication layer as defined in {{JMAP-CHAT}}.
 
-If `did` is present AND `identity` parses as a DID URI, the two MUST refer to the same DID. A server detecting a mismatch (the parsed DID from `identity` differs from the DID in `did`) MUST treat the ChatContact record as invalid and MUST NOT use either DID for authentication.
+If `did` is present AND `identity` parses as a DID URI, the two MUST refer to the same DID. A server detecting a mismatch (the parsed DID from `identity` differs from the DID in `did`) SHOULD treat the ChatContact record as invalid and SHOULD NOT use either DID for authentication.
 
-This document defines no client-visible indication that a server has verified a ChatContact's DID. A client MUST NOT present a ChatContact as verified solely because `did` is present or `identity` is DID-form; a client that displays such an indication MUST base it on its own resolution and verification of the DID, the procedure for which is outside the scope of this document.
+This document defines no client-visible indication that a server has verified a ChatContact's DID. A client SHOULD NOT present a ChatContact as verified solely because `did` is present or `identity` is DID-form; a client that displays such an indication SHOULD base it on its own resolution and verification of the DID, the procedure for which is outside the scope of this document.
 
 The `did` field is OPTIONAL. Implementations MAY ignore it entirely if their deployment topology does not require pseudonymous DID binding; in that case, deployments SHOULD use the `identity`-as-DID form ({{did-as-identity}}) instead.
 
 # Federation Authentication {#federation-auth}
 
-When a federated peer per {{JMAP-CHAT-FED}} authenticates to a local server using a DID-form principal identity, the local server MUST verify that the peer controls the claimed DID by validating a cryptographic signature made by a public key bound in the DID's DID Document.
+When a federated peer per {{JMAP-CHAT-FED}} authenticates to a local server using a DID-form principal identity, the local server SHOULD verify that the peer controls the claimed DID by validating a cryptographic signature made by a public key bound in the DID's DID Document.
 
 ## Signature requirement
 
@@ -179,14 +216,14 @@ The verification flow at the level mandated by this document is:
 1. The receiving server resolves the requesting peer's claimed DID (per {{methods}} for mandatory methods, or per the relevant method specification otherwise).
 2. The receiving server selects a verification method from the resolved DID Document appropriate for authenticating the request. The specific verification-method selection rule is deployment-defined within the bounds of {{DID-CORE}}.
 3. The receiving server verifies a cryptographic signature attached to the request against the selected verification method's public key.
-4. If verification fails, the receiving server MUST reject the request with an authentication error.
+4. If verification fails, the receiving server SHOULD reject the request with an authentication error.
 5. If verification succeeds, the receiving server MUST treat the request as authenticated for the claimed DID and proceed with the rest of the {{JMAP-CHAT-FED}} authorization model.
 
 This document does NOT specify the precise signature scheme, the on-the-wire location of the signature, the set of signed components, replay-prevention parameters (nonce, timestamp, clock-skew tolerance), or rejection-error code values. These are deployment-defined.
 
 ## Recommended concrete realization
 
-The RECOMMENDED concrete realization is RFC 9421 ({{RFC9421}}) HTTP Message Signatures using an Ed25519 signing key selected from the DID Document's `authentication` verification relationship. The companion implementer guide to this specification documents a working component list, replay-prevention parameters, and operational defaults consistent with this realization.
+The RECOMMENDED concrete realization is RFC 9421 ({{RFC9421}}) HTTP Message Signatures using an Ed25519 ({{RFC8032}}) signing key selected from the DID Document's `authentication` verification relationship. The companion implementer guide to this specification documents a working component list, replay-prevention parameters, and operational defaults consistent with this realization.
 
 Deployments MAY use a different signature mechanism (for example, JWS over a JSON-formatted challenge payload, or a custom binary scheme) provided that:
 
@@ -206,7 +243,7 @@ A server MUST refresh its cached DID Document for a given DID before next use if
 
 ## Resolution failure handling
 
-When a server attempts to resolve a DID and resolution fails (transient or permanent), the server MUST treat the DID as unverified and MUST reject any authentication attempt that depends on it. Servers MUST NOT silently downgrade to an unauthenticated mode or proceed with stale cached state when the cache entry has been explicitly invalidated. Servers MAY continue serving cached entries until a refresh succeeds, subject to the deployment's caching policy.
+When a server attempts to resolve a DID, resolution fails (transient or permanent), and the server holds no usable cached DID Document for that DID, the server SHOULD treat the DID as unverified and SHOULD reject any authentication attempt that depends on it. Servers SHOULD NOT silently downgrade to an unauthenticated mode or proceed with stale cached state when the cache entry has been explicitly invalidated, including by the refresh requirement above. Otherwise, servers MAY continue serving cached entries until a refresh succeeds, subject to the deployment's caching policy.
 
 # Mention Textual Form {#mentions}
 
@@ -216,28 +253,28 @@ When a server attempts to resolve a DID and resolution fails (transient or perma
 - The wire form is unchanged: the resulting Mention object has `id` set to the `id` of the mentioned user's ChatContact, or to the accountId when the mentioned user is the account owner, and between servers the mention carries the DID URI as that user's identity ({{JMAP-CHAT-FED}}); no separate field carries the textual rendering.
 - Parsing the textual form into a candidate identity, and resolving that candidate to a known ChatContact, are deployment-defined per {{JMAP-CHAT}}.
 
-No additional bracketed or otherwise-delimited textual form is defined. Clients SHOULD render DID-form mentions in a manner visually distinct from local-handle mentions, but the specific rendering is a client UX decision and is not constrained by this specification.
+No additional bracketed or otherwise-delimited textual form is defined. Clients can render DID-form mentions in a manner visually distinct from local-handle mentions, but the specific rendering is a client UX decision and is not constrained by this specification.
 
 # Federation Considerations
 
 DID-based identity interacts with {{JMAP-CHAT-FED}} federation in the following ways:
 
-- When a federated peer presents a DID-form principal, the receiving server MUST verify the DID-bound signature ({{federation-auth}}) before accepting the peer's request as authenticated.
+- When a federated peer presents a DID-form principal, the receiving server verifies the DID-bound signature ({{federation-auth}}) before accepting the peer's request as authenticated.
 - A user's `identity` MAY be a DID URI; cross-server references to such a user carry the DID URI verbatim, and the receiving server maps it to its own ChatContact for that user and resolves the DID per {{methods}}.
 - The federation method set defined in {{JMAP-CHAT-FED}} is unchanged. This specification adds the authentication layer; it does not add new federation methods.
-- Cross-server DID resolution is independently performed by each server. There is no protocol for one server to delegate resolution to another. A server that cannot resolve a peer's DID MUST treat that peer as unauthenticated.
+- Cross-server DID resolution is independently performed by each server. There is no protocol for one server to delegate resolution to another. A server that cannot resolve a peer's DID treats that peer as unauthenticated ({{resolution}}).
 
 # Security Considerations {#security}
 
 ## Authentication is deployment-defined in detail
 
-The signature mechanism, signed-component list, and replay-prevention parameters are deployment-defined ({{federation-auth}}). Implementations MUST choose parameters that defend against replay attacks (typical defenses: per-request nonces with bounded cache TTL, timestamp checks with bounded skew tolerance) and MUST document their chosen parameters in operator-facing documentation. A weak choice (no nonce, no timestamp, signature over only the request body) is a deployment vulnerability, not a protocol bug.
+The signature mechanism, signed-component list, and replay-prevention parameters are deployment-defined ({{federation-auth}}). Implementations SHOULD choose parameters that defend against replay attacks (typical defenses: per-request nonces with bounded cache TTL, timestamp checks with bounded skew tolerance) and SHOULD document their chosen parameters in operator-facing documentation. A weak choice (no nonce, no timestamp, signature over only the request body) is a deployment vulnerability, not a protocol bug.
 
 ## DID-document trust
 
 The trust placed in a DID Document is exactly the trust placed in the resolution mechanism for that DID method. A `did:web` DID Document is only as trustworthy as the TLS-protected HTTPS GET that returned it and the DNS resolution that preceded it. A `did:key` DID Document is self-authenticating because it is derived from the public key in the DID URI. A `did:plc` DID Document is only as trustworthy as the PLC directory operator and the operation-log integrity checks the resolver performs.
 
-Implementations MUST document the trust assumptions of each supported DID method to operators. Implementations SHOULD prefer resolution paths that minimize third-party trust (for example, by preferring direct HTTPS resolution for `did:web` over a delegated resolver).
+Each supported DID method carries its own trust assumptions, which operators need to know before relying on it. Implementations SHOULD prefer resolution paths that minimize third-party trust (for example, by preferring direct HTTPS resolution for `did:web` over a delegated resolver).
 
 ## Key compromise and rotation
 
@@ -245,11 +282,10 @@ When a DID's signing key is compromised, the DID's controller is expected to pub
 
 - Use cache TTLs no longer than what their threat model tolerates.
 - Implement out-of-band signaling for high-priority rotations where the controller can notify resolving peers proactively (such mechanisms are deployment-defined and not part of this protocol).
-- Treat any signature failure as a refresh trigger even if the same DID has previously authenticated successfully.
 
 ## did:plc operation log integrity
 
-`did:plc` resolution depends on an operation log served by a PLC directory operator. Implementations MUST verify operation-log integrity per {{DID-PLC}} and MUST NOT trust a DID Document obtained from a PLC directory that has presented an inconsistent or non-monotonic operation log. A `did:plc` resolver that does not perform this integrity check is vulnerable to directory-operator compromise.
+`did:plc` resolution depends on an operation log served by a PLC directory operator. Resolution per {{methods}} includes the operation-log integrity check defined by {{DID-PLC}}; a DID Document obtained from a PLC directory that has presented an inconsistent or non-monotonic operation log fails that check. A `did:plc` resolver that does not perform this integrity check is vulnerable to directory-operator compromise.
 
 ## did:web DNS and TLS dependency
 
@@ -261,7 +297,7 @@ When a DID's signing key is compromised, the DID's controller is expected to pub
 
 ## Cross-method consistency
 
-A ChatContact MAY carry both a DID-form `identity` and a `did` field ({{did-field}}). The consistency rule (if `identity` parses as a DID URI, both MUST refer to the same DID) defends against impersonation in which an attacker submits a ChatContact with an `identity` they control and a `did` belonging to a different principal. Implementations MUST enforce the consistency rule; failure to do so is a security bug.
+A ChatContact MAY carry both a DID-form `identity` and a `did` field ({{did-field}}). The consistency rule in {{did-field}} (if `identity` parses as a DID URI, both refer to the same DID) defends against impersonation in which an attacker submits a ChatContact with an `identity` they control and a `did` belonging to a different principal.
 
 # IANA Considerations {#iana}
 
@@ -286,7 +322,7 @@ Security and privacy considerations:
 
 ## DID Method Registry
 
-This document does not request changes to the W3C DID Methods registry. The three DID methods raised to mandatory-to-implement status here ({{DID-WEB}}, {{DID-KEY}}, {{DID-PLC}}) are registered by their respective method specifications.
+This document does not request changes to the W3C DID Extensions registry ({{DID-EXTENSIONS}}). The three DID methods raised to mandatory-to-implement status here ({{DID-WEB}}, {{DID-KEY}}, {{DID-PLC}}) are registered by their respective method specifications.
 
 --- back
 
