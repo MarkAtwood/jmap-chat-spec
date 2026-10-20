@@ -230,7 +230,7 @@ A server rotates its signing key by publishing the new key alongside the old one
 
 Where its zone is signed with DNSSEC {{RFC4033}}, a server SHOULD also publish each signing key's `kid` in DNS, as a TXT record at the name `_jmap-peer.<peer-domain>` whose value is `v=jmappeer1; kid=<kid>`, one record per key. Because the `kid` is the key's thumbprint, the record commits to the key itself.
 
-A receiving server that has a DNSSEC-validating resolver SHOULD query this name when it fetches a peer domain's keys. The DNSSEC binding takes precedence over the HTTPS-published keys:
+A receiving server that can obtain DNSSEC validation results as described below SHOULD query this name when it fetches a peer domain's keys. The DNSSEC binding takes precedence over the HTTPS-published keys:
 
 - If the answer is secure ({{RFC4033}} Section 5) and contains at least one record of this form, a key from `peerSigningKeys` is usable only if its recomputed thumbprint equals the `kid` of one of those records.
 - If the answer is a secure denial of existence, is insecure, or contains no record of this form, the HTTPS-published keys are used alone.

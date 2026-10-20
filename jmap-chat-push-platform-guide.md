@@ -31,7 +31,10 @@ specification:
 server supports this extension, it advertises the `urn:ietf:params:jmap:chat:push`
 capability. Clients that want inline push payloads add a `chatPush` property to their
 `PushSubscription` objects. The server then delivers `ChatMessagePush` payloads directly
-to the push endpoint instead of (or in addition to) the standard `StateChange` object.
+to the push endpoint for new inbound messages, in place of the `StateChange` those
+messages would otherwise cause. Every other change, including Message edits and
+destroys, the owner's own messages, and other data types, still produces a standard
+`StateChange`.
 
 Before registering a `chatPush` configuration, clients SHOULD check the account-level
 capability object for `urn:ietf:params:jmap:chat:push`. It contains:

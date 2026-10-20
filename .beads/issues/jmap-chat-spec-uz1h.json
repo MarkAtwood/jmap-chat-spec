@@ -2,11 +2,13 @@
   "id": "jmap-chat-spec-uz1h",
   "title": "Leftover SetError misuse in guides and scene-00",
   "description": "Found while fixing jmap-chat-spec-up1n (91672c9), left out of scope: (1) jmap-did-guide.md L332/L339 says invalidArguments, draft-atwood-jmap-did-00 L204 says invalidProperties. (2) jmap-chat-push-platform-guide.md L58 and jmap-vtc-implementer-guide.md L746 use invalidArguments as a SetError. (3) scene-00 uses notFound for create-time dangling references (L751, SceneObject table); RFC 8620 allows notFound only for update/destroy. (4) jmap-scene-implementer-guide.md lists stateMismatch as a SetError; RFC 8620 makes it method-level.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "bug",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-20T01:32:11.528694272Z",
   "created_by": "agent",
-  "updated_at": "2026-10-20T01:32:11.528694272Z"
+  "updated_at": "2026-10-20T21:47:42.823170518Z",
+  "closed_at": "2026-10-20T21:47:42.823170518Z",
+  "close_reason": "P3/P2 batch 2026-10-20: see commit; pcoc/amkj/uz1h(1,2) already correct in committed text; ntpx stats row verified correct (bead count was wrong)"
 }

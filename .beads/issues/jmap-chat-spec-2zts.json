@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-2zts",
+  "title": "Compliance tests cite stale bare section numbers",
+  "description": "byrl replaced line citations only. Spec lines still carry bare section numbers that no longer match drafts (e.g. 'Section 4.16', 'Section 5.3', federation 'Section 6.2', wss 'Section 6.4'). Replace with section titles/anchors.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T21:47:42.982828107Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T21:47:42.982828107Z"
+}

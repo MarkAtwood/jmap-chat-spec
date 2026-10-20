@@ -105,7 +105,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:push"]` is a JSON o
 This document extends the `PushSubscription` object defined in {{RFC8620}} Section 7.2 with one additional property:
 
 `chatPush` (Id[ChatPushConfig], optional):
-: A map of accountId to `ChatPushConfig` object. When present for an account, the server delivers `ChatMessagePush` payloads to the push endpoint for new inbound messages in that account that match the configuration. When absent or null for an account, the server delivers standard `StateChange` notifications for that account without inline message content.
+: A map of accountId to `ChatPushConfig` object. When present for an account, the server delivers `ChatMessagePush` payloads to the push endpoint for new inbound messages in that account that match the configuration. A `ChatMessagePush` stands in for the `StateChange` that the arrival of the messages it carries would otherwise cause. Every other change in the account is still announced by a standard `StateChange`, as {{RFC8620}} Section 7 describes: this includes Message changes that the payload does not carry (edits, destroys, the owner's own messages, and messages excluded by `ChatPushConfig`, mute, or block) and changes to every other data type. When `chatPush` is absent or null for an account, the server delivers standard `StateChange` notifications for that account without inline message content.
 
 If a `PushSubscription/set` create or update includes a `chatPush` entry for an account whose `accountCapabilities` does not include `urn:ietf:params:jmap:chat:push`, the server MUST return an `invalidProperties` SetError whose `properties` names the offending entry (e.g., `chatPush/<id>`) and MUST NOT store the subscription change.
 
@@ -145,6 +145,10 @@ A `ChatMessagePush` object is the push payload delivered directly to the registe
 
 `messages` (ChatMessageEntry[]):
 : MUST be a non-empty array of message entries that triggered this push. Contains exactly one entry for a single new message, or multiple entries when the server batches messages that arrived in quick succession (see {{delivery}}).
+
+`unreadCount` (UnsignedInt|null, optional):
+: The account owner's total unread message count across all non-muted Chats at the time this push was generated. Servers SHOULD include this for platforms that support atomic badge updates (e.g., APNs `aps.badge`). When absent, the client can derive the badge count via a subsequent `Chat/get` request. It is a property of the push as a whole, not of any one entry, and is not governed by the `properties` list of {{chat-push-config}}.
+
 
 ## ChatMessageEntry {#chat-message-entry}
 
@@ -188,9 +192,6 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 
 `bodySnippet` (String, optional):
 : A truncated plaintext rendering of the message body, suitable for display in a notification preview. At most `maxSnippetBytes` bytes, truncated on a UTF-8 character boundary. When the message's `bodyType` is `"text/markdown"` or `"application/jmap-chat-rich"`, the server SHOULD generate a plaintext approximation rather than including raw markup syntax.
-
-`unreadCount` (UnsignedInt|null, optional):
-: The account owner's total unread message count across all non-muted Chats at the time this push was generated. Servers SHOULD include this for platforms that support atomic badge updates (e.g., APNs `aps.badge`). When absent, the client can derive the badge count via a subsequent `Chat/get` request.
 
 # End-to-End Encrypted Deployments {#e2ee}
 

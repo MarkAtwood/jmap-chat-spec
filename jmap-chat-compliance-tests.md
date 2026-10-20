@@ -45,7 +45,7 @@ Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or
 **Test:** After a federated message delivery, call `ChatContact/get` for the sender. Verify `serverUrl` is populated with the peer's base URL. Verify `directAddress` is populated if the peer advertised `ownerDirectAddress`.
 
 ### 1.4 Message.deletedAt is UTCDate, not Boolean
-**Spec:** draft-atwood-jmap-chat-00 Section 4.11, line 649
+**Spec:** draft-atwood-jmap-chat-00 §Message (`deletedAt`), §Deleting a Message
 **Severity:** MUST | **Round:** 1
 
 **Test:** Delete a message via `Message/set` update with `deletedAt: <timestamp>` (§Deleting a Message; not `destroy`). Call `Message/get` for that id. Verify `deletedAt` is a UTCDate string (not a boolean `true`), and `body` is empty string.
@@ -61,25 +61,25 @@ Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or
 **Common failure:** ReadPosition has no `id` field; uses chatId as identity.
 
 ### 1.6 ReadPosition field name is lastReadAt
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 874
+**Spec:** draft-atwood-jmap-chat-00 §ReadPosition
 **Severity:** MUST | **Round:** 1
 
 **Test:** Call `ReadPosition/get`. Verify the timestamp field is named `lastReadAt` (not `updatedAt`).
 
 ### 1.7 ChatMember.invitedBy field
-**Spec:** draft-atwood-jmap-chat-00 Section 4.8, lines 451-452
+**Spec:** draft-atwood-jmap-chat-00 §ChatMember
 **Severity:** MUST | **Round:** 1
 
 **Test:** Create a group chat with `Chat/set`, then call `Chat/addMembers` (or patch key). Call `Chat/get` and inspect member objects. Verify `invitedBy` is set to the adder's id for added members, null for the creator.
 
 ### 1.8 Message.receivedAt is required
-**Spec:** draft-atwood-jmap-chat-00 Section 4.11, lines 615-616
+**Spec:** draft-atwood-jmap-chat-00 §Message (`receivedAt`)
 **Severity:** MUST | **Round:** 1
 
 **Test:** Create a message. Call `Message/get`. Verify `receivedAt` is always present (not null/absent).
 
 ### 1.9 ChatMember role values: admin|member only
-**Spec:** draft-atwood-jmap-chat-00 Section 4.8, line 446
+**Spec:** draft-atwood-jmap-chat-00 §ChatMember, §Updating a Chat
 **Severity:** MUST | **Round:** 18
 
 **Test:** Via `Peer/groupUpdate` create, send a member with `role: "owner"`. Verify the server either rejects it or normalizes to `"member"`. The only valid values are `"admin"` and `"member"`.
@@ -87,7 +87,7 @@ Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or
 **Common failure:** Implementation defines "owner" and "guest" roles that don't exist in the spec.
 
 ### 1.10 ReadPosition.lastReadMessageId is optional
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 871
+**Spec:** draft-atwood-jmap-chat-00 §ReadPosition
 **Severity:** MUST | **Round:** 3
 
 **Test:** Verify a ReadPosition can exist with `lastReadMessageId: null` (unread chat).
@@ -119,7 +119,7 @@ Verify this succeeds. If the server expects `body` to be a nested object `{"cont
 **Common failure:** Returns the literal `"self"` or the owner's identity (`ownerUserId`) instead of the accountId.
 
 ### 2.3 Chat/set create direct uses contactId
-**Spec:** draft-atwood-jmap-chat-00 Section 4.10, line 957
+**Spec:** draft-atwood-jmap-chat-00 §Creating a Direct Chat
 **Severity:** MUST | **Round:** 3
 
 **Test:** Create a direct chat:
@@ -145,7 +145,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 ## 3. Session and Capabilities
 
 ### 3.1 Session-level chat capability is empty object
-**Spec:** draft-atwood-jmap-chat-00 line 197
+**Spec:** draft-atwood-jmap-chat-00 §Session-Level Capability Object
 **Severity:** MUST | **Round:** 15
 
 **Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:ietf:params:jmap:chat"]` is `{}`. Chat properties (maxBodyBytes, supportedBodyTypes, etc.) belong ONLY in account-level `accountCapabilities`.
@@ -241,7 +241,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Rejecting non-empty arrays on rich bodies (the old rule), or gating on spans, on any of the create, update, or federation edit paths.
 
 ### 4.7 Broadcast mention permission check
-**Spec:** draft-atwood-jmap-chat-00 Section 4.5, lines 350-351
+**Spec:** draft-atwood-jmap-chat-00 §BroadcastMention, §Creating a Message
 **Severity:** MUST | **Round:** 2
 
 **Test:** In a channel chat, send a message with broadcastMentions from a user lacking `mention_broadcast` permission. Verify `forbidden` error.
@@ -265,7 +265,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Set slowModeSeconds on a channel. Send two messages in rapid succession from a non-admin. Verify the second is rejected with a `rateLimit` SetError (RFC 8620 Section 5.3) in `notCreated`, not the method-level `rateLimited`.
 
 ### 4.11 CustomEmoji name uniqueness within scope
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 791
+**Spec:** draft-atwood-jmap-chat-00 §CustomEmoji
 **Severity:** MUST | **Round:** 17
 
 **Test:** Create two CustomEmojis with the same `name` in the same Space. Verify the second returns `alreadyExists`.
@@ -411,7 +411,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 ## 7. Federation
 
 ### 7.1 Peer/retract sets deletedForAll
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.4, line 451
+**Spec:** draft-atwood-jmap-chat-federation-00 §Peer/retract Receiver Behavior
 **Severity:** MUST | **Round:** 2
 
 **Test:** Call `Peer/retract`. Verify the tombstoned message has `deletedForAll: true` (not just `deletedAt`).
@@ -468,9 +468,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00 §ChatContact Methods, §Chat/set
 **Severity:** MUST | **Round:** 16
 
-**Test:** For an identity of a user with no local account and no ChatContact (federated user), call `ChatContact/set` create with `{"identity": "<identity>"}`. Verify the server creates the ChatContact, assigns its `id`, and returns it with that `identity`. Then call `Chat/set` create with `{"kind": "direct", "contactId": "<that id>"}`. Verify success.
+**Test:** For an identity of a user with no local account and no ChatContact (federated user), call `ChatContact/set` create with `{"identity": "<identity>"}`. Verify the server creates the ChatContact, assigns its `id`, and returns it with that `identity`. Call it again with the same `identity`. Verify the error is `alreadyExists` with `existingId` equal to that `id`. Call `ChatContact/query` with filter `{"identity": "<identity>"}`. Verify it returns exactly that `id`. Then call `Chat/set` create with `{"kind": "direct", "contactId": "<that id>"}`. Verify success. Call `ChatContact/set` create with `{"identity": "<ownerUserId>"}`, the owner's identity from the Session. Verify the error is `invalidProperties` naming `identity`, and that no ChatContact with that `identity` exists afterwards.
 
-**Common failure:** Rejects `ChatContact/set` create with `forbidden`, or rejects the Chat create with "account does not exist".
+**Common failure:** Rejects `ChatContact/set` create with `forbidden`; validates `contactId` against the local accounts table and rejects the Chat create with "account does not exist"; makes a second ChatContact for the same identity on a repeated create instead of returning `alreadyExists`; or accepts a create with the owner's identity and makes a ChatContact for the owner.
 
 ### 7.10 Peer rate limiter integrated
 **Spec:** none for `Peer/deliver`; draft-atwood-jmap-chat-federation-00 lists `rateLimited` as a Peer/* error type
@@ -510,13 +510,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Common failure:** Verifies the signature over the `Content-Digest` header but never recomputes the digest of the body.
 
-### 7.15 Unknown kid triggers one refetch
+### 7.15 A `kid` not among the usable keys triggers one refetch
 **Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
 **Severity:** MUST (refetch), SHOULD (at most once per 60 seconds) | **Round:** spec change (peer request signatures)
 
 **Test:** Let the receiver cache the sender's keys. Add a new key to the sender's `peerSigningKeys` and sign a request with it. Verify success (the receiver refetched). Within 60 seconds, sign a request with a second new, not yet published key, then publish it. Verify 403 and that the receiver made no second fetch in that interval.
 
-**Common failure:** Rejects new keys until the cache expires, or refetches on every unknown `kid`, letting any client drive unbounded outbound fetches.
+**Common failure:** Rejects new keys until the cache expires, or refetches on every `kid` not among the usable keys, letting any client drive unbounded outbound fetches.
 
 ### 7.16 ownerUserId host must equal peer domain
 **Spec:** draft-atwood-jmap-chat-federation-00 §Identity Binding
@@ -530,7 +530,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-federation-00 §DNSSEC Key Binding
 **Severity:** SHOULD | **Round:** spec change (peer request signatures)
 
-**Test:** With a validating resolver, sign the sender's zone and publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>`. Publish keys K1 and K2 in `peerSigningKeys`. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a request signed with K1 succeeds and one signed with K2 is rejected. Break the zone's DNSSEC signatures so answers are bogus. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a K1-signed request is rejected. Restore the signatures and make the `_jmap-peer` lookup time out. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a K2-signed request succeeds (fallback to the HTTPS keys).
+**Test:** With the receiver validating DNSSEC itself or getting validation results from a resolver on the same host or over a trusted channel, sign the sender's zone and publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>`. Publish keys K1 and K2 in `peerSigningKeys`. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a request signed with K1 succeeds and one signed with K2 is rejected. Break the zone's DNSSEC signatures so answers are bogus. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a K1-signed request is rejected. Restore the signatures and make the `_jmap-peer` lookup time out. Then, after the receiver's key cache and DNS cache for the sender have expired, and more than 60 seconds after its last fetch of the sender's keys, verify a K2-signed request succeeds (fallback to the HTTPS keys).
 
 **Common failure:** Treats a bogus answer as "no record" and falls back to the HTTPS keys, or rejects every request when the lookup merely times out.
 
@@ -542,13 +542,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Common failure:** Requires authentication on `/.well-known/jmap` as for an ordinary RFC 8620 Session, or signs its own key fetches, so two such servers can never verify each other.
 
-### 7.19 Unknown kid re-queries the DNSSEC binding
+### 7.19 A `kid` not among the usable keys re-queries the DNSSEC binding
 **Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication, §DNSSEC Key Binding
 **Severity:** MUST (re-query), SHOULD (at most once per 60 seconds) | **Round:** spec change (peer request signatures)
 
 **Test:** Applies to a receiver that uses the DNSSEC binding. Sign the sender's zone, publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>` with a TTL of 3600 seconds, and publish K1 in `peerSigningKeys`. Send a K1-signed request and verify success, so the receiver has cached both the keys and the DNS answer. Add K2 to `peerSigningKeys` and a `_jmap-peer` record for K2. Then, more than 60 seconds after the receiver's last fetch of the sender's keys but while the cached DNS answer is still within its 3600-second TTL, send a K2-signed request. Verify success and that the receiver issued a new `_jmap-peer` query rather than answering from its DNS cache (observe at the zone's authoritative server or in the receiver's resolver log). Within 60 seconds, add K3 to both `peerSigningKeys` and DNS and send a K3-signed request. Verify 403 and that the receiver made no further key fetch or `_jmap-peer` query in that interval. More than 60 seconds after the K2 lookup, resend the K3-signed request. Verify success.
 
-**Common failure:** Refetches the HTTPS keys but answers the `_jmap-peer` query from its DNS cache, so a key added during rotation stays unusable until the old TTL expires; or re-queries DNS on every unknown `kid`, letting any client drive unbounded lookups.
+**Common failure:** Refetches the HTTPS keys but answers the `_jmap-peer` query from its DNS cache, so a key added during rotation stays unusable until the old TTL expires; or re-queries DNS on every `kid` not among the usable keys, letting any client drive unbounded lookups.
 
 ---
 
@@ -567,7 +567,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** User A starts typing. Before the event is delivered, remove user B from the chat. Verify B does NOT receive the typing event.
 
 ### 8.3 receiveTypingIndicators re-checked at delivery time
-**Spec:** draft-atwood-jmap-chat-wss-00 Section 6.3, line 414
+**Spec:** draft-atwood-jmap-chat-wss-00 §ChatTypingEvent; draft-atwood-jmap-chat-00 §Chat/typing Server Behavior
 **Severity:** MUST | **Round:** 4
 
 **Test:** Same pattern: a user has `receiveTypingIndicators: false` at the moment of delivery (not just at subscription time). Verify they don't receive typing events.
@@ -675,31 +675,23 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 These tests catch subtle issues that survived 14+ audit rounds. They represent the deepest compliance gaps — the kind that only surface under adversarial review or cross-spec interaction analysis.
 
 ### 13.1 Session-level chat capability must be empty `{}`
-**Spec:** draft-atwood-jmap-chat-00 line 197
+**Spec:** draft-atwood-jmap-chat-00 §Session-Level Capability Object
 **Severity:** MUST | **Round:** 15
 
 **Test:** Fetch `/.well-known/jmap`. Verify `capabilities["urn:ietf:params:jmap:chat"]` is exactly `{}`. The chat properties (maxBodyBytes, supportedBodyTypes, etc.) must ONLY appear in per-account `accountCapabilities["urn:ietf:params:jmap:chat"]`.
 
 **Common failure:** Copying the properties into both session-level and account-level. Session-level must be empty.
 
-### 13.2 Direct chat contactId accepts remote/federated users
-**Spec:** draft-atwood-jmap-chat-00 §ChatContact Methods, §Chat/set
-**Severity:** MUST | **Round:** 16
-
-**Test:** Call `ChatContact/set` create with `{"identity": "remote.peer.example"}`, an identity with no local account. Verify success and note the assigned `id`. Call it again with the same `identity`. Verify the error is `alreadyExists` with `existingId` equal to that `id`. Call `ChatContact/query` with filter `{"identity": "remote.peer.example"}`. Verify it returns exactly that `id`. Call `Chat/set` create with `{"kind": "direct", "contactId": "<that id>"}`. Verify success. Call `ChatContact/set` create with `{"identity": "<ownerUserId>"}`, the owner's identity from the Session. Verify the error is `invalidProperties` naming `identity`, and that no ChatContact with that `identity` exists afterwards.
-
-**Common failure:** Server validates contactId against local accounts table and rejects with "account does not exist"; or a repeated ChatContact create makes a second ChatContact for the same identity instead of returning `alreadyExists`; or a create with the owner's identity succeeds and makes a ChatContact for the owner.
-
-### 13.3 CustomEmoji name uniqueness within scope
-**Spec:** draft-atwood-jmap-chat-00 Section 4.16, line 791
+### 13.2 CustomEmoji name uniqueness within scope
+**Spec:** draft-atwood-jmap-chat-00 §CustomEmoji
 **Severity:** MUST | **Round:** 17
 
 **Test:** Create two CustomEmojis with identical `name` in the same Space. Verify the second returns `alreadyExists` error. Also test across scopes: same name in different Spaces should succeed.
 
 **Common failure:** No UNIQUE constraint or application-level check on (name, space_id).
 
-### 13.4 ChatMember role restricted to admin|member
-**Spec:** draft-atwood-jmap-chat-00 Section 4.8, line 446
+### 13.3 ChatMember role restricted to admin|member
+**Spec:** draft-atwood-jmap-chat-00 §ChatMember, §Updating a Chat
 **Severity:** MUST | **Round:** 18
 
 **Test:** Via `Peer/groupUpdate` create, send members with `role: "owner"` or `role: "guest"`. Verify the server either rejects or normalizes to "member". Only `"admin"` and `"member"` are valid.
@@ -708,15 +700,15 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Implementation defines "owner"/"guest" roles from internal design that don't exist in the spec's wire protocol.
 
-### 13.5 SpaceBan silent-drop response has String receivedMsgId
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.1.1, line 296
+### 13.4 SpaceBan silent-drop response has String receivedMsgId
+**Spec:** draft-atwood-jmap-chat-federation-00 §New Message Validation step 4, §Peer/deliver Response (`receivedMsgId`)
 **Severity:** MUST | **Round:** 19
 
 **Test:** Deliver a message from a space-banned sender via `Peer/deliver`. Verify the `receivedMsgId` in the response is a String (a ULID), not `null`.
 
 **Common failure:** Returns `null` for silently-dropped messages, violating the String type constraint.
 
-### 13.6 Peer/receipt preserves previously-stored fields
+### 13.5 Peer/receipt preserves previously-stored fields
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
 **Severity:** MUST | **Round:** 13 (rediscovered 19)
 
@@ -724,15 +716,15 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Using INSERT OR REPLACE which overwrites the entire row, nulling fields not provided in the current call.
 
-### 13.7 deviceDeliveredAt suppressed unconditionally when receiptSharing=false
-**Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2, lines 354-362
+### 13.6 deviceDeliveredAt suppressed unconditionally when receiptSharing=false
+**Spec:** draft-atwood-jmap-chat-federation-00 §Peer/receipt Receiver Behavior
 **Severity:** SHOULD | **Round:** 10
 
 **Test:** Set receiptSharing=false for a message sender. Call `Peer/receipt` with `deliveredAt` and `deviceDeliveredAt` (but NO `readAt`). Verify `deviceDeliveredAt` is NOT stored.
 
 **Common failure:** Only suppressing `deviceDeliveredAt` when `readAt` is also present. The spec says: "The server SHOULD NOT record `deviceDeliveredAt` when the effective preference is `false`" — regardless of what other fields are present.
 
-### 13.8 Broadcast gate on update uses broadcastMentions
+### 13.7 Broadcast gate on update uses broadcastMentions
 **Spec:** draft-atwood-jmap-chat-00 §Editing a Message
 **Severity:** MUST | **Round:** 9
 
@@ -740,7 +732,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Gate only on the create path, or gating on spans.
 
-### 13.9 Push ignores rich body spans
+### 13.8 Push ignores rich body spans
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
 **Severity:** MUST | **Round:** 12
 
@@ -748,7 +740,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Parsing the body JSON for spans; spans are display-only.
 
-### 13.10 Peer/deliver mention arrays round-trip
+### 13.9 Peer/deliver mention arrays round-trip
 **Spec:** draft-atwood-jmap-chat-00 §Mention, §BroadcastMention
 **Severity:** MUST | **Round:** 11
 
@@ -756,8 +748,8 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Storing `mentions` but dropping `broadcastMentions`.
 
-### 13.11 Slow mode must use received_at, not sent_at
-**Spec:** draft-atwood-jmap-chat-00 §4.11 lines 612-615, federation §6.1.2 step 6
+### 13.10 Slow mode must use received_at, not sent_at
+**Spec:** draft-atwood-jmap-chat-00 §Message (`sentAt`, `receivedAt`), §Chat (`slowModeSeconds`); draft-atwood-jmap-chat-federation-00 §New Message Validation step 6
 **Severity:** MUST | **Round:** 21
 
 **Test:** Send two messages via `Peer/deliver` to a channel with slowModeSeconds=60. The second message has `sentAt` backdated 120 seconds but arrives immediately. Verify the server rejects the second message (rate limited by actual arrival time, not the forged sentAt).
@@ -908,9 +900,9 @@ Tests that mix MUST and SHOULD checks are counted under MUST. Optional tests are
 | Scheduling | 2 | 2 | 0 | 0 | 4 |
 | Space | 5 | 0 | 0 | 0 | 5 |
 | Other (unreadCount, PushSubscription) | 2 | 0 | 0 | 0 | 2 |
-| Late-discovery edge cases | 10 | 1 | 0 | 0 | 11 |
+| Late-discovery edge cases | 9 | 1 | 0 | 0 | 10 |
 | Security/robustness | 0 | 0 | 0 | 17 | 17 |
-| **Total** | **87** | **9** | **2** | **17** | **115** |
+| **Total** | **86** | **9** | **2** | **17** | **114** |
 
 ---
 
