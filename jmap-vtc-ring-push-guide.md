@@ -79,13 +79,13 @@ embedding it in the platform envelope. The canonical payload is:
 authoritative identity — a client that wants to verify the caller SHOULD fetch
 `VTCCall/get` after the UI is displayed, not before.
 
-`joinUri` is peer-supplied and MUST be treated as untrusted. The app MUST NOT connect
+`joinUri` is peer-supplied and untrusted. The app SHOULD NOT connect
 to it without explicit user action (the user tapping "answer"). Auto-joining exposes the
 microphone and camera without consent.
 
-Before dispatching any ring push, the server MUST check whether the initiator is blocked
+Before dispatching any ring push, the server SHOULD check whether the initiator is blocked
 by the target. If so, the push is silently dropped and the initiator is not informed.
-Over WebSocket (per the VTC WSS spec), servers MUST also suppress `VTCCallEndEvent`
+Over WebSocket (per the VTC WSS spec), servers SHOULD also suppress `VTCCallEndEvent`
 delivery with `endReason` of `"cancelled"` or `"timeout"` when the initiator is blocked,
 to prevent leaking that a blocked contact attempted to call.
 
@@ -210,8 +210,11 @@ a standard alert push that prompts the user to open the app).
 ### Handling VTCCallEndEvent on iOS
 
 When the call is answered on another device, declined, or times out, the server delivers
-a `VTCCallEndEvent` with the appropriate `endReason`. If the app has a WebSocket
-connection active, it receives this as an ephemeral event and MUST call
+a `VTCCallEndEvent` with the appropriate `endReason`. If the app has an active VTC
+subscription on its WebSocket (`VTCStreamEnable`, or `ChatStreamEnable` with `"vtc"`
+when the server advertises both WebSocket capabilities) and its `eventTypes` is `null`
+or includes `VTCCallEndEvent` (`draft-atwood-jmap-vtc-wss-00`), it receives this as an
+ephemeral event and MUST call
 `CXProvider.reportCall(with:endedAt:reason:)` to dismiss the CallKit UI. If the app was
 backgrounded by the VoIP push and has no WebSocket, it should poll `VTCCall/get` after a
 short delay to detect the ended state.
@@ -230,7 +233,7 @@ FCM offers two message types:
   `FirebaseMessagingService.onMessageReceived()`. The app handles display entirely. This
   is the correct type for incoming calls.
 
-JMAP VTC ring pushes MUST be sent as FCM data messages, not notification messages. A
+JMAP VTC ring pushes SHOULD be sent as FCM data messages, not notification messages. A
 notification message cannot trigger `ConnectionService`; a data message can.
 
 ### priority: high and Doze mode
@@ -306,10 +309,10 @@ permitted. Using `ConnectionService` avoids this complication entirely.
 
 ### Handling VTCCallEndEvent on Android
 
-When the server dispatches a `VTCCallEndEvent`, the app (if it has a WebSocket
-connection) receives it as an ephemeral event and MUST call `Connection.setDisconnected`
-on the active `Connection` object to dismiss the call UI. If the app has no active
-WebSocket, it should monitor `VTCCall/get` after the FCM-driven `onMessageReceived`
+When the server dispatches a `VTCCallEndEvent`, the app (if it has an active VTC
+WebSocket subscription that covers `VTCCallEndEvent`; see Section 2, "Handling VTCCallEndEvent on iOS") receives it as an
+ephemeral event and MUST call `Connection.setDisconnected` on the active `Connection`
+object to dismiss the call UI. If the app has no such subscription, it should monitor `VTCCall/get` after the FCM-driven `onMessageReceived`
 returns, using a short polling interval during the ring window.
 
 ---
@@ -360,7 +363,7 @@ Urgency: high
 The body is the encrypted `VTCCallPush` payload (RFC 8291, encrypted with the
 subscription's public key). The `Urgency: high` header tells the push service to deliver
 immediately rather than batching with lower-urgency messages. For ring calls, `high`
-urgency MUST be used.
+urgency SHOULD be used.
 
 Decrypted payload (what the service worker receives):
 
@@ -436,7 +439,7 @@ Key points:
   second notification replaces the first rather than stacking.
 - The "Answer" action opens or focuses the app window and passes the payload via
   `postMessage`. The app tab connects to `joinUri` after the user confirms. The service
-  worker MUST NOT connect to `joinUri` directly.
+  worker SHOULD NOT connect to `joinUri` directly.
 
 ### Notification permission UX
 
@@ -472,8 +475,9 @@ It is not a substitute for native push on mobile devices.
 
 A user typically has a phone, a tablet, and a desktop browser. All registered devices
 for that user receive the ring push simultaneously. The server delivers a `VTCCallPush`
-to every push endpoint and a `VTCRingEvent` to every active WebSocket connection. All
-devices ring at once.
+to every push endpoint and a `VTCRingEvent` to every WebSocket connection with an
+active VTC subscription that covers `VTCRingEvent` (Section 2, "Handling VTCCallEndEvent on iOS"). All devices ring at
+once.
 
 This is the correct behavior. Picking which device to ring requires the server to know
 the user's current device — information it does not reliably have. Forking to all devices
@@ -483,12 +487,13 @@ ensures the call is received regardless of which device is in the user's hand.
 
 The state machine resolves the race: the first `VTCParticipant/set` update that sets
 `joinMethod` on a target's VTCParticipant record wins (the server sets `joinedAt` as a
-side effect). The server accepts it, transitions the call to `"active"`, and then:
+side effect). The server accepts it, transitions the call to `"active"` if it is still
+`"ringing"`, and dispatches `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to
+all other push endpoints and WebSocket connections of the same user.
 
-1. Dispatches `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to all other
-   push endpoints and WebSocket connections of the same user.
-2. Dispatches `VTCCallEndEvent` with `endReason: "answered"` to all other target
-   participants in a multi-party ring.
+In a multi-party ring, the other targets are not sent a `VTCCallEndEvent` when the first
+target answers. They keep ringing and may still answer (and join the now-active call) or
+decline until the ring timeout (`draft-atwood-jmap-vtc-00`, "Multi-Device Forking").
 
 ### Client behavior on "answered_elsewhere"
 
@@ -511,9 +516,11 @@ to detect state transitions. The maximum polling window is bounded by the ring t
 
 In the unusual case where two `VTCParticipant/set` updates for the same participant
 arrive concurrently (e.g., two rapid taps), the server processes them in order. The
-second update arrives on a call already in state `"active"` with the participant already
-joined; the server SHOULD return a no-op success rather than an error, since the
-desired final state is already achieved.
+second update arrives after the participant's `callResponse` is already `"accepted"`,
+so the server returns `invalidProperties` naming `joinMethod`
+(`draft-atwood-jmap-vtc-00`, "Answering a Ring Call"). Clients should treat that
+error, after a successful first answer, as harmless: the participant is already
+joined.
 
 ### Device preference
 
@@ -552,6 +559,14 @@ When the timeout fires with no answer:
 3. Devices receiving the event dismiss the call UI via the platform-specific
    mechanism described in Sections 2–4.
 
+If another target has already answered, the call is `"active"` when the timeout fires
+and it continues. The server dispatches `VTCCallEndEvent` with `endReason: "timeout"`
+only to the devices of targets whose `callResponse` is still `"pending"`.
+
+If every target is blocked by the initiator, the call is still created, no target
+rings, and the call ends by this same timeout with `endReason: "missed"`, so the
+initiator cannot tell a block from an unanswered call.
+
 On iOS, if the app has no active WebSocket (e.g., it was launched by the VoIP push and
 has not yet established a connection), the timeout `VTCCallEndEvent` may not arrive in
 time. The app SHOULD implement a local failsafe: if `VTCCall/get` returns `state:
@@ -567,8 +582,9 @@ notification. This is a normal-urgency notification, not a VoIP push:
 - **Web**: Web Push with `Urgency: normal`.
 
 The missed-call notification payload is not a `VTCCallPush`; it is a regular JMAP
-`StateChange` or a deployment-defined notification indicating that the VTCCall's
-`endReason` is `"missed"`. The client renders it as "Missed call from Alice Chen".
+`StateChange` or a deployment-defined notification indicating that the VTCCall ended
+unanswered (`endReason` is `"missed"` after a timeout, or `"declined"` when all targets
+declined). The client renders it as "Missed call from Alice Chen".
 
 Missed-call notifications can be delivered with a longer TTL (several hours) since they
 are informational, not time-critical.
@@ -601,10 +617,12 @@ missed call or declined call, they create a new VTCCall (a new `VTCCall/set crea
 which generates new push notifications under the per-caller ring rate limits.
 
 The per-caller rate limit (the spec recommends no more than 3 ring calls to the same
-target within 60 seconds) prevents retry from becoming harassment. Servers MUST enforce
-this limit. When a caller exceeds the limit, the server SHOULD reject the `VTCCall/set
-create` with `tooManyRequests` rather than silently accepting it and dropping the
-notification.
+target within 60 seconds) prevents retry from becoming harassment. The spec says
+servers SHOULD enforce per-caller and per-callee ring rate limits and gives these
+numbers only as examples (`draft-atwood-jmap-vtc-00`, Security Considerations). The
+spec does not name an error for an over-limit create; rejecting it with the RFC 8620
+`rateLimit` SetError, rather than silently accepting it and dropping the notification,
+tells the caller what happened.
 
 ---
 
@@ -668,8 +686,8 @@ Alert when p95 of `T4 - T0` exceeds 2 seconds.
 
 ### WSS path (connected clients)
 
-For clients with an active WebSocket connection, the server delivers a `VTCRingEvent`
-in addition to the push. The WSS path is typically faster than push (sub-100 ms for a
+For clients with an active VTC WebSocket subscription that covers `VTCRingEvent`
+(Section 2, "Handling VTCCallEndEvent on iOS"), the server delivers a `VTCRingEvent` in addition to the push. The WSS path is typically faster than push (sub-100 ms for a
 connected client on a good network) because it skips the push service entirely. Clients
 that receive a `VTCRingEvent` before the push arrives SHOULD begin presenting the
 incoming-call UI immediately and suppress the duplicate push-triggered UI when (if) the
@@ -681,9 +699,11 @@ CallKit. However, CallKit SHOULD still be notified so that the call appears in t
 system's recent calls list, integrates with Siri, and handles hardware button events
 correctly.
 
-The `VTCRingEvent` carries `callId`, `initiatorId`, `mediaTypes`, and `joinUri` — a
-smaller field set than `VTCCallPush`, which additionally includes `accountId`,
-`callType`, `initiatorDisplayName`, `subject`, `chatId`, and `spaceId`. The client has
+The `VTCRingEvent` carries `callId`, `initiatorId`, `mediaTypes`, and `joinUri`, plus
+the `accountId` that WebSocket delivery adds to every VTC event
+(`draft-atwood-jmap-vtc-wss-00`). That is a smaller field set than `VTCCallPush`, which
+additionally includes `callType`, `initiatorDisplayName`, `subject`, `chatId`,
+`spaceId`, and `channelId`. The client has
 all the information needed to render the call screen without a `VTCCall/get` round-trip.
 
 ### TTL and stale-push mitigation

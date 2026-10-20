@@ -274,16 +274,18 @@ agreement, the call is not E2EE.
 
 When `e2eeEnabled` is `true` on a call:
 
-- **Reject gateway dial-out unless the gateway holds keys openly.** If a
-  moderator attempts to create a VTCParticipant with `joinMethod` of
-  `"pstn"`, `"sip"`, or `"h323"`, and the gateway cannot join as a disclosed
-  key-holding participant, the server SHOULD return `forbidden` with a
-  description explaining why.
+- **Reject gateway dial-out unless the gateway holds keys openly.** A
+  dial-out (VTCParticipant/set create with `joinMethod` of `"pstn"`,
+  `"sip"`, or `"h323"`) is allowed when the gateway joins as a disclosed
+  key-holding participant. A dial-out whose gateway cannot do so SHOULD be
+  rejected with `forbidden` (draft-atwood-jmap-vtc-00, Gateway Dial-Out and
+  Key-Holding Media Participants). Include a description explaining why.
 
-- **Reject gateway dial-in on the same terms.** If a gateway connection
-  arrives for a call with `e2eeEnabled: true` and the gateway cannot join as
-  a disclosed key-holding participant, the server SHOULD reject the
-  connection and return an appropriate error to the gateway (e.g., SIP 488
+- **Reject gateway dial-in on the same terms.** The draft does not define
+  the gateway dial-in path, so this is deployment-defined. A deployment that
+  admits a dial-in to a call with `e2eeEnabled: true` can only do so through
+  a gateway that joins as a disclosed key-holding participant; otherwise it
+  SHOULD refuse the connection with a protocol-appropriate error (e.g., SIP 488
   Not Acceptable Here).
 
 - **Never tap media server-side.** The spec forbids server-side media taps,
@@ -291,11 +293,12 @@ When `e2eeEnabled` is `true` on a call:
   participant list. A gateway, recorder, or livestream bridge either joins
   as a visible participant or does not get plaintext.
 
-- **Warn on downgrade.** If a moderator attempts to set `e2eeEnabled: false`
-  on an active E2EE call (to admit a gateway participant), this is a security
-  downgrade. The server SHOULD require explicit confirmation, and all
-  participants MUST be notified (via `VTCRecordingStateEvent` or a new
-  event type if warranted).
+- **Reject downgrade.** A moderator may change `e2eeEnabled` from `false`
+  to `true`, but the server SHOULD reject an update from `true` to `false`
+  with `invalidProperties` naming `e2eeEnabled`, so that participants never
+  have to detect a downgrade (draft-atwood-jmap-vtc-00, VTCCall
+  `e2eeEnabled`). To admit a gateway that cannot hold keys, start a new call
+  without E2EE rather than downgrading the existing one.
 
 ---
 
@@ -357,8 +360,10 @@ speaker, which show who answered whom and for how long. For E2EE calls:
 - Do not map SFU streams to participant ids in the server. Leave
   `speakerTimeMs` at `0`, skip `VTCActiveSpeakerEvent`, and let clients
   detect the active speaker from decrypted audio.
-- Hide VTCParticipant records from users who are not in the call, even
-  members of a bound Chat. This mirrors JMAP Scene's suppression of
+- Hide VTCParticipant records from users who have no VTCParticipant
+  record in the call, even members of a bound Chat (the draft's SHOULD in
+  Participant Visibility). Past participants keep their record, so they
+  still see the list. This mirrors JMAP Scene's suppression of
   avatar events for regions bound to E2EE calls. Non-participants still
   see that the call exists and its `activeParticipantCount`.
 - Send the content-free `VTCCallPush` on APNs and FCM so the platform
@@ -414,10 +419,12 @@ has one leaf per device, not per user. This matches how MLS is designed
 
 Consequences:
 
-- Each device has its own `e2eeFingerprint`. The client SHOULD display per-device
-  fingerprints when the user expands a participant's details, but show a single
-  "verified" badge at the participant level if all of that user's devices are
-  verified.
+- Each device has its own MLS key and fingerprint, but VTCParticipant has a
+  single `e2eeFingerprint` field per user per call. Per-device fingerprints
+  are learned inside the E2EE layer, not from JMAP. The client SHOULD display
+  per-device fingerprints when the user expands a participant's details, but
+  show a single "verified" badge at the participant level if all of that
+  user's devices are verified.
 - When a device disconnects, remove its leaf from the MLS group. When it
   reconnects, add a new leaf. Do not reuse old key material.
 - The VTCParticipant record is per-user (the spec reuses the record on
@@ -428,7 +435,7 @@ Consequences:
 
 ## 8. Fingerprint verification
 
-The spec says clients SHOULD display `e2eeFingerprint` for out-of-band
+The spec says clients can display `e2eeFingerprint` for out-of-band
 verification (§VTCParticipant Object Fields). Here is what that looks like
 in practice.
 
@@ -460,8 +467,9 @@ a secondary format.
 **Derivation.** Take the SHA-256 of the participant's public key, truncate
 to the desired number of bits, and encode as word-list indices. Store the
 full SHA-256 in `e2eeFingerprint` — the display encoding is a client concern.
-The `e2eeFingerprint` field value SHOULD be the full hex-encoded SHA-256 for
-interoperability; clients choose how to present it.
+The draft leaves the `e2eeFingerprint` format to the media layer; for
+interoperability the value SHOULD be the full hex-encoded SHA-256, and clients
+choose how to present it.
 
 **Note on encoding format.** The display encoding of fingerprints (hex, base64,
 word list, emoji hash, etc.) is deployment-defined. Deployments SHOULD document
@@ -528,15 +536,17 @@ work while sending plaintext).
    by VTCParticipant/get matches the actual public key used by the client's
    encryption layer. A mismatch means the verification UI is lying.
 
-5. **Gateway rejection.** Attempt to add a PSTN participant to an E2EE call.
-   Verify that the server returns `forbidden`.
+5. **Gateway rejection.** Attempt to dial out to a PSTN participant on an
+   E2EE call through a gateway that cannot join as a disclosed key-holding
+   participant. Verify that the server returns `forbidden`. If the deployment
+   has a key-holding gateway, verify that the dial-out succeeds and the
+   gateway appears in the participant list with its `e2eeFingerprint`.
 
 6. **Recording rejection.** In a deployment without a key-holding recorder,
    attempt VTCRecording/set create on an E2EE call. Verify `forbidden`.
 
-7. **Downgrade notification.** If your deployment supports disabling E2EE
-   mid-call, verify that all participants receive a notification before
-   plaintext frames flow.
+7. **Downgrade rejection.** Attempt VTCCall/set update of `e2eeEnabled`
+   from `true` to `false`. Verify `invalidProperties` naming `e2eeEnabled`.
 
 ### Automated testing approach
 

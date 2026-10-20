@@ -197,8 +197,10 @@ for direct chats as well.
 ### What activeCallId is
 
 `Chat.activeCallId` is a `String|null` field on the Chat object, defined in
-`draft-atwood-jmap-chat-00`. It is server-set; clients MAY clear a stale value
-(referencing an ended or nonexistent call) but MUST NOT set it directly. The spec says:
+`draft-atwood-jmap-chat-00`. It is server-set and is not a `Chat/set` patch key, so
+clients can neither set nor clear it. A client that sees a stale value (referencing an
+ended or nonexistent call) treats it as `null` for UI purposes; the server repairs it on
+next read. The spec says:
 
 > When `urn:ietf:params:jmap:vtc` is present: the id of a VTCCall that is currently
 > active and bound to this Chat via the VTCCall's `chatId` field. The server sets this
@@ -223,8 +225,11 @@ The server must do this atomically with the VTCCall state transition. A VTCCall 
 has ended but whose Chat still shows `activeCallId` set is a data integrity bug.
 
 For ring calls: `"active"` state is reached when a target participant answers. Until
-then, the call is in `"ringing"` state and `activeCallId` is still `null`. This is
-intentional: a ringing call is not yet joinable by other chat members.
+then, the call is in `"ringing"` state and `activeCallId` is still `null`. Even once a
+ring call is active, only its targets can enter it, by answering their pre-created
+VTCParticipant records; the VTC spec defines no path for other chat members to join a
+ring call. Show the banner on a ring call as status, not as a join button, for users who
+are not targets.
 
 For room calls: `"active"` state is immediate on creation. `activeCallId` is set as
 soon as the room call exists.
@@ -242,20 +247,31 @@ the changed types, fetch the updated Chat object. If `activeCallId` has changed 
 When the user clicks the join banner:
 
 1. Fetch the VTCCall via `VTCCall/get` using `Chat.activeCallId` to retrieve the
-   `joinUri` field. (The `joinUri` is on VTCCall, not on VTCParticipant.)
+   `joinUri` field. (The `joinUri` is on VTCCall, not on VTCParticipant.) Send
+   this and the requests below to the call's hosting account, which may be a
+   shared account rather than the user's own (`draft-atwood-jmap-vtc-00`,
+   Hosting Account).
 2. Create a VTCParticipant on the call via `VTCParticipant/set create` with
    `callId` set to `Chat.activeCallId` and `joinMethod` set to the client's connection
-   type (typically `"webrtc"`).
+   type (typically `"webrtc"`). If the user already has a record in the call (they
+   left earlier), rejoin by updating that record's `leftAt` to `null` instead; a
+   create fails with `alreadyExists` and `existingId` naming the record. When
+   `lobbyEnabled` is `true`, the new record has `lobbyState: "waiting"` and
+   `joinedAt: null` until a moderator admits the user.
 3. Open the `joinUri` in the media layer — only after explicit user action.
 
-Do not open `joinUri` automatically. The VTC spec is explicit: clients MUST NOT connect
+Do not open `joinUri` automatically. The VTC spec says clients SHOULD NOT connect
 to `joinUri` without explicit user initiation.
 
 **Ring call answer vs join:** For ring call targets answering their own ring, use
-`VTCParticipant/set update` on the existing VTCParticipant record — the server
-pre-created it at ring time. The `VTCParticipant/set create` path described here applies
-to joining an already-active call as a new participant (e.g., a room call, or a third
-party joining a ring call that has already been answered).
+`VTCParticipant/set update` on the existing VTCParticipant record in the call's
+hosting account — the server pre-created it at ring time. Its id is
+server-assigned, not the userId; find it with `VTCParticipant/query` on `callId`
+and `userId`. Answering is allowed while the call is `"ringing"`, or
+`"active"` if the target's `callResponse` is still `"pending"`, so every target of a
+multi-target ring call can join. The `VTCParticipant/set create` path described here
+applies only to room and scheduled calls; the VTC spec defines no create path for a
+non-target to join a ring call.
 
 ### Displaying participant count and names
 
@@ -286,17 +302,18 @@ SpaceRole vocabulary. It is one entry in the `permissions` array of a SpaceRole 
   "id": "role-moderator",
   "name": "Moderator",
   "color": "#5865F2",
-  "permissions": ["send_messages", "start_call", "mention_broadcast"],
+  "permissions": ["send", "start_call", "mention_broadcast"],
   "position": 10
 }
 ```
 
-This permission gates VTCCall creation for Space-bound chats. Before sending
-`VTCCall/set create` with a `spaceId`, your client can pre-flight check whether the
-current user holds a role that includes `"start_call"`. The server SHOULD enforce
-this independently (the VTC spec uses SHOULD, not MUST) — a client that skips the
-pre-flight check and sends the create will typically receive `forbidden` if the user
-lacks the permission.
+This permission gates VTCCall creation for Space-bound calls. Before sending
+`VTCCall/set create` with a `spaceId` or `channelId`, your client can pre-flight check
+whether the current user holds a role that includes `"start_call"`. The server enforces
+this independently: for every call type the VTC spec says the server SHOULD return
+`forbidden` when the caller lacks `"start_call"` in the bound Space or channel
+(`draft-atwood-jmap-vtc-00`, VTCCall/set common create checks). A client that skips the
+pre-flight check typically gets `forbidden` from the create.
 
 ### What start_call gates and does not gate
 
@@ -313,9 +330,11 @@ Space-bound call, check that the caller is a member of the bound Space with at l
 
 This is a deployment decision. Common patterns:
 
-- **Everyone can call**: Grant `"start_call"` on the `@everyone` implicit role, which
-  every Space member holds. This is appropriate for small teams where any member may
-  start a standup or 1:1.
+- **Everyone can call**: Let every Space member start calls. `draft-atwood-jmap-chat-00`
+  defines no way to set the permissions of the implicit `@everyone` role, so how this is
+  achieved is deployment-defined (for example, server-side defaults for `@everyone`, or
+  a defined role granted to every member). This is appropriate for small teams where any
+  member may start a standup or 1:1.
 - **Only higher roles can call**: Grant `"start_call"` only on roles with elevated
   position. Appropriate for channels that are primarily broadcast (announcements, support
   queues) where uncontrolled call-starting would be disruptive.
