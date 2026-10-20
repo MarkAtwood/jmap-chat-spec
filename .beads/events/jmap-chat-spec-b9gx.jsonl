@@ -1,0 +1,2 @@
+{"id":"01a156c2-99ce-7785-8804-8116b0ecbd3e","issue_id":"jmap-chat-spec-b9gx","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T00:42:36.36649371Z"}
+{"id":"01a156ef-ff30-74a4-8cc0-7b671999182a","issue_id":"jmap-chat-spec-b9gx","event_type":"closed","actor":"agent","old_value":"","new_value":"Fixed in 91672c9 (spec: fix SetError codes, settle open conflicts), pushed.","created_at":"2026-10-20T01:32:11.440318965Z"}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.19",
+  "title": "vtc-00: VTCRecording field and lifecycle gaps",
+  "description": "duration undefined during processing (:486 vs :1098); initiatedBy not marked server-set (:476 vs :1060); destroying a recording while recording or paused undefined (:1102); stopping recordings when the call ends is only in an example (:1908).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:06.278680692Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:08.930384113Z",
+  "closed_at": "2026-10-20T17:41:08.930384113Z",
+  "close_reason": "initiatedBy server-set; duration in stopped/processing/available; destroy while recording stops first; call end stops recordings and livestreams.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.19",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:06.319516408Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

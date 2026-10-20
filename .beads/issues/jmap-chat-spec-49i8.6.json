@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.6",
+  "title": "vtc-00: e2eeEnabled can be turned off mid-call",
+  "description": "draft-atwood-jmap-vtc-00.md:406 lets a moderator update e2eeEnabled in either direction; true-\u003efalse silently downgrades the call and lifts the server-side recording ban. e2eeEnabled is also missing from every create list despite 'call creator (at create time)'.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:03.84531402Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:40:59.163037061Z",
+  "closed_at": "2026-10-20T17:40:59.163037061Z",
+  "close_reason": "e2eeEnabled added to create options; moderator may change false-\u003etrue; server SHOULD reject true-\u003efalse.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.6",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:03.890211959Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

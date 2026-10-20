@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.16",
+  "title": "vtc-00: scheduled-call lifecycle gaps",
+  "description": "Early joiners (:818) get stuck: call activates only on a join at or after scheduledStartAt. Ending a pending call has no endReason (:691). :130 says joinUri 'becomes active at the event's start time', contradicting :400. Scheduled create lacks the start_call MUST that ring/room have. :1585 says SHOULD check start_call on join, contradicting 'gates creation, not joining'.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:05.736339284Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:07.352849109Z",
+  "closed_at": "2026-10-20T17:41:07.352849109Z",
+  "close_reason": "First join activates scheduled calls (scheduledStartAt advisory); pending end -\u003e cancelled; calendar wording fixed; start_call SHOULD on scheduled create; join-permission contradiction removed.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.16",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:05.789421658Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

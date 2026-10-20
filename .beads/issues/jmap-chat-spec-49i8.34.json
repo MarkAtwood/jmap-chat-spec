@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-49i8.34",
+  "title": "Chat.activeCallId across hosting accounts",
+  "description": "With the shared-account model (VTCCall lives in its hosting account), chat-00 sets Chat.activeCallId on the Chat named by chatId, which must be in the hosting account. Chat uses per-owner copies, so other members' copies of the Chat live in their own accounts and activeCallId there would name a call in a different account, with no accountId to resolve it. Decide: add activeCallAccountId, or define activeCallId as resolved in the call's hosting account. Same question for federation's locally created VTCCall (which account).",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T18:44:20.808491182Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:44:20.808491182Z",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.34",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T18:44:20.840845873Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

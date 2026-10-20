@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.22",
+  "title": "vtc-00: no error for E2EE dial-out",
+  "description": "Dial-out errors (draft-atwood-jmap-vtc-00.md:1001) do not cover E2EE calls, though :1562 forbids paths to plaintext except key-holding participants. Recording and livestream already return forbidden.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:06.645633504Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:09.122062747Z",
+  "closed_at": "2026-10-20T17:41:09.122062747Z",
+  "close_reason": "Dial-out on E2EE call without key-holding gateway rejected with forbidden, by reference to the existing E2EE rule (no new MUST).",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.22",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:06.680399588Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.19",
+  "title": "scene-wss: missing RFC 8887 4.2 justification",
+  "description": "RFC 8887 4.2 says other message types MUST NOT be sent over the connection. chat-wss:99 explains how its session capability permits new message types; draft-atwood-jmap-scene-wss-00.md has no equivalent paragraph for SceneStreamEnable/Disable and the event types.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.855036672Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.064196487Z",
+  "closed_at": "2026-10-20T17:20:38.064196487Z",
+  "close_reason": "Fixed by jmap-chat-spec-k0pv.1 (scene-wss now has the RFC 8887 update section).",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.19",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.881936217Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

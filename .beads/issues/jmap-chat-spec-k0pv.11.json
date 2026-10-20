@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.11",
+  "title": "wss: invalid example ULIDs and handshakes",
+  "description": "All 5 ids in draft-atwood-jmap-chat-wss-00.md/draft-atwood-jmap-vtc-wss-00.md examples are 25 chars (01J3XKZQN4MWVT8PPBEHTJ3HX, 01J4XKZQN4MWVT8PPBEHTJ3AB, 01J4XMVQK7NRYS9PPCEHTK4CD, 01J4XNZRM8QWUT0RRDFIUS5EF, 01J4XP2SN9RXVU1SSEGIUT6GH); the last two also contain I/U. draft-atwood-jmap-vtc-wss-00.md:405 and draft-atwood-jmap-scene-wss-00.md:938 handshakes omit Sec-WebSocket-Key and Sec-WebSocket-Version (draft-atwood-jmap-chat-wss-00.md:314 has them).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:15.055591322Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.845793396Z",
+  "closed_at": "2026-10-20T17:20:38.845793396Z",
+  "close_reason": "Replaced 5 invalid ULIDs across 9 files; added Sec-WebSocket-Key/Version to vtc/scene-wss handshakes.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.11",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:15.091493497Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

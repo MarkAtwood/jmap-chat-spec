@@ -1,0 +1,3 @@
+{"id":"01a15a50-4b79-79f8-b7c3-13554d35f473","issue_id":"jmap-chat-spec-k0pv.2","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:16:14.073654102Z"}
+{"id":"01a15a50-4b81-7ea2-a106-b51dbb79efd2","issue_id":"jmap-chat-spec-k0pv.2","event_type":"label_added","actor":"agent","comment":"Added label: wss","created_at":"2026-10-20T17:16:14.081959828Z"}
+{"id":"01a15a54-5301-7b3e-a486-a3c142e289ee","issue_id":"jmap-chat-spec-k0pv.2","event_type":"closed","actor":"agent","old_value":"","new_value":"Unknown client @type now cites RFC 8887 4.3.1's existing MUST (RequestError, notRequest type) in all three; no new MUST added.","created_at":"2026-10-20T17:20:38.145737491Z"}

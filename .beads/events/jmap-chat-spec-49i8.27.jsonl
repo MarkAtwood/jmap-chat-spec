@@ -1,0 +1,3 @@
+{"id":"01a15a5e-d688-71a7-94e0-be854661fee0","issue_id":"jmap-chat-spec-49i8.27","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:32:07.17610935Z"}
+{"id":"01a15a5e-d68c-771e-973c-c6722892826d","issue_id":"jmap-chat-spec-49i8.27","event_type":"label_added","actor":"agent","comment":"Added label: vtc","created_at":"2026-10-20T17:32:07.180467627Z"}
+{"id":"01a15a67-1d57-7dde-a93b-ae3a6a04172b","issue_id":"jmap-chat-spec-49i8.27","event_type":"closed","actor":"agent","old_value":"","new_value":"Guide aligned with revised drafts by guide-fix agents; guide-invented MUSTs removed; undecided mechanisms labelled deployment-defined.","created_at":"2026-10-20T17:41:09.591909518Z"}

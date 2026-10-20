@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.17",
+  "title": "scene-00: invite policy has no protocol mechanism",
+  "description": "accessPolicy invite's grant list is deployment-defined (draft-atwood-jmap-scene-00.md:2362), so invite-only regions cannot interoperate. Decide: define an invite list on SceneRegion, or explicitly declare invite non-interoperable.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.695505794Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.927553539Z",
+  "closed_at": "2026-10-20T18:55:04.927553539Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.17",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.718899439Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

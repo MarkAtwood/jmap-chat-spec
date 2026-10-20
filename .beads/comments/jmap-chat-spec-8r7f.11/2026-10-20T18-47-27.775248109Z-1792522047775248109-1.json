@@ -1,0 +1,7 @@
+{
+  "id": "1792522047775248109-1",
+  "issue_id": "jmap-chat-spec-8r7f.11",
+  "author": "agent",
+  "text": "Also: chat-00 registers notPermitted, which looks like a duplicate of RFC 8620's forbidden SetError. Decide together with rateLimited. (Registry name and template fixed to RFC 8620 9.5 'JMAP Error Codes' on 2026-10-20.)",
+  "created_at": "2026-10-20T18:47:27.775248109Z"
+}

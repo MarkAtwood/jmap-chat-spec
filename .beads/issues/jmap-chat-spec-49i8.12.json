@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.12",
+  "title": "vtc-00: rejoin via create underspecified",
+  "description": "draft-atwood-jmap-vtc-00.md:921 reuses the existing record on re-join via create but does not say what created returns or whether kickedBy clears. A create that returns an existing record breaks RFC 8620 /set semantics. Fix: rejoin by updating leftAt to null; create on an existing record returns alreadyExists.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:04.943682003Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:02.434494995Z",
+  "closed_at": "2026-10-20T17:41:02.434494995Z",
+  "close_reason": "Rejoin is an update setting leftAt to null; create on existing record -\u003e alreadyExists; kickedBy cleared.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.12",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:04.995154925Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

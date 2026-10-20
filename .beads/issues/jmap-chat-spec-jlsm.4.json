@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.4",
+  "title": "scene-00: forbidden leaks hidden regions",
+  "description": "get returns notFound for inaccessible regions to prevent enumeration (draft-atwood-jmap-scene-00.md:2367), but entering an invite region returns forbidden (:1959,:2362) and creating an object in a non-member region returns forbidden (:1660). Both confirm existence. Root cause: 'access' (may view) vs 'may enter' is never defined separately.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:56.639344295Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:03.859060161Z",
+  "closed_at": "2026-10-20T18:55:03.859060161Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.4",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:56.662908583Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

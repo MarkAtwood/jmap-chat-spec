@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-51yb",
+  "title": "Compliance tests 7.9 and 13.2 are duplicates",
+  "description": "Same round 16, same behaviour. Merge after ka7b's create-by-identity rewrite.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T04:15:28.107303965Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-19T04:15:28.107303965Z"
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.20",
+  "title": "vtc-00: captions/reactions promise undefined events",
+  "description": "draft-atwood-jmap-vtc-00.md:113-114 (and :1727, :1741) promise captions and reactions as ephemeral events on the Chat WebSocket; chat-wss defines only typing and presence, and vtc-wss closes its list at 8 types.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:06.414878511Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:09.024921251Z",
+  "closed_at": "2026-10-20T17:41:09.024921251Z",
+  "close_reason": "Captions/reactions are Messages / Message reactions in the bound Chat; no ephemeral event type claimed.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.20",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:06.448805943Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

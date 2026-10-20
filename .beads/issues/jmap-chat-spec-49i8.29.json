@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.29",
+  "title": "guide: fix jmap-vtc-gateway-guide.md drift",
+  "description": "Guide contradicts vtc-00/vtc-wss/chat-00 per the 2026-10-20 drift check; see epic notes. Fix the guide-wrong items; align unclear items with the resolved draft text.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:07.378660711Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:09.756707266Z",
+  "closed_at": "2026-10-20T17:41:09.756707266Z",
+  "close_reason": "Guide aligned with revised drafts by guide-fix agents; guide-invented MUSTs removed; undecided mechanisms labelled deployment-defined.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.29",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:07.413079079Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

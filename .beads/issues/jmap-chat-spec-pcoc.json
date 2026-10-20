@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-pcoc",
+  "title": "Scene/vtc docs: classify ~200 user:alice ids",
+  "description": "scene-00 (20), scene-wss-00 (13), vtc-00 (16), vtc-wss-00 (1), scene-2d (6), scene-board-games (102), scene-implementer (4), scene-vtc-integration (12), scene-wss guide (13), vtc-recording (5), vtc-ring-push (4), vtc-chat-delegation (1) use user:alice@example.com-style values. After ka7b, each must be classified: ChatContact id (must be a valid RFC 8620 Id) vs identity vs an independent scene/vtc userId concept. Found by spec pass wf_2bc7061e-393.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T04:15:28.000440816Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-19T04:15:28.000440816Z"
+}

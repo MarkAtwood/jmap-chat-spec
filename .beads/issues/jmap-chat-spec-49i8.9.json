@@ -1,0 +1,35 @@
+{
+  "id": "jmap-chat-spec-49i8.9",
+  "title": "vtc-00: no cross-account model",
+  "description": "Bob's call lives in bob-account, but Alice answers in alice-account (draft-atwood-jmap-vtc-00.md:1813) by updating a record created by Bob's call, and VTCCallPush pairs alice-account with Bob's callId (:1281). Which account holds a call for each user is undefined. Related: jmap-chat-spec-jlsm.3, jmap-chat-spec-k0pv.5.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "decision",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:04.399364617Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:05.333149589Z",
+  "closed_at": "2026-10-20T18:55:05.333149589Z",
+  "close_reason": "Shared hosting-account model added to vtc-00/vtc-wss (Hosting Account section); examples use the hosting account.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.9",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:04.446394338Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-49i8.9",
+      "depends_on_id": "jmap-chat-spec-jlsm.3",
+      "type": "related",
+      "created_at": "2026-10-20T17:33:04.891308002Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

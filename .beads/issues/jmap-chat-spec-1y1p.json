@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-1y1p",
+  "title": "federation-00: aggregate deliveryState defined three conflicting ways",
+  "description": "draft-atwood-jmap-chat-federation-00.md defines the group-chat aggregate deliveryState three ways: L780 (Group Chat Delivery): advances to delivered when all participants have acknowledged; L788 (Delivery State Transitions): 'delivered - All recipients (for group chats: all participants) have acknowledged receipt'; L793: 'delivered when at least one peer has accepted, failed only when ALL peers have permanently failed'. L780/L788 say all, L793 says at least one. Pick one rule and state it once; also define the failed aggregate consistently. Blocks crate-jmap federation outbound deliveryState aggregation (JMAP-v9py.15). Source: crate-jmap spec gap audit 2026-10-19.",
+  "notes": "Blocks crate-jmap JMAP-v9py.15.6 (outbound deliveryState aggregation).\nDECIDED by Mark 2026-10-20: for group chats the aggregate deliveryState is the best state any recipient has reached (pending \u003c delivered \u003c received); it is \"failed\" only when every recipient has permanently failed. Partial failure never downgrades the aggregate; retries to one peer never change other recipients' states. deliveryReceipts stays OPTIONAL ('if supported'). Edit: rewrite federation-00 L780 and the L788-789 bullets to match, keep the L793 paragraph (reworded to the best-state rule). Rationale (Mark): the internet fails in pieces; surface what worked, don't fail when a peer goes down.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T00:42:36.241746928Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T01:32:10.66693204Z",
+  "closed_at": "2026-10-20T01:32:10.66693204Z",
+  "close_reason": "Fixed in 91672c9 (spec: fix SetError codes, settle open conflicts), pushed."
+}

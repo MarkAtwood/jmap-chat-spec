@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-py20.3",
+  "title": "refs: scene, scene-wss, vtc, vtc-wss",
+  "description": "Apply /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/refs/R3-scene-vtc.md and relevant R0 rows.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T19:00:28.581038979Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T19:11:48.662923828Z",
+  "closed_at": "2026-10-20T19:11:48.662923828Z",
+  "close_reason": "Applied; logs in scratchpad/refs/fix-R3.md; drafts build.",
+  "labels": [
+    "refs"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-py20.3",
+      "depends_on_id": "jmap-chat-spec-py20",
+      "type": "parent-child",
+      "created_at": "2026-10-20T19:00:28.607056411Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

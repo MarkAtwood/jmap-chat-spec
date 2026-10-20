@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.7",
+  "title": "chat-wss: presence rate limit can leave stale state",
+  "description": "draft-atwood-jmap-chat-wss-00.md:291 drops ChatPresenceEvent above 1/30s per contact with no 'latest state SHOULD be delivered when window reopens' (cf. draft-atwood-jmap-vtc-wss-00.md:269). Online then offline within 30s can leave the contact shown online indefinitely.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.621787504Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.536803744Z",
+  "closed_at": "2026-10-20T17:20:38.536803744Z",
+  "close_reason": "Presence: latest state SHOULD be delivered when rate window reopens.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.7",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.660614193Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

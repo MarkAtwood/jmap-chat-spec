@@ -1,0 +1,3 @@
+{"id":"01a15a5e-cafb-7b1c-824e-b85bbc7c1bbb","issue_id":"jmap-chat-spec-49i8.8","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:32:04.219729476Z"}
+{"id":"01a15a5e-cb02-7a66-a282-06caaecba519","issue_id":"jmap-chat-spec-49i8.8","event_type":"label_added","actor":"agent","comment":"Added label: vtc","created_at":"2026-10-20T17:32:04.226683512Z"}
+{"id":"01a15a66-fa75-7756-8466-5997c7507e86","issue_id":"jmap-chat-spec-49i8.8","event_type":"closed","actor":"agent","old_value":"","new_value":"Join returns notFound for missing view permission, non-membership of bound Chat, or initiator block.","created_at":"2026-10-20T17:41:00.661482411Z"}

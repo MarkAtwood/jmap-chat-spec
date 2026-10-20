@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.17",
+  "title": "vtc-00: room example implies activeCallId via channelId",
+  "description": "draft-atwood-jmap-vtc-00.md:1946 says the bound Chat's activeCallId is set, but the call binds spaceId/channelId; chat-00:570 sets activeCallId only for chatId-bound calls.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:05.941088478Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:07.924178663Z",
+  "closed_at": "2026-10-20T17:41:07.924178663Z",
+  "close_reason": "Room example now says no activeCallId changes for channelId-bound calls.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.17",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:06.000847845Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

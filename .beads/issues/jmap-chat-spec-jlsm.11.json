@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.11",
+  "title": "scene-00: no avatar presence timeout",
+  "description": "A crashed client leaves leftAt:null forever. No auto-leave on disconnect, timeout, or heartbeat is defined. draft-atwood-jmap-scene-wss-00.md:818 says the server 'MAY have destroyed the user's avatar', but avatars cannot be destroyed (draft-atwood-jmap-scene-00.md:2226).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.207056989Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.429256761Z",
+  "closed_at": "2026-10-20T18:55:04.429256761Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.11",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.231975673Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

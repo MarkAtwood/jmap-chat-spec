@@ -1,0 +1,3 @@
+{"id":"01a15a5e-c8d2-7a09-86b4-fb938cef0fa6","issue_id":"jmap-chat-spec-49i8.5","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:32:03.666662947Z"}
+{"id":"01a15a5e-c8db-779b-8cd1-9ff10e3a4447","issue_id":"jmap-chat-spec-49i8.5","event_type":"label_added","actor":"agent","comment":"Added label: vtc","created_at":"2026-10-20T17:32:03.675500054Z"}
+{"id":"01a15a66-f041-7010-a54c-ce929d9294c8","issue_id":"jmap-chat-spec-49i8.5","event_type":"closed","actor":"agent","old_value":"","new_value":"Participant with unmuteRequested true may unmute despite policy; removed 'unmute them directly'.","created_at":"2026-10-20T17:40:58.049004959Z"}

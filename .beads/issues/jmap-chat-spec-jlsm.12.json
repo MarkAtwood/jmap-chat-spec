@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.12",
+  "title": "scene-00: re-entry via create underspecified",
+  "description": "draft-atwood-jmap-scene-00.md:2139: a create that revives an existing avatar record does not say what goes in created, whether /changes reports it as created or updated, or whether orientation, visualRef, and worldState reset (only position does). The create error table lists position (:2150), but position is not an accepted create property (:1922).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.286455532Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.509966943Z",
+  "closed_at": "2026-10-20T18:55:04.509966943Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.12",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.31316021Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

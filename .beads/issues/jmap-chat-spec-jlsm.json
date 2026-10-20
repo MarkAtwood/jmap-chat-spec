@@ -1,0 +1,19 @@
+{
+  "id": "jmap-chat-spec-jlsm",
+  "title": "Scene drafts close-read findings (2026-10-20)",
+  "description": "Close read of draft-atwood-jmap-scene-00.md and draft-atwood-jmap-scene-wss-00.md found contradictions, JMAP-model violations, and gaps. Children track each finding. Overlaps already tracked elsewhere: jmap-chat-spec-pcoc (user:alice id syntax), jmap-chat-spec-uz1h (notFound on create).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "epic",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:56.320207349Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:09.366699244Z",
+  "started_at": "2026-10-20T18:28:08.88713007Z",
+  "closed_at": "2026-10-20T18:55:09.366699244Z",
+  "close_reason": "All children closed 2026-10-20.",
+  "labels": [
+    "scene"
+  ]
+}

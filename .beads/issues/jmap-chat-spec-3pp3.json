@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-3pp3",
+  "title": "Federation: blob fetches not covered by signing",
+  "description": "Receivers fetch attachment blobs from the sending peer's URLs; sh60's signing rule covers Peer/* requests only. Decide whether blob fetches are signed (receiver as client) or authorised another way (capability URLs), and specify it. Follow-up to jmap-chat-spec-sh60 (peer auth via RFC 9421 signatures, approved 2026-10-19).",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T18:27:28.155041938Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-19T18:27:28.155041938Z"
+}

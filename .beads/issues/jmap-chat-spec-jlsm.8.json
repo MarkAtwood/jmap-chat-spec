@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.8",
+  "title": "scene-00: region destroy sends bogus VTCCall StateChange",
+  "description": "draft-atwood-jmap-scene-00.md:1119 SHOULD deliver a StateChange for VTCCall when a region with activeCallId is destroyed. The VTCCall did not change, so its state string does not move and the notification is meaningless. Either give VTCCall a back-reference that changes, or drop the requirement.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:56.969882885Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.181765867Z",
+  "closed_at": "2026-10-20T18:55:04.181765867Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.8",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:56.992308205Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

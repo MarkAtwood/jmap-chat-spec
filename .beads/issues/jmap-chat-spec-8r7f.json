@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-8r7f",
+  "title": "BCP 14 keyword audit (2026-10-20)",
+  "description": "Audit of all ~2300 MUST/SHOULD occurrences (findings in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit). Decisions (Mark 2026-10-20): drafts use MUST only where interop breaks; security/harm MUSTs -\u003e SHOULD; redundant restatements -\u003e citations; guides keep their keywords, fix only contradictions with drafts; restore the ~20 guide keywords removed earlier today unless they contradict a draft.",
+  "status": "open",
+  "priority": 1,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:58:18.894811689Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:58:18.894811689Z",
+  "labels": [
+    "keywords"
+  ]
+}

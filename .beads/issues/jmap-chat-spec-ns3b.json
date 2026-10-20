@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-ns3b",
+  "title": "scene-00: duplicate SceneAvatar create, updated vs alreadyExists SetError",
+  "description": "draft-atwood-jmap-scene-00.md conflicts on a create while the user already has an active SceneAvatar (leftAt: null) in the same region: L2015 says the server MUST return the existing record in `updated` rather than creating a duplicate; L2196 says the server MUST NOT create a duplicate and MUST return an `alreadyExists` SetError in notCreated with existingId. RFC 8620 alreadyExists (with existingId) is the /set convention for this case; returning an object in `updated` for a create is unusual. Pick one and fix the other. Blocks crate-jmap Scene base SceneAvatar handlers. Source: crate-jmap spec gap audit 2026-10-19.",
+  "notes": "Blocks crate-jmap JMAP-38uq.5 (SceneAvatar handlers).\nDECIDED by Mark 2026-10-20: keep scene-00 L2196 (alreadyExists SetError in notCreated with existingId, RFC 8620 §5.3). Rewrite the L2015 sentence to match, and add that clients reconnecting SHOULD treat alreadyExists as 'already entered' and use existingId.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T00:42:36.298929372Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T01:32:10.823104612Z",
+  "closed_at": "2026-10-20T01:32:10.823104612Z",
+  "close_reason": "Fixed in 91672c9 (spec: fix SetError codes, settle open conflicts), pushed."
+}
