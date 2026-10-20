@@ -2,7 +2,7 @@
 
 A structured checklist and test harness specification for verifying any JMAP Chat implementation against the spec suite. Derived from 23 audit rounds plus 3 code reviews against a reference implementation that found and fixed ~260 gaps.
 
-Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and the round in which the gap was first discovered.
+Each test is tagged with the spec, section, severity (MUST, SHOULD, Optional, or P0-P2 for §14), and the round in which the gap was first discovered. A failed SHOULD test is a SHOULD-level finding, not a MUST failure. An Optional test checks a deployment choice that no draft requires.
 
 ---
 
@@ -29,14 +29,14 @@ Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and th
 **Common failure:** Implementation uses the identity string as `id`, producing ids outside the Id character set (`@`, `:`, `.`), or omits `identity`.
 
 ### 1.2 ChatContact required fields
-**Spec:** draft-atwood-jmap-chat-00 Section 4.7
+**Spec:** draft-atwood-jmap-chat-00 §ChatContact
 **Severity:** MUST | **Round:** 1
 
-> ChatContact MUST include: id, identity, login, displayName, blocked, firstSeenAt, lastSeenAt, presence, lastActiveAt, statusText, statusEmoji, endpoints.
+> The non-optional ChatContact properties are `id`, `identity`, `login`, `firstSeenAt`, `lastSeenAt`, and `blocked`. `displayName`, `presence`, `lastActiveAt`, `statusText`, `statusEmoji`, and `endpoints` are optional.
 
-**Test:** Call `ChatContact/get` with `ids: null`. Verify every returned object contains all listed fields (some may be null).
+**Test:** Call `ChatContact/get` with `ids: null`. Verify every returned object contains each non-optional property. Do not fail an object for omitting an optional property.
 
-**Common failure:** Missing `identity`, `login`, `firstSeenAt`, `lastSeenAt`, `presence`, `lastActiveAt`, `statusText`, `statusEmoji`, `endpoints`.
+**Common failure:** Missing `identity`, `login`, `firstSeenAt`, or `lastSeenAt`.
 
 ### 1.3 ChatContact federation fields
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 5
@@ -48,7 +48,7 @@ Each test is tagged with the spec, section, severity (MUST/SHOULD/minor), and th
 **Spec:** draft-atwood-jmap-chat-00 Section 4.11, line 649
 **Severity:** MUST | **Round:** 1
 
-**Test:** Delete a message via `Message/set` destroy. Call `Message/get` for that id. Verify `deletedAt` is a UTCDate string (not a boolean `true`), and `body` is empty string.
+**Test:** Delete a message via `Message/set` update with `deletedAt: <timestamp>` (§Deleting a Message; not `destroy`). Call `Message/get` for that id. Verify `deletedAt` is a UTCDate string (not a boolean `true`), and `body` is empty string.
 
 **Common failure:** Field named `deleted` with boolean type instead of `deletedAt` with UTCDate.
 
@@ -183,10 +183,10 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Verify account-level chat capability uses exact field names: `maxBodyBytes` (not `maxMessageBodySize`), `supportedBodyTypes` (not `supportedMediaTypes`), `maxAttachmentBytes`, `maxAttachmentsPerMessage`, `supportsThreads`.
 
 ### 3.7 Push capability in primaryAccounts
-**Spec:** draft-atwood-jmap-chat-push-00 Section 2
-**Severity:** SHOULD | **Round:** 4
+**Spec:** none (RFC 8620 Section 2 `primaryAccounts` is optional per capability)
+**Severity:** Optional (deployment check) | **Round:** 4
 
-**Test:** Verify `primaryAccounts` contains `urn:ietf:params:jmap:chat:push` mapped to the primary account id.
+**Test:** Verify `primaryAccounts` contains `urn:ietf:params:jmap:chat:push` mapped to the primary account id. No draft requires this entry; do not report its absence as a spec failure.
 
 ---
 
@@ -204,15 +204,15 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Send `Message/set` create with `bodyType: "video/mp4"`. Verify server rejects with `invalidProperties`.
 
-**Test:** For each type in `supportedBodyTypes`, send `Message/set` create with that `bodyType` and a body valid for it. Verify acceptance, except for a type that a companion specification reserves for server-created Messages (for example, `"application/mimi-fanout"`, which draft-atwood-jmap-chat-mimi-00 requires rejecting with `invalidArguments`).
+**Test:** For each type in `supportedBodyTypes`, send `Message/set` create with that `bodyType` and a body valid for it. Verify acceptance, except for a type that a companion specification reserves for server-created Messages (for example, `"application/mimi-fanout"`, which draft-atwood-jmap-chat-mimi-00 requires rejecting with an `invalidProperties` SetError naming `bodyType`).
 
 **Test:** Verify `supportedBodyTypes` includes `"text/plain"`, unless the server accepts only end-to-end encrypted body types.
 
 **Common failure:** Advertising a type the server rejects in `Message/set` create without a companion specification reserving it, or omitting `"text/plain"` on a server that accepts plaintext.
 
 ### 4.3 Attachment filename path traversal rejection
-**Spec:** draft-atwood-jmap-chat-00
-**Severity:** MUST | **Round:** 3
+**Spec:** draft-atwood-jmap-chat-00 §Attachment, §Input Validation
+**Severity:** SHOULD | **Round:** 3
 
 **Test:** Send `Message/set` create with attachment `filename: "../../../etc/passwd"`. Verify rejection.
 
@@ -277,10 +277,10 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Create CustomEmoji with `name: "invalid name!"`. Verify rejection.
 
 ### 4.13 Attachment contentType and sha256 validation
-**Spec:** draft-atwood-jmap-chat-00
-**Severity:** SHOULD | **Round:** 3
+**Spec:** draft-atwood-jmap-chat-00 §Input Validation; draft-atwood-jmap-chat-federation-00 §New Message Validation steps 10-11
+**Severity:** MUST (contentType), SHOULD (sha256) | **Round:** 3
 
-**Test:** Send attachment with `contentType: "not a mime type"`. Verify rejection. Send `sha256: "xyz"` (not 64 hex chars). Verify rejection.
+**Test:** Send attachment with `contentType: "not a mime type"`. Verify rejection (MUST). Send an attachment whose `sha256` does not match the blob's content. Verify rejection (SHOULD in `Message/set`; for `Peer/deliver`, step 11 rejects with `invalidArguments`).
 
 ---
 
@@ -355,12 +355,12 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Set `urgency: "low"` in config. Send a message without mentions. Verify push urgency is `"low"` (not hardcoded `"normal"`).
 
 ### 6.6 Broadcast mention mute bypass includes admins
-**Spec:** draft-atwood-jmap-chat-push-00
-**Severity:** MUST | **Round:** 7
+**Spec:** draft-atwood-jmap-chat-push-00 §Delivery; draft-atwood-jmap-chat-00 §Chat.muted
+**Severity:** SHOULD | **Round:** 7
 
 **Test:** Mute a chat. Send a message with `broadcastMentions: [{"scope": "admins"}]` where the recipient is an admin. Verify push is NOT suppressed.
 
-**Common failure:** Only "everyone" and "here" bypass mute; "admins" incorrectly suppressed.
+**Common failure:** Only "everyone" and "here" bypass mute; "admins" incorrectly suppressed. A deployment-defined "always honor mute" preference (MAY) also suppresses; run this test with it off.
 
 ### 6.7 Rich body push mentions come from the arrays
 **Spec:** draft-atwood-jmap-chat-push-00 Section 4.2
@@ -452,7 +452,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 7.7 deviceDeliveredAt suppressed when receiptSharing=false
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2
-**Severity:** MUST | **Round:** 10
+**Severity:** SHOULD | **Round:** 10
 
 **Test:** Set receiptSharing=false for a sender. Call `Peer/receipt` with `deliveredAt` and `deviceDeliveredAt`. Verify `deviceDeliveredAt` is NOT stored (it's privacy-sensitive).
 
@@ -473,10 +473,10 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Common failure:** Rejects `ChatContact/set` create with `forbidden`, or rejects the Chat create with "account does not exist".
 
 ### 7.10 Peer rate limiter integrated
-**Spec:** draft-atwood-jmap-chat-federation-00
-**Severity:** MUST | **Round:** 3
+**Spec:** none for `Peer/deliver`; draft-atwood-jmap-chat-federation-00 lists `rateLimited` as a Peer/* error type
+**Severity:** Optional (deployment check) | **Round:** 3
 
-**Test:** Send many `Peer/deliver` calls in rapid succession from the same peer. Verify `rateLimited` error after exceeding the limit.
+**Test:** Send many `Peer/deliver` calls in rapid succession from the same peer. If the deployment limits peers, verify `rateLimited` error after exceeding the limit. No draft requires rate limiting `Peer/deliver`, so do not report its absence as a spec failure. (`Peer/typing` rate limiting is a SHOULD, and excess calls MAY be discarded without error.)
 
 ### 7.11 Encrypted bodyType carries no plaintext structure
 **Spec:** draft-atwood-jmap-chat-federation-00 New Message Validation; draft-atwood-jmap-chat-00 End-to-End Encrypted Deployments, Fields Inside the Ciphertext
@@ -512,7 +512,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 7.15 Unknown kid triggers one refetch
 **Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
-**Severity:** MUST | **Round:** spec change (peer request signatures)
+**Severity:** MUST (refetch), SHOULD (at most once per 60 seconds) | **Round:** spec change (peer request signatures)
 
 **Test:** Let the receiver cache the sender's keys. Add a new key to the sender's `peerSigningKeys` and sign a request with it. Verify success (the receiver refetched). Within 60 seconds, sign a request with a second new, not yet published key, then publish it. Verify 403 and that the receiver made no second fetch in that interval.
 
@@ -544,7 +544,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 7.19 Unknown kid re-queries the DNSSEC binding
 **Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication, §DNSSEC Key Binding
-**Severity:** MUST | **Round:** spec change (peer request signatures)
+**Severity:** MUST (re-query), SHOULD (at most once per 60 seconds) | **Round:** spec change (peer request signatures)
 
 **Test:** Applies to a receiver that uses the DNSSEC binding. Sign the sender's zone, publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>` with a TTL of 3600 seconds, and publish K1 in `peerSigningKeys`. Send a K1-signed request and verify success, so the receiver has cached both the keys and the DNS answer. Add K2 to `peerSigningKeys` and a `_jmap-peer` record for K2. Then, more than 60 seconds after the receiver's last fetch of the sender's keys but while the cached DNS answer is still within its 3600-second TTL, send a K2-signed request. Verify success and that the receiver issued a new `_jmap-peer` query rather than answering from its DNS cache (observe at the zone's authoritative server or in the receiver's resolver log). Within 60 seconds, add K3 to both `peerSigningKeys` and DNS and send a K3-signed request. Verify 403 and that the receiver made no further key fetch or `_jmap-peer` query in that interval. More than 60 seconds after the K2 lookup, resend the K3-signed request. Verify success.
 
@@ -562,7 +562,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 8.2 Typing membership re-verified at delivery time
 **Spec:** draft-atwood-jmap-chat-wss-00 Section 6.3, Section 8.2
-**Severity:** MUST | **Round:** 4
+**Severity:** SHOULD | **Round:** 4
 
 **Test:** User A starts typing. Before the event is delivered, remove user B from the chat. Verify B does NOT receive the typing event.
 
@@ -606,7 +606,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** SHOULD | **Round:** 3
 
-**Test:** Set presence with `expiresAt` in the past. Run the expiry sweep. Verify presence resets to "offline".
+**Test:** Set presence with `expiresAt` in the past. Run the expiry sweep. Verify `presence` resets to `"online"` and `statusText` and `statusEmoji` are null.
 
 ### 9.4 Chat muteUntil auto-clear
 **Spec:** draft-atwood-jmap-chat-00
@@ -628,13 +628,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** MUST | **Round:** 3
 
-**Test:** Call `Space/get` for a public space the caller is NOT a member of. Verify a restricted property set is returned (name, description, memberCount — but NOT roles or members).
+**Test:** Call `Space/get` for a space with `isPubliclyPreviewable: true` that the caller is NOT a member of. Verify the returned object contains only `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, `isPubliclyPreviewable`, and `closedAt` (when set), even when other properties are requested. Repeat for a space with `isPubliclyPreviewable: false`. Verify its id is in `notFound`.
 
 ### 10.3 Space/query includes public spaces
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** MUST | **Round:** 3
 
-**Test:** Call `Space/query` with `filter: {isPublic: true}`. Verify public spaces the caller is NOT a member of are included.
+**Test:** Call `Space/query` with `filter: {isPublic: true}`. Verify spaces the caller is NOT a member of are included when they have both `isPublic: true` and `isPubliclyPreviewable: true`, and excluded when `isPubliclyPreviewable` is false.
 
 ### 10.4 SpaceBan/set update supports reason and expiresAt
 **Spec:** draft-atwood-jmap-chat-00
@@ -726,11 +726,11 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 ### 13.7 deviceDeliveredAt suppressed unconditionally when receiptSharing=false
 **Spec:** draft-atwood-jmap-chat-federation-00 Section 6.2, lines 354-362
-**Severity:** MUST | **Round:** 10
+**Severity:** SHOULD | **Round:** 10
 
 **Test:** Set receiptSharing=false for a message sender. Call `Peer/receipt` with `deliveredAt` and `deviceDeliveredAt` (but NO `readAt`). Verify `deviceDeliveredAt` is NOT stored.
 
-**Common failure:** Only suppressing `deviceDeliveredAt` when `readAt` is also present. The spec says: "The server MUST NOT record deviceDeliveredAt when the effective preference is false" — regardless of what other fields are present.
+**Common failure:** Only suppressing `deviceDeliveredAt` when `readAt` is also present. The spec says: "The server SHOULD NOT record `deviceDeliveredAt` when the effective preference is `false`" — regardless of what other fields are present.
 
 ### 13.8 Broadcast gate on update uses broadcastMentions
 **Spec:** draft-atwood-jmap-chat-00 §Editing a Message
@@ -893,22 +893,24 @@ These are implementation-quality issues found via code review rather than spec a
 
 ## Summary Statistics
 
-| Category | MUST tests | SHOULD tests | Total |
-|----------|:----------:|:------------:|:-----:|
-| Data types | 10 | 0 | 10 |
-| Wire format | 5 | 0 | 5 |
-| Session/capabilities | 7 | 1 | 8 |
-| Validation | 13 | 1 | 14 |
-| Permissions | 5 | 0 | 5 |
-| Push | 15 | 0 | 15 |
-| Federation | 16 | 0 | 16 |
-| WebSocket | 4 | 1 | 5 |
-| Scheduling | 2 | 2 | 4 |
-| Space | 6 | 0 | 6 |
-| Late-discovery edge cases | 11 | 0 | 11 |
-| Security/robustness | 17 | 0 | 17 |
-| Other | 2 | 0 | 2 |
-| **Total** | **108** | **5** | **113** |
+Tests that mix MUST and SHOULD checks are counted under MUST. Optional tests are deployment checks with no draft requirement; §14 tests are code-review findings, not spec requirements (tagged P0-P2).
+
+| Category | MUST tests | SHOULD tests | Optional | Non-spec (P0-P2) | Total |
+|----------|:----------:|:------------:|:--------:|:----------------:|:-----:|
+| Data types | 10 | 0 | 0 | 0 | 10 |
+| Wire format | 5 | 0 | 0 | 0 | 5 |
+| Session/capabilities | 6 | 0 | 1 | 0 | 7 |
+| Validation | 12 | 1 | 0 | 0 | 13 |
+| Permissions | 5 | 0 | 0 | 0 | 5 |
+| Push | 11 | 1 | 0 | 0 | 12 |
+| Federation | 16 | 2 | 1 | 0 | 19 |
+| WebSocket | 3 | 2 | 0 | 0 | 5 |
+| Scheduling | 2 | 2 | 0 | 0 | 4 |
+| Space | 5 | 0 | 0 | 0 | 5 |
+| Other (unreadCount, PushSubscription) | 2 | 0 | 0 | 0 | 2 |
+| Late-discovery edge cases | 10 | 1 | 0 | 0 | 11 |
+| Security/robustness | 0 | 0 | 0 | 17 | 17 |
+| **Total** | **87** | **9** | **2** | **17** | **115** |
 
 ---
 
