@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-b9gx",
+  "title": "chat-wss-00 L232: senderId 'MUST NOT be the accountId' is stale",
+  "description": "draft-atwood-jmap-chat-wss-00.md L232 says TypingEvent senderId is 'The ChatContact.id of the typing user. MUST NOT be the accountId.' This contradicts jmap-chat-compliance-tests.md test 2.2 (L113-119, a MUST: the owner's senderId is the accountId) and the draft-atwood-jmap-chat-00 identity model (owner senderId = accountId). crate-jmap follows the compliance test (commit e8ad58d2 'fix(chat)!: owner senderId is the accountId'; crate-jmap-chat-types/src/ephemeral.rs L58-59). The draft text is stale: rewrite L232 to match the chat-00 identity model (owner = accountId, others = ChatContact.id). No code change. Source: crate-jmap spec gap audit 2026-10-19.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T00:42:36.358017185Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T01:32:11.435702989Z",
+  "closed_at": "2026-10-20T01:32:11.435702989Z",
+  "close_reason": "Fixed in 91672c9 (spec: fix SetError codes, settle open conflicts), pushed."
+}

@@ -1,0 +1,3 @@
+{"id":"01a15aaf-bacd-7d2d-915d-6422ce97ac60","issue_id":"jmap-chat-spec-py20.2","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T19:00:28.49386428Z"}
+{"id":"01a15aaf-bad1-7ac2-a799-4cc9b75d41e7","issue_id":"jmap-chat-spec-py20.2","event_type":"label_added","actor":"agent","comment":"Added label: refs","created_at":"2026-10-20T19:00:28.497708184Z"}
+{"id":"01a15aba-1b69-74e3-a5d4-6ede5e59161f","issue_id":"jmap-chat-spec-py20.2","event_type":"closed","actor":"agent","old_value":"","new_value":"Applied; logs in scratchpad/refs/fix-R2.md; drafts build.","created_at":"2026-10-20T19:11:48.585320939Z"}

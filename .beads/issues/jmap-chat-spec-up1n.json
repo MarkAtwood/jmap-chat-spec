@@ -1,0 +1,33 @@
+{
+  "id": "jmap-chat-spec-up1n",
+  "title": "invalidArguments used as a SetError in chat-00, Scene and VTC drafts",
+  "description": "RFC 8620 defines invalidArguments only as a method-level error, not a SetError (RFC 8620 §5.3 SetError list). Drafts use it as a SetError in: draft-atwood-jmap-chat-push-00.md L124 and L127 (tracked by jmap-chat-spec-g047); draft-atwood-jmap-chat-00.md L656 (senderExpiresAt; crate-jmap returns invalidProperties) and L1732 (E2EE fields-inside-ciphertext rule); SetError tables in draft-atwood-jmap-scene-00.md and draft-atwood-jmap-vtc-00.md (44 invalidArguments occurrences across the two; triage which are SetErrors vs method errors). Replace with invalidProperties (naming properties) or another RFC 8620 SetError. Related: jmap-chat-spec-y3rm (compliance 4.1 tooLarge vs ~L236 invalidArguments). Source: crate-jmap spec gap audit 2026-10-19.",
+  "notes": "Affects crate-jmap JMAP-y3f2.8 (senderExpiresAt), JMAP-8mem and JMAP-38uq SetError tables.\nMark 2026-10-20: chat-00 L657 past senderExpiresAt -\u003e SetError invalidProperties [senderExpiresAt] (kit behaviour kept).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T00:42:36.415772911Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T01:32:11.296525881Z",
+  "closed_at": "2026-10-20T01:32:11.296525881Z",
+  "close_reason": "Fixed in 91672c9 (spec: fix SetError codes, settle open conflicts), pushed.",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-up1n",
+      "depends_on_id": "jmap-chat-spec-g047",
+      "type": "related",
+      "created_at": "2026-10-20T00:42:36.605520814Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    },
+    {
+      "issue_id": "jmap-chat-spec-up1n",
+      "depends_on_id": "jmap-chat-spec-y3rm",
+      "type": "related",
+      "created_at": "2026-10-20T00:42:36.694403544Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.7",
+  "title": "scene-00: contentPolicy SetError unworkable",
+  "description": "draft-atwood-jmap-scene-00.md:2441 says to report contentPolicy 'via a SetError on a subsequent state-change notification'; StateChange cannot carry SetErrors. contentPolicy and the retryAfter property (:2445) are defined nowhere (not RFC 8620, not elsewhere in the repo) and are not registered in IANA.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:56.891176214Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.103513524Z",
+  "closed_at": "2026-10-20T18:55:04.103513524Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.7",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:56.914879588Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

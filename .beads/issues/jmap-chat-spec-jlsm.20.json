@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.20",
+  "title": "scene drafts: missing references",
+  "description": "draft-atwood-jmap-scene-00.md:2469 webpush-vapid without RFC 9749 (chat cites it). Urgency header (:2531) needs RFC 8030. WGS84 (:305) and DID / did:web (:309) uncited. sha256 (:235) needs FIPS 180-4.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.936869913Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:05.086824041Z",
+  "closed_at": "2026-10-20T18:55:05.086824041Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.20",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.960839189Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

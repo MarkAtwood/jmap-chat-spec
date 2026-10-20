@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.1",
+  "title": "scene-00: geoAnchor axes are left-handed",
+  "description": "draft-atwood-jmap-scene-00.md:328 says +X East, +Y up, +Z North. East x Up = South, so this frame is left-handed, contradicting the right-handed convention at :129 and glTF. For right-handed Y-up, +Z must be South (North = -Z). Restate heading (:326) to match.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:56.385891331Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:03.604311366Z",
+  "closed_at": "2026-10-20T18:55:03.604311366Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.1",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:56.412430705Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

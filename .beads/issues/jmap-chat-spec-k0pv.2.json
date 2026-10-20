@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.2",
+  "title": "wss: unknown client @type ignore contradicts 8887",
+  "description": "draft-atwood-jmap-chat-wss-00.md:299, draft-atwood-jmap-vtc-wss-00.md:393, draft-atwood-jmap-scene-wss-00.md:926 say servers SHOULD silently ignore unknown client @type. RFC 8887 4.3.1: server MUST return a Problem Details object for request-level errors (invalid JMAP object). Fix: respond with RequestError notRequest, keep connection open.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.064745566Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.141035467Z",
+  "closed_at": "2026-10-20T17:20:38.141035467Z",
+  "close_reason": "Unknown client @type now cites RFC 8887 4.3.1's existing MUST (RequestError, notRequest type) in all three; no new MUST added.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.2",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.105056733Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.8",
+  "title": "chat-wss: minor reference and enum fixes",
+  "description": "JMAP-CHAT-FED is normative but cited only for rate-limit consistency (:248,:291): make informative. ChatPresenceEvent presence enum (:267) lists 'invisible', which :269 forbids sending.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.725420204Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.620036808Z",
+  "closed_at": "2026-10-20T17:20:38.620036808Z",
+  "close_reason": "JMAP-CHAT-FED moved to informative; invisible removed from ChatPresenceEvent enum.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.8",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.764653281Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.1",
+  "title": "wss: extensions break RFC 8887 4.2/4.3 MUSTs",
+  "description": "RFC 8887 4.2: 'Other message types MUST NOT be transmitted'; 4.3 restricts client and server frame forms. draft-atwood-jmap-chat-wss-00.md:99 argues capability negotiation overrides this, which a draft cannot do by assertion. draft-atwood-jmap-vtc-wss-00.md and draft-atwood-jmap-scene-wss-00.md do not address it (scene part was jmap-chat-spec-jlsm.19). Fix: updates: 8887 in each draft plus a section stating the update.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:13.961553758Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:37.984168933Z",
+  "closed_at": "2026-10-20T17:20:37.984168933Z",
+  "close_reason": "Added updates: 8887 and an 'Update to RFC 8887' section to chat/vtc/scene-wss: capabilities may define message types; server MUST NOT send new server-to-client types unless the client enabled them.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.1",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:13.997957639Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

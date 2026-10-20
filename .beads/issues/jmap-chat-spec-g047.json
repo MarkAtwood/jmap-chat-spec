@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-g047",
+  "title": "push-00 L124: invalidArguments not a SetError",
+  "description": "draft-atwood-jmap-chat-push-00 L124 says an unsupported urgency is rejected with invalidArguments, but RFC 8620 defines invalidArguments only as a method-level error (rfc8620.txt ~1189), not among the /set SetErrors (~2099-2159). crate-jmap returns invalidProperties naming chatPush/\u003caccountId\u003e/urgency (decision D4). Fix the draft text to invalidProperties. Raised by crate-jmap JMAP-nbk3 plan (approved 2026-10-19).",
+  "notes": "2026-10-19 spec gap audit: the same invalidArguments-as-SetError problem also appears in chat-00 L656/L1732 and Scene/VTC SetError tables; tracked together in jmap-chat-spec-up1n.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T18:25:40.850983233Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T01:32:22.501899394Z",
+  "closed_at": "2026-10-20T01:32:22.501899394Z",
+  "close_reason": "Fixed in 91672c9: push-00 L124/L127 now invalidProperties naming chatPush/\u003cid\u003e/urgency and mentionUrgency."
+}

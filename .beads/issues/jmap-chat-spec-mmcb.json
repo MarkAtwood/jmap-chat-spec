@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-mmcb",
+  "title": "E2EE-only servers: text/plain MUST conflicts",
+  "description": "draft-atwood-jmap-chat-00 L245: supportedBodyTypes is 'MIME types accepted in bodyType' and 'MUST include \"text/plain\"'. An end-to-end-encrypted-only provider (mimid, decision mimid-1wgh.12.22 JM-4) never accepts plaintext, so it must either advertise a type it rejects (contradicting 'accepted') or violate the MUST. Proposed: exempt deployments that accept only encrypted body types, e.g. 'MUST include \"text/plain\" unless the server accepts only end-to-end encrypted body types ({{e2ee-fields}})'. Check knock-on: compliance tests, implementer guide, crate-jmap capability docs/tests that assume text/plain. Needs Mark's decision.",
+  "notes": "Approved by Mark 2026-10-18: L245 becomes 'MUST include \"text/plain\" unless the server accepts only end-to-end encrypted body types'. Do in the post-crate-jmap-run spec pass with ka7b/3dp0/i3v4; update compliance tests; Mark commits.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T03:17:27.49916186Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-19T04:47:58.985835866Z",
+  "closed_at": "2026-10-19T04:47:58.985835866Z",
+  "close_reason": "Committed and pushed in cefc217"
+}

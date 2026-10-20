@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.8",
+  "title": "vtc-00: forbidden on join leaks invisible calls",
+  "description": "Non-members get notFound for chat-bound calls (draft-atwood-jmap-vtc-00.md:1584), but joining returns forbidden for missing view permission or Chat membership (:867), confirming the call exists. Same pattern as jmap-chat-spec-jlsm.4.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:04.211999391Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:00.399347111Z",
+  "closed_at": "2026-10-20T17:41:00.399347111Z",
+  "close_reason": "Join returns notFound for missing view permission, non-membership of bound Chat, or initiator block.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.8",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:04.26265946Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

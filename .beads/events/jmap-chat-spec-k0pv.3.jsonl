@@ -1,0 +1,3 @@
+{"id":"01a15a50-4be8-7526-be4a-9d3e43c9bbe9","issue_id":"jmap-chat-spec-k0pv.3","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:16:14.184338543Z"}
+{"id":"01a15a50-4bf0-795f-9d33-6b5c7c9ea738","issue_id":"jmap-chat-spec-k0pv.3","event_type":"label_added","actor":"agent","comment":"Added label: wss","created_at":"2026-10-20T17:16:14.192615373Z"}
+{"id":"01a15a54-534e-74ba-9951-6ecfb0be49f1","issue_id":"jmap-chat-spec-k0pv.3","event_type":"closed","actor":"agent","old_value":"","new_value":"Optional id on StreamEnable in all three; RFC 8887 4.3.4 already requires echoing it as requestId. Success is silent; replaced chat-wss 'wait for any frame' text.","created_at":"2026-10-20T17:20:38.22231061Z"}

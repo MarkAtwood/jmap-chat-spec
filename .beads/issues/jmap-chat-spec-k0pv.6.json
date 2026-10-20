@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.6",
+  "title": "chat-wss: error rule rejects companion dataTypes",
+  "description": "draft-atwood-jmap-chat-wss-00.md:195 errors when dataTypes has 'none of typing or presence', so ['vtc'] or ['scene'] alone is an error despite :179 registering them. 'scene' has no delegation note like 'vtc' (:181). 'Companion specifications MAY register' refers to a registry that does not exist.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.504587695Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.456724604Z",
+  "closed_at": "2026-10-20T17:20:38.456724604Z",
+  "close_reason": "Companion values recognized when their capability is advertised; delegation note covers vtc and scene; 'register' wording dropped.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.6",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.548040856Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

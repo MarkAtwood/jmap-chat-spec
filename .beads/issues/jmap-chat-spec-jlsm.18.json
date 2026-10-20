@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.18",
+  "title": "scene-00: no privacy text for AR avatar positions",
+  "description": "In a geoAnchor region, avatar position is a real person's physical location, and the server records it every 5-30s (draft-atwood-jmap-scene-00.md:2333). Spatial Metadata Exposure (:2409) does not address it. Add privacy considerations: e.g. coarsening, retention, reconciliation off for AR.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "feature",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.775567342Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:05.009152001Z",
+  "closed_at": "2026-10-20T18:55:05.009152001Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.18",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.800954552Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

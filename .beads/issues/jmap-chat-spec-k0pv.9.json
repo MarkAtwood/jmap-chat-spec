@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.9",
+  "title": "vtc-wss: per-user events vs eventTypes/callIds",
+  "description": "draft-atwood-jmap-vtc-wss-00.md:255 says any non-empty VTCStreamEnable implicitly enables VTCRingEvent/VTCCallEndEvent: unclear if eventTypes excluding them still delivers rings, and :175 says callIds [] delivers no events. 'Current participant' (:173) undefined for a rung-but-unjoined callee; ignored callIds mean a subscribe-then-join client misses early events (scene-wss retains entries instead).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.832060455Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.695256167Z",
+  "closed_at": "2026-10-20T17:20:38.695256167Z",
+  "close_reason": "Defined current participant (joinedAt non-null, leftAt null); callIds entries retained; per-user events follow eventTypes and ignore callIds.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.9",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.869677399Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

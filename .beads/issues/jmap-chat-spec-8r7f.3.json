@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-8r7f.3",
+  "title": "keywords: vtc-00 and vtc-wss drafts",
+  "description": "Apply audit /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/03-vtc.md. Also fix today's regressions: decline rejected after call goes active though other targets keep ringing; vtc-00 VTCRingEvent 'any WebSocket' vs vtc-wss rule that servers send only enabled types; chatId non-member invalidProperties vs forbidden; kick vs userId-match rule.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:58:19.205004833Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:13:06.683885242Z",
+  "closed_at": "2026-10-20T18:13:06.683885242Z",
+  "close_reason": "Applied audit findings; change log in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/fix-03-*.md. All drafts build (kramdown-rfc + xml2rfc), warning counts unchanged from HEAD.",
+  "labels": [
+    "keywords"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8r7f.3",
+      "depends_on_id": "jmap-chat-spec-8r7f",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:58:19.242918904Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

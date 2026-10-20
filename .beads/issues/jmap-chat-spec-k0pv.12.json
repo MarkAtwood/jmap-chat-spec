@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.12",
+  "title": "wss: credential-expiry MUST NOT -\u003e SHOULD NOT",
+  "description": "Per Mark's keyword rule (MUST only when the protocol breaks without it), the k0pv.4 rule 'server that does not close on expiry MUST NOT deliver further ephemeral events' is security hygiene, not interop. Downgraded to SHOULD NOT in chat/vtc/scene-wss.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "chore",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:41:10.071049978Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:10.173875585Z",
+  "closed_at": "2026-10-20T17:41:10.173875585Z",
+  "close_reason": "Downgraded in all three WSS drafts.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.12",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:41:10.098506412Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

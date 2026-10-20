@@ -1,0 +1,3 @@
+{"id":"01a15a4c-5d3b-72da-80cc-3f55072b4b4f","issue_id":"jmap-chat-spec-jlsm.2","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:11:56.475187694Z"}
+{"id":"01a15a4c-5d3f-72df-93b9-83b2f69531af","issue_id":"jmap-chat-spec-jlsm.2","event_type":"label_added","actor":"agent","comment":"Added label: scene","created_at":"2026-10-20T17:11:56.47918885Z"}
+{"id":"01a15aaa-c60f-77b7-868a-5111d4fdbac9","issue_id":"jmap-chat-spec-jlsm.2","event_type":"closed","actor":"agent","old_value":"","new_value":"Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.","created_at":"2026-10-20T18:55:03.695506219Z"}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.1",
+  "title": "vtc-00: forbidden leaks block status",
+  "description": "draft-atwood-jmap-vtc-00.md:623 returns forbidden when all ring targets blocked the caller, revealing the block for 1:1 rings; contradicts :1329 'initiator is not informed'. draft-atwood-jmap-vtc-00.md:867 returns forbidden when the initiator blocked the joiner. Fix: all-blocked ring proceeds silently and times out; blocked join returns the same notFound as an inaccessible call.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:02.94018226Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:40:53.224801904Z",
+  "closed_at": "2026-10-20T17:40:53.224801904Z",
+  "close_reason": "All-blocked ring now proceeds and times out; blocked joiner gets notFound like an inaccessible call. Residual: in a chat-bound call the blocked joiner can still VTCCall/get it, so notFound differs from what get shows.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.1",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:02.998098469Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

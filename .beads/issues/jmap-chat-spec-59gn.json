@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-59gn",
+  "title": "Base draft L187: peer auth no longer out of scope",
+  "description": "draft-atwood-jmap-chat-00 ~L187 says authentication is outside the protocol (overlay network, mTLS, bearer tokens). For peer (server-to-server) requests federation-00 now defines authentication; scope the L187 statement to client authentication and point to {{JMAP-CHAT-FED}}. Follow-up to jmap-chat-spec-sh60 (peer auth via RFC 9421 signatures, approved 2026-10-19).",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T18:27:28.042586867Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-19T18:27:28.042586867Z"
+}

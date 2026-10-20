@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.16",
+  "title": "scene-00: binding validation missing on update",
+  "description": "chatId/spaceId/channelId existence and access checks are specified for create only (draft-atwood-jmap-scene-00.md:999). Not addressed: clearing spaceId while accessPolicy is space (only create rows :1176-1177), and channelId belonging to spaceId.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.613929911Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.849414327Z",
+  "closed_at": "2026-10-20T18:55:04.849414327Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.16",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.636377505Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

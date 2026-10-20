@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.4",
+  "title": "wss: credential expiry leaves event streams on",
+  "description": "draft-atwood-jmap-chat-wss-00.md:135 lets the server 'treat subsequent requests as unauthenticated' instead of closing, but ephemeral events are pushed, not requested, so they keep flowing. draft-atwood-jmap-vtc-wss-00.md and draft-atwood-jmap-scene-wss-00.md do not address expiry. Also draft-atwood-jmap-chat-wss-00.md mischaracterizes RFC 8887's choice as a MAY (only the 1008 code is MAY).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.290297905Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.297339186Z",
+  "closed_at": "2026-10-20T17:20:38.297339186Z",
+  "close_reason": "All three: server that does not close on expiry MUST NOT deliver further ephemeral events. vtc/scene: 1008 SHOULD on close (chat keeps its MUST). Fixed chat-wss MAY characterization.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.4",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.326224878Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

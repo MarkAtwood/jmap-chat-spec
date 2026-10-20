@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.13",
+  "title": "scene-00: client chooses arbitrary leftAt",
+  "description": "Leave (draft-atwood-jmap-scene-00.md:2083) lets the client set leftAt to any timestamp, and the field (:577) is not marked server-set. The server should set or override it to the current time.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.370714556Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.598621137Z",
+  "closed_at": "2026-10-20T18:55:04.598621137Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.13",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.395869357Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

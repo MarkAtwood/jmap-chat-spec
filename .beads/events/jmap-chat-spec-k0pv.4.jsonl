@@ -1,0 +1,3 @@
+{"id":"01a15a50-4c5a-7cdc-a112-20674be6233d","issue_id":"jmap-chat-spec-k0pv.4","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:16:14.2988436Z"}
+{"id":"01a15a50-4c62-7400-9f01-cbf654b4b333","issue_id":"jmap-chat-spec-k0pv.4","event_type":"label_added","actor":"agent","comment":"Added label: wss","created_at":"2026-10-20T17:16:14.306276007Z"}
+{"id":"01a15a54-539e-71df-86bd-b096e18f0880","issue_id":"jmap-chat-spec-k0pv.4","event_type":"closed","actor":"agent","old_value":"","new_value":"All three: server that does not close on expiry MUST NOT deliver further ephemeral events. vtc/scene: 1008 SHOULD on close (chat keeps its MUST). Fixed chat-wss MAY characterization.","created_at":"2026-10-20T17:20:38.30212331Z"}

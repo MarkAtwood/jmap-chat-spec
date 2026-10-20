@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.18",
+  "title": "vtc-00: state is server-set but clients end calls",
+  "description": "VTCCall.state is server-set (draft-atwood-jmap-vtc-00.md:351), yet clients end a call by patching state to ended (:687-706, :1895).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:06.127722091Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:08.848488246Z",
+  "closed_at": "2026-10-20T17:41:08.848488246Z",
+  "close_reason": "state no longer marked server-set; moderators may set ended.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.18",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:06.184151799Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

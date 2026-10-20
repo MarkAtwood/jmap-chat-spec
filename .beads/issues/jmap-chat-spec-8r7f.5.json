@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-8r7f.5",
+  "title": "keywords: chat-wss, chat-push, chat-mimi, chat-filenode",
+  "description": "Apply audit /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/05-chat-companions.md. Includes push 'greatest state' (opaque strings) and cached-state contradiction; chat-wss 1008 MUST -\u003e SHOULD (matches vtc/scene; RFC 8887 MAY).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:58:19.41543726Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:13:06.837804275Z",
+  "closed_at": "2026-10-20T18:13:06.837804275Z",
+  "close_reason": "Applied audit findings; change log in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/fix-05-*.md. All drafts build (kramdown-rfc + xml2rfc), warning counts unchanged from HEAD.",
+  "labels": [
+    "keywords"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8r7f.5",
+      "depends_on_id": "jmap-chat-spec-8r7f",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:58:19.451718201Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

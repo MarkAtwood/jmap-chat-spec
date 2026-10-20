@@ -1,0 +1,7 @@
+{
+  "id": "1792521307209944895-1",
+  "issue_id": "jmap-chat-spec-49i8.10",
+  "author": "agent",
+  "text": "Decided (Mark 2026-10-20): shared-account model for scene and VTC. A region/call and its records live in one hosting account; other users reach it as an RFC 8620 shared account. Avatar/participant ids are server-assigned; find a user's record by userId filter.",
+  "created_at": "2026-10-20T18:35:07.209944895Z"
+}

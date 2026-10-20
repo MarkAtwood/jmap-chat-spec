@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.2",
+  "title": "vtc: lobby waiters count as current participants",
+  "description": "draft-atwood-jmap-vtc-00.md:814 sets joinedAt at create even when lobbyState is waiting, so waiters count in activeParticipantCount/maxParticipantsPerCall and match the vtc-wss current-participant definition (joined, not left), receiving in-call events before admission. Rejected participants never get leftAt. Fix: joinedAt set on admission; rejection sets leftAt.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:03.133746099Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:40:54.569870346Z",
+  "closed_at": "2026-10-20T17:40:54.569870346Z",
+  "close_reason": "Lobby waiters keep joinedAt null until admitted; rejection sets leftAt; vtc-wss current-participant text notes waiters are excluded.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.2",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:03.186730767Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

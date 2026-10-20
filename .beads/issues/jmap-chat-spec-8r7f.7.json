@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-8r7f.7",
+  "title": "keywords: compliance tests and push guides",
+  "description": "Fix contradictions in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/07-tests-push.md, including tests that fail correct servers: 1.4 delete via destroy, 9.3 presence reset value, 10.2/10.3 isPublic vs isPubliclyPreviewable, 8.4/4.13 strength; tests 7.10/3.7 asserting nonexistent requirements. Align tests with phase-1 draft strengths.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:58:19.632356679Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:20:55.793500331Z",
+  "closed_at": "2026-10-20T18:20:55.793500331Z",
+  "close_reason": "Guides/tests aligned with revised drafts; contradictions fixed, guide-owned keywords kept; log in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/fix-07-*.md.",
+  "labels": [
+    "keywords"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8r7f.7",
+      "depends_on_id": "jmap-chat-spec-8r7f",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:58:19.667379639Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

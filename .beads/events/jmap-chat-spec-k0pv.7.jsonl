@@ -1,0 +1,3 @@
+{"id":"01a15a50-4da7-735a-9a5e-e125c1242fa8","issue_id":"jmap-chat-spec-k0pv.7","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-20T17:16:14.631220775Z"}
+{"id":"01a15a50-4daf-78dc-b254-a1c3fa1d62b5","issue_id":"jmap-chat-spec-k0pv.7","event_type":"label_added","actor":"agent","comment":"Added label: wss","created_at":"2026-10-20T17:16:14.639581337Z"}
+{"id":"01a15a54-548d-79bb-8acc-8bfed6fcd862","issue_id":"jmap-chat-spec-k0pv.7","event_type":"closed","actor":"agent","old_value":"","new_value":"Presence: latest state SHOULD be delivered when rate window reopens.","created_at":"2026-10-20T17:20:38.541638396Z"}

@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.3",
+  "title": "vtc-00: group ring calls admit only first answer",
+  "description": "Answer requires state ringing (draft-atwood-jmap-vtc-00.md:785); first answer makes the call active (:1543), so later targets fail and have no join path. Initiator record has joinedAt null (:580,:1790) and nothing sets it; an initiator joinMethod update counts as answering. Fix: initiator joined at create; remaining targets keep ringing and may answer while active until decline or timeout.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:03.332842154Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:40:54.917758361Z",
+  "closed_at": "2026-10-20T17:40:54.917758361Z",
+  "close_reason": "Initiator joined at creation; answers accepted while ringing or active if callResponse pending; other targets keep ringing until timeout; 'answered' end reason removed.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.3",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:03.38129611Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

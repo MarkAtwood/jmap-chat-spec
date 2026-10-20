@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-k0pv.3",
+  "title": "wss: control-message errors not correlatable",
+  "description": "StreamEnable/Disable have no id, and RFC 8887 4.3.4 echoes requestId only if given, so a client sending several enables cannot tell which failed. Success signal is inconsistent: draft-atwood-jmap-chat-wss-00.md:193 'wait for any server frame' (proves nothing), draft-atwood-jmap-scene-wss-00.md:437 absence of error. Fix: optional id on control messages, echoed as requestId on RequestError; success is silent.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:16:14.174632078Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:20:38.217447089Z",
+  "closed_at": "2026-10-20T17:20:38.217447089Z",
+  "close_reason": "Optional id on StreamEnable in all three; RFC 8887 4.3.4 already requires echoing it as requestId. Success is silent; replaced chat-wss 'wait for any frame' text.",
+  "labels": [
+    "wss"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-k0pv.3",
+      "depends_on_id": "jmap-chat-spec-k0pv",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:16:14.216169245Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

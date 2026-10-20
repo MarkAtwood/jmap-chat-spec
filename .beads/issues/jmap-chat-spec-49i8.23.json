@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.23",
+  "title": "vtc: 'vtc' dataType prerequisite misstated",
+  "description": "draft-atwood-jmap-vtc-00.md:1448, draft-atwood-jmap-vtc-wss-00.md:79 and draft-atwood-jmap-vtc-wss-00.md:404 imply ChatStreamEnable with 'vtc' works whenever chat-wss is present; chat-wss also requires urn:ietf:params:jmap:vtc:websocket. draft-atwood-jmap-vtc-wss-00.md:404 still says 'calls in which the user participates' instead of 'current participant'.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:06.753936168Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:09.217961768Z",
+  "closed_at": "2026-10-20T17:41:09.217961768Z",
+  "close_reason": "vtc-00 and vtc-wss state the 'vtc' dataType needs both WebSocket capabilities; 'current participant' wording.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.23",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:06.789828134Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

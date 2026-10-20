@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-8r7f.4",
+  "title": "keywords: scene-00 and scene-wss drafts",
+  "description": "Apply audit /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/04-scene.md. Overlaps jmap-chat-spec-jlsm (do not redesign; keyword strength and contradictions only).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:58:19.307834415Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:13:06.761668215Z",
+  "closed_at": "2026-10-20T18:13:06.761668215Z",
+  "close_reason": "Applied audit findings; change log in /tmp/claude-1000/-home-mark-PROJECT-jmap-chat-spec/17153f81-9b36-4df4-ac8d-4c4d6c9c1aa4/scratchpad/audit/fix-04-*.md. All drafts build (kramdown-rfc + xml2rfc), warning counts unchanged from HEAD.",
+  "labels": [
+    "keywords"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-8r7f.4",
+      "depends_on_id": "jmap-chat-spec-8r7f",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:58:19.346950698Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

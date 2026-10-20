@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-py20.5",
+  "title": "urn:jmap:* uses an unregistered URN namespace",
+  "description": "chat-00 Endpoint/MessageAction type URIs (urn:jmap:chat:cap:*) and chat-filenode role urn:jmap:chat:filenode:space use 'jmap' as a URN namespace identifier, which is not registered (RFC 8141); only urn:ietf:params:jmap exists. Decide: move under urn:ietf:params:jmap with registration (like the new JMAP Object URN Types registry), or another form. Touches chat-00, chat-filenode, chat-calendars/tasks (MessageAction types), vtc-00, guides.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T19:11:48.299495487Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T19:11:48.299495487Z",
+  "labels": [
+    "refs"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-py20.5",
+      "depends_on_id": "jmap-chat-spec-py20",
+      "type": "parent-child",
+      "created_at": "2026-10-20T19:11:48.328806993Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

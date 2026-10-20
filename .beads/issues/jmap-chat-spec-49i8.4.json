@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.4",
+  "title": "vtc-00: room calls end when last person leaves",
+  "description": "draft-atwood-jmap-vtc-00.md:905 ends the call when the last participant leaves; :444 says room calls end only by moderator close or inactivity timeout. Persistent rooms die when empty.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:03.502719077Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:40:56.734168971Z",
+  "closed_at": "2026-10-20T17:40:56.734168971Z",
+  "close_reason": "Last-leave end rule limited to ring/scheduled calls; room calls stay active when empty.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.4",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:03.541837574Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

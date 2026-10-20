@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-49i8.14",
+  "title": "vtc-00: last moderator can leave, orphaning room",
+  "description": "draft-atwood-jmap-vtc-00.md:944 stops the last moderator from revoking their role but not from leaving; afterwards nobody can admit lobby waiters, close the room, or manage the call.",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:32:05.336349855Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T17:41:03.973521656Z",
+  "closed_at": "2026-10-20T17:41:03.973521656Z",
+  "close_reason": "Server SHOULD promote earliest-joined authenticated participant when the last moderator leaves an occupied call.",
+  "labels": [
+    "vtc"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-49i8.14",
+      "depends_on_id": "jmap-chat-spec-49i8",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:32:05.400457511Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

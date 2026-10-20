@@ -1,0 +1,27 @@
+{
+  "id": "jmap-chat-spec-jlsm.10",
+  "title": "scene drafts: invalid ULIDs/required fields in examples",
+  "description": "8 ids starting 01J5OBJ in draft-atwood-jmap-scene-00.md and draft-atwood-jmap-scene-wss-00.md are not ULIDs (Crockford base32 excludes O). draft-atwood-jmap-scene-wss-00.md:899 callIds value is 25 chars, not 26. Both PushSubscription/set examples (draft-atwood-jmap-scene-00.md:2556,:2577) omit deviceClientId, which RFC 8620 7.2 requires.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T17:11:57.126860833Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T18:55:04.345565933Z",
+  "closed_at": "2026-10-20T18:55:04.345565933Z",
+  "close_reason": "Fixed in scene-00/scene-wss per 2026-10-20 decisions; log scratchpad/audit/scene00-fix.md and scenewss-fix.md; guides synced.",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-jlsm.10",
+      "depends_on_id": "jmap-chat-spec-jlsm",
+      "type": "parent-child",
+      "created_at": "2026-10-20T17:11:57.151458316Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

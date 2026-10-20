@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-27ro",
+  "title": "Federation: 'delivered' defined two ways",
+  "description": "Delivery State Transitions bullet: delivered = all recipients acknowledged; a later paragraph: in group chats, at least one peer accepted. Contradiction; needs Mark's decision.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-19T04:15:28.215927784Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-19T04:15:28.215927784Z"
+}
