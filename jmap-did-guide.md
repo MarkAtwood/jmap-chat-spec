@@ -9,6 +9,9 @@ Read the draft first. This guide does not re-state normative requirements. It
 covers what implementers need to know beyond the wire contract.
 [`jmap-toip-mapping-guide.md`](jmap-toip-mapping-guide.md) maps this
 capability onto the Trust over IP stack (non-normative).
+[`jmap-chat-vc-guide.md`](jmap-chat-vc-guide.md) shows how to gate JMAP
+Chat Spaces on Verifiable Credentials issued to the bound DID
+(non-normative).
 
 ---
 

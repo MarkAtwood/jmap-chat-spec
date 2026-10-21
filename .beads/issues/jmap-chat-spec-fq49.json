@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-fq49",
+  "title": "chat: Space/join refers to invite roles SpaceInvite lacks",
+  "description": "draft-atwood-jmap-chat-00.md:1408 (Space/join): 'The caller is assigned no roles beyond @everyone unless the invite specifies otherwise.' SpaceInvite has no role property, so an invite cannot specify otherwise. Either add a roleIds property to SpaceInvite or delete the clause. Found while writing jmap-chat-vc-guide.md §5 (bead dqe3).",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T00:54:25.684530702Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T00:54:25.684530702Z"
+}

@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-dqe3",
+  "title": "Write VC guide (jmap-chat-vc-guide.md): rooms, admins, membership via VCs",
+  "description": "Non-normative how-to guide: using Verifiable Credentials to gate Space creation, admin roles, and membership in JMAP Chat, as deployment patterns only. No draft changes; VCs stay outside the wire protocol (jmap-did #vc-relationship says wire-level VC presentation is a possible future capability).\n\nSections: 1 VC-gated Space creation (operator checks credential before Space/set create); 2 admins (VC -\u003e SpaceRole with manage_*/ban; re-check on expiry); 3 membership (VC-gated join/invite, SpaceMember.roleIds from claims); 4 revocation/expiry (status lists; effect on roles; what federation peers do/don't see); 5 credential formats: W3C VC 2.0, ACDC (ToIP), SD-JWT VC (selective disclosure); 6 worked example: IETF/ASF/W3C liaison room, consistent with jmap-toip-mapping-guide.md §5 (mailbox-per-user federation, liaison mailboxes); 7 non-goals.\n\nEvery JMAP claim cites a draft section; every pattern labelled deployment pattern, not protocol feature. No BCP 14 keywords. Link from jmap-toip-mapping-guide.md §4 and jmap-did-guide.md with one sentence each.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T00:43:51.415318118Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T00:54:26.41198715Z",
+  "started_at": "2026-10-21T00:43:51.602362705Z",
+  "closed_at": "2026-10-21T00:54:26.41198715Z",
+  "close_reason": "Guide written (jmap-chat-vc-guide.md), adversarially verified (6 defects fixed), linked from jmap-did-guide.md and jmap-toip-mapping-guide.md §4; 4 draft inconsistencies filed as bugs"
+}

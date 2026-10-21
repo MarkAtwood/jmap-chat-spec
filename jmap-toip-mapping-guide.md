@@ -167,7 +167,8 @@ either.
 
 The patterns below need no draft changes. Each is a **deployment pattern,
 not protocol feature**. Peers and clients see only the existing wire
-objects, never the credential.
+objects, never the credential. `jmap-chat-vc-guide.md` works these
+patterns through for Space creation, roles, membership, and revocation.
 
 **4.1 VC-backed Space role.** *Deployment pattern, not protocol feature.*
 The Space-hosting operator verifies a VC issued to a user's bound DID out
