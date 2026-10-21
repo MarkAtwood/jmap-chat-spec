@@ -2,11 +2,15 @@
   "id": "jmap-chat-spec-k3b2",
   "title": "chat/fed: Space addMembers vs Peer/groupUpdate conflict",
   "description": "draft-atwood-jmap-chat-00.md:1324 says adding a Space member 'triggers outbound Peer/groupUpdate notifications in federated deployments'. But Peer/groupUpdate is defined only for group chats, and draft-atwood-jmap-chat-federation-00 §Space-Level Federation says Space-level operations are not proactively federated. Reconcile (likely: drop Peer/groupUpdate from the Space/set rationale). Found writing jmap-chat-vc-guide.md §6 (bead dqe3).",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "issue_type": "bug",
+  "assignee": "agent",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-21T00:54:25.801079504Z",
   "created_by": "agent",
-  "updated_at": "2026-10-21T00:54:25.801079504Z"
+  "updated_at": "2026-10-21T01:05:34.486310174Z",
+  "started_at": "2026-10-21T01:04:12.751234031Z",
+  "closed_at": "2026-10-21T01:05:34.486310174Z",
+  "close_reason": "Dropped Peer/groupUpdate clause from Space/set rationale; federation draft's 'not proactively federated' stands"
 }
