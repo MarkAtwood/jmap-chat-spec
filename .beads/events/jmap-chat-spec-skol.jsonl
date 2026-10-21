@@ -1,0 +1,2 @@
+{"id":"01a15bf6-b55c-72d8-8552-16096177bb98","issue_id":"jmap-chat-spec-skol","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-21T00:57:37.372187413Z"}
+{"id":"01a15bf7-e74c-770c-85d1-87c4812323f9","issue_id":"jmap-chat-spec-skol","event_type":"closed","actor":"agent","old_value":"","new_value":"Added §9 Reference architecture: a credential oracle to jmap-chat-vc-guide.md; Non-goals renumbered §10","created_at":"2026-10-21T00:58:55.692462511Z"}

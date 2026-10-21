@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-skol",
+  "title": "VC guide: credential oracle reference architecture section",
+  "description": "Add implementation-neutral section to jmap-chat-vc-guide.md describing a server-side credential oracle (Mark's jmapd vision; jmapd not yet created): narrow interface (DID + Space -\u003e roles + expiry), mapping file (trusted issuers, credential type -\u003e SpaceRole, scope, re-check interval, explicit unreachable-oracle behaviour), consult points (provisioning, multi-account create, addMembers/role assignment, periodic re-check), backends (holder presentation, published credentials via did:webs, TRQP registry lookup). Deployment pattern; no draft changes.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T00:57:37.363698876Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T00:58:55.68804572Z",
+  "closed_at": "2026-10-21T00:58:55.68804572Z",
+  "close_reason": "Added §9 Reference architecture: a credential oracle to jmap-chat-vc-guide.md; Non-goals renumbered §10"
+}

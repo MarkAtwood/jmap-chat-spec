@@ -354,7 +354,109 @@ the status re-check all live with IETF as the hosting operator.
 
 ---
 
-## 9. Non-goals
+## 9. Reference architecture: a credential oracle
+
+*Deployment pattern, not protocol feature.*
+
+A server can hand the whole credential check to a separate component, a
+credential oracle, driven by an operator-written mapping file. The oracle
+is one concrete form of the enrollment service in Section 2. Nothing in
+this section reaches the wire, and no draft changes are needed.
+
+**Keep the interface narrow.** The server asks one question: given an
+account's bound DID and a Space, which roles does the holder qualify for,
+and until when? The oracle answers with a set of role names and a time
+after which the answer is stale. An empty set means no credential-backed
+roles. The server then knows nothing about credential formats, and all
+format-specific code stays in the oracle.
+
+**Where the server consults it.**
+
+| Point | What the server does with the answer | See |
+|---|---|---|
+| Account provisioning | Provisions or refuses the account. This is the main gate | Section 3 |
+| `Space/set` create on a multi-account server | Returns `forbidden` (this guide's reading of the drafts) | Section 3 |
+| `addMembers` and role assignment | Sets `roleIds` from the answer, acting as a principal that holds `manage_members` or `manage_roles` | Sections 4, 5 |
+| Re-check when an answer goes stale | Removes lost roles with `updateMembers`, or the member with `removeMembers`; adds a `SpaceBan` where rejoining should be blocked | Section 6 |
+
+**What the mapping file holds.**
+
+- **Trusted issuers** per credential type, by DID or KERI AID. This is
+  the operator's issuer-trust policy (Section 2).
+- **Credential type to role**, one `SpaceRole` per credential type, so
+  that revocation removes exactly one role id (Section 4).
+- **Scope**: which Spaces, or which kinds of Space, each mapping applies
+  to.
+- **Re-check interval**, shortened when a credential's own validity ends
+  sooner (`validUntil` or `exp`, Section 6).
+- **Unreachable behaviour**: what to do when the oracle, a status list,
+  or a registry cannot be reached. Typical choices are to keep the last
+  answer until it goes stale and then either remove the roles (fail
+  closed) or keep them (fail open). No draft defines this, so make it an
+  explicit setting. It is separate from the rule that a DID resolution
+  failure with no usable cache rejects a federated request
+  (`draft-atwood-jmap-chat-did-00` §Resolution failure handling).
+
+An illustrative mapping file for the liaison room in Section 8 (no draft
+defines this format; the names are placeholders):
+
+```yaml
+recheck: 24h
+on_unreachable: keep_until_stale_then_fail_closed
+mappings:
+  - credential: appointed-liaison
+    format: sd-jwt-vc
+    issuers:
+      - did:webvh:{SCID}:ietf.example
+      - did:webvh:{SCID}:asf.example
+      - did:webvh:{SCID}:w3c.example
+    spaces: [liaison]
+    role: liaison
+  - credential: room-administrator
+    format: sd-jwt-vc
+    issuers: [did:webvh:{SCID}:ietf.example]
+    spaces: [liaison]
+    role: room-admin
+```
+
+**Where the oracle gets credentials.** "Reading VCs off the internet"
+works differently per source.
+
+- **Holder presentation.** W3C VC 2.0 and SD-JWT VC credentials normally
+  sit with the holder and are not published. The oracle sees one only
+  when the holder presents it, bound to a fresh verifier challenge
+  (Section 7), typically at enrollment. Re-checking status after that
+  needs no user step, because the status list is fetched from the URI
+  the credential names (Section 6). Re-checking the claims themselves
+  needs a new presentation.
+- **Published presentations.** A DID controller can publish
+  presentations through a `LinkedVerifiablePresentation` service in its
+  DID document (DIF Linked Verifiable Presentation v1.0.0). The oracle
+  can fetch these by DID with no user step. This suits claims the holder
+  is willing to make public, and it makes them correlatable across
+  servers (`draft-atwood-jmap-did-00` §DID Correlation Across Servers).
+- **ACDC.** A `did:webs` identifier publishes its KERI event stream,
+  including TEL issuance and revocation events, and its designated-alias
+  ACDCs (did:webs specification). Other ACDCs still reach the oracle by
+  disclosure (Section 7). Once one has, the oracle can follow its
+  revocation in the TEL without the holder.
+- **Trust registry.** A ToIP Trust Registry Query Protocol (TRQP) v2.0
+  authorization query (`POST /authorization` with `authority_id`,
+  `entity_id`, `action`, and `resource`) asks whether an authority has
+  authorized an entity, such as the holder's DID, for an action on a
+  resource. The response carries `authorized` and `time_evaluated` (TRQP
+  §Authorization Query and Response Schemas). No credential changes
+  hands, which makes this the simplest backend. Trust moves from the
+  credential's issuer to the registry operator, and since the response
+  has no expiry, staleness comes from the re-check interval alone.
+
+Whatever the source, the `keyCustody` caveat in Section 2 still applies:
+a presentation signed with a server-held key proves the server's control,
+not the user's.
+
+---
+
+## 10. Non-goals
 
 - **No wire-level VC presentation.** No draft defines a method, argument,
   or property that carries a credential or presentation. That is the
@@ -390,3 +492,6 @@ the status re-check all live with IETF as the hosting operator.
 | SD-JWT VC | https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/ |
 | Token Status List | https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/ |
 | ToIP ACDC specification v1.1 | https://doi.org/10.5281/zenodo.18792085 |
+| ToIP did:webs Method Specification | https://trustoverip.github.io/kswg-did-method-webs-specification/ |
+| ToIP Trust Registry Query Protocol v2.0 | https://github.com/trustoverip/tswg-trust-registry-protocol |
+| DIF Linked Verifiable Presentation v1.0.0 | https://identity.foundation/linked-vp/ |
