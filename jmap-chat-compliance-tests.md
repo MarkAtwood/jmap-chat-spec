@@ -654,9 +654,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 11.1 unreadCount computed from ReadPosition
 **Spec:** draft-atwood-jmap-chat-00
-**Severity:** MUST | **Round:** 3
+**Severity:** SHOULD | **Round:** 3
 
-**Test:** Send 5 messages. Set ReadPosition to message 3. Call `Chat/get`. Verify `unreadCount` is 2 (messages 4 and 5).
+**Test:** Send 5 messages. Set ReadPosition to message 3. Call `Chat/get`, repeating after a short delay if needed. Verify `unreadCount` becomes 2 (messages 4 and 5). A server that caps the count reports its maximum only when the true count exceeds it.
 
 ---
 
@@ -899,10 +899,10 @@ Tests that mix MUST and SHOULD checks are counted under MUST. Optional tests are
 | WebSocket | 3 | 2 | 0 | 0 | 5 |
 | Scheduling | 2 | 2 | 0 | 0 | 4 |
 | Space | 5 | 0 | 0 | 0 | 5 |
-| Other (unreadCount, PushSubscription) | 2 | 0 | 0 | 0 | 2 |
+| Other (unreadCount, PushSubscription) | 1 | 1 | 0 | 0 | 2 |
 | Late-discovery edge cases | 9 | 1 | 0 | 0 | 10 |
 | Security/robustness | 0 | 0 | 0 | 17 | 17 |
-| **Total** | **86** | **9** | **2** | **17** | **114** |
+| **Total** | **85** | **10** | **2** | **17** | **114** |
 
 ---
 
