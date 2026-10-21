@@ -129,10 +129,10 @@ Notes:
   Space). The enrollment service needs an account holding those, or a
   controller principal, whose designation is deployment-defined (§Space
   Permission Resolution).
-- **Hierarchy limits role assignment.** A member can create, edit,
-  assign, or remove only roles below their own highest position, through
-  `addRoles`, `updateRoles`, `addMembers`, and `updateMembers` (§Space
-  Permission Resolution). The account that assigns credential-backed
+- **Hierarchy limits role assignment.** Servers are expected to let a
+  member create, edit, assign, or remove only roles below their own
+  highest position, through `addRoles`, `updateRoles`, `addMembers`, and
+  `updateMembers` (§Space Permission Resolution). The account that assigns credential-backed
   roles therefore needs a role positioned above all of them. An operator
   that wants those roles assignable only by the enrollment service can
   add that restriction under the deployment-policy latitude in the same
