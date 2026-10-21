@@ -1341,16 +1341,16 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 : Metadata fields. Require `"manage_space"` permission.
 
 `addRoles` (Object[]):
-: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeRoles` (String[]):
 : SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Requires `"manage_roles"`.
 
 `updateRoles` (Object[]):
-: Each entry: `id` (String) and any of `name`, `color`, `permissions`, `position`. Requires `"manage_roles"`. Members may only modify roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this.
+: Each entry: `id` (String) and any of `name`, `color`, `permissions`, `position`. Requires `"manage_roles"`. Members may only modify roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this.
 
 `addMembers` (Object[]):
-: Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String[]). Requires `"manage_members"`. Members may only assign roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. If the resulting membership would exceed a server-defined limit on the number of members per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+: Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String[]). Requires `"manage_members"`. Members may only assign roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting membership would exceed a server-defined limit on the number of members per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeMembers` (String[]):
 : ChatContact.ids to remove. Requires `"manage_members"`. Servers SHOULD refuse to remove another member when doing so would leave the Space without any member holding `"manage_members"` or `"manage_space"`; the specific last-administrator protection policy is server-defined. Servers MUST return an `invalidProperties` SetError ({{RFC8620}} §5.3) naming `removeMembers` when refusing on this basis. The same protection applies to an `updateMembers` role change, a `removeRoles` entry, or an `updateRoles` permission change that would leave the Space without any member holding `"manage_members"` or `"manage_space"`; a refusal names the patch key concerned.
@@ -1358,7 +1358,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
   A member who does not hold `"manage_members"` permission MAY remove themselves from the Space by including only the accountId in `removeMembers`. The server MUST permit self-removal regardless of the caller's permission set. Last-administrator protection does not apply to self-removal. If the member removing themselves is the last member holding `"manage_space"` and other members remain, leaving closes the Space: the server MUST set `closedAt` ({{space}}) in the same operation. Clients can ask the user to confirm before the last administrator leaves, stating that the Space will close.
 
 `updateMembers` (Object[]):
-: Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`. Members may only add or remove roles whose `position` is strictly less than their own highest-position role; servers MUST enforce this. Changing another member's `nick` requires `"manage_members"`. A member MAY set their own `nick` by submitting `updateMembers` with a single entry whose `id` is the accountId and which contains only `nick`; the server MUST permit this regardless of the caller's permission set.
+: Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`. Members may only add or remove roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. Changing another member's `nick` requires `"manage_members"`. A member MAY set their own `nick` by submitting `updateMembers` with a single entry whose `id` is the accountId and which contains only `nick`; the server MUST permit this regardless of the caller's permission set.
 
 `addChannels` (Object[]):
 : Each entry: `name` (String, required), optional `categoryId` (String), `position` (UnsignedInt), and `topic` (String). The server creates a Chat record of `kind: "channel"` with `spaceId` set to this Space's id and assigns a ULID as the chatId. Requires `"manage_channels"`. If the resulting channel count would exceed a server-defined limit on the number of channels per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
