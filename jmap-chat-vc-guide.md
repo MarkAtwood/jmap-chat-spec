@@ -129,16 +129,14 @@ Notes:
   Space). The enrollment service needs an account holding those, or a
   controller principal, whose designation is deployment-defined (§Space
   Permission Resolution).
-- **Hierarchy limits on role assignment are unclear.** Servers enforce
-  that a member creates or edits only roles below their own highest
-  position, on `addRoles` and `updateRoles` (§Space Permission
-  Resolution). The §Space/set rationale says adding a member "checks
-  role-hierarchy constraints", but the `addMembers` definition states no
-  such rule, and the draft says nothing about role changes through
-  `updateMembers`. An operator that wants
-  credential-backed roles to be assignable only by the enrollment service
-  can add that restriction under the deployment-policy latitude in
-  §Space Permission Resolution.
+- **Hierarchy limits role assignment.** A member can create, edit,
+  assign, or remove only roles below their own highest position, through
+  `addRoles`, `updateRoles`, `addMembers`, and `updateMembers` (§Space
+  Permission Resolution). The account that assigns credential-backed
+  roles therefore needs a role positioned above all of them. An operator
+  that wants those roles assignable only by the enrollment service can
+  add that restriction under the deployment-policy latitude in the same
+  section.
 - **One role per credential type.** Mapping each credential type to one
   dedicated `SpaceRole` keeps revocation simple: removing the credential
   means removing that one role id (Section 6).
@@ -172,10 +170,9 @@ the verified holder over its own channel. Limits:
 - An invite code is a bearer token. Whoever redeems it joins. The
   credential check is only as strong as the channel that delivers the
   code.
-- `SpaceInvite` has no role property (§SpaceInvite). `Space/join` says the
-  joiner gets only `@everyone` "unless the invite specifies otherwise"
-  (§Space/join), but an invite has no field to specify otherwise. Roles
-  from the credential are assigned afterwards with `updateMembers`.
+- `SpaceInvite` has no role property, and a joiner gets only `@everyone`
+  (§SpaceInvite, §Space/join). Roles from the credential are assigned
+  afterwards with `updateMembers`.
 
 **What the operator cannot do at join time.** `Space/join` lists its
 errors: `invalidArguments` for bad arguments or a bad invite,
@@ -221,11 +218,10 @@ server granted the role from its own check, so it has to re-check on its own
 schedule: at each session start, periodically, or both. When a check
 fails, the operator removes the credential-backed role with
 `updateMembers`, or removes the member with `removeMembers`
-(`draft-atwood-jmap-chat-00` §Updating a Space). If the role being
-removed is the Space's last administrator, the last-administrator refusal
-on `removeMembers` applies (§Updating a Space). The draft does not say
-whether the same protection applies to a role change through
-`updateMembers`. A Space whose last `manage_space` holder leaves while
+(`draft-atwood-jmap-chat-00` §Updating a Space). If either change would
+leave the Space with no member holding `manage_members` or
+`manage_space`, servers are expected to refuse it, for `removeMembers`
+and `updateMembers` alike (§Updating a Space). A Space whose last `manage_space` holder leaves while
 others remain is closed (§Updating a Space, §Space).
 
 Suspension maps naturally to removing the role and restoring it later.
@@ -243,14 +239,6 @@ the role, it fails with `forbidden` at the `send` check (step 5). The
 silent drop for a ban (step 4) applies only to a sender who is still a
 member (§New Message Validation). Peers never learn
 that a credential was the reason.
-
-The core draft says `addMembers` triggers `Peer/groupUpdate` in federated
-deployments (`draft-atwood-jmap-chat-00` §Space/set), but `Peer/groupUpdate`
-is defined only for group chats, and the federation draft says Space-level
-operations are not proactively federated
-(`draft-atwood-jmap-chat-federation-00` §Peer/groupUpdate, §Space-Level
-Federation). The two drafts disagree. This guide relies on the federation
-draft's statement.
 
 ---
 
