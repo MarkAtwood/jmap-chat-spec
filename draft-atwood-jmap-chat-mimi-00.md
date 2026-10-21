@@ -436,6 +436,8 @@ A Message with `bodyType` `"application/mimi-fanout"` has as `body` one FanoutMe
 
 The server stores each FanoutMessage it receives or originates for a room as one Message, in the order received, in every Chat of a local account bound to that room ({{chat-roomid}}). A FanoutMessage carrying a Welcome is stored only in the account owning a KeyPackageRef named in the Welcome; if that account has no Chat bound to the room, the server first binds the account's unbound Chat for the room again or, if it has none, creates a Chat bound to the room. The server stores a FanoutMessage that carries a commit removing the owner's clients like any other, so that those clients learn of their removal ({{chat-roomid}}).
 
+A room's hub is the provider named by the authority component of its room ID ({{MIMI-PROTOCOL}}). The server MUST reject a `/notify` request for a room, and MUST NOT store its FanoutMessages, unless the MIMI transport authenticated the sender as that provider. Without this check, another provider with participants in the room could inject Commits and Welcomes for a room it does not host.
+
 For such a Message:
 
 - `senderMsgId` is the ULID {{ULID}} whose 48-bit time component is the FanoutMessage `timestamp` and whose 80-bit random component is the first 10 octets of the SHA-256 hash of the FanoutMessage octets. The server MUST NOT store a FanoutMessage whose `senderMsgId` it has already stored in the Chat, so a repeated `/notify` yields one Message.
