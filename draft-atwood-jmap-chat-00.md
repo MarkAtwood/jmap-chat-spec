@@ -626,7 +626,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : Received time of the most recent message.
 
 `unreadCount` (UnsignedInt, server-set):
-: Count of Messages in this Chat whose `id` ULID is lexicographically greater than `ReadPosition.lastReadMessageId`. Derived server-side from the owner's ReadPosition record. If `lastReadMessageId` is absent, all messages are counted as unread.
+: The number of Messages in this Chat whose `id` ULID is lexicographically greater than `ReadPosition.lastReadMessageId`, derived server-side from the owner's ReadPosition record. If `lastReadMessageId` is absent, all messages are counted as unread. The value is advisory, for display such as badges. Servers SHOULD keep it accurate, but MAY update it some time after the change that affects it, MAY combine several such changes into one update, and MAY report a server-defined maximum in place of any larger count. Whenever the server changes the value, the Chat's state changes as for any other property ({{RFC8620}} Section 5.1). Clients MUST NOT rely on `unreadCount` being exact.
 
 `pinnedMessageIds` (String[]):
 : Ordered list of pinned Message ids, most-recently-pinned first. For group chats, only admins may modify this list. For direct chats, the owner may modify it freely. For channel chats, only members with the `"pin"` Space permission may modify this list. Each id MUST be the id of a Message in this Chat; the server MUST reject a `Chat/set` update that would add any other id with `invalidProperties`. When a pinned Message is hard-deleted, the server MUST remove its id from this list. Empty by default.
@@ -1431,7 +1431,7 @@ Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
-`update` supports: `lastReadMessageId`. The server sets `lastReadAt` to the current time and recomputes `Chat.unreadCount` for the affected Chat.
+`update` supports: `lastReadMessageId`. The server sets `lastReadAt` to the current time and updates `Chat.unreadCount` for the affected Chat, possibly later ({{chat}}).
 
 `create` and `destroy` are not supported; both MUST return a SetError of type `forbidden`. ReadPosition records are managed by the server.
 
