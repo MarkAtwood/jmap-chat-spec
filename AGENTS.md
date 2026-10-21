@@ -11,11 +11,19 @@ Before doing any work:
 
 This is a spec-writing project. All deliverables are Markdown files. There is no code, no build system, and no test suite.
 
-**Normative drafts** (`draft-atwood-*.md`): IETF Internet-Draft format. Use RFC 2119 keywords (MUST, SHOULD, MAY). The drafts are the source of truth for all protocol behavior.
+**Normative drafts** (`draft-atwood-*.md`): IETF Internet-Draft format (kramdown-rfc). Use BCP 14 keywords per the discipline in `PROJECT.md`. The drafts are the source of truth for all protocol behavior.
 
-Ten drafts are currently in the corpus: the core (`draft-atwood-jmap-chat-00.md`) plus nine companion specs covering push (`-push-00`), WebSocket transport (`-wss-00`), federation (`-federation-00`), file storage (`-filenode-00`), content identifiers (`draft-atwood-jmap-cid-00`), calendars (`-calendars-00`), tasks (`-tasks-00`), Decentralized Identifiers (`-did-00`), and MIMI gateway mapping (`-mimi-00`). Each companion is optional and, except `-mimi-00` (gateway behavior only), has its own capability URN; the core stays focused on the chat protocol itself.
+Twenty drafts are in the corpus, in five families (`README.md` lists each one):
 
-**Implementer guides** (`jmap-*-guide.md`): Non-normative companions. No RFC 2119 keywords. When a guide describes behavior defined in a draft, the guide must be consistent with the draft.
+- **Chat:** core `draft-atwood-jmap-chat-00` plus `-federation`, `-push`, `-wss`, `-filenode`, `-calendars`, `-tasks`, `-did`, `-mimi`
+- **VTC:** `draft-atwood-jmap-vtc-00`, `draft-atwood-jmap-vtc-wss-00`
+- **Scene:** `draft-atwood-jmap-scene-00`, `draft-atwood-jmap-scene-wss-00`
+- **Graph:** `draft-atwood-jmap-graph-00` plus `-projection`, `-search`, `-edit`
+- **Shared building blocks:** `draft-atwood-jmap-cid-00`, `draft-atwood-jmap-did-00`, `draft-atwood-jmap-object-uri-00`
+
+Every draft except `-chat-federation` (extends the core capability) and `-object-uri` (a URI scheme) has its own capability URN. Each companion is optional.
+
+**Implementer guides** (`jmap-*-guide.md`, plus `jmap-chat-compliance-tests.md` and `jmap-unified-client-architecture.md`): Non-normative companions. Keywords only as described under Restrictions below. When a guide describes behavior defined in a draft, the guide must be consistent with the draft.
 
 ## Upstream draft sources
 
@@ -46,7 +54,7 @@ To check for upstream changes: `git -C ~/GIT/<clone> fetch` and diff, then confi
 
 | If you change... | Also check... |
 |---|---|
-| A field name or method signature in a draft | All six guides for references to that field |
+| A field name or method signature in a draft | Every guide that names that field (`grep -l`), plus `jmap-chat-compliance-tests.md` for Chat drafts |
 | Suppression or rate-limit behavior in a draft | The guide section describing that behavior |
 | A capability URN or error string | Every file that mentions it (`grep -r`) |
 | Urgency values or their semantics | Urgency tables in `jmap-push-platform-guide.md` |
@@ -57,7 +65,14 @@ To check for upstream changes: `git -C ~/GIT/<clone> fetch` and diff, then confi
 | TaskList binding / Task-Chat back-reference / task workflow | `jmap-chat-tasks-guide.md` |
 | Peer auth mechanism / allowlist / abuse mitigation / federation observability | `jmap-chat-federation-guide.md` |
 | File storage backend / scanning / quotas / previews / grace-period implementation | `jmap-chat-filenode-guide.md` |
-| DID method support / federation signature mechanism / DID resolution / DID document conventions | `jmap-chat-did-guide.md` |
+| DID method support / federation signature mechanism / DID resolution / DID document conventions | `jmap-chat-did-guide.md`, `jmap-did-guide.md`, `jmap-toip-mapping-guide.md`, `jmap-chat-vc-guide.md` |
+| CID / blob digest behavior | `jmap-cid-guide.md` |
+| `jmap:` object URI form or the Object URI Types registry | Every draft that cites the registry (`grep -l 'JMAP Object URI Types' draft-*.md`) and `draft-atwood-jmap-chat-federation-00.md` |
+| VTC call state, recording, ring push, gateways | The matching `jmap-vtc-*-guide.md`; `jmap-vtc-chat-*-guide.md` if Chat links change |
+| VTC or Scene WebSocket events | `jmap-chat-wss-guide.md` and `jmap-scene-wss-guide.md` interop sections, plus the draft's own guide |
+| Scene data types, simulation, or visibility | `jmap-scene-*-guide.md` (implementer, simulation, 2d, board-games, vtc-integration) |
+| Graph data types or companions | The other Graph drafts (projection, search, edit build on graph-00) |
+| Which capabilities exist | `jmap-unified-client-architecture.md`, `README.md` |
 
 Always `grep -r <term> . --include='*.md'` before and after a change to catch all occurrences.
 
