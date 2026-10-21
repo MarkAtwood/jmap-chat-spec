@@ -325,6 +325,7 @@ This non-normative section documents the design influences and explicit non-deci
 
 - **Self-sovereign identity practice (`did:key`).** The individual-controlled `did:key` method, with no resolution infrastructure and no rotation, is recognized as the floor of self-sovereign identity. This specification's choice to mandate `did:key` follows the convention established by self-sovereign identity systems and adjacent JMAP-Chat-compatible deployments.
 - **Institutional self-sovereign identity (`did:web`).** The DNS-anchored `did:web` method is recognized as the practical bridge between self-sovereign identity primitives and existing institutional identity infrastructure (corporate IdPs, organizational domains). This specification's choice to mandate `did:web` follows that practice.
+- **Decentralized Identity Foundation (`did:webvh`).** `did:webvh` ({{DID-WEBVH}}) is a Decentralized Identity Foundation (DIF) method specification. This document recommends it as the history-verifiable successor to `did:web` and defers to it for resolution rather than restating its rules.
 - **AT Protocol identity (`did:plc`).** Bluesky and the AT Protocol ecosystem use `did:plc` as their default identity method. This specification's choice to mandate `did:plc` is motivated by enabling interoperability with that ecosystem.
 - **HTTP Message Signatures ({{RFC9421}}).** Federation authentication uses RFC 9421 with Ed25519 as {{JMAP-CHAT-FED}} mandates; this document binds the signing key to a DID rather than defining a signature mechanism.
 
