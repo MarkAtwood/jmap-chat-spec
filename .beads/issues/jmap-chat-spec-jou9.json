@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-jou9",
+  "title": "Write ToIP mapping guide (jmap-toip-mapping-guide.md)",
+  "description": "Non-normative guide mapping the JMAP corpus onto the Trust over IP stack. ToIP is governance/trust framework, not wire protocol, so it lives in a guide, never a draft; drafts gain no ToIP text or requirements.\n\nFirst step: verify the CURRENT ToIP model (layer names changed across revisions; older 4-layer model vs Technology Architecture Spec). Cite a stable ToIP document.\n\nSections:\n1. Scope disclaimer: non-normative, no new requirements, nothing in JMAP depends on ToIP.\n2. Layer mapping table: trust support (DID methods webvh/key/plc, resolver, keyCustody); trust spanning (peer signing keys + DID-bound check; state JMAP federation is parallel to ToIP TSP, not built on it, because JMAP is HTTP client/server sync, not a peer messaging substrate); trust tasks (MIMI/MLS E2EE, blocking/bans, membership checks); trust applications (Chat, Scene, VTC, Graph).\n3. Governance mapping: ecosystem governance framework in JMAP terms = Space roles/rules, operator federation allow-list, did:webvh witness policy.\n4. Credentials gap: how a VC could attach without spec changes (ChatContact/Space role backed by operator-verified VC; trust-registry lookup as operator policy hook via existing fail-open hooks). Each marked deployment pattern, not protocol feature. Reference jmap-did #vc-relationship.\n5. Worked example: IETF/ASF/W3C federation, each its own governance authority; trust of a liaison room's membership across them.\n6. Non-goals: no DIDComm transport, no mandatory VCs, no trust-registry protocol.\n\nPlacement: repo root next to jmap-did-guide.md; add one-sentence link from jmap-did-guide.md. Audience: DID/DIF/ToIP reviewers.",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T00:17:28.754108153Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T00:25:28.500563254Z",
+  "started_at": "2026-10-21T00:18:24.40561393Z",
+  "closed_at": "2026-10-21T00:25:28.500563254Z",
+  "close_reason": "Guide written (jmap-toip-mapping-guide.md), adversarially verified (4 defects fixed), linked from jmap-did-guide.md"
+}
