@@ -850,7 +850,7 @@ A Category is a named grouping of channels within a Space.
 A ChannelPermission record overrides Space-level role permissions for a specific channel, for a specific role or member. The evaluation order for these overrides is defined in {{space-permissions}}.
 
 `targetId` (String):
-: A SpaceRole id or a SpaceMember `id`.
+: A SpaceRole id or a SpaceMember `id`. A record with `targetType: "role"` whose `targetId` is the id of the Space itself addresses the implicit `@everyone` role, which has no SpaceRole id.
 
 `targetType` (String):
 : `"role"` or `"member"`.
@@ -1703,7 +1703,7 @@ Authorization for peer server access in federation deployments is defined in {{J
 When determining whether a member may perform an action in a channel Chat, servers MUST evaluate permissions in this order:
 
 1. Compute the union of `permissions` across all SpaceRoles held by the member, including the implicit `@everyone` role.
-2. Apply `deny` entries from any ChannelPermission records matching the member's roles (`targetType: "role"`), in ascending position order.
+2. Apply `deny` entries from any ChannelPermission records matching the member's roles (`targetType: "role"`, including the record for `@everyone`, whose `targetId` is the Space id), in ascending position order.
 3. Apply `allow` entries from the same role-targeted records, in ascending position order.
 4. Apply `deny` entries from any ChannelPermission record matching the member directly (`targetType: "member"`).
 5. Apply `allow` entries from the same member-targeted record.
