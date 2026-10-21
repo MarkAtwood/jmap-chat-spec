@@ -42,6 +42,11 @@ normative:
     target: https://identity.foundation/didwebvh/v1.0/
 
 informative:
+  DID-WEBS:
+    title: "did:webs DID Method Specification"
+    author:
+      org: Trust Over IP Foundation
+    target: https://trustoverip.github.io/kswg-did-method-webs-specification/
   RFC7515:
   RFC8621:
   RFC8984:
@@ -358,6 +363,10 @@ A valid log shows only that each entry the resolver received was authorized. A h
 To verify a signature or attestation on an object it accepted earlier and stored, a party uses the DID document version that was in effect when it accepted the object, not the current version. A party that stores such objects SHOULD record with each object the `versionId` in effect at acceptance, and verify against that version. Without it, the party cannot re-verify stored history after a key rotation ({{key-rotation}}), because a key removed by a later log entry no longer appears in the current document. For an object being received, the current version applies.
 
 A holder MAY publish a parallel `did:web` document for the same domain and path ({{DID-WEBVH}}). That document is outside the log's verification, and its keys carry none of the log's guarantees ({{DID-WEBVH}}).
+
+## Other Verifiable-History Methods {#other-methods}
+
+This document does not restrict which DID method a bound DID uses. `did:webs` ({{DID-WEBS}}) is also anchored to a web domain and verifies wherever its history is obtained, but it records that history as a KERI key event log rather than a JSON DID log. It is the method by which a JMAP account's DID can be a KERI identifier, which KERI-based credentials (ACDC) require of their holders. This revision gives no `did:webs` resolution guidance, because KERI tooling outside its reference implementation is still immature and operators have not yet asked for it. A later revision may add such guidance as the ecosystem matures and operator demand appears. Until then, a client that cannot resolve a bound DID's method cannot verify the binding ({{verification}}) and treats the `did` value as unverified.
 
 # DID Lifecycle {#lifecycle}
 
