@@ -669,6 +669,10 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 
 # Methods
 
+## Extension Properties in Updates {#scene-extension-properties}
+
+The `update` lists in this section name the properties this document defines that a client may patch. A server that stores vendor extension properties on a Scene object (properties this document does not define) MAY also accept patches to them. It MUST NOT accept patches to a property this document defines as immutable or server-set.
+
 ## SceneAsset Methods {#scene-asset-methods}
 
 ### SceneAsset/get
@@ -695,7 +699,7 @@ Optional: `name` (String), `assetUri` (String), `sha256` (String).
 
 The server sets `id`, `accountId`, `ownerId`, `size`, and `createdAt`.
 
-`update` supports patching `name`, `assetUri`, and `sha256`. All other properties are immutable or server-set.
+`update` supports patching `name`, `assetUri`, and `sha256`, and vendor extension properties as described in {{scene-extension-properties}}. All other properties this document defines are immutable or server-set.
 
 `destroy` removes the SceneAsset record only. SceneObject and SceneAvatar records that reference the same blob through `visualRef` are unaffected, because they reference the blobId, not the SceneAsset. The blob itself follows the blob lifetime rules of {{RFC8620}} Section 6.
 
@@ -841,7 +845,7 @@ Response:
 
 | Condition | Description |
 |---|---|
-| Attempting to change a property other than `name`, `assetUri`, or `sha256` | `id`, `accountId`, `ownerId`, `blobId`, `mediaType`, `size`, and `createdAt` are immutable or server-set. |
+| Attempting to change `id`, `accountId`, `ownerId`, `blobId`, `mediaType`, `size`, or `createdAt` | `id`, `accountId`, `ownerId`, `blobId`, `mediaType`, `size`, and `createdAt` are immutable or server-set. |
 
 **`forbidden`**:
 
