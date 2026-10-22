@@ -199,6 +199,20 @@ handled is the operator's call. It is separate from the normative rule
 that a DID resolution failure with no usable cache rejects the request
 (`draft-atwood-jmap-chat-did-00` §Resolution failure handling).
 
+**4.4 Attribute assurance through a credential oracle.** *Deployment
+pattern, not protocol feature.* Where a deployment must restrict a Space,
+region, or call by an attribute such as age, the operator asks a
+credential oracle (`jmap-chat-vc-guide.md` Section 9) a narrow question,
+for example "is this member over 18, and until when?", and maps a yes to
+a role or to region access as in Section 4.1. The oracle can answer from
+a selective-disclosure credential or a zero-knowledge proof presented by
+the holder, so neither the oracle's caller nor any peer learns a
+birthdate or an identity record. In ToIP terms the oracle performs a
+Layer 3 verification task, and the deployment's ecosystem governance
+framework decides which issuers it accepts. Peers and clients see only
+the resulting role. What the deployment does when the oracle is
+unreachable is an operator setting (`jmap-chat-vc-guide.md` Section 9).
+
 ---
 
 ## 5. Worked example (hypothetical)
@@ -284,6 +298,10 @@ governance framework.
 - **No trust-registry protocol.** No draft defines or requires a trust
   registry, a registry query, or a policy hook for one. Registry use is
   operator policy (Section 4.3).
+- **No identity enrollment or age registry.** No draft defines identity
+  enrollment, stores a birthdate, or queries a government or other
+  registry. Age and attribute assurance is an oracle answer only
+  (Section 4.4).
 
 ---
 
@@ -295,6 +313,7 @@ governance framework.
 | Mandatory DID methods, DID-bound verification, resolution | `draft-atwood-jmap-chat-did-00.md`, `jmap-chat-did-guide.md` |
 | Peer authentication, `Peer/*` methods | `draft-atwood-jmap-chat-federation-00.md` |
 | Federation allowlist / denylist policy | `jmap-chat-federation-guide.md` |
+| Credential oracle, VC-backed roles, attribute assurance | `jmap-chat-vc-guide.md` |
 | Space roles, permissions, governance variation | `draft-atwood-jmap-chat-00.md` |
 | MIMI and MLS | `draft-atwood-jmap-chat-mimi-00.md` |
 | ToIP Technology Architecture Specification | https://trustoverip.github.io/TechArch/ |
