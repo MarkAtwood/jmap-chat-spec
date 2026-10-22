@@ -1344,7 +1344,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 : Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeRoles` (String[]):
-: SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Requires `"manage_roles"`.
+: SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Servers SHOULD also remove each channel's `permissionOverrides` entries whose `targetId` is a removed role; a role id is never reused, so a remaining entry has no effect. Requires `"manage_roles"`.
 
 `updateRoles` (Object[]):
 : Each entry: `id` (String) and any of `name`, `color`, `permissions`, `position`. Requires `"manage_roles"`. Members may only modify roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this.
