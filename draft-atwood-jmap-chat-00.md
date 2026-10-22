@@ -1195,6 +1195,8 @@ Standard JMAP `/get`.
 
 Standard JMAP `/changes`.
 
+When a Message is created and hard-deleted (for example by `burnOnRead` or `senderExpiresAt`) between the `sinceState` and the new state, {{RFC8620}} Section 5.2 allows the server either to list its id in `destroyed` or to omit it from both `created` and `destroyed`. Servers SHOULD list it in `destroyed`: a client may have learned of the Message through a push notification, and needs the id to purge its copy.
+
 ### Message/set
 
 Standard JMAP `/set`.
