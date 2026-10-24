@@ -513,7 +513,7 @@ A ChatContact represents a remote user known to this mailbox.
 : A non-empty human-readable identifier for this contact, suitable for display when `displayName` is absent. The format is deployment-specific but MUST be a valid UTF-8 string of at least one non-whitespace character. Clients SHOULD fall back to `login` when `displayName` is absent or empty, and MAY fall back to `identity` when `login` is unavailable.
 
 `displayName` (String, optional):
-: Human-readable display name. MAY be absent or empty. Set by the owner via `ChatContact/set`. Owner-side preference; not shared with peers.
+: Human-readable display name. MAY be absent or empty. Set by the owner via `ChatContact/set` update. Owner-side preference; not shared with peers.
 
 `firstSeenAt` (UTCDate, server-set):
 : Time this ChatContact was first recorded.
@@ -533,7 +533,7 @@ A ChatContact represents a remote user known to this mailbox.
 `statusEmoji` (String, optional, server-set):
 : The contact's current status emoji. Mirrors `PresenceStatus.statusEmoji` on the contact's own server; updated when a presence event is received from that server. Absent when the contact has no active status emoji.
 
-`endpoints` (Endpoint[], optional):
+`endpoints` (Endpoint[], optional, server-set):
 : Out-of-band capability endpoints advertised by this ChatContact. Servers populate this field from the ChatContact's `ownerEndpoints` at `/.well-known/jmap`. Clients MAY use these to initiate video calls, send payments, or fetch files outside the JMAP message channel. Clients SHOULD NOT act on these values automatically without explicit user intent.
 
 `blocked` (Boolean):
@@ -595,29 +595,29 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `avatarBlobId` (String, optional):
 : **Group chats only.** blobId of the group avatar image. Mutable by admins.
 
-`members` (ChatMember[]):
-: **Group chats only.** Full membership list.
+`members` (ChatMember[], server-set):
+: **Group chats only.** Full membership list. Changed through the `addMembers`, `removeMembers` and `updateMemberRoles` patch keys of `Chat/set`.
 
 `closedAt` (UTCDate, optional, server-set):
 : **Group chats only.** Time the group closed. Absent while the group is open. A group closes when its last admin leaves while other members remain (see `removeMembers` under Chat/set). Once set, `closedAt` MUST NOT be cleared. After it is set, the server MUST reject with a `forbidden` SetError every `Message/set` create in this Chat and every `Chat/set` update that changes membership (`addMembers`, `removeMembers`, `updateMemberRoles`) or shared group settings (`name`, `description`, `avatarBlobId`, `pinnedMessageIds`). Message history remains readable. Owner-side preferences (`muted`, `muteUntil`, `receiveTypingIndicators`, `messageExpirySeconds`, `receiptSharing`) remain updatable, and members MAY still destroy the Chat via `Chat/set` to remove it from their view.
 
-`spaceId` (String, immutable):
-: **Channel Chats only.** The id of the containing Space.
+`spaceId` (String, immutable, server-set):
+: **Channel Chats only.** The id of the containing Space, set when the `addChannels` patch key of `Space/set` ({{space-set}}) creates the channel.
 
-`categoryId` (String, optional):
-: **Channel Chats only.** The Category id within the Space. Absent if this channel is uncategorized.
+`categoryId` (String, optional, server-set):
+: **Channel Chats only.** The Category id within the Space. Absent if this channel is uncategorized. Changed through the channel and category patch keys of `Space/set` ({{space-set}}), not through `Chat/set`.
 
-`position` (UnsignedInt, optional):
-: **Channel Chats only.** Sort order within the category (or among uncategorized channels). Lower values appear first.
+`position` (UnsignedInt, optional, server-set):
+: **Channel Chats only.** Sort order within the category (or among uncategorized channels). Lower values appear first. Changed through the `addChannels` and `updateChannels` patch keys of `Space/set` ({{space-set}}), not through `Chat/set`.
 
-`topic` (String, optional):
-: **Channel Chats only.** Short description shown in the channel header. Mutable by members with `"manage_channels"` permission.
+`topic` (String, optional, server-set):
+: **Channel Chats only.** Short description shown in the channel header. Mutable by members with `"manage_channels"` permission through the `addChannels` and `updateChannels` patch keys of `Space/set` ({{space-set}}), not through `Chat/set`.
 
-`slowModeSeconds` (UnsignedInt):
-: **Channel Chats only.** When non-zero, the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimit` SetError ({{RFC8620, Section 5.3}}) on the offending `Message/set` create. Servers SHOULD exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimit` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimit`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
+`slowModeSeconds` (UnsignedInt, server-set):
+: **Channel Chats only.** Changed through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. When non-zero, the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimit` SetError ({{RFC8620, Section 5.3}}) on the offending `Message/set` create. Servers SHOULD exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimit` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimit`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
 
-`permissionOverrides` (ChannelPermission[]):
-: **Channel Chats only.** Per-channel permission overrides for specific roles or members. Evaluated after Space-level role permissions per {{space-permissions}}. Only members with `"manage_channels"` permission may modify this list. Empty by default.
+`permissionOverrides` (ChannelPermission[], server-set):
+: **Channel Chats only.** Per-channel permission overrides for specific roles or members. Evaluated after Space-level role permissions per {space-permissions}. Only members with `"manage_channels"` permission may modify this list, through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. Empty by default.
 
 `createdAt` (UTCDate, immutable, server-set):
 : Time this chat was first recorded on this mailbox.
@@ -699,7 +699,7 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 : MIME type of `body`. MUST be in `supportedBodyTypes`.
 
 `attachments` (Attachment[]):
-: File attachments. Cleared to empty array when deleted.
+: File attachments. Set only at creation: a `Message/set` update cannot change it. The server clears it to an empty array when the message is deleted.
 
 `mentions` (Mention[]):
 : Structured per-user @mention annotations. Empty by default. Authoritative for every `bodyType`; see {{mention}}.
@@ -707,16 +707,16 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `broadcastMentions` (BroadcastMention[]):
 : Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). Empty by default. Authoritative for every `bodyType`; see {{broadcast-mention}}.
 
-`actions` (MessageAction[]):
+`actions` (MessageAction[], immutable):
 : Out-of-band action invitations associated with this message. Empty by default. Servers store and forward these without inspection, as {{message-action}} requires.
 
 `reactions` (Id[Reaction]):
 : Emoji reactions, keyed by `senderReactionId`. The `senderReactionId` is a client-assigned ULID for owner reactions, or a peer-supplied ULID for received reactions. Empty object by default.
 
-`replyTo` (String, optional):
+`replyTo` (String, optional, immutable):
 : The receiver-assigned `id` of the Message this replies to. Servers MUST validate that this ID exists in the same Chat before storing.
 
-`threadRootId` (String, optional):
+`threadRootId` (String, optional, immutable):
 : The receiver-assigned `id` of the thread root message. Only meaningful when `supportsThreads` is `true`. See {{threads}}.
 
 `replyCount` (UnsignedInt, server-set):
@@ -731,7 +731,7 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `subject` (String, optional, immutable):
 : The human-readable name of the topic identified by `topicId`. MUST be valid UTF-8 text. MUST be absent when `topicId` is absent. Clients SHOULD display the `subject` of the most recent Message in a topic that carries one as that topic's name.
 
-`sentAt` (UTCDate):
+`sentAt` (UTCDate, immutable):
 : Sender's claimed composition time. Peer-supplied; SHOULD be treated as untrusted and MUST NOT be used for ordering.
 
 `receivedAt` (UTCDate, immutable, server-set):
@@ -877,17 +877,17 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 `iconBlobId` (String, optional):
 : blobId of the Space icon. Mutable by members with `"manage_space"` permission.
 
-`roles` (SpaceRole[]):
-: Named roles defined for this Space, ordered by `position` descending. Does not include the implicit `@everyone` role.
+`roles` (SpaceRole[], server-set):
+: Named roles defined for this Space, ordered by `position` descending. Does not include the implicit `@everyone` role. Changed through the `addRoles`, `removeRoles` and `updateRoles` patch keys of `Space/set` ({{space-set}}).
 
-`members` (SpaceMember[]):
-: Full membership list.
+`members` (SpaceMember[], server-set):
+: Full membership list. Changed through the `addMembers`, `removeMembers` and `updateMembers` patch keys of `Space/set` ({{space-set}}) and by `Space/join`.
 
-`categories` (Category[]):
-: Categories, ordered by `position`.
+`categories` (Category[], server-set):
+: Categories, ordered by `position`. Changed through the `addCategories`, `removeCategories` and `updateCategories` patch keys of `Space/set` ({{space-set}}).
 
-`uncategorizedChannelIds` (String[]):
-: Ordered list of channel Chat ids not assigned to any category.
+`uncategorizedChannelIds` (String[], server-set):
+: Ordered list of channel Chat ids not assigned to any category. Changed as a side effect of the channel and category patch keys of `Space/set` ({{space-set}}).
 
 `createdAt` (UTCDate, immutable, server-set):
 : Time this Space was created.
@@ -923,7 +923,7 @@ A CustomEmoji is a server- or Space-scoped custom emoji image available for use 
 `blobId` (String):
 : blobId of the emoji image. MUST be a valid image type (e.g., PNG, GIF, WebP).
 
-`spaceId` (String, optional):
+`spaceId` (String, optional, immutable):
 : The id of the Space this emoji belongs to. If absent, the emoji is server-global and available in all chats on this server.
 
 `createdBy` (String, immutable, server-set):
