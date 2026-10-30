@@ -1007,6 +1007,15 @@ the timeline restarts, not on every segment; each update is a JMAP state
 change. Keep reactions, scene changes, and other interactive events on JMAP
 push and WebSocket; do not inject them into the media.
 
+**Captions and content protection.** If your transcription engine already
+posts live captions to the bound Chat, feed the same text to the packager as a
+caption track and list it with `kind: "captions"` and its `format`. Keep at
+least one unencrypted endpoint unless a rights holder requires otherwise: it is
+the only path that works with free players and the free-tools pipeline. If you
+encrypt, list every key system your key provider serves in `keySystems`;
+the key-provider protocol and packaging format are your choice and do not
+appear on the wire.
+
 **Ignore what you do not know.** Clients skip endpoints with an
 unrecognized `protocol` and tracks with an unrecognized `kind`. A server can
 add a new protocol without breaking old clients, as long as it keeps offering
@@ -1096,3 +1105,4 @@ made and documented each of the following decisions:
 - [ ] `"live"`/`"failed"` transitions driven by pipeline callbacks; failures set `failureReason`
 - [ ] Idle auto-stop period and per-account livestream limit configured
 - [ ] Playback restriction decided; if restricted, per-user `url`/`credential` and expiry implemented
+- [ ] Caption tracks listed with `kind` and `format`; content protection decided and `keySystems` match the key provider
