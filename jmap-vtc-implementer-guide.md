@@ -977,6 +977,19 @@ low-latency WebRTC egress and a segmented stream, list both; the client picks
 the lowest-latency one it can play. Do not encode protocol-specific tuning
 into `latencyHint`; it has three coarse values on purpose.
 
+**Slow start and failure.** A managed packager can take minutes to
+provision; WebRTC egress is usually ready in seconds. Leave the livestream in
+`"starting"` until the pipeline reports it is serving, and drive the
+`"live"` and `"failed"` transitions from pipeline callbacks rather than
+timers. If you do give up, move to `"failed"` with `failureReason:
+"timeout"`; never stop silently. Clients should show "starting" for as long as
+the server says so.
+
+**Cost control.** A forgotten hosted livestream keeps a paid pipeline
+running. Stop idle livestreams (the spec suggests "no media from the call for
+a deployment-defined period") and cap concurrent livestreams per account,
+returning `overQuota` on create.
+
 **Ignore what you do not know.** Clients skip endpoints with an
 unrecognized `protocol` and tracks with an unrecognized `kind`. A server can
 add a new protocol without breaking old clients, as long as it keeps offering
@@ -1063,3 +1076,5 @@ made and documented each of the following decisions:
 - [ ] `livestreamModes` advertised to match what creates accept
 - [ ] Hosted mode: playback protocols chosen and media pipeline documented
 - [ ] Audience reach decided (readers of the VTCLivestream only, or a wider audience)
+- [ ] `"live"`/`"failed"` transitions driven by pipeline callbacks; failures set `failureReason`
+- [ ] Idle auto-stop period and per-account livestream limit configured
