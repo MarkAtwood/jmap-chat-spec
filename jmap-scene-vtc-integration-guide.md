@@ -73,6 +73,7 @@ A session advertising both capabilities looks like this:
           "supportsScheduledCalls": false,
           "supportsRecording": false,
           "supportsLivestream": false,
+          "livestreamModes": [],
           "supportsLobby": false,
           "supportsBreakoutRooms": true,
           "supportedMediaTypes": ["audio", "video", "screen"],

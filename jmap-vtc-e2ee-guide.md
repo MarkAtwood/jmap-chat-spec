@@ -316,7 +316,7 @@ MUST surface these constraints clearly in the client UI.
 | Feature | Available with E2EE? | Why |
 |---|---|---|
 | Recording (VTCRecording) | Via key-holding recorder only | Server cannot access plaintext media; a recorder that joins as a visible participant can, announced by `VTCRecordingStateEvent` |
-| Livestreaming (VTCLivestream) | Via key-holding bridge only | Same as recording; the bridge re-encodes for RTMP |
+| Livestreaming (VTCLivestream) | Via key-holding bridge only | Same as recording; the bridge feeds the push ingest endpoint or the hosted media pipeline |
 | PSTN dial-in/out | Via key-holding gateway only | Far-end phone cannot join MLS group; the gateway joins as a visible participant |
 | SIP dial-in/out | Via key-holding gateway only | Gateway terminates SRTP at boundary |
 | H.323 dial-in/out | Via key-holding gateway only | Same as SIP |
