@@ -990,6 +990,16 @@ running. Stop idle livestreams (the spec suggests "no media from the call for
 a deployment-defined period") and cap concurrent livestreams per account,
 returning `overQuota` on create.
 
+**Per-viewer playback authorization.** If playback is restricted, mint
+`url`/`credential` per requesting user in `VTCLivestream/get`
+(§Playback Authorization). For segmented protocols served from a CDN, the
+usual shape is a signed URL or signed cookie policy whose token is folded
+into `url`, with `credential: null`. For WHEP, return a bearer token in
+`credential`. For the free-tools path with no restriction, return the plain
+URL with `credential` and `expiresAt` both `null`. Pick an expiry that covers
+a typical viewing session plus refresh margin; clients refetch before
+`expiresAt`.
+
 **Ignore what you do not know.** Clients skip endpoints with an
 unrecognized `protocol` and tracks with an unrecognized `kind`. A server can
 add a new protocol without breaking old clients, as long as it keeps offering
@@ -1078,3 +1088,4 @@ made and documented each of the following decisions:
 - [ ] Audience reach decided (readers of the VTCLivestream only, or a wider audience)
 - [ ] `"live"`/`"failed"` transitions driven by pipeline callbacks; failures set `failureReason`
 - [ ] Idle auto-stop period and per-account livestream limit configured
+- [ ] Playback restriction decided; if restricted, per-user `url`/`credential` and expiry implemented

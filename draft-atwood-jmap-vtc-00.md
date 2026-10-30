@@ -618,7 +618,13 @@ A VTCPlaybackEndpoint is a place from which a viewer's player can receive a host
 : The playback protocol. This specification defines the following short aliases: `"hls"` (HTTP Live Streaming {{RFC8216}}), `"dash"` (MPEG-DASH {{MPEG-DASH}}), `"whep"` (WebRTC-HTTP Egress Protocol {{I-D.ietf-wish-whep}}), and `"moq"` (Media over QUIC {{I-D.ietf-moq-transport}}). Other protocols SHOULD use reverse-domain notation (e.g., `"org.example.playback"`). Clients MUST ignore endpoints whose `protocol` they do not recognize.
 
 `url` (String):
-: The URL a viewer's player opens, in the form the protocol defines: for example, a playlist or manifest URL for a segmented protocol, or an endpoint URL for a session-based protocol.
+: The URL a viewer's player opens, in the form the protocol defines: for example, a playlist or manifest URL for a segmented protocol, or an endpoint URL for a session-based protocol. The URL MAY carry authorization for the requesting user ({{playback-authorization}}).
+
+`credential` (String|null):
+: An opaque playback credential minted for the requesting user, or `null` when the endpoint needs none beyond `url` ({{playback-authorization}}).
+
+`expiresAt` (UTCDate|null):
+: When `url` and `credential` stop being valid for this user, or `null` when they do not expire.
 
 `latencyHint` (String):
 : The coarse delay between the call and what viewers of this endpoint see:
@@ -632,6 +638,14 @@ A VTCPlaybackEndpoint is a place from which a viewer's player can receive a host
 : The selectable tracks this endpoint carries, such as alternative audio languages. Empty when the endpoint offers no choice, or when the server does not describe its tracks.
 
 How the deployment produces an endpoint (packaging, transcoding, origin, distribution network) is outside the scope of this document.
+
+#### Playback Authorization {#playback-authorization}
+
+A deployment that restricts playback gives each viewer a short-lived authorization rather than one static URL. The server computes `playbackEndpoints` for each requesting user: `url`, `credential`, and `expiresAt` can differ between users and between requests. Minting a new credential does not change the VTCLivestream state string. A client that is still playing fetches the livestream again before `expiresAt` to obtain a fresh `url` and `credential`. Whether expiry interrupts playback already in progress depends on the protocol and the deployment.
+
+A viewer presents `credential` to the playback endpoint. How it is presented (for example, as an HTTP bearer token, which is how {{I-D.ietf-wish-whep}} authenticates viewers) is defined by the playback protocol or the deployment and is outside the scope of this document. Where players of a protocol have no common way to present a separate credential, a server can carry the authorization in `url` itself and set `credential` to `null`. A deployment that does not restrict playback sets `credential` and `expiresAt` to `null`.
+
+The server MAY return an empty `playbackEndpoints` list to a user it does not authorize to view, even when that user may retrieve the livestream. A companion specification can make this decision depend on its own state, for example a paid access ticket that the server exchanges for a playback credential; this document defines only that endpoints and credentials are issued per user.
 
 #### VTCStreamTrack {#vtc-stream-track}
 
@@ -1278,11 +1292,11 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 ## VTCLivestream Methods
 
-### VTCLivestream/get
+### VTCLivestream/get {#vtc-livestream-get}
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-All current and past participants of the associated VTCCall may retrieve VTCLivestream objects. Non-moderators receive a push-mode `streamKey` as an empty string (see `streamKey` in {{vtc-livestream}}). `playbackEndpoints` is visible to everyone who may retrieve the livestream. Delivering playback to an audience that has no JMAP access to the call (for example, anonymous viewers of a public web page) is deployment-defined. The server SHOULD return `notFound` for livestream ids belonging to calls the authenticated user has no access to.
+All current and past participants of the associated VTCCall may retrieve VTCLivestream objects. Non-moderators receive a push-mode `streamKey` as an empty string (see `streamKey` in {{vtc-livestream}}). For a hosted-mode livestream, the server MAY also let users who are not participants of the call retrieve it, so that an audience can obtain playback endpoints; which users is deployment policy. `playbackEndpoints` and their credentials are computed for the requesting user ({{playback-authorization}}). Delivering playback to an audience that has no JMAP access to the call (for example, anonymous viewers of a public web page) is deployment-defined. The server SHOULD return `notFound` for livestream ids belonging to calls the authenticated user has no access to.
 
 ### VTCLivestream/changes
 
@@ -1779,7 +1793,7 @@ The server SHOULD NOT expose VTCParticipant records or VTCParticipant state chan
 
 A VTCCall, together with the VTCParticipant, VTCRecording, and VTCLivestream records that belong to it, lives in one JMAP account: the account in which the call was created, called the call's hosting account. A breakout room lives in the hosting account of its parent call.
 
-Other users reach these records by accessing the hosting account as a shared account ({{RFC8620}} Section 1.6.2): the account appears in the user's Session with `isPersonal` set to `false`. The server gives a user access to the hosting account when the user is a ring target of a call in it or may join a call in it. Access to the account does not by itself grant access to every call in it; the per-call rules in {{chat-bound-calls}} and {{standalone-calls}} apply to each call.
+Other users reach these records by accessing the hosting account as a shared account ({{RFC8620}} Section 1.6.2): the account appears in the user's Session with `isPersonal` set to `false`. The server gives a user access to the hosting account when the user is a ring target of a call in it, may join a call in it, or may view a hosted livestream in it ({{vtc-livestream-get}}). Access to the account does not by itself grant access to every call in it; the per-call rules in {{chat-bound-calls}} and {{standalone-calls}} apply to each call.
 
 The `accountId` of every method call on a VTC data type, of `VTCCallPush` ({{vtc-call-push}}), and of every WebSocket event ({{JMAP-VTC-WSS}}) that concerns a call is the id of that call's hosting account. A participant who answers, mutes, or leaves therefore sends `VTCParticipant/set` to the hosting account, not to their personal account. A user's calls can be spread across several hosting accounts; a client that lists them queries each account the user can access.
 
@@ -1859,6 +1873,10 @@ When `lobbyEnabled` is `true`, the server SHOULD NOT allow participants to skip 
 ## Livestream Key Exposure {#livestream-key-exposure}
 
 `streamKey` is an authentication credential for an external streaming platform, which is why non-moderators receive it as an empty string (see `streamKey` in {{vtc-livestream}}). The `streamUri` is also sensitive (it often contains account-identifying path components); the server SHOULD return `streamUri` as an empty string for non-moderator participants, as for `streamKey`.
+
+## Playback Credential Exposure {#playback-credential-exposure}
+
+A playback `credential`, and a `url` that carries authorization, let whoever holds them watch the stream. Because they are issued per user ({{playback-authorization}}), a leaked credential can be traced to the user it was issued to and revoked without affecting other viewers. The server SHOULD give them an expiry no longer than the deployment needs. Clients SHOULD NOT log them or include them in links that users share.
 
 ## Gateway Participant Identity
 
