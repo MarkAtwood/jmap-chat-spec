@@ -518,13 +518,13 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Common failure:** Rejects new keys until the cache expires, or refetches on every `kid` not among the usable keys, letting any client drive unbounded outbound fetches.
 
-### 7.16 ownerUserId host must equal peer domain
-**Spec:** draft-atwood-jmap-chat-federation-00 §Identity Binding
-**Severity:** MUST | **Round:** spec change (peer request signatures)
+### 7.16 Caller identity host must equal peer domain
+**Spec:** draft-atwood-jmap-chat-federation-00 §Identity Binding, §Server-to-Server Methods
+**Severity:** MUST | **Round:** spec change (multi-mailbox federation)
 
-**Test:** From peer domain `a.example`, publish a Session whose `ownerUserId` is `bob@b.example` and send a correctly signed `Peer/deliver` with `senderUserId: "bob@b.example"`. Verify rejection and no placeholder ChatContact. Repeat with `ownerUserId` `did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK` and no DID companion support. Verify rejection. Repeat with `ownerUserId` `alice@A.Example` from `a.example`. Verify success.
+**Test:** Let test peer `a.example` publish a Session with no `ownerUserId`. Send correctly signed `Peer/deliver` calls from `a.example` with `senderUserId` `alice@A.Example` and then `carol@a.example`, two users of one peer domain. Verify both succeed. Send one with `senderUserId: "bob@b.example"`. Verify `forbidden` and no placeholder ChatContact. Repeat with `senderUserId` `did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK` and no DID companion support. Verify `forbidden`. Have `a.example` publish `ownerUserId: "bob@b.example"` and resend the `bob@b.example` call. Verify `forbidden`: the Session does not grant an identity. Send `Peer/receipt` with `readerUserId: "bob@b.example"` and `Peer/typing` with `senderUserId: "bob@b.example"` from `a.example`. Verify `forbidden` for each.
 
-**Common failure:** Checks only `senderUserId == ownerUserId`, letting any domain claim any identity.
+**Common failure:** Compares `senderUserId` with the peer's `ownerUserId`, which rejects every user of a multi-mailbox peer but one, and lets a peer claim any identity it advertises; or checks `senderUserId` in `Peer/deliver` but not the other caller-identity fields.
 
 ### 7.17 DNSSEC key binding takes precedence
 **Spec:** draft-atwood-jmap-chat-federation-00 §DNSSEC Key Binding
@@ -538,7 +538,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
 **Severity:** MUST | **Round:** spec change (peer request signatures)
 
-**Test:** Send `GET /.well-known/jmap` with no `Signature` and no `Authorization` header. Verify 200 and that the Session contains `ownerUserId` and a non-empty `peerSigningKeys`. Then have the server under test receive a signed `Peer/deliver` from a test peer whose `/.well-known/jmap` answers 403 to any signed request. Verify the server under test fetches the peer's keys with an unsigned GET and accepts the delivery.
+**Test:** Send `GET /.well-known/jmap` with no `Signature` and no `Authorization` header. Verify 200 and that the Session contains a non-empty `peerSigningKeys`. If the server hosts a single mailbox, verify the Session contains that mailbox's `ownerUserId` (SHOULD). If it hosts more than one, verify the Session contains no `ownerUserId`, `ownerDirectAddress`, or `ownerEndpoints`. Then have the server under test receive a signed `Peer/deliver` from a test peer whose `/.well-known/jmap` answers 403 to any signed request. Verify the server under test fetches the peer's keys with an unsigned GET and accepts the delivery.
 
 **Common failure:** Requires authentication on `/.well-known/jmap` as for an ordinary RFC 8620 Session, or signs its own key fetches, so two such servers can never verify each other.
 
@@ -549,6 +549,14 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Test:** Applies to a receiver that uses the DNSSEC binding. Sign the sender's zone, publish `_jmap-peer` TXT `v=jmappeer1; kid=<K1>` with a TTL of 3600 seconds, and publish K1 in `peerSigningKeys`. Send a K1-signed request and verify success, so the receiver has cached both the keys and the DNS answer. Add K2 to `peerSigningKeys` and a `_jmap-peer` record for K2. Then, more than 60 seconds after the receiver's last fetch of the sender's keys but while the cached DNS answer is still within its 3600-second TTL, send a K2-signed request. Verify success and that the receiver issued a new `_jmap-peer` query rather than answering from its DNS cache (observe at the zone's authoritative server or in the receiver's resolver log). Within 60 seconds, add K3 to both `peerSigningKeys` and DNS and send a K3-signed request. Verify 403 and that the receiver made no further key fetch or `_jmap-peer` query in that interval. More than 60 seconds after the K2 lookup, resend the K3-signed request. Verify success.
 
 **Common failure:** Refetches the HTTPS keys but answers the `_jmap-peer` query from its DNS cache, so a key added during rotation stays unusable until the old TTL expires; or re-queries DNS on every `kid` not among the usable keys, letting any client drive unbounded lookups.
+
+### 7.20 Peer/* calls name the recipient by identity
+**Spec:** draft-atwood-jmap-chat-federation-00 §Peer Authentication Model, §Server-to-Server Methods
+**Severity:** MUST (one peer account, `recipientUserId` routing, `forbidden` for an unknown recipient), SHOULD (uniform rejection) | **Round:** spec change (multi-mailbox federation)
+
+**Test:** Provision two mailboxes on the server under test, owned by `u1@<server>` and `u2@<server>` (one mailbox if the server hosts only one; skip the `u2` steps). From a test peer, fetch the Session with a signed request. Verify `accounts` holds exactly one account, whose `urn:ietf:params:jmap:chat` capability has `role: "peer"`, and no account of either owner. Send one request holding two `Peer/deliver` method calls with that account's id as `accountId`: one with `recipientUserId: "u1@<server>"`, one with `recipientUserId: "u2@<server>"`, each a new direct message with a distinct `senderMsgId`. Verify both succeed and return that `accountId`. Authenticate as each owner and query its messages. Verify each mailbox holds only the message addressed to it. Send `Peer/deliver` with `recipientUserId: "nobody@<server>"`. Verify `forbidden` and that nothing is stored and no ChatContact is created. Send `Peer/typing` with `recipientUserId: "u1@<server>"` and a `chatId` the sender is not a member of. Verify `forbidden`, and that its error object equals the `nobody@<server>` one apart from any per-request value (SHOULD).
+
+**Common failure:** Lists one peer account per local user, so every peer can enumerate the user list; routes by `accountId` and ignores `recipientUserId`; answers an unknown recipient with `notFound`, `invalidArguments`, or a `description` such as "no such user", which tells the peer the identity has no mailbox.
 
 ---
 
@@ -744,7 +752,7 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 **Spec:** draft-atwood-jmap-chat-00 §Mention, §BroadcastMention
 **Severity:** MUST | **Round:** 11
 
-**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]` and `broadcastMentions: [{"scope": "here"}]`, where `u1` is an identity string. Query the message back. Verify `mentions` holds the `id` of the local ChatContact whose `identity` is `u1`, and that `broadcastMentions` is preserved. Repeat with the receiving server's `ownerUserId` as the mention id. Verify `mentions` holds the accountId.
+**Test:** Deliver a message via `Peer/deliver` with `mentions: [{"id": "u1"}]` and `broadcastMentions: [{"scope": "here"}]`, where `u1` is an identity string. Query the message back. Verify `mentions` holds the `id` of the local ChatContact whose `identity` is `u1`, and that `broadcastMentions` is preserved. Repeat with the recipient mailbox's `ownerUserId` as the mention id. Verify `mentions` holds that mailbox's accountId.
 
 **Common failure:** Storing `mentions` but dropping `broadcastMentions`.
 
