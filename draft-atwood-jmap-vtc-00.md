@@ -569,7 +569,16 @@ A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It 
 : `"push"` or `"hosted"`. Default: `"push"`.
 
 `state` (String):
-: `"starting"`, `"live"`, `"stopped"`, or `"failed"`.
+: `"starting"`, `"live"`, `"stopped"`, or `"failed"`. See {{livestream-states}}.
+
+`failureReason` (String|null, server-set):
+: Why the livestream failed. `null` unless `state` is `"failed"`. Values:
+  - `"timeout"`: The server stopped waiting for the livestream to go live.
+  - `"rejected"`: The ingest destination or the media pipeline refused the stream (for example, an invalid stream key or an unsupported media format).
+  - `"unavailable"`: The media pipeline could not be provisioned, for example for lack of capacity.
+  - `"interrupted"`: The stream was live and was lost.
+
+  Clients treat an unrecognized value as an unspecified failure.
 
 `platform` (String|null):
 : Push mode: target platform identifier (e.g., `"youtube"`, `"twitch"`). Deployment-defined; clients MUST ignore unrecognized values. Always `null` in hosted mode.
@@ -587,7 +596,19 @@ A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It 
 : Time the stream went live. `null` before the stream is live.
 
 `stoppedAt` (UTCDate|null, server-set):
-: Time the stream stopped. `null` while the stream is active.
+: Time the stream stopped or failed. `null` while the stream is `"starting"` or `"live"`.
+
+### Livestream States {#livestream-states}
+
+A livestream is created in `"starting"`. From there:
+
+- `"starting"` → `"live"`: server-initiated, when the stream is reaching its destination (push mode) or its playback endpoints (hosted mode).
+- `"starting"` or `"live"` → `"failed"`: server-initiated, with `failureReason` set.
+- `"starting"` or `"live"` → `"stopped"`: by a moderator ({{stopping-a-livestream}}), when the call ends ({{ending-a-call}}), or by an idle stop.
+
+This document defines no transition out of `"stopped"` or `"failed"`. It places no bound on how long a livestream stays in `"starting"`: some media pipelines take minutes to provision. A client learns the outcome from the state change, not from a timer. When a livestream ends for any reason other than those listed for `"stopped"`, the server SHOULD move it to `"failed"` rather than `"stopped"`, so that clients can tell a failure from a deliberate stop.
+
+To limit cost, the server SHOULD stop a livestream, as if a moderator had set it to `"stopped"`, once it has carried no media from the call for a deployment-defined period (for example, after every participant has left a room call that remains active). The server SHOULD limit the number of livestreams per account that are in state `"starting"` or `"live"`, rejecting a create over the limit with `overQuota` ({{RFC8620}} Section 5.3).
 
 ### VTCPlaybackEndpoint {#vtc-playback-endpoint}
 
@@ -1321,7 +1342,7 @@ Example create (hosted mode):
 }
 ~~~
 
-The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error. The `"starting"` → `"live"` and `"starting"` → `"failed"` transitions are server-initiated. In hosted mode the server sets `playbackEndpoints` as the endpoints become available.
+The server sets `id` and `state` (to `"starting"`), then moves the livestream through the states in {{livestream-states}}. In hosted mode the server sets `playbackEndpoints` as the endpoints become available.
 
 A hosted livestream as JMAP data looks like this once it is live:
 
@@ -1358,7 +1379,7 @@ A hosted livestream as JMAP data looks like this once it is live:
 
 When the call has `e2eeEnabled: true`, a livestream that would require server-side media access is rejected as {{e2ee-media-participants}} describes. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidProperties` naming `mode` when the requested mode is not listed in the account-level `livestreamModes`. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
 
-#### Stopping a Livestream
+#### Stopping a Livestream {#stopping-a-livestream}
 
 `update` with `state: "stopped"` ends the stream. The server sets `stoppedAt` to the current time.
 
