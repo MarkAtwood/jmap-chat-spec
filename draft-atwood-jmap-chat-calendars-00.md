@@ -372,6 +372,8 @@ The following design choices were left to deployments rather than prescribed:
 - **Cross-Space availability disclosure defaults.** Deployment-defined.
 - **Auto-RSVP on `.ics` parsing.** Explicitly forbidden; recipients must consent.
 
+A deployment that needs one of the behaviours left out above adds it by an extension with a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8), not by changing this document. Who may perform which operation stays deployment policy ({{calendar-binding}}).
+
 # Acknowledgements
 
 The author thanks the authors of {{JMAP-CHAT}} for the chat protocol this specification extends, the authors of {{JMAP-CALENDARS}} for the calendar protocol this specification integrates with, and the design teams of Discord, Microsoft Teams, and Slack for prior art in chat-calendar integration that informed this work.

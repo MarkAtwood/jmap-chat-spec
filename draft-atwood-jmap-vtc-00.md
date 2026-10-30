@@ -2044,6 +2044,10 @@ The following design choices were left to deployments rather than prescribed:
 - **Call queuing (contact center).** Out of scope. May be modeled as gateway-specific signal flows.
 - **Virtual backgrounds, noise suppression, layout selection.** Client-side rendering concerns with no protocol surface.
 
+Trust and policy are also left to deployments. Whether a caller is verified, which credentials admit a user to a call or a livestream, and whether a user meets an age or membership condition are answered by the deployment's own policy, which may consult an external service; this document defines no interface to such a service and carries only the outcome ({{access-control}}, {{playback-authorization}}).
+
+New data and new behaviour are added by an extension, not by changing this document. An extension has a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8). It can also use the extension points this document provides: reverse-domain identifiers for gateway, join, and playback protocols ({{vtc-gateway}}, {{vtc-participant}}, {{vtc-playback-endpoint}}), the VTCGateway `metadata` map, and opaque VTCGatewaySignal events ({{gateway-signal}}).
+
 # Complete Lifecycle Examples {#lifecycle-examples}
 
 ## Ring Call: Create, Answer, Record, End

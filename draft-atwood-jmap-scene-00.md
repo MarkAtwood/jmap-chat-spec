@@ -3059,6 +3059,10 @@ The following design choices were left to deployments rather than prescribed:
 - **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
 - **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments can follow the color representation convention defined in {{JMAP-CHAT}}, Section 2.1: W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
 
+Trust and policy are also left to deployments. Whether a user is verified, which credentials admit a user to a region, and whether a user meets an age or membership condition are answered by the deployment's own policy, which may consult an external service; this document defines no interface to such a service and carries only the outcome ({{access-control}}).
+
+New data and new behaviour are added by an extension, not by changing this document. An extension has a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8). It can also use the extension points this document provides: reverse-domain values for `viewHint`, reference frames, and interaction actions, the `worldState` map on regions, objects, and avatars, and vendor extension properties ({{scene-extension-properties}}).
+
 # Complete Lifecycle Examples {#lifecycle-examples}
 
 ## Avatar Session: Enter, Interact, Move, Leave

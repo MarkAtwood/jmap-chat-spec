@@ -339,6 +339,8 @@ The following design choices were left to deployments rather than prescribed:
 - **Federated TaskList binding.** Explicitly out of scope.
 - **Multi-Chat task threading** (one Task with multiple back-referenced Chats). Out of scope; the single `chatId` field is by design.
 
+A deployment that needs one of the behaviours left out above adds it by an extension with a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8), not by changing this document. Who may perform which operation stays deployment policy ({{tasklist-binding}}).
+
 # Acknowledgements
 
 The author thanks the authors of {{JMAP-CHAT}} for the chat protocol this specification extends, the authors of {{JMAP-TASKS}} for the task protocol this specification integrates with, and the design teams of Slack, Microsoft Teams + Planner, Linear, and Jira for prior art in chat-task integration that informed this work.
