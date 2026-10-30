@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-byyi",
+  "title": "Later: survey 3D/XR standards forums",
+  "description": "Mark 2026-10-21: look at these forums later and decide whether to participate. Candidates: Metaverse Standards Forum (coordination body, reports not specs; check membership tiers and IPR terms), OMI group (W3C Community Group writing glTF extensions; check activity and real importer support per extension, e.g. Godot), Khronos glTF ecosystem (KHR extensions; issues, no membership needed), AOUSD (OpenUSD), W3C Immersive Web WG (WebXR), VRM Consortium (avatars). For each: what it produces, who implements it, relevance to JMAP Scene, cost in time, and IPR terms. Related: jmap-chat-spec-9k91 (Scene citations).",
+  "status": "open",
+  "priority": 4,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T23:15:56.390675699Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T23:15:56.390675699Z"
+}

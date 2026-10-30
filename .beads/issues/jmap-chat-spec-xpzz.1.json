@@ -1,0 +1,22 @@
+{
+  "id": "jmap-chat-spec-xpzz.1",
+  "title": "vtc-00: hosted livestream playback endpoints",
+  "description": "Decide (Mark): extend VTCLivestream with a mode (outbound push vs hosted) or add a separate type. Hosted mode carries server-set playbackEndpoints: [{protocol, url, latencyHint, ...}] where protocol is an open string set (e.g. hls, dash, whep, moq; servers MAY add others; clients ignore unknown ones) and latencyHint is coarse and protocol-neutral (e.g. interactive / low / standard, no second counts tied to one protocol). Optional track lists (audio languages, captions) described generically. No vendor names.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T21:34:10.063660079Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T21:46:44.388290234Z",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-xpzz.1",
+      "depends_on_id": "jmap-chat-spec-xpzz",
+      "type": "parent-child",
+      "created_at": "2026-10-21T21:34:10.963047492Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
