@@ -941,6 +941,65 @@ automatic end events with the `endReason` for operator observability.
 
 ---
 
+## 9. Livestreaming
+
+### What the spec leaves open
+
+The spec defines VTCLivestream with two modes (§VTCLivestream). Push mode
+sends the call to an ingest endpoint the moderator supplies. Hosted mode
+serves the audience from the deployment and advertises the result as
+`playbackEndpoints` (§VTCPlaybackEndpoint): a protocol name from an open set,
+a URL, a coarse `latencyHint`, and a generic track list. The spec does not say
+how the call's media becomes those endpoints, which protocols to offer, or
+how viewers outside the call find the stream.
+
+### What you must decide
+
+- **Modes**: which of `"push"` and `"hosted"` you accept; advertise them in
+  `livestreamModes`.
+- **Playback protocols**: which `protocol` values you offer. Offer at least
+  one protocol your own clients can play.
+- **Media pipeline**: what turns the call into playback (an SFU egress, a
+  transcoder and packager, an origin, a content delivery network).
+- **Audience reach**: whether viewers are only users who can read the
+  VTCLivestream, or also an audience with no JMAP access, which you serve
+  from your own web page.
+
+### Considerations
+
+**Calls stay on the call media stack.** A hosted livestream is a second,
+one-to-many path fed from the call; it does not change how participants
+connect. Feed it the same way a recorder is fed. In an E2EE call that means a
+disclosed key-holding livestream bridge (section 4).
+
+**One endpoint per protocol and latency class.** If you produce both a
+low-latency WebRTC egress and a segmented stream, list both; the client picks
+the lowest-latency one it can play. Do not encode protocol-specific tuning
+into `latencyHint`; it has three coarse values on purpose.
+
+**Ignore what you do not know.** Clients skip endpoints with an
+unrecognized `protocol` and tracks with an unrecognized `kind`. A server can
+add a new protocol without breaking old clients, as long as it keeps offering
+one they know.
+
+### Common patterns
+
+| Pattern | Pipeline | Endpoints | Typical `latencyHint` |
+|---|---|---|---|
+| Managed cloud packager | SFU egress to a cloud transcoder and packager, served from a CDN | `hls`, `dash` | `"standard"` or `"low"` |
+| WebRTC egress | SFU forwards to viewers over WHEP, possibly through a cascade of SFUs | `whep` | `"interactive"` |
+| Free tools | SFU egress (or a recorder participant) piped into ffmpeg writing HLS segments to a directory, served by a static web server | `hls` | `"standard"` |
+| Media over QUIC | SFU egress publishing to a MoQ relay | `moq` | `"interactive"` or `"low"` |
+
+### Recommended starting point
+
+Start with the free-tools path: one `hls` endpoint written by ffmpeg to a
+static origin, `latencyHint: "standard"`. It needs no paid service and plays
+in most browsers and media players. Add a `whep` endpoint from your SFU when
+viewers need to interact with the call in real time.
+
+---
+
 ## Appendix: Decision checklist
 
 Before deploying JMAP VTC to production, verify that your implementation has
@@ -999,3 +1058,8 @@ made and documented each of the following decisions:
 - [ ] `StateChange` notifications delivered on server-initiated end transitions
 - [ ] Breakout room cascade end-ordering implemented
 - [ ] Per-account `maxConcurrentCalls` limit enforced
+
+**Livestreaming (section 9)**
+- [ ] `livestreamModes` advertised to match what creates accept
+- [ ] Hosted mode: playback protocols chosen and media pipeline documented
+- [ ] Audience reach decided (readers of the VTCLivestream only, or a wider audience)

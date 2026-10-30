@@ -36,8 +36,18 @@ informative:
   RFC3261:
   RFC3515:
   RFC4733:
+  RFC5646:
+  RFC8216:
   RFC8291:
   RFC8825:
+  I-D.ietf-wish-whep:
+  I-D.ietf-moq-transport:
+  MPEG-DASH:
+    title: "Information technology -- Dynamic adaptive streaming over HTTP (DASH) -- Part 1: Media presentation description and segment formats"
+    author:
+      org: ISO/IEC
+    seriesinfo:
+      ISO/IEC: 23009-1
   JMAP-CHAT:
     title: "JMAP for Chat"
     author:
@@ -212,6 +222,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 
 `supportsLivestream` (Boolean):
 : `true` if the server supports livestream metadata via VTCLivestream.
+
+`livestreamModes` (String[]):
+: The VTCLivestream modes the server accepts: one or both of `"push"` and `"hosted"` ({{vtc-livestream}}). Empty when `supportsLivestream` is `false`.
 
 `supportsLobby` (Boolean):
 : `true` if the server supports lobby/waiting-room mode on calls.
@@ -541,7 +554,10 @@ A VTCRecording tracks the metadata of a recording session within a VTCCall. It i
 
 ## VTCLivestream {#vtc-livestream}
 
-A VTCLivestream tracks the metadata of an outbound livestream from a VTCCall to an external platform. It is a top-level JMAP data type.
+A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It is a top-level JMAP data type. A livestream has one of two modes:
+
+- **Push:** the deployment sends the call's media to an ingest endpoint that the moderator supplies, typically on an external platform that serves the audience.
+- **Hosted:** the deployment serves the audience itself. The call stays on its own media stack; the deployment's media pipeline turns it into one or more playback endpoints ({{vtc-playback-endpoint}}), which the server advertises on the VTCLivestream.
 
 `id` (String, immutable, server-set):
 : Opaque server-assigned identifier.
@@ -549,23 +565,65 @@ A VTCLivestream tracks the metadata of an outbound livestream from a VTCCall to 
 `callId` (String, immutable):
 : The VTCCall this livestream belongs to.
 
+`mode` (String, immutable):
+: `"push"` or `"hosted"`. Default: `"push"`.
+
 `state` (String):
 : `"starting"`, `"live"`, `"stopped"`, or `"failed"`.
 
 `platform` (String|null):
-: Target platform identifier (e.g., `"youtube"`, `"twitch"`). Deployment-defined; clients MUST ignore unrecognized values.
+: Push mode: target platform identifier (e.g., `"youtube"`, `"twitch"`). Deployment-defined; clients MUST ignore unrecognized values. Always `null` in hosted mode.
 
-`streamUri` (String):
-: The RTMP or equivalent ingest endpoint. Treated as sensitive; see {{livestream-key-exposure}}.
+`streamUri` (String|null):
+: Push mode: the RTMP or equivalent ingest endpoint. Treated as sensitive; see {{livestream-key-exposure}}. Always `null` in hosted mode.
 
-`streamKey` (String):
-: The stream key or authentication credential for the ingest endpoint. This field is write-only for non-moderators: the server SHOULD return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}.
+`streamKey` (String|null):
+: Push mode: the stream key or authentication credential for the ingest endpoint. This field is write-only for non-moderators: the server SHOULD return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}. Always `null` in hosted mode.
+
+`playbackEndpoints` (VTCPlaybackEndpoint[], server-set):
+: Hosted mode: the endpoints from which viewers can play the stream ({{vtc-playback-endpoint}}). The server chooses which protocols to offer. The list MAY be empty while the livestream is `"starting"`, and is empty once it is `"stopped"` or `"failed"`. Always empty in push mode.
 
 `startedAt` (UTCDate|null, server-set):
 : Time the stream went live. `null` before the stream is live.
 
 `stoppedAt` (UTCDate|null, server-set):
 : Time the stream stopped. `null` while the stream is active.
+
+### VTCPlaybackEndpoint {#vtc-playback-endpoint}
+
+A VTCPlaybackEndpoint is a place from which a viewer's player can receive a hosted livestream. Each endpoint uses one playback protocol. A deployment offers several endpoints for one livestream when it serves the same broadcast over several protocols, for example a low-latency endpoint for viewers who react in real time and a segmented endpoint for a large audience.
+
+`protocol` (String):
+: The playback protocol. This specification defines the following short aliases: `"hls"` (HTTP Live Streaming {{RFC8216}}), `"dash"` (MPEG-DASH {{MPEG-DASH}}), `"whep"` (WebRTC-HTTP Egress Protocol {{I-D.ietf-wish-whep}}), and `"moq"` (Media over QUIC {{I-D.ietf-moq-transport}}). Other protocols SHOULD use reverse-domain notation (e.g., `"org.example.playback"`). Clients MUST ignore endpoints whose `protocol` they do not recognize.
+
+`url` (String):
+: The URL a viewer's player opens, in the form the protocol defines: for example, a playlist or manifest URL for a segmented protocol, or an endpoint URL for a session-based protocol.
+
+`latencyHint` (String):
+: The coarse delay between the call and what viewers of this endpoint see:
+  - `"interactive"`: close enough to the call that a viewer can take part in conversation with its participants.
+  - `"low"`: behind the call, but close enough for live audience reactions.
+  - `"standard"`: delay is traded for scale, reach, or robustness.
+
+  Clients treat an unrecognized value as `"standard"`.
+
+`tracks` (VTCStreamTrack[]):
+: The selectable tracks this endpoint carries, such as alternative audio languages. Empty when the endpoint offers no choice, or when the server does not describe its tracks.
+
+How the deployment produces an endpoint (packaging, transcoding, origin, distribution network) is outside the scope of this document.
+
+#### VTCStreamTrack {#vtc-stream-track}
+
+A VTCStreamTrack describes one selectable track of a playback endpoint, independent of how the protocol signals it.
+
+`kind` (String):
+: `"audio"` or `"video"`. Clients MUST ignore tracks whose `kind` they do not recognize.
+
+`language` (String|null):
+: The track's language as a language tag {{RFC5646}}, or `null` when not applicable.
+
+`label` (String|null):
+: Human-readable label for a track picker (e.g., `"English"`, `"Director's commentary"`).
 
 # Methods
 
@@ -1203,7 +1261,7 @@ Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-All current and past participants of the associated VTCCall may retrieve VTCLivestream objects. Non-moderators receive `streamKey` as an empty string (see `streamKey` in {{vtc-livestream}}). The server SHOULD return `notFound` for livestream ids belonging to calls the authenticated user has no access to.
+All current and past participants of the associated VTCCall may retrieve VTCLivestream objects. Non-moderators receive a push-mode `streamKey` as an empty string (see `streamKey` in {{vtc-livestream}}). `playbackEndpoints` is visible to everyone who may retrieve the livestream. Delivering playback to an audience that has no JMAP access to the call (for example, anonymous viewers of a public web page) is deployment-defined. The server SHOULD return `notFound` for livestream ids belonging to calls the authenticated user has no access to.
 
 ### VTCLivestream/changes
 
@@ -1222,13 +1280,18 @@ Only participants with `role: "moderator"` on the associated VTCCall MAY create,
 `callId` (String, required):
 : The VTCCall to stream. The call MUST be in state `"active"`.
 
-`streamUri` (String, required):
+`mode` (String, optional):
+: `"push"` (default) or `"hosted"`.
+
+`streamUri` (String, required in push mode):
 : The RTMP or equivalent ingest endpoint.
 
-`streamKey` (String, required):
+`streamKey` (String, required in push mode):
 : The stream key or authentication credential for the ingest endpoint.
 
-Optional: `platform` (String) — a label identifying the target platform (e.g., `"youtube"`, `"twitch"`).
+Optional in push mode: `platform` (String) — a label identifying the target platform (e.g., `"youtube"`, `"twitch"`).
+
+In hosted mode the client supplies only `callId` and `mode`. The server MUST return `invalidProperties` naming each of `streamUri`, `streamKey`, and `platform` that a hosted-mode create sets to a non-null value.
 
 Example create:
 
@@ -1245,9 +1308,55 @@ Example create:
 }
 ~~~
 
-The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error. The `"starting"` → `"live"` and `"starting"` → `"failed"` transitions are server-initiated.
+Example create (hosted mode):
 
-When the call has `e2eeEnabled: true`, a livestream that would require server-side media access is rejected as {{e2ee-media-participants}} describes. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
+~~~json
+{
+  "create": {
+    "s1": {
+      "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+      "mode": "hosted"
+    }
+  }
+}
+~~~
+
+The server sets `id` and `state` (to `"starting"`), then transitions to `"live"` when the stream is active, or `"failed"` on error. The `"starting"` → `"live"` and `"starting"` → `"failed"` transitions are server-initiated. In hosted mode the server sets `playbackEndpoints` as the endpoints become available.
+
+A hosted livestream as JMAP data looks like this once it is live:
+
+~~~json
+{
+  "id": "01J4XQ7VN0SYWV2TTFHJVW7JK0",
+  "callId": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "mode": "hosted",
+  "state": "live",
+  "platform": null,
+  "streamUri": null,
+  "streamKey": null,
+  "playbackEndpoints": [
+    {
+      "protocol": "whep",
+      "url": "https://media.example.com/whep/01J4XQ7V",
+      "latencyHint": "interactive",
+      "tracks": []
+    },
+    {
+      "protocol": "hls",
+      "url": "https://cdn.example.com/live/01J4XQ7V/index.m3u8",
+      "latencyHint": "standard",
+      "tracks": [
+        { "kind": "audio", "language": "en", "label": "English" },
+        { "kind": "audio", "language": "es", "label": "Espanol" }
+      ]
+    }
+  ],
+  "startedAt": "2026-10-21T17:02:11Z",
+  "stoppedAt": null
+}
+~~~
+
+When the call has `e2eeEnabled: true`, a livestream that would require server-side media access is rejected as {{e2ee-media-participants}} describes. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidProperties` naming `mode` when the requested mode is not listed in the account-level `livestreamModes`. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
 
 #### Stopping a Livestream
 
@@ -1263,11 +1372,11 @@ When the call has `e2eeEnabled: true`, a livestream that would require server-si
 }
 ~~~
 
-The server MUST return `invalidProperties` naming `state` if the livestream is not in state `"starting"` or `"live"`. Once stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream (see {{updating-stream-configuration}}) or by creating a new VTCLivestream object.
+The server MUST return `invalidProperties` naming `state` if the livestream is not in state `"starting"` or `"live"`. Once a push-mode livestream is stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream (see {{updating-stream-configuration}}) or by creating a new VTCLivestream object.
 
 #### Updating Stream Configuration {#updating-stream-configuration}
 
-`update` supports patching `streamUri`, `streamKey`, or `platform` only while the livestream is in state `"stopped"` or `"failed"`. The server MUST return `invalidProperties` naming each patched configuration property for configuration updates while the stream is in state `"starting"` or `"live"`.
+`update` supports patching `streamUri`, `streamKey`, or `platform` of a push-mode livestream only while it is in state `"stopped"` or `"failed"`. A hosted-mode livestream has no client-settable configuration; the server MUST return `invalidProperties` naming each of these properties when an update to a hosted-mode livestream sets one. The server MUST return `invalidProperties` naming each patched configuration property for configuration updates while the stream is in state `"starting"` or `"live"`.
 
 #### Destroying a Livestream
 
@@ -1824,7 +1933,8 @@ The following design choices were left to deployments rather than prescribed:
 - **WebRTC signaling.** SDP offer/answer and ICE candidate exchange are the media stack's responsibility. A future companion specification may define JMAP-based signaling relay, but this document does not.
 - **STUN/TURN server deployment.** NAT traversal infrastructure is deployment-defined.
 - **Recording storage backend.** Where and how recording blobs are stored. The spec only models the metadata and the resulting `blobId`.
-- **Livestream ingest protocol.** RTMP is assumed but not prescribed; deployments may use SRT, HLS ingest, or any other protocol.
+- **Livestream ingest protocol.** RTMP is assumed for push mode but not prescribed; deployments may use SRT, HLS ingest, or any other protocol.
+- **Livestream media pipeline.** In hosted mode, how the call's media becomes playback endpoints (an SFU egress, a transcoder and packager, an origin server, a content delivery network) is deployment-defined. The spec models only the resulting endpoints ({{vtc-playback-endpoint}}), so the JMAP server remains a state database, not a media server.
 - **Transcription engine.** Live captions and transcription are delivered as chat messages via {{JMAP-CHAT}}, not as VTC-native types. The transcription engine (Whisper, Vosk, cloud ASR, or other) is entirely deployment-defined.
 - **Gateway carrier interconnection.** How PSTN, SIP, or H.323 gateways connect to their respective networks is deployment infrastructure.
 - **Protocol-specific signaling.** Call transfer (SIP REFER), DTMF relay, hold/resume, codec renegotiation, H.245 commands, and any future verb added by an external specification are carried as opaque VTCGatewaySignal events (see {{gateway-signal}}). JMAP VTC does not define or constrain protocol-specific signals; it provides the pass-through mechanism.
