@@ -749,7 +749,7 @@ Method name: `Peer/subscribePresence`
 
 ### Behavior
 
-A subscription is identified by its `subscriberId` and `recipientUserId`. On success, the remote server MAY push subsequent `Peer/presence` calls to the subscriber whenever the subscribed user's presence, `statusText`, or `statusEmoji` changes; each carries the subscribed user's identity in `identity` and the `subscriberId` in `recipientUserId`. Servers SHOULD rate-limit outbound `Peer/presence` calls per subscriber; the specific rate is implementation-defined. Servers MAY drop presence push deliveries that fail; presence delivery is best-effort.
+A subscription is identified by its `subscriberId` and `recipientUserId`. Which subscriptions a server accepts is implementation-defined; a server that refuses one rejects the call with `forbidden`. On success, the remote server MAY push subsequent `Peer/presence` calls to the subscriber whenever the subscribed user's presence, `statusText`, or `statusEmoji` changes; each carries the subscribed user's identity in `identity` and the `subscriberId` in `recipientUserId`. Servers SHOULD rate-limit outbound `Peer/presence` calls per subscriber; the specific rate is implementation-defined. Servers MAY drop presence push deliveries that fail; presence delivery is best-effort.
 
 Calling `Peer/subscribePresence` again before the TTL expires renews the subscription and SHOULD reset the TTL to the newly granted value.
 
