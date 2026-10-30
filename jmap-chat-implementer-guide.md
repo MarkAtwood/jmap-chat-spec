@@ -741,7 +741,8 @@ rather than failed mentions (less UX friction).
 
 Resolution SHOULD try local `ChatContact` lookup first (`ChatContact/query`
 with an `identity` filter on the resolved candidate identity). On miss, the implementation SHOULD probe
-`/.well-known/jmap` at the host to discover the peer's `ownerUserId` and
+`/.well-known/jmap` at the host to confirm it runs a JMAP Chat peer (and,
+for a host with a single mailbox, read its `ownerUserId`) and
 validate the resolution. Successful resolutions SHOULD be cached for the
 session.
 

@@ -86,10 +86,10 @@ peer-role session or invokes a Peer/* method to carry an RFC 9421
 HTTP Message Signature with Ed25519. It defines the covered
 components, the `created`/`expires`/`nonce` replay window, the
 `peerSigningKeys` Session field and key discovery, the 403 rejection,
-and the binding of the peer's `ownerUserId` to the authenticated peer
-domain. Peers need no out-of-band agreement on any of it.
+and the binding of each caller identity (such as `senderUserId`) to
+the authenticated peer domain. Peers need no out-of-band agreement on any of it.
 
-The DID draft (§Federation Authentication) adds one rule for a peer
+The DID draft (§Federation Authentication) adds one rule for a caller
 identity that is a DID without a host (`did:key`, `did:plc`,
 `did:webvh`, or any method other than `did:web`): after the
 signature verifies, the receiving server resolves the DID, and the
@@ -99,14 +99,14 @@ it does not, the request is rejected. A `did:web` identity is bound
 by the domain it encodes under the federation draft, and the DID
 check is optional for it.
 
-What remains open is which DID form a server uses as its
-`ownerUserId`, how the server's signing key gets into that DID
+What remains open is which DID form a mailbox owner's
+`ownerUserId` takes, how the server's signing key gets into that DID
 Document and stays in step with key rotation, whether to run the DID
 check on `did:web` peers, and local diagnostics.
 
 ### What you must decide
 
-- Whether the server's `ownerUserId` is a DID at all, and if so,
+- Whether a mailbox owner's `ownerUserId` is a DID at all, and if so,
   which method.
 - How the server's peer signing key enters the DID Document's
   `authentication` relationship, and how a rotation of that key
@@ -304,7 +304,7 @@ For each supported method:
 ### What the spec leaves open
 
 The DID draft prescribes one DID Document convention: for a
-host-less DID peer identity, the `authentication` verification
+host-less DID identity, the `authentication` verification
 relationship contains the Ed25519 key that signs the server's
 federation requests (§Federation Authentication). Beyond that
 ("Explicit non-prescriptions"), which verification
@@ -336,7 +336,7 @@ source of truth on DID Document structure.
 - *The `authentication` verification relationship* is the natural fit
   for keys used to authenticate JMAP Chat federation requests, and the
   DID draft requires the server's peer signing key there for a
-  host-less DID peer identity (§1).
+  host-less DID identity (§1).
 - *The `keyAgreement` verification relationship* is the natural fit
   for X25519 keys used in MLS KeyPackage init keys or HPKE-style
   payload encryption. JMAP Chat itself does not currently require
@@ -395,7 +395,7 @@ source of truth on DID Document structure.
 
 ### Recommended starting point
 
-For a host-less DID used as a server's `ownerUserId`, list the
+For a host-less DID used as a mailbox owner's `ownerUserId`, list the
 server's current peer signing keys (Ed25519) in `authentication`
 (§1).
 

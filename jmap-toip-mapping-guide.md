@@ -62,7 +62,7 @@ and this guide uses only the current names.
 | TAS layer | Closest JMAP corpus features | Where defined |
 |---|---|---|
 | 1 Trust Support | DID methods: `did:web`, `did:key`, and `did:plc` are mandatory to implement for `urn:ietf:params:jmap:chat:did`; `did:webvh` is recommended. Base JMAP DID mandates no method and advertises `supportedMethods`. Resolver behavior: caching, forced re-resolution on key mismatch, failure handling. Key custody disclosure via `keyCustody`. | `draft-atwood-jmap-chat-did-00` §Mandatory DID Methods, §DID Resolution; `draft-atwood-jmap-did-00` §Capability, §Resolving `did:webvh` |
-| 2 Trust Spanning (parallel, not TSP) | Peer signing keys published as Ed25519 JWKs in the Session object's `peerSigningKeys`; RFC 9421 request signatures tagged `jmap-chat-peer`; DNSSEC key binding, recommended where DNSSEC is available; optional mTLS with DANE; identity binding of `ownerUserId` to the authenticated peer domain; DID-bound verification for host-less DIDs. | `draft-atwood-jmap-chat-federation-00` §Peer Authentication Model; `draft-atwood-jmap-chat-did-00` §DID-Bound Verification |
+| 2 Trust Spanning (parallel, not TSP) | Peer signing keys published as Ed25519 JWKs in the Session object's `peerSigningKeys`; RFC 9421 request signatures tagged `jmap-chat-peer`; DNSSEC key binding, recommended where DNSSEC is available; optional mTLS with DANE; identity binding of each caller identity to the authenticated peer domain; DID-bound verification for host-less DIDs. | `draft-atwood-jmap-chat-federation-00` §Peer Authentication Model; `draft-atwood-jmap-chat-did-00` §DID-Bound Verification |
 | 3 Trust Tasks | MLS-based end-to-end encryption through the MIMI capability and the E2EE relay topology; blocking (`ChatContact.blocked`); bans (`SpaceBan`); membership and permission checks in `Peer/deliver`. | `draft-atwood-jmap-chat-mimi-00`; `draft-atwood-jmap-chat-00` §End-to-End Encrypted Deployments, §SpaceBan, §Blocked Contacts; `draft-atwood-jmap-chat-federation-00` §New Message Validation |
 | 4 Trust Applications | JMAP Chat, JMAP Scene, JMAP VTC, JMAP Graph. | `draft-atwood-jmap-chat-00`, `draft-atwood-jmap-scene-00`, `draft-atwood-jmap-vtc-00`, `draft-atwood-jmap-graph-00` |
 
@@ -76,7 +76,7 @@ TSP.
 
 | Property | TSP | JMAP Chat federation |
 |---|---|---|
-| Endpoint identity | Verifiable Identifier (VID): a DID or URN with a verifiable trust root | A peer domain. The Session's `ownerUserId` is bound to it by host, or by DID-bound verification when host-less |
+| Endpoint identity | Verifiable Identifier (VID): a DID or URN with a verifiable trust root | A peer domain, which speaks for every user identity bound to it by host, or by DID-bound verification when host-less |
 | Unit of exchange | Message: envelope (protocol tag, version, sender VID, receiver VID), payload, signature, encoded in CESR | HTTP request to a JMAP endpoint, signed per RFC 9421 over `@method`, `@target-uri`, and `content-digest` |
 | Transport | Any transport | HTTPS only |
 | Topology | Direct Mode, or Routed Mode through intermediaries with nested messages | Point-to-point between mailbox servers; no intermediaries |
@@ -224,10 +224,10 @@ each act as their own governance authority. Each appoints one liaison,
 and each liaison runs their own mailbox, one peer domain with one
 `ownerUserId`: `liaison.ietf.example`, `liaison.asf.example`, and
 `liaison.w3c.example`. They want a shared liaison channel. A multi-user
-organization server would be a relay deployment, and the federation
-draft's Peer/* model covers neither relay-to-relay exchange nor
-multi-user peers (`draft-atwood-jmap-chat-federation-00` §Deployment
-Context).
+organization server would federate the same way, since a peer domain
+speaks for every identity whose host it is
+(`draft-atwood-jmap-chat-federation-00` §Identity Binding); the
+scenario keeps one mailbox per body for simplicity.
 
 **Who governs what.**
 
@@ -253,21 +253,22 @@ publish the DNSSEC key binding wherever its zone is DNSSEC-signed.
    `peerSigningKeys` (§Request Signing). `liaison.ietf.example` verifies the
    signature, time window, nonce, and content digest. The verified domain
    becomes the authenticated peer domain.
-2. `liaison.ietf.example` checks that the peer's `ownerUserId` binds to
-   `liaison.asf.example` (§Identity Binding). If that identity were a host-less
+2. `liaison.ietf.example` checks that the caller-supplied sender,
+   `senderUserId`, binds to `liaison.asf.example` (§Identity Binding): its
+   host must be that domain. If that identity were a host-less
    DID, it would instead require DID-bound verification: the DID
    Document's `authentication` relationship has to contain the signing key
    (`draft-atwood-jmap-chat-did-00` §DID-Bound Verification).
-3. `liaison.ietf.example` compares the caller-supplied sender against the bound
-   peer identity. It then checks current membership, any active
+3. `liaison.ietf.example` resolves `recipientUserId` to the liaison
+   mailbox it hosts. It then checks current membership, any active
    `SpaceBan`, the channel `send` permission, and slow mode
    (§New Message Validation). If any check fails, nothing is stored.
 
 **What each party is trusting.**
 
 - **IETF trusts ASF** to have bound its liaison's mailbox to the right
-  person. The protocol shows that the sender is the authenticated peer
-  domain's bound `ownerUserId`, by host match or DID-bound verification,
+  person. The protocol shows that the sender identity is bound to the
+  authenticated peer domain, by host match or DID-bound verification,
   not who the human is.
 - **ASF and W3C trust IETF** to apply the agreed role and ban policy. A
   receiving server generally cannot re-check the sender's permission

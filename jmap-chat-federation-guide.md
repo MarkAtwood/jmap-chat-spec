@@ -119,11 +119,20 @@ publish the DNSSEC binding, and whether they add mutual TLS with DANE.
   plus 60-second skew). A shared store (Redis or the database) is
   needed when several receiver instances serve one domain; otherwise a
   replay can land on a different instance.
-- *Identity forms*: your `ownerUserId` must carry your peer domain as
-  its host (`alice@alice.example`, `did:web:alice.example`, a URI on
-  that host). A host-less form such as `did:key` is accepted only via
-  the DID companion's verification; plan for that before choosing
-  one.
+- *Identity forms*: every identity your server sends for (each
+  mailbox owner's `ownerUserId`) must carry your peer domain as its host
+  (`alice@alice.example`, `did:web:alice.example`, a URI on that host).
+  Your domain then speaks for all of them, whether you host one mailbox
+  or many. A host-less form such as `did:key` is accepted only via the
+  DID companion's verification; plan for that before choosing one.
+- *Several mailboxes on one domain*: each `Peer/*` call names its
+  mailbox in `recipientUserId`; the peer-role session has one account
+  however many users you host, and your unsigned `/.well-known/jmap`
+  omits `ownerUserId`. To deliver one group message to several members
+  hosted by the same peer, put one call per member in a single JMAP
+  request. Answer a call naming an unknown identity with the same
+  `forbidden` you give any other refused call, with no telling
+  `description`.
 
 ### Common patterns
 
@@ -368,9 +377,9 @@ each other's capabilities (which `Peer/*` methods, which extensions).
 
 - The first-contact workflow: out-of-band agreement, exchange of
   credentials, discovery probe, first test message.
-- Identity binding verification: confirming that the peer's authenticated
-  identity equals their advertised `ownerUserId` before opening the
-  federation gate.
+- Identity binding verification: confirming that the identities the
+  peer sends for have the peer's domain as their host (or pass DID-bound
+  verification) before opening the federation gate.
 - Capability negotiation: cataloging which `Peer/*` methods and which
   capability extensions the peer supports (versus what your deployment
   expects).
@@ -392,11 +401,11 @@ each other's capabilities (which `Peer/*` methods, which extensions).
   reachable and well-formed. This SHOULD happen before declaring
   federation active.
 - *Identity binding verification* is the federation draft's
-  §Peer Authentication correspondence check, applied at first contact:
-  verify the peer's signature, fetch their `/.well-known/jmap`, confirm
-  the discovered `ownerUserId` is bound to the peer domain. If this
-  check fails at onboarding time, the federation cannot proceed; the
-  peer's configuration is broken.
+  §Identity Binding check, applied at first contact: verify the peer's
+  signature, and confirm that the identities in its test calls have the
+  peer domain as their host (or, for a host-less DID, pass DID-bound
+  verification). If this check fails at onboarding time, the federation
+  cannot proceed; the peer's configuration is broken.
 - *Capability negotiation* is reading the peer's Session object and
   understanding which capabilities they advertise. JMAP capabilities are
   self-describing; the peer either advertises
@@ -410,7 +419,8 @@ each other's capabilities (which `Peer/*` methods, which extensions).
   operational practice, not protocol.
 - *Documentation*: peer operators should publish at minimum: their
   whether they publish the DNSSEC key binding; the format of their
-  `ownerUserId` (regex or example); their `serverUrl` and discovery
+  users' identity strings (regex or example); whether they host one
+  mailbox or many; their `serverUrl` and discovery
   endpoint; which `urn:ietf:params:jmap:chat:*` companion capabilities
   they implement; their rate-limit policies; their abuse-report contact.
 
@@ -441,24 +451,25 @@ the operator handbook.
    `peerSigningKeys` thumbprints out of band.
 3. **Discovery probe** from each side: each operator fetches the
    other's `/.well-known/jmap` and validates that it returns a
-   well-formed Session object with the expected `ownerUserId`.
+   well-formed Session object with `peerSigningKeys` (and, for a peer
+   that hosts a single mailbox, the expected `ownerUserId`).
 4. **Identity binding verification**: the federation draft's
-   correspondence check applied at first contact. A failure here
+   §Identity Binding check applied at first contact. A failure here
    indicates a configuration error; federation cannot proceed.
 5. **Health-check exchange**: a designated test account exchanges a
    small batch of messages, reactions, and typing events to validate
    the full `Peer/*` surface area before federation is declared
    active for end-user traffic.
 
-Record each onboarded peer in a federation registry (peer identity, the
-authenticated `ownerUserId`, the key thumbprints seen, the
+Record each onboarded peer in a federation registry (the peer domain,
+the key thumbprints seen, the
 contact for abuse reports, the onboarding date, the last successful
 discovery refresh). This registry is the source of truth for the
 operator's view of who they federate with.
 
 Open-federation deployments (denylist mode) may skip the explicit
 onboarding procedure for routine peers, but SHOULD apply the same
-correspondence check at first contact and SHOULD record the peer in
+identity binding check at first contact and SHOULD record the peer in
 the federation registry for observability.
 
 ---
@@ -505,9 +516,9 @@ to coordinate abuse signals across multiple local accounts and Spaces.
   rate, total blocked-message rate (messages dropped under
   federation draft, §Blocked Contacts), identity-binding failure rate, malformed-payload
   rate.
-- *Identity-binding failures* are a strong signal: a peer whose
-  advertised `ownerUserId` does not bind to its verified peer domain
-  is either misconfigured or attempting forgery. A burst of these
+- *Identity-binding failures* are a strong signal: a peer that sends
+  a caller identity whose host is not its verified peer domain is either
+  misconfigured or attempting forgery. A burst of these
   failures from one peer should escalate immediately.
 - *Placeholder ChatContact growth*: every unknown identity a peer
   names (a sender, a group member, a mention) creates a placeholder
@@ -697,7 +708,7 @@ For most deployments:
   Space ban) versus escalate to peer operator.
 - **Peer-operator notification format**: when escalating to the peer
   operator, send an email or web-form submission with: the offending
-  user identity (their `ownerUserId`), the offending behavior summary,
+  user's identity string, the offending behavior summary,
   evidence (message ids, timestamps), and the local action taken. The
   peer operator decides whether to act on their end.
 - **Defederation as last resort** (§5 covers details). Defederation
@@ -771,7 +782,7 @@ all require visibility into the federation surface.
   the JMAP Chat federation protocol; if used, do so via standard HTTP
   trace propagation headers and ensure that trace data does not include
   message bodies or sensitive metadata.
-- *Privacy hygiene*: log peer identity (the `ownerUserId`) and Chat /
+- *Privacy hygiene*: log the peer domain, the caller identity, and Chat /
   Space / Message ids; do NOT log message bodies, attachment contents,
   or `ChatContact` profile data routinely. Behind a debug flag, payload
   inclusion is acceptable for short-term incident response.
@@ -792,7 +803,7 @@ all require visibility into the federation surface.
 ### Recommended starting point
 
 - **Log every `Peer/*` call** at metadata level: timestamp, method,
-  peer `ownerUserId`, target accountId, chatId (if applicable), success
+  peer domain, caller identity, `recipientUserId`, chatId (if applicable), success
   or failure, response code, latency. NOT message body, NOT attachment
   content.
 - **Metrics**: expose per-peer counters and histograms via the
