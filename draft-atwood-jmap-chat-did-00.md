@@ -127,7 +127,7 @@ This document does not redefine ChatContact, does not introduce new JMAP methods
 - A new JMAP capability `urn:ietf:params:jmap:chat:did` and its session-level and account-level capability objects.
 - A non-foreclosing list of mandatory-to-implement DID methods.
 - An optional `did` field on the ChatContact data type for the pseudonymous case (an `identity` that is not a DID, with a separately bound DID).
-- The DID-bound verification that the {{JMAP-CHAT-FED}} identity binding requires for a peer identity that is a DID without a host.
+- The DID-bound verification that the {{JMAP-CHAT-FED}} identity binding requires for a caller identity that is a DID without a host.
 - A reaffirmation of the textual mention form for DID URIs already noted in {{JMAP-CHAT}}.
 
 Implementations of this specification MUST also implement {{JMAP-CHAT}}.
@@ -195,7 +195,7 @@ This specification does not foreclose any DID method. Future companion specifica
 
 ## Optional `did` field {#did-field}
 
-ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable `identity` that is not a DID is preserved (for example, to keep MLS group membership stable across DID migrations ({{JMAP-DID}}) in a relay deployment) while a separately bound DID provides the cryptographic identity used for key resolution. Federation authentication does not use this field: it binds a request to the peer's `ownerUserId` ({{JMAP-CHAT-FED}}).
+ChatContacts MAY carry an optional `did` field to accommodate the pseudonymous case, in which a stable `identity` that is not a DID is preserved (for example, to keep MLS group membership stable across DID migrations ({{JMAP-DID}}) in a relay deployment) while a separately bound DID provides the cryptographic identity used for key resolution. Federation authentication does not use this field: it binds each caller identity of a Peer/* call to the request's authenticated peer domain ({{JMAP-CHAT-FED}}).
 
 `did` (String, optional):
 : A DID-referencing property ({{JMAP-DID}}): a DID URI ({{DID-CORE}}) bound to this ChatContact for cryptographic purposes. It is server-set (`ChatContact/set` create accepts only `identity`); how the server learns the value is deployment-defined. When present, the DID's verification methods are the authoritative source of public-key material for verifying signatures attributed to this ChatContact. When absent, no DID is bound to this ChatContact; cryptographic identity is derived from the authentication layer as defined in {{JMAP-CHAT}}.
@@ -208,11 +208,11 @@ The `did` field is OPTIONAL. Implementations MAY ignore it entirely if their dep
 
 # Federation Authentication {#federation-auth}
 
-A federated peer signs every request that obtains a peer-role session or invokes a Peer/* method with an Ed25519 key that its peer domain publishes, and the receiving server verifies the signature and binds the peer identity (the peer's `ownerUserId`) to the authenticated peer domain, all as defined in {{JMAP-CHAT-FED}}. This document does not change that mechanism and defines no other. When the peer identity is a DID without a host (for example, a `did:key` or `did:plc` DID), the peer domain does not vouch for it, and {{JMAP-CHAT-FED}} accepts it only after the DID-bound verification defined here succeeds.
+A federated peer signs every request that obtains a peer-role session or invokes a Peer/* method with an Ed25519 key that its peer domain publishes, and the receiving server verifies the signature and binds each caller identity of a Peer/* call (for example, `senderUserId`) to the authenticated peer domain, all as defined in {{JMAP-CHAT-FED}}. This document does not change that mechanism and defines no other. When a caller identity is a DID without a host (for example, a `did:key` or `did:plc` DID), the peer domain does not vouch for it, and {{JMAP-CHAT-FED}} accepts it only after the DID-bound verification defined here succeeds.
 
 ## DID-Bound Verification {#did-verification}
 
-After the request signature has verified ({{JMAP-CHAT-FED}}), the receiving server verifies a DID-form peer identity as follows:
+After the request signature has verified ({{JMAP-CHAT-FED}}), the receiving server verifies a DID-form caller identity as follows:
 
 1. The receiving server resolves the DID (per {{methods}} for the mandatory methods, or per the relevant method specification otherwise), subject to {{resolution}}.
 2. It takes the Ed25519 public key that verified the request signature: the key in the peer domain's `peerSigningKeys` whose `kid` the signature's `keyid` names ({{JMAP-CHAT-FED}}).
@@ -220,9 +220,9 @@ After the request signature has verified ({{JMAP-CHAT-FED}}), the receiving serv
 
 If the verification fails, including because the DID cannot be resolved ({{resolution}}), the identity binding of {{JMAP-CHAT-FED}} does not hold and the receiving server rejects the request.
 
-For a `did:web` peer identity, {{JMAP-CHAT-FED}} binds the identity by the domain name it encodes and does not require this verification; a server MAY perform it as well.
+For a `did:web` caller identity, {{JMAP-CHAT-FED}} binds the identity by the domain name it encodes and does not require this verification; a server MAY perform it as well.
 
-A DID-form `ownerUserId` without a host is therefore usable for federation only if its DID Document lists the server's peer signing key in its `authentication` verification relationship, so the server holds a private key of that relationship (see `keyCustody` in {{JMAP-DID}}). A `did:key` DID Document contains only the key the DID encodes, so a server whose peer identity is a `did:key` DID signs with that key, and rotating its signing key ({{JMAP-CHAT-FED}}) changes the DID, which is a DID migration ({{JMAP-DID}}).
+A host-less DID identity is therefore usable for federation only if its DID Document lists a peer signing key of the server that hosts its mailbox in its `authentication` verification relationship, so the server holds a private key of that relationship (see `keyCustody` in {{JMAP-DID}}). A `did:key` DID Document contains only the key the DID encodes, so a server that hosts a `did:key` identity signs that identity's calls with that key, and rotating that signing key ({{JMAP-CHAT-FED}}) changes the DID, which is a DID migration ({{JMAP-DID}}). A request carries one signature, so calls whose caller identities are different `did:key` DIDs go in separate requests.
 
 # DID Resolution {#resolution}
 
@@ -250,10 +250,10 @@ No additional bracketed or otherwise-delimited textual form is defined. Clients 
 
 DID-based identity interacts with {{JMAP-CHAT-FED}} federation in the following ways:
 
-- When a peer identity is a DID without a host, the receiving server accepts it only after the DID-bound verification ({{did-verification}}) succeeds.
+- When a caller identity is a DID without a host, the receiving server accepts it only after the DID-bound verification ({{did-verification}}) succeeds.
 - A user's `identity` MAY be a DID URI; cross-server references to such a user carry the DID URI verbatim, and the receiving server maps it to its own ChatContact for that user and resolves the DID per {{methods}}.
 - The federation method set defined in {{JMAP-CHAT-FED}} is unchanged. This specification adds the DID-bound verification; it does not add federation methods or change the request signature.
-- Cross-server DID resolution is independently performed by each server. There is no protocol for one server to delegate resolution to another. A server that cannot resolve a peer's host-less DID identity rejects that peer's requests ({{resolution}}).
+- Cross-server DID resolution is independently performed by each server. There is no protocol for one server to delegate resolution to another. A server that cannot resolve a host-less DID caller identity rejects the calls that name it ({{resolution}}).
 
 # Security Considerations {#security}
 
