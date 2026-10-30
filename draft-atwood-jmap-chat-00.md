@@ -405,7 +405,7 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
 
 ## MessageAction {#message-action}
 
-A MessageAction is a per-message out-of-band action invitation carried in a Message and in `Peer/deliver`. It signals that a message is associated with an out-of-band interaction — a video call invitation, a payment request, a file available outside the blob channel, etc. Servers MUST store and forward MessageAction records without inspection or transformation, except that a server implementing {{JMAP-CHAT-FED}} maps any user reference that this or a companion specification defines in `metadata` as that document specifies. Clients SHOULD NOT act on a MessageAction automatically; all OOB actions require explicit user initiation.
+A MessageAction is a per-message out-of-band action invitation carried in a Message and in `Peer/deliver`. It signals that a message is associated with an out-of-band interaction — a video call invitation, a payment request, a file available outside the blob channel, etc. Servers MUST store and forward MessageAction records without inspection or transformation, except that a server implementing {{JMAP-CHAT-FED}} maps any user reference that this or a companion specification defines in `metadata`, and removes from data it receives from a peer every MessageAction whose `uri` is a JMAP object URI ({{JMAP-OBJECT-URI}}), both as {{JMAP-CHAT-FED}} specifies. Clients SHOULD NOT act on a MessageAction automatically; all OOB actions require explicit user initiation.
 
 `type` (String):
 : Same URI namespace as Endpoint `type` (see {{endpoint}}). Clients MUST ignore actions whose `type` they do not recognize.
