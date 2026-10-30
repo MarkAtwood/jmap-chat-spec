@@ -42,6 +42,16 @@ informative:
   RFC8825:
   I-D.ietf-wish-whep:
   I-D.ietf-moq-transport:
+  EME:
+    title: "Encrypted Media Extensions"
+    author:
+      - fullname: David Dorwin
+      - fullname: Jerry Smith
+      - fullname: Mark Watson
+    seriesinfo:
+      W3C: REC-encrypted-media-20170918
+    date: 2017-09-18
+    target: https://www.w3.org/TR/2017/REC-encrypted-media-20170918/
   MPEG-DASH:
     title: "Information technology -- Dynamic adaptive streaming over HTTP (DASH) -- Part 1: Media presentation description and segment formats"
     author:
@@ -640,7 +650,13 @@ A VTCPlaybackEndpoint is a place from which a viewer's player can receive a host
   - `wallClock` (UTCDate): The time, on the server's clock, at which the call produced the media found at `mediaTimeMs`.
 
 `tracks` (VTCStreamTrack[]):
-: The selectable tracks this endpoint carries, such as alternative audio languages. Empty when the endpoint offers no choice, or when the server does not describe its tracks.
+: The selectable tracks this endpoint carries, such as alternative audio languages or caption tracks. Empty when the endpoint offers no choice, or when the server does not describe its tracks.
+
+`encrypted` (Boolean):
+: `true` if the endpoint's media is encrypted under a content protection system and a player needs a key system to play it ({{content-protection}}). Default: `false`.
+
+`keySystems` (String[]):
+: When `encrypted` is `true`, the key systems any one of which can decrypt the media, as key system identifiers ({{EME}}), which are reverse-domain names. Empty when `encrypted` is `false`.
 
 How the deployment produces an endpoint (packaging, transcoding, origin, distribution network) is outside the scope of this document.
 
@@ -660,18 +676,35 @@ What the media timeline is, and how a player reports its position on it, are def
 
 This document carries no call events inside the media. Events reach viewers over JMAP push and the WebSocket binding ({{JMAP-VTC-WSS}}) like any other state, and a client delays presenting them until playback reaches the moment they happened.
 
+#### Content Protection {#content-protection}
+
+Content protection is optional, and this document requires no key system. An endpoint with `encrypted: false` plays with any player for its protocol. A client that supports none of an endpoint's `keySystems` cannot play that endpoint and skips it. How a player obtains keys, how the media pipeline obtains them from a key provider, and how the media is packaged for encryption (for example, the Common Encryption format) are defined by the content protection system and are outside the scope of this document.
+
+`encrypted` describes the playback endpoint only. It is unrelated to `e2eeEnabled` on the call ({{e2ee-calls}}): content protection limits which players can decrypt the broadcast, and the media pipeline that encrypts it has the plaintext.
+
 #### VTCStreamTrack {#vtc-stream-track}
 
 A VTCStreamTrack describes one selectable track of a playback endpoint, independent of how the protocol signals it.
 
 `kind` (String):
-: `"audio"` or `"video"`. Clients MUST ignore tracks whose `kind` they do not recognize.
+: One of:
+  - `"audio"`
+  - `"video"`
+  - `"captions"`: a text transcription of the audio for viewers who cannot hear it, including relevant non-speech sound.
+  - `"subtitles"`: a text translation of the speech into another language.
+
+  Clients MUST ignore tracks whose `kind` they do not recognize.
 
 `language` (String|null):
 : The track's language as a language tag {{RFC5646}}, or `null` when not applicable.
 
 `label` (String|null):
 : Human-readable label for a track picker (e.g., `"English"`, `"Director's commentary"`).
+
+`format` (String|null):
+: The media type of the track's content where it differs from the endpoint's main media, such as `"text/vtt"` or `"application/ttml+xml"` for a caption track; otherwise `null`. Clients can use it to skip text tracks they cannot render.
+
+Caption and subtitle tracks serve viewers of a hosted livestream. Participants of the call continue to receive live captions as Messages in the bound Chat ({{chat-delegation}}); a deployment can produce both from one transcription.
 
 # Methods
 
@@ -1390,7 +1423,9 @@ A hosted livestream as JMAP data looks like this once it is live:
       "credential": null,
       "expiresAt": null,
       "timeReference": null,
-      "tracks": []
+      "tracks": [],
+      "encrypted": false,
+      "keySystems": []
     },
     {
       "protocol": "hls",
@@ -1403,9 +1438,15 @@ A hosted livestream as JMAP data looks like this once it is live:
         "wallClock": "2026-10-21T17:02:09.400Z"
       },
       "tracks": [
-        { "kind": "audio", "language": "en", "label": "English" },
-        { "kind": "audio", "language": "es", "label": "Espanol" }
-      ]
+        { "kind": "audio", "language": "en", "label": "English",
+          "format": null },
+        { "kind": "audio", "language": "es", "label": "Espanol",
+          "format": null },
+        { "kind": "captions", "language": "en", "label": "English CC",
+          "format": "text/vtt" }
+      ],
+      "encrypted": false,
+      "keySystems": []
     }
   ],
   "startedAt": "2026-10-21T17:02:11Z",
@@ -1996,7 +2037,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Recording storage backend.** Where and how recording blobs are stored. The spec only models the metadata and the resulting `blobId`.
 - **Livestream ingest protocol.** RTMP is assumed for push mode but not prescribed; deployments may use SRT, HLS ingest, or any other protocol.
 - **Livestream media pipeline.** In hosted mode, how the call's media becomes playback endpoints (an SFU egress, a transcoder and packager, an origin server, a content delivery network) is deployment-defined. The spec models only the resulting endpoints ({{vtc-playback-endpoint}}), so the JMAP server remains a state database, not a media server.
-- **Transcription engine.** Live captions and transcription are delivered as chat messages via {{JMAP-CHAT}}, not as VTC-native types. The transcription engine (Whisper, Vosk, cloud ASR, or other) is entirely deployment-defined.
+- **Transcription engine.** Live captions and transcription for call participants are delivered as chat messages via {{JMAP-CHAT}}, not as VTC-native types; a hosted livestream can also carry them as caption tracks in the media ({{vtc-stream-track}}). The transcription engine (Whisper, Vosk, cloud ASR, or other) is entirely deployment-defined.
 - **Gateway carrier interconnection.** How PSTN, SIP, or H.323 gateways connect to their respective networks is deployment infrastructure.
 - **Protocol-specific signaling.** Call transfer (SIP REFER), DTMF relay, hold/resume, codec renegotiation, H.245 commands, and any future verb added by an external specification are carried as opaque VTCGatewaySignal events (see {{gateway-signal}}). JMAP VTC does not define or constrain protocol-specific signals; it provides the pass-through mechanism.
 - **Voicemail and IVR.** Out of scope. May be modeled as gateway-specific signal flows in deployments that support them.
