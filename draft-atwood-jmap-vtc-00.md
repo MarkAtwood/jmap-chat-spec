@@ -634,6 +634,11 @@ A VTCPlaybackEndpoint is a place from which a viewer's player can receive a host
 
   Clients treat an unrecognized value as `"standard"`.
 
+`timeReference` (Object|null, server-set):
+: Maps this endpoint's media timeline to wall-clock time ({{stream-sync}}), or `null` when the server does not provide a mapping. Properties:
+  - `mediaTimeMs` (UnsignedInt): A position on the endpoint's media timeline, in milliseconds.
+  - `wallClock` (UTCDate): The time, on the server's clock, at which the call produced the media found at `mediaTimeMs`.
+
 `tracks` (VTCStreamTrack[]):
 : The selectable tracks this endpoint carries, such as alternative audio languages. Empty when the endpoint offers no choice, or when the server does not describe its tracks.
 
@@ -646,6 +651,14 @@ A deployment that restricts playback gives each viewer a short-lived authorizati
 A viewer presents `credential` to the playback endpoint. How it is presented (for example, as an HTTP bearer token, which is how {{I-D.ietf-wish-whep}} authenticates viewers) is defined by the playback protocol or the deployment and is outside the scope of this document. Where players of a protocol have no common way to present a separate credential, a server can carry the authorization in `url` itself and set `credential` to `null`. A deployment that does not restrict playback sets `credential` and `expiresAt` to `null`.
 
 The server MAY return an empty `playbackEndpoints` list to a user it does not authorize to view, even when that user may retrieve the livestream. A companion specification can make this decision depend on its own state, for example a paid access ticket that the server exchanges for a playback credential; this document defines only that endpoints and credentials are issued per user.
+
+#### Stream Synchronization {#stream-sync}
+
+Viewers of a hosted livestream see the call some time after it happens, and the delay differs between endpoints and between viewers. A client that shows call-related events next to playback (reactions, scene changes, participant changes) can align them with the picture using `timeReference`: media produced at wall-clock time D appears at media time `mediaTimeMs` + (D - `wallClock`), in milliseconds. Both times are on the server's clock, so the client needs no clock synchronization with the server. The server updates `timeReference` when the mapping changes, for example after the media timeline restarts; this is an ordinary change to the VTCLivestream.
+
+What the media timeline is, and how a player reports its position on it, are defined by the playback protocol. Protocols can also carry wall-clock time in the media itself; examples include program date-time tags in segmented playlists, ID3 timed metadata, RTCP sender reports for RTP-based playback, and object timestamps in Media over QUIC. A client MAY use such in-media timing instead of `timeReference`.
+
+This document carries no call events inside the media. Events reach viewers over JMAP push and the WebSocket binding ({{JMAP-VTC-WSS}}) like any other state, and a client delays presenting them until playback reaches the moment they happened.
 
 #### VTCStreamTrack {#vtc-stream-track}
 
@@ -1374,12 +1387,21 @@ A hosted livestream as JMAP data looks like this once it is live:
       "protocol": "whep",
       "url": "https://media.example.com/whep/01J4XQ7V",
       "latencyHint": "interactive",
+      "credential": null,
+      "expiresAt": null,
+      "timeReference": null,
       "tracks": []
     },
     {
       "protocol": "hls",
       "url": "https://cdn.example.com/live/01J4XQ7V/index.m3u8",
       "latencyHint": "standard",
+      "credential": null,
+      "expiresAt": null,
+      "timeReference": {
+        "mediaTimeMs": 0,
+        "wallClock": "2026-10-21T17:02:09.400Z"
+      },
       "tracks": [
         { "kind": "audio", "language": "en", "label": "English" },
         { "kind": "audio", "language": "es", "label": "Espanol" }
