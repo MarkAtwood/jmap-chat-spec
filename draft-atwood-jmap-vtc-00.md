@@ -590,13 +590,13 @@ A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It 
 
   Clients treat an unrecognized value as an unspecified failure.
 
-`platform` (String|null):
+`platform` (String|null, immutable):
 : Push mode: target platform identifier (e.g., `"youtube"`, `"twitch"`). Deployment-defined; clients MUST ignore unrecognized values. Always `null` in hosted mode.
 
-`streamUri` (String|null):
+`streamUri` (String|null, immutable):
 : Push mode: the RTMP or equivalent ingest endpoint. Treated as sensitive; see {{livestream-key-exposure}}. Always `null` in hosted mode.
 
-`streamKey` (String|null):
+`streamKey` (String|null, immutable):
 : Push mode: the stream key or authentication credential for the ingest endpoint. This field is write-only for non-moderators: the server SHOULD return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}. Always `null` in hosted mode.
 
 `playbackEndpoints` (VTCPlaybackEndpoint[], server-set):
@@ -616,7 +616,7 @@ A livestream is created in `"starting"`. From there:
 - `"starting"` or `"live"` → `"failed"`: server-initiated, with `failureReason` set.
 - `"starting"` or `"live"` → `"stopped"`: by a moderator ({{stopping-a-livestream}}), when the call ends ({{ending-a-call}}), or by an idle stop.
 
-This document defines no transition out of `"stopped"` or `"failed"`. It places no bound on how long a livestream stays in `"starting"`: some media pipelines take minutes to provision. A client learns the outcome from the state change, not from a timer. When a livestream ends for any reason other than those listed for `"stopped"`, the server SHOULD move it to `"failed"` rather than `"stopped"`, so that clients can tell a failure from a deliberate stop.
+`"stopped"` and `"failed"` are final: to stream again, a client creates a new VTCLivestream. It places no bound on how long a livestream stays in `"starting"`: some media pipelines take minutes to provision. A client learns the outcome from the state change, not from a timer. When a livestream ends for any reason other than those listed for `"stopped"`, the server SHOULD move it to `"failed"` rather than `"stopped"`, so that clients can tell a failure from a deliberate stop.
 
 To limit cost, the server SHOULD stop a livestream, as if a moderator had set it to `"stopped"`, once it has carried no media from the call for a deployment-defined period (for example, after every participant has left a room call that remains active). The server SHOULD limit the number of livestreams per account that are in state `"starting"` or `"live"`, rejecting a create over the limit with `overQuota` ({{RFC8620}} Section 5.3).
 
@@ -1470,11 +1470,7 @@ When the call has `e2eeEnabled: true`, a livestream that would require server-si
 }
 ~~~
 
-The server MUST return `invalidProperties` naming `state` if the livestream is not in state `"starting"` or `"live"`. Once a push-mode livestream is stopped, the `streamUri`, `streamKey`, and `platform` fields may be updated for a future stream (see {{updating-stream-configuration}}) or by creating a new VTCLivestream object.
-
-#### Updating Stream Configuration {#updating-stream-configuration}
-
-`update` supports patching `streamUri`, `streamKey`, or `platform` of a push-mode livestream only while it is in state `"stopped"` or `"failed"`. A hosted-mode livestream has no client-settable configuration; the server MUST return `invalidProperties` naming each of these properties when an update to a hosted-mode livestream sets one. The server MUST return `invalidProperties` naming each patched configuration property for configuration updates while the stream is in state `"starting"` or `"live"`.
+The server MUST return `invalidProperties` naming `state` if the livestream is not in state `"starting"` or `"live"`.
 
 #### Destroying a Livestream
 
