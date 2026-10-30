@@ -144,6 +144,7 @@ Example Session object (abbreviated):
           "supportsScheduledCalls": true,
           "supportsRecording": true,
           "supportsLivestream": false,
+          "livestreamModes": [],
           "supportsLobby": true,
           "supportsBreakoutRooms": true,
           "supportedMediaTypes": ["audio", "video", "screen"],
@@ -535,10 +536,11 @@ PresenceStatus, Space, CustomEmoji, SpaceBan, SpaceInvite
 - VTCCall (call lifecycle, state machine, join URI)
 - VTCParticipant (per-call participant state, media state)
 - VTCRecording (recording metadata, blob references)
-- VTCLivestream (outbound stream metadata)
+- VTCLivestream (broadcast metadata: push ingest target or hosted
+  playback endpoints)
 
 **Embedded types:** VTCMediaState, VTCCallPolicy, VTCGateway,
-VTCDialInEntry
+VTCDialInEntry, VTCPlaybackEndpoint, VTCStreamTrack
 
 **Ephemeral events consumed:** VTCRingEvent, VTCCallEndEvent,
 VTCParticipantEvent, VTCMediaStateEvent, VTCActiveSpeakerEvent,
