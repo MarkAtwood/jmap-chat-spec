@@ -212,7 +212,7 @@ A receiving server MUST reject, without processing any method call, a request th
 5. The receiver has not accepted a request carrying the same peer domain and `nonce` before. The receiver SHOULD remember each accepted (peer domain, `nonce`) pair at least until 60 seconds after that signature's `expires`.
 6. For a request with content, the `content-digest` field contains a `sha-256` digest and that digest matches the content.
 
-The receiving server rejects a request that fails any of these checks with HTTP status 403 (Forbidden). The exception is a request rejected only because its `created` precedes the receiver's restart ({{replay}}): the receiving server MUST answer it with HTTP status 503 (Service Unavailable), and the sender retries it as a transient failure ({{error-handling}}) with a new signature. The peer domain named in a verified `keyid` is the request's authenticated peer domain.
+The receiving server rejects a request that fails any of these checks with HTTP status 403 (Forbidden). The exception is a request rejected only by the restart rule in {{replay}}: the receiving server MUST answer it with HTTP status 503 (Service Unavailable), and the sender retries it as a transient failure ({{error-handling}}) with a new signature. The peer domain named in a verified `keyid` is the request's authenticated peer domain.
 
 ## Key Publication {#key-publication}
 
@@ -836,7 +836,7 @@ Anyone holding a server's signing private key can act as that peer domain toward
 
 ## Replay {#replay}
 
-The `nonce`, `created`, and `expires` checks ({{request-signing}}) bound replay: a captured request is rejected after its validity window, and within it the nonce cache rejects a second use. Covering `@target-uri` prevents a request from being replayed to a different server or endpoint, and covering `content-digest` prevents the content from being altered. A receiving server whose nonce cache is lost, for example on restart, SHOULD reject requests whose `created` precedes the restart, since it can no longer detect their replay.
+The `nonce`, `created`, and `expires` checks ({{request-signing}}) bound replay: a captured request is rejected after its validity window, and within it the nonce cache rejects a second use. Covering `@target-uri` prevents a request from being replayed to a different server or endpoint, and covering `content-digest` prevents the content from being altered. A receiving server whose nonce cache is lost, for example on restart, SHOULD reject requests whose `created` is earlier than the restart time plus the 60 seconds by which check 4 of {{request-signing}} lets `created` lead the receiver's clock, since it can no longer detect their replay.
 
 ## DNS and Certificate Authority Trust {#dns-ca-trust}
 
