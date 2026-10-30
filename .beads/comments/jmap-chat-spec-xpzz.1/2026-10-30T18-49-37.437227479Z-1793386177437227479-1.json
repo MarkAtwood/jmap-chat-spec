@@ -1,0 +1,7 @@
+{
+  "id": "1793386177437227479-1",
+  "issue_id": "jmap-chat-spec-xpzz.1",
+  "author": "agent",
+  "text": "Design decision taken under the epic's smallest-model rule; Mark may overrule. Chosen: extend VTCLivestream with immutable mode (push default | hosted) rather than a new type. Reason: a separate type duplicates lifecycle, stop-before-destroy, call-end auto-stop, E2EE bridge rules, VTCRecordingStateEvent.livestreamId, IANA data-type and object-URI entries. Reversal is mechanical (move playbackEndpoints to a new type). Open protocol set uses the draft's existing VTCGateway.protocol pattern (short aliases hls/dash/whep/moq, reverse-domain for others, clients MUST ignore unknown) instead of a new IANA registry, since vtc-00 defines no registries. Commit 6af1b94.",
+  "created_at": "2026-10-30T18:49:37.437227479Z"
+}

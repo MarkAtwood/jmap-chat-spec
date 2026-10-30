@@ -1,0 +1,17 @@
+{
+  "id": "jmap-chat-spec-c6ta",
+  "title": "vtc-00: abstract type list is stale",
+  "description": "draft-atwood-jmap-vtc-00.md ~L143 abstract says 'four top-level data types ... plus the embedded VTCMediaState object'. Omits VTCCallPolicy, VTCGateway, VTCDialInEntry (pre-existing) and new embedded VTCPlaybackEndpoint, VTCStreamTrack. Either list them correctly or drop the count and list from the abstract (abstracts needn't enumerate types).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-30T18:55:22.979085022Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-30T18:59:18.398905514Z",
+  "closed_at": "2026-10-30T18:59:18.398905514Z",
+  "close_reason": "Closed",
+  "labels": [
+    "vtc"
+  ]
+}

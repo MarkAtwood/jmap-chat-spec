@@ -1,0 +1,17 @@
+{
+  "id": "jmap-chat-spec-f1gj",
+  "title": "unified-client: Live indicator ignores state",
+  "description": "jmap-unified-client-architecture.md ~L1026: UI shows 'Live' whenever any VTCLivestream exists for the call. stopped/failed livestreams still exist; indicator should depend on state (live). Pre-existing, found during 7muw.",
+  "status": "closed",
+  "priority": 4,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-30T18:55:23.411401783Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-30T18:59:18.47498295Z",
+  "closed_at": "2026-10-30T18:59:18.47498295Z",
+  "close_reason": "Closed",
+  "labels": [
+    "vtc"
+  ]
+}
