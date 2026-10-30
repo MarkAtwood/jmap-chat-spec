@@ -127,6 +127,8 @@ Specifically, this document defines:
 
 In the mailbox-per-user model, each participant runs their own JMAP server (a "mailbox") that stores only their own messages. There is no central server, no central message store, and no central operator. Mailboxes exchange messages directly with each other over a secure transport using the Peer/* server-to-server methods defined in this document.
 
+A server can also host the mailboxes of several users under one peer domain. It federates for each of them in the same way: a peer domain speaks for every identity whose host it is ({{identity-binding}}), and each Peer/* call names the mailbox it is for by its owner's identity ({{peer-methods}}). A server that hosts a single mailbox is the case in which one identity sends and receives.
+
 This document does not redefine the relay topology described in {{JMAP-CHAT}}. In a relay deployment, the relay itself implements the Peer/* methods internally; this federation protocol applies only when distinct, independently operated mailbox servers communicate with one another.
 
 ## Relationship to JMAP Chat
@@ -159,7 +161,7 @@ Peer domain:
 : The DNS domain name that identifies a mailbox server for federation: the host at which the server publishes its `/.well-known/jmap` Session object ({{peer-discovery}}). A peer domain is compared in lowercase A-label form, without a trailing dot or port.
 
 Peer identity:
-: The `ownerUserId` advertised in the Session object published at a peer domain whose request signature the local server has verified ({{peer-authentication}}).
+: An identity that the authenticated peer domain of a request speaks for: one whose host is that peer domain, or a host-less DID bound to the key that signed the request ({{identity-binding}}). A peer domain has as many peer identities as the mailboxes it hosts.
 
 # Peer Discovery {#peer-discovery}
 
@@ -174,9 +176,9 @@ GET /.well-known/jmap HTTP/1.1
 Host: <peer-hostname>
 ~~~
 
-The response is the peer's JMAP Session object as defined in {{RFC8620}} Section 2. The Session object includes an `ownerUserId` field identifying the mailbox owner (see {{session-extensions}}).
+The response is the peer's JMAP Session object as defined in {{RFC8620}} Section 2. The Session object of a server that hosts a single mailbox includes an `ownerUserId` field identifying that mailbox's owner (see {{session-extensions}}).
 
-Servers SHOULD cache discovered session data, including the session URL and `ownerUserId`, to avoid redundant discovery on each request. Servers SHOULD re-run discovery when delivery fails, as the peer's session URL or capabilities may have changed.
+Servers SHOULD cache discovered session data, including the session URL and any `ownerUserId`, to avoid redundant discovery on each request. Servers SHOULD re-run discovery when delivery fails, as the peer's session URL or capabilities may have changed.
 
 ## Direct Address Hints
 
@@ -188,9 +190,9 @@ The Session object MAY include an `ownerDirectAddress` field (see {{session-exte
 
 A peer is a domain. A server authenticates to a peer by signing each HTTP request with a key that its peer domain publishes; the receiving server verifies the signature and so learns which peer domain sent the request. Every server MUST support the baseline mechanism ({{request-signing}} through {{key-publication}}). Publishing the signing keys in DNSSEC-signed DNS ({{dnssec-keys}}) is RECOMMENDED where DNSSEC is available, and mutual TLS with a DANE-verified client certificate ({{mutual-tls}}) is OPTIONAL. Neither replaces the request signature.
 
-Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide a JMAP account in the resulting session that carries the `urn:ietf:params:jmap:chat` capability with `role: "peer"` (see {{account-capability}}).
+Before a remote server can invoke any Peer/* method on a local server, it MUST obtain a JMAP session at the local server by fetching the local server's Session resource with a signed request. The local server MUST provide exactly one JMAP account in the resulting session, and that account carries the `urn:ietf:params:jmap:chat` capability with `role: "peer"` (see {{account-capability}}). The session has this one account however many mailboxes the local server hosts: Peer/* calls name their mailbox by its owner's identity, not by account ({{peer-methods}}).
 
-Before granting peer-role access, the local server checks that the `ownerUserId` advertised at the authenticated peer domain is bound to that domain, and rejects the request if it is not ({{identity-binding}}).
+The local server checks that each caller identity named in a Peer/* call is bound to the authenticated peer domain, and rejects the call if it is not ({{identity-binding}}).
 
 ## Request Signing {#request-signing}
 
@@ -220,7 +222,7 @@ A server publishes its signing public keys in the `peerSigningKeys` field of its
 
 To find the keys of a peer domain, the receiving server fetches `https://<peer-domain>/.well-known/jmap` ({{peer-discovery}}) over HTTPS, validating the server certificate against the peer domain as {{RFC9110}} Section 4.3.4 and {{RFC9525}} describe. The receiving server MAY follow redirects, provided each one is to an `https` URI whose certificate it validates the same way; the fetch is subject to {{ssrf}}. A key is usable only if its `kty` and `crv` are as above and the receiving server, recomputing the thumbprint, obtains the key's `kid`. The receiving server MUST ignore any other entry.
 
-This key fetch, like every discovery fetch of `/.well-known/jmap` ({{peer-discovery}}), is an unsigned GET: the fetching server MUST NOT sign it. A server MUST answer an unsigned GET of its `/.well-known/jmap` with a Session object that includes `ownerUserId` and `peerSigningKeys`, and MUST NOT require any authentication for that response; in it, `accounts` and `primaryAccounts` MAY be empty objects and `username` MAY be the empty string. Only the request that obtains a peer-role session, Peer/* method calls, and blob fetches ({{blob-fetch}}) are signed ({{request-signing}}). Verifying a signature therefore never requires a signed request back to the signer, so two servers that verify each other's requests cannot wait on each other.
+This key fetch, like every discovery fetch of `/.well-known/jmap` ({{peer-discovery}}), is an unsigned GET: the fetching server MUST NOT sign it. A server MUST answer an unsigned GET of its `/.well-known/jmap` with a Session object that includes `peerSigningKeys`, and MUST NOT require any authentication for that response; in it, `accounts` and `primaryAccounts` MAY be empty objects and `username` MAY be the empty string. Only the request that obtains a peer-role session, Peer/* method calls, and blob fetches ({{blob-fetch}}) are signed ({{request-signing}}). Verifying a signature therefore never requires a signed request back to the signer, so two servers that verify each other's requests cannot wait on each other.
 
 The receiving server MAY cache the keys of a peer domain for the HTTP freshness lifetime of the response, but for no longer than one hour. When a request names a `kid` that is not among the usable keys of its peer domain (the cached keys that are usable under the precedence rule of {{dnssec-keys}}), the receiving server MUST fetch the keys again, bypassing its cache, before rejecting the request; if it uses the DNSSEC binding ({{dnssec-keys}}), it also queries the `_jmap-peer` name again, bypassing any DNS answer it has cached. It SHOULD NOT refetch the keys of one peer domain, or repeat that query, more often than once every 60 seconds; a request that arrives within that interval and names a `kid` that is not among the usable keys is rejected. For this rule the freshness lifetime of a fetched key set is at least 60 seconds: until the 60-second interval since the last fetch ends, the receiving server MAY keep using the keys it last fetched even if their HTTP freshness lifetime is shorter.
 
@@ -249,19 +251,17 @@ A receiving server that verifies such a certificate SHOULD check that the TLS-au
 
 ## Identity Binding {#identity-binding}
 
-Peer authentication establishes a peer domain, while Peer/* arguments name users by identity string ({{identity-mapping}}). The local server binds the two as follows:
+Peer authentication establishes a peer domain, while Peer/* arguments name users by identity string ({{identity-mapping}}). A peer domain speaks for every identity it hosts. The local server binds each caller identity of a Peer/* call (the caller-identity field of {{peer-methods}}) to the request's authenticated peer domain as follows:
 
-1. The peer identity of an authenticated request is the `ownerUserId` in the Session object published at its authenticated peer domain, obtained by the fetch that supplied the signing keys ({{key-publication}}).
-2. If the peer identity has a host, that host MUST equal the authenticated peer domain. The host of an identity is: for a URI with an authority component, its host; for a `did:web` DID, the domain name it encodes; for a string of the form `local@domain` without a URI scheme, the part after the last `@`; for a bare DNS name, the name itself. Hosts are compared as peer domains are.
-3. If the peer identity has no host (for example, a `did:key` DID), the peer domain does not vouch for it. The local server MUST NOT accept such an identity on the strength of peer authentication alone. A DID-form identity is accepted only after the DID-bound verification of {{JMAP-CHAT-DID}} succeeds; any other host-less identity MUST be rejected.
+1. If the identity has a host, that host MUST equal the authenticated peer domain. The host of an identity is: for a URI with an authority component, its host; for a `did:web` DID, the domain name it encodes; for a string of the form `local@domain` without a URI scheme, the part after the last `@`; for a bare DNS name, the name itself. Hosts are compared as peer domains are.
+2. If the identity has no host (for example, a `did:key` DID), the peer domain does not vouch for it. The local server MUST NOT accept such an identity on the strength of peer authentication alone. A DID-form identity is accepted only after the DID-bound verification of {{JMAP-CHAT-DID}} succeeds; any other host-less identity MUST be rejected.
 
-If the binding does not hold, the local server MUST reject the request. This binding ensures that:
+An identity bound this way is a peer identity of the request. If a caller identity is not, the local server MUST reject the call with `forbidden`. The binding does not use the peer's `ownerUserId` ({{session-extensions}}): a server that hosts a single mailbox is bound the same way as one that hosts many. This binding ensures that:
 
-1. The ChatContact record created or updated for a peer on the local server has, as its `identity`, the same string that the peer itself advertises.
-2. The `senderUserId` argument in Peer/* methods can be validated against the peer identity of the authenticated domain.
-3. A peer domain cannot claim an identity whose host is another domain.
+1. The ChatContact record created or updated for a remote user on the local server has, as its `identity`, the same string that the user's own server uses.
+2. A peer domain cannot claim an identity whose host is another domain.
 
-The peer identity is the `identity` of the peer's ChatContact on the local server (see ChatContact in {{JMAP-CHAT}}) and is the identity against which all Peer/* method arguments are validated. The ChatContact's `id` is assigned by the local server and is unrelated to this string.
+A peer identity is the `identity` of a ChatContact on the local server (see ChatContact in {{JMAP-CHAT}}). The ChatContact's `id` is assigned by the local server and is unrelated to this string.
 
 ## Blob Fetch Authorization {#blob-fetch}
 
@@ -290,10 +290,7 @@ The ChatContact data type defined in {{JMAP-CHAT}} includes the following fields
 
 # Session Object Extensions for Federation {#session-extensions}
 
-Servers implementing this specification MUST include the following fields in their JMAP Session object (advertised at `/.well-known/jmap`):
-
-`ownerUserId` (String):
-: The identity string of the mailbox owner. This value equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact; the `id` of that ChatContact is assigned by the peer server. Peer servers use this value as the authoritative identity for the mailbox owner when performing the identity binding check described in {{peer-authentication}}. On the advertising server itself, the owner's local id is the `accountId` of the owner's account ({{JMAP-CHAT}}); in Peer/* arguments that `accountId` maps to `ownerUserId` and back ({{identity-mapping}}).
+Servers implementing this specification MUST include the following field in their JMAP Session object (advertised at `/.well-known/jmap`):
 
 `peerSigningKeys` (JWK[]):
 : The public keys with which this server signs peer requests ({{key-publication}}). Each entry is a JSON Web Key {{RFC7517}} with `kty` `"OKP"`, `crv` `"Ed25519"` {{RFC8037}}, `x`, and `kid` equal to the key's base64url-encoded SHA-256 JWK Thumbprint {{RFC7638}}. Servers MUST advertise this field with at least one key. For example:
@@ -309,26 +306,35 @@ Servers implementing this specification MUST include the following fields in the
 ]
 ~~~
 
-Servers MAY include the following additional field:
+The following fields describe a single mailbox owner. `ownerUserId` and `ownerEndpoints` are defined in {{JMAP-CHAT}}; this document defines `ownerDirectAddress`.
+
+`ownerUserId` (String):
+: The identity string of the mailbox owner. This value equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact; the `id` of that ChatContact is assigned by the peer server. A server that hosts several mailboxes serves each owner a Session with that owner's `ownerUserId`. On the advertising server, the owner's local id is the `accountId` of the owner's account ({{JMAP-CHAT}}); in Peer/* arguments that `accountId` maps to `ownerUserId` and back ({{identity-mapping}}).
 
 `ownerDirectAddress` (String, optional):
 : A deployment-specific address at which the owner's client may be reachable directly. Peers that probe `/.well-known/jmap` SHOULD store this value as the `directAddress` on the corresponding ChatContact record (see {{chat-contact-extensions}}). The format and semantics are deployment-defined. This value is advisory only (see {{direct-address-security}}).
+
+In the Session with which a server answers an unsigned GET of `/.well-known/jmap` ({{key-publication}}), a server that hosts a single mailbox SHOULD include that mailbox's `ownerUserId`, and MAY include `ownerDirectAddress` and `ownerEndpoints`. A server that hosts more than one mailbox omits all three: they describe a single owner, and listing owners there would disclose them to anyone. Identity binding does not use these fields ({{identity-binding}}). A peer uses them to update the ChatContact whose `identity` equals `ownerUserId`, and SHOULD do so only if that `ownerUserId` binds to the peer domain the Session was fetched from as {{identity-binding}} describes, taking, for a host-less DID, any usable signing key of that peer domain ({{key-publication}}) as the key that DID-bound verification checks.
 
 # Server-to-Server Methods {#peer-methods}
 
 The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
 
-All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the peer identity of the calling server. Servers MUST validate all such fields identically against the peer identity.
+All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the identity of the user on the calling server for whom the call is made. Servers MUST check every such field by {{identity-binding}}, and MUST reject the call with `forbidden` if its value is not a peer identity of the request.
+
+All Peer/* methods also carry `recipientUserId` (String): the identity string of the owner of the mailbox on the receiving server for which the call is made. An `accountId` is local to the server that assigns it, so Peer/* calls do not name a mailbox by account; the `accountId` argument of every Peer/* call is the id of the single peer-role account in the caller's session ({{peer-authentication}}), and every response returns it. The receiving server processes the call in the mailbox whose owner's identity (its `ownerUserId`, {{session-extensions}}) equals `recipientUserId`, compared octet for octet. If no mailbox on the receiving server has that identity, the receiving server rejects the call with `forbidden`. It SHOULD give that rejection the same form, including any `description`, as a `forbidden` rejection of a call to an existing mailbox, so that the rejection does not show which identities have mailboxes there ({{mailbox-enumeration}}).
+
+A sending server with calls for several mailboxes on one peer domain, for example one group message for each member hosted there, MAY send them in one request, one method call per recipient ({{RFC8620}} Section 3.3).
 
 ## User References in Peer Methods {#identity-mapping}
 
-A ChatContact `id` identifies the ChatContact only on the server that assigned it ({{JMAP-CHAT}}); another server holds a different `id` for the same user. Peer/* arguments therefore never carry a ChatContact `id`. Every Peer/* argument or payload field that names a user carries that user's identity string: the `identity` of the user's ChatContact ({{JMAP-CHAT}}), or, for a server's own mailbox owner, that server's `ownerUserId` ({{session-extensions}}). These fields are `senderUserId`, `readerUserId`, `subscriberId`, `identity`, the `id` and `invitedBy` of each ChatMember in `members` and `addedMembers`, each entry of `removedMemberIds`, the `id` of each `updatedRoles` entry, and the `id` of each Mention in `mentions`. The same rule applies to every user-reference field that {{JMAP-CHAT}} or a companion specification defines for data carried in Peer/* payloads, including fields inside MessageAction metadata (for example, `assigneeIds` in the task metadata defined by {{JMAP-CHAT-TASKS}}). The field names are unchanged: each field still names a user, and the identity string is the only user identifier that both servers share.
+A ChatContact `id` identifies the ChatContact only on the server that assigned it ({{JMAP-CHAT}}); another server holds a different `id` for the same user. Peer/* arguments therefore never carry a ChatContact `id`. Every Peer/* argument or payload field that names a user carries that user's identity string: the `identity` of the user's ChatContact ({{JMAP-CHAT}}), or, for a mailbox owner, the owner's `ownerUserId` ({{session-extensions}}). These fields are `recipientUserId`, `senderUserId`, `readerUserId`, `subscriberId`, `identity`, the `id` and `invitedBy` of each ChatMember in `members` and `addedMembers`, each entry of `removedMemberIds`, the `id` of each `updatedRoles` entry, and the `id` of each Mention in `mentions`. The same rule applies to every user-reference field that {{JMAP-CHAT}} or a companion specification defines for data carried in Peer/* payloads, including fields inside MessageAction metadata (for example, `assigneeIds` in the task metadata defined by {{JMAP-CHAT-TASKS}}). The field names are unchanged: each field still names a user, and the identity string is the only user identifier that both servers share.
 
-The sending server replaces each local ChatContact `id` in these fields with that ChatContact's `identity`, and each occurrence of its owner's `accountId`, which is the owner's local id ({{JMAP-CHAT}}), with its `ownerUserId`.
+The sending server replaces each local ChatContact `id` in these fields with that ChatContact's `identity`, and each occurrence of the sending mailbox owner's `accountId`, which is the owner's local id ({{JMAP-CHAT}}), with that owner's `ownerUserId`.
 
-The receiving server compares identity strings octet for octet and resolves each one to a local user:
+The receiving server resolves `recipientUserId` to a mailbox ({{peer-methods}}). It compares the other identity strings octet for octet and resolves each one to a local user of that mailbox:
 
-1. An identity equal to the receiving server's own `ownerUserId` refers to the mailbox owner, whose local id is the owner's `accountId`.
+1. An identity equal to the mailbox's `ownerUserId` refers to the mailbox owner, whose local id is the owner's `accountId`.
 2. Otherwise, an identity equal to the `identity` of a ChatContact refers to that ChatContact.
 3. Otherwise, the receiving server MUST create a placeholder ChatContact with that `identity` and a server-assigned `id`, and the identity refers to the placeholder. The placeholder's other properties are learned through later interactions.
 
@@ -343,13 +349,16 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the receiving server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the owner of the mailbox the message, edit, or reaction is delivered to ({{peer-methods}}).
 
 `chatId` (String):
 : The Chat ID. For direct chats, if the receiving server already has a direct Chat whose `contactId` is the id of the sender's ChatContact, it MUST verify that `chatId` matches the stored chatId, or resolve a mismatch per {{direct-chat-race}}. For group and channel chats, the receiver MUST verify this value matches the chatId of a known chat of which the sender is a current member.
 
 `senderUserId` (String):
-: The sender's identity string ({{identity-mapping}}). MUST match the peer identity of the request's authenticated peer domain ({{identity-binding}}). The receiver MUST compare these and MUST reject the request if they differ.
+: The sender's identity string ({{identity-mapping}}). MUST be a peer identity of the request's authenticated peer domain ({{identity-binding}}). The receiver MUST check this and MUST reject the request if it is not.
 
 `chatKind` (String):
 : `"direct"`, `"group"`, or `"channel"`. Informs which chatId verification procedure applies.
@@ -419,7 +428,7 @@ Before populating the `message` fields of an outbound `Peer/deliver` call, the s
 Before storing a new message, the server MUST perform the following steps in order:
 
 1. Verify the request signature and the identity binding ({{peer-authentication}}).
-2. Confirm `senderUserId` matches the peer identity. Reject immediately if they differ. Resolve `senderUserId` to the sender's local ChatContact per {{identity-mapping}}; the remaining steps refer to that ChatContact as the sender.
+2. Confirm `senderUserId` is a peer identity of the request ({{identity-binding}}). Reject immediately if it is not. Resolve `recipientUserId` to a mailbox ({{peer-methods}}), rejecting with `forbidden` if there is none; the remaining steps take place in that mailbox. Resolve `senderUserId` to the sender's local ChatContact per {{identity-mapping}}; the remaining steps refer to that ChatContact as the sender.
 3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id or resolve a mismatch per {{direct-chat-race}}; otherwise create a new Chat record with this chatId and set `contactId` to the sender's ChatContact `id` (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat. If the group chat's `closedAt` is set, or the channel's Space has `closedAt` set ({{JMAP-CHAT}}), reject with `forbidden`.
 4. For channel chats: verify that no active SpaceBan exists for the sender in the Space containing the identified channel. If a SpaceBan exists, silently drop the message and return success.
 5. For channel chats: verify that the sender holds the `"send"` permission in the identified channel per the Space permission resolution defined in {{JMAP-CHAT}}. If the sender lacks `"send"`, reject with `forbidden`.
@@ -472,7 +481,10 @@ Method name: `Peer/receipt`
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the receiving server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the owner of the mailbox that holds the message: the message's original sender ({{peer-methods}}).
 
 `senderMsgId` (String):
 : The sender-assigned ULID identifying the message for which this receipt is being sent.
@@ -490,7 +502,7 @@ Method name: `Peer/receipt`
 : The ReadDisposition value indicating why the message was acknowledged. SHOULD be present when `readAt` is present. If `readAt` is present and `readDisposition` is absent, the receiving server MUST store `"displayed"`. See ReadDisposition in {{JMAP-CHAT}}. Unrecognized values MUST be stored as-is.
 
 `readerUserId` (String):
-: The identity string of the acknowledging user ({{identity-mapping}}). For group chats, the receiver updates the per-recipient delivery receipt in `deliveryReceipts` under that user's local ChatContact `id`. The `readerUserId` MUST match the peer identity of the calling server; the receiver MUST reject the request with `forbidden` if they differ.
+: The identity string of the acknowledging user ({{identity-mapping}}). For group chats, the receiver updates the per-recipient delivery receipt in `deliveryReceipts` under that user's local ChatContact `id`. The `readerUserId` MUST be a peer identity of the request ({{identity-binding}}); the receiver MUST reject the request with `forbidden` if it is not.
 
 ### Sender Behavior
 
@@ -527,20 +539,23 @@ SHOULD return a normal success response regardless.
 
 ## Peer/typing
 
-Notifies a remote mailbox that the owner of the calling server is or is not currently typing in a shared chat.
+Notifies a remote mailbox that a user of the calling server is or is not currently typing in a shared chat.
 
 Method name: `Peer/typing`
 
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the receiving server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the owner of the mailbox to notify ({{peer-methods}}).
 
 `chatId` (String):
 : The Chat ID of the conversation in which typing is occurring.
 
 `senderUserId` (String):
-: The identity string of the typing user ({{identity-mapping}}). MUST match the peer identity; the receiver MUST reject the request if they differ.
+: The identity string of the typing user ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}); the receiver MUST reject the request if it is not.
 
 `typing` (Boolean):
 : `true` if the user is typing; `false` if typing has stopped.
@@ -589,20 +604,23 @@ Method name: `Peer/retract`
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the receiving server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the owner of the mailbox that holds the message ({{peer-methods}}).
 
 `chatId` (String):
 : The Chat ID containing the message to be retracted.
 
 `senderUserId` (String):
-: The identity string of the user requesting retraction ({{identity-mapping}}). MUST match the peer identity.
+: The identity string of the user requesting retraction ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}).
 
 `senderMsgId` (String):
 : The sender-assigned ULID of the message to retract.
 
 ### Sender Behavior
 
-When a `Message/set` update sets `deletedForAll: true` on a message whose `senderId` is the owner's `accountId` ({{JMAP-CHAT}}), the server MUST send `Peer/retract` to the server of every other participant in the Chat.
+When a `Message/set` update sets `deletedForAll: true` on a message whose `senderId` is the owner's `accountId` ({{JMAP-CHAT}}), the server MUST send `Peer/retract` to the mailbox of every other participant in the Chat.
 
 ### Receiver Behavior
 
@@ -627,13 +645,16 @@ Method name: `Peer/groupUpdate`
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the receiving server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the owner of the mailbox to notify ({{peer-methods}}).
 
 `chatId` (String):
 : The group chat ULID.
 
 `senderUserId` (String):
-: The identity string of the user making the change ({{identity-mapping}}). MUST match the peer identity. The sending server SHOULD also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
+: The identity string of the user making the change ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}). The sending server SHOULD also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
 
 `action` (String):
 : One of the following values:
@@ -647,7 +668,7 @@ Method name: `Peer/groupUpdate`
   - `"close"` — The sender, the group's last admin, is departing while other members remain, which closes the group ({{JMAP-CHAT}}). Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list and set the local Chat record's `closedAt`. The sending server sends `"close"` in place of `"leave"`.
 
 `members` (ChatMember[], required for `"create"`):
-: Full membership list at the time of this update, including the calling server's owner. Each ChatMember `id` and `invitedBy` carries an identity string. The receiver resolves each one per {{identity-mapping}}, creating a placeholder ChatContact for each identity it does not know.
+: Full membership list at the time of this update, including the sender. Each ChatMember `id` and `invitedBy` carries an identity string. The receiver resolves each one per {{identity-mapping}}, creating a placeholder ChatContact for each identity it does not know.
 
 `addedMembers` (ChatMember[], required for `"addMembers"`):
 : The newly added members. Each ChatMember `id` and `invitedBy` is resolved as for `members`, including placeholder creation.
@@ -688,17 +709,20 @@ This specification defines federation for group chats only. Space-level operatio
 
 ## Peer/subscribePresence {#peer-subscribepresence}
 
-Requests that the remote server push presence updates for its owner to the calling server. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not.
+Requests that the remote server push presence updates for the user that `recipientUserId` names to a subscriber on the calling server. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not.
 
 Method name: `Peer/subscribePresence`
 
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the remote server whose owner's presence is being subscribed to.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the user whose presence is being subscribed to ({{peer-methods}}).
 
 `subscriberId` (String):
-: The `ownerUserId` of the calling server. MUST match the peer identity; the remote server MUST reject the request if they differ.
+: The identity string of the subscribing user ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}); the remote server MUST reject the request if it is not.
 
 `ttl` (UnsignedInt, optional):
 : Requested subscription lifetime in seconds. Servers MAY cap or adjust this value. If absent, the server assigns an implementation-defined default TTL. Subscriptions that are not renewed before expiry SHOULD be silently dropped by the server.
@@ -725,23 +749,26 @@ Method name: `Peer/subscribePresence`
 
 ### Behavior
 
-On success, the remote server MAY push subsequent `Peer/presence` calls to the subscriber whenever the owner's presence, `statusText`, or `statusEmoji` changes. Servers SHOULD rate-limit outbound `Peer/presence` calls per subscriber; the specific rate is implementation-defined. Servers MAY drop presence push deliveries that fail; presence delivery is best-effort.
+A subscription is identified by its `subscriberId` and `recipientUserId`. On success, the remote server MAY push subsequent `Peer/presence` calls to the subscriber whenever the subscribed user's presence, `statusText`, or `statusEmoji` changes; each carries the subscribed user's identity in `identity` and the `subscriberId` in `recipientUserId`. Servers SHOULD rate-limit outbound `Peer/presence` calls per subscriber; the specific rate is implementation-defined. Servers MAY drop presence push deliveries that fail; presence delivery is best-effort.
 
 Calling `Peer/subscribePresence` again before the TTL expires renews the subscription and SHOULD reset the TTL to the newly granted value.
 
 ## Peer/unsubscribePresence {#peer-unsubscribepresence}
 
-Cancels a presence subscription before its TTL expires. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not. Servers MUST succeed if no active subscription exists for the given `subscriberId`.
+Cancels a presence subscription before its TTL expires. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not. Servers MUST succeed if no active subscription exists for the given `subscriberId` and `recipientUserId`.
 
 Method name: `Peer/unsubscribePresence`
 
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the remote server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the user whose presence was subscribed to ({{peer-methods}}).
 
 `subscriberId` (String):
-: The `ownerUserId` of the calling server. MUST match the peer identity.
+: The identity string of the subscribing user ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}).
 
 ### Response
 
@@ -750,17 +777,20 @@ Method name: `Peer/unsubscribePresence`
 
 ## Peer/presence {#peer-presence}
 
-Delivers a presence update for the calling server's owner to a subscriber. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not.
+Delivers a presence update for a user of the calling server to a subscriber. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not.
 
 Method name: `Peer/presence`
 
 ### Request Arguments
 
 `accountId` (String):
-: Account ID on the receiving server.
+: The id of the peer-role account ({{peer-methods}}).
+
+`recipientUserId` (String):
+: The identity string of the subscriber, the owner of the mailbox to update ({{peer-methods}}).
 
 `identity` (String):
-: The `ownerUserId` of the pushing server, an identity string ({{identity-mapping}}). MUST match the peer identity; the receiver MUST reject the request if they differ.
+: The identity string of the user whose presence changed ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}); the receiver MUST reject the request if it is not.
 
 `presence` (String):
 : The updated presence state of the remote owner. One of `"online"`, `"away"`, `"busy"`, or `"offline"`. An owner whose PresenceStatus is `"invisible"` is reported as `"offline"`; `"invisible"` is never sent to a peer.
@@ -799,7 +829,7 @@ A delivery attempt is considered failed when the remote server returns a transie
 
 ## Group Chat Delivery
 
-For group chats, the sender delivers independently to each participant's mailbox and, if it supports `deliveryReceipts`, tracks per-recipient state in that field of the outgoing Message record. The aggregate `deliveryState` is the best state any recipient has reached, as defined in {{delivery-state-transitions}}; it advances to `"delivered"` as soon as one recipient's server has acknowledged receipt.
+For group chats, the sender delivers independently to each participant's mailbox, naming it in `recipientUserId` ({{peer-methods}}), and, if it supports `deliveryReceipts`, tracks per-recipient state in that field of the outgoing Message record. The aggregate `deliveryState` is the best state any recipient has reached, as defined in {{delivery-state-transitions}}; it advances to `"delivered"` as soon as one recipient's server has acknowledged receipt.
 
 A message whose `senderMsgId` is already known for the given chat at the receiving server MAY be silently discarded by that server. Sending servers SHOULD treat a successful response (even for a discarded duplicate) as confirmation that delivery is complete for that recipient.
 
@@ -828,7 +858,7 @@ Errors in Peer/* methods follow the standard JMAP method-level error format ({{R
 
 ## Identity Verification {#identity-verification}
 
-The `senderUserId` argument in all Peer/* methods is caller-supplied and untrusted. The local server obtains the peer identity independently, as the identity bound to the request's authenticated peer domain ({{identity-binding}}), and compares it to `senderUserId` before any storage, state change, or side effect, rejecting the request if they differ (steps 1 and 2 of {{new-message-validation}}).
+The `senderUserId` argument, like every caller-identity field of a Peer/* method, is caller-supplied and untrusted. Before any storage, state change, or side effect, the local server checks that it is a peer identity of the request, bound to the request's authenticated peer domain by its host or, for a host-less DID, by DID-bound verification ({{identity-binding}}), and rejects the request if it is not (steps 1 and 2 of {{new-message-validation}}). A peer domain speaks for every identity whose host it is, so whoever holds a peer domain's signing keys can act for all of its users, as the operator of an email domain can.
 
 ## Signing Key Compromise {#key-compromise}
 
@@ -892,19 +922,23 @@ The recipient set targeted by a broadcast mention (`@everyone`, `@here`, or `@ad
 
 A receiving server's targeted-owner opt-out preferences (for example, "always honor mute for this account") are deployment-defined and SHOULD NOT be exposed via the federation protocol. Disclosing whether a remote owner has chosen to suppress broadcast elevation would let a sender confirm which recipients are silently filtering them; servers SHOULD NOT reveal this state in any Peer/* response or error.
 
+## Mailbox Enumeration {#mailbox-enumeration}
+
+A peer cannot list the mailboxes a server hosts: the peer-role session has a single account ({{peer-authentication}}), and the discovery Session of a server that hosts more than one mailbox names no owner ({{session-extensions}}). A peer can still test a guessed identity, because a call to an existing mailbox can succeed where a call naming an unknown identity is rejected ({{peer-methods}}). The uniform rejection keeps the error itself from telling the two apart; it does not prevent guessing.
+
 ## Placeholder ChatContact Creation
 
 A peer can cause a receiving server to create placeholder ChatContacts ({{identity-mapping}}) by naming identities the receiver does not know. Servers MAY limit how many placeholder ChatContacts a peer can cause to be created. A server that applies such a limit rejects, with `rateLimited`, any request that would exceed it, and that request creates no placeholders.
 
 ## Presence Subscription Abuse
 
-Servers implementing `Peer/subscribePresence` authenticate the subscriber before recording the subscription and reject unauthenticated or mismatched `subscriberId` values ({{request-signing}}, {{peer-subscribepresence}}). Servers SHOULD limit the number of active presence subscriptions per peer to bound fan-out costs on presence changes. TTL-based expiry ensures that subscriptions from peers that have gone away do not accumulate indefinitely.
+Servers implementing `Peer/subscribePresence` authenticate the subscriber before recording the subscription and reject unauthenticated or unbound `subscriberId` values ({{request-signing}}, {{identity-binding}}). Servers SHOULD limit the number of active presence subscriptions per peer to bound fan-out costs on presence changes. TTL-based expiry ensures that subscriptions from peers that have gone away do not accumulate indefinitely.
 
 ## End-to-End Encryption Relay Considerations
 
 When the federation protocol is used in conjunction with end-to-end encrypted deployments (as described in {{JMAP-CHAT}}), the relay or forwarding server routes Peer/* messages without access to plaintext message content: `body` carries only ciphertext when `bodyType` indicates an encrypted payload type (e.g., `"application/mls-ciphertext"`), and the encryption key schedule excludes the relay (e.g., by using MLS {{RFC9420}} or a similar protocol that does not involve the relay in key agreement), as the End-to-End Encrypted Deployments section of {{JMAP-CHAT}} specifies.
 
-The End-to-End Encrypted Deployments section of {{JMAP-CHAT}} defines which `Peer/deliver` fields are outside the ciphertext. When `bodyType` is encrypted, `mentions`, `broadcastMentions`, attachment metadata, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` are carried inside the ciphertext or omitted, and steps 11 through 13 of {{new-message-validation}} are skipped. The sender MAY be authenticated inside the end-to-end encryption layer, in which case a relay needs only a recipient or group routing handle, and the sending server's `ownerUserId`, which `senderUserId` carries, MAY be an opaque value that does not reveal the sender's address, provided its host is the sending server's peer domain (for example, `k3x9q7@relay.example`). That opaque value is an identity string like any other: it is bound to the authenticated peer domain per {{identity-binding}} and mapped per {{identity-mapping}}; it is not exempt. A host-less opaque value fails {{identity-binding}} and is rejected. Relay-side enforcement of SpaceBan and slow mode is OPTIONAL; receiving clients enforce any check the relay does not perform against signed group state.
+The End-to-End Encrypted Deployments section of {{JMAP-CHAT}} defines which `Peer/deliver` fields are outside the ciphertext. When `bodyType` is encrypted, `mentions`, `broadcastMentions`, attachment metadata, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` are carried inside the ciphertext or omitted, and steps 11 through 13 of {{new-message-validation}} are skipped. The sender MAY be authenticated inside the end-to-end encryption layer, in which case a relay needs only a recipient or group routing handle, and the sender's identity, which `senderUserId` carries, MAY be an opaque value that does not reveal the sender's address, provided its host is the sending server's peer domain (for example, `k3x9q7@relay.example`). That opaque value is an identity string like any other: it is bound to the authenticated peer domain per {{identity-binding}} and mapped per {{identity-mapping}}; it is not exempt. A host-less opaque value fails {{identity-binding}} and is rejected. Relay-side enforcement of SpaceBan and slow mode is OPTIONAL; receiving clients enforce any check the relay does not perform against signed group state.
 
 Metadata visible to relay servers (including the routing fields, timestamp, body size, and `reactionUpdate` and `Peer/retract` arguments) remains an information-leakage surface even in encrypted deployments. Deployments with strong metadata-privacy requirements SHOULD apply message padding and cover traffic at the transport layer; those techniques are outside the scope of this document.
 
