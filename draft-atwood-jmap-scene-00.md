@@ -88,6 +88,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-00
     date: 2026
+  JMAP-CHAT-FED:
+    title: "JMAP Chat Federation"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-federation-00
+    date: 2026
   JMAP-CHAT-WSS:
     title: "JMAP Chat over WebSocket"
     author:
@@ -3049,6 +3056,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Physics engine.** Bullet, PhysX, Rapier, Cannon.js, or none. The `physicsMode` field signals intent; the simulation layer implements it.
 - **Avatar system.** Full-body tracking, head-and-hands, 2D sprites, abstract shapes. The `visualRef` points to whatever the deployment uses. A humanoid avatar in VRM ({{VRM}}), a glTF 2.0 binary with avatar-specific extensions, fits this model as an ordinary glTF asset.
 - **Authentication for region entry.** OAuth, JMAP auth, tickets, or any other mechanism. The spec defines access policies; the auth mechanism is deployment infrastructure.
+- **Entry from another server.** Out of scope. Only users with access to the region's hosting account on the same JMAP server can enter it ({{account-model}}). Letting a user of one server enter a region hosted on another, in the manner of the Hypergrid ({{HYPERGRID}}), is left to a future extension built on {{JMAP-CHAT-FED}} or a similar federation protocol.
 - **Spatial audio.** How voice from {{JMAP-VTC}} is spatialized based on avatar positions. This is a simulation-layer concern at the intersection of VTC and Scene.
 - **Scripting and behaviors.** Object behaviors, triggers, animations, and interaction logic. Out of scope. May be modeled via `worldState` or a future companion specification.
 - **Economy and inventory.** Virtual currencies, item trading, user inventories. Out of scope.
