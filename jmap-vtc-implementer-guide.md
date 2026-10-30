@@ -1000,6 +1000,13 @@ URL with `credential` and `expiresAt` both `null`. Pick an expiry that covers
 a typical viewing session plus refresh margin; clients refetch before
 `expiresAt`.
 
+**Stream sync.** Set `timeReference` from whatever your pipeline knows:
+the packager's program date-time for segmented output, the RTCP sender-report
+mapping for WebRTC egress, or the publish timestamp for MoQ. Update it when
+the timeline restarts, not on every segment; each update is a JMAP state
+change. Keep reactions, scene changes, and other interactive events on JMAP
+push and WebSocket; do not inject them into the media.
+
 **Ignore what you do not know.** Clients skip endpoints with an
 unrecognized `protocol` and tracks with an unrecognized `kind`. A server can
 add a new protocol without breaking old clients, as long as it keeps offering
