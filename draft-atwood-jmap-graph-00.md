@@ -82,6 +82,10 @@ The following are out of scope for this revision. Each may be addressed by a sep
 - **Edges between Graphs.** A node can instead stand for a resource outside its Graph, by URI ({{links}}), which links Graphs, and anything else on the web, without cross-graph edges.
 - **Application profiles** that assign meaning to edge types and annotation keys.
 
+Trust and policy are likewise outside this document. Whether a user is verified and which credentials or conditions qualify a user to be granted access to a Graph are answered by the deployment's own policy, which may consult an external service; this document defines no interface to such a service and sees only the resulting sharing rights ({{RFC9670}}).
+
+New data and new behaviour are added by an extension, not by changing this document. An extension has a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8). Conventions that need no new behaviour use annotation keys and edge `type` values under a reversed domain name the author controls ({{annotations}}).
+
 # Conventions and Definitions
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear in all capitals, as shown here.

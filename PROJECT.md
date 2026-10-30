@@ -28,6 +28,7 @@ All open work is in beads: `bd ready` for the frontier, `bd show <id>` for detai
 - **Naming:** capability URNs live under `urn:ietf:params:jmap:` and are assigned only through the JMAP Capabilities registry. References to objects are `jmap:` object URIs, not URNs.
 - **Citations:** cite only posted datatracker revisions. Editor's copies in `~/GIT` (listed in AGENTS.md) are for seeing upcoming changes.
 - **Optionality:** every companion is optional and has its own capability. A deployment without a companion must still be fully functional.
+- **Three extension rules:** (1) Trust and policy (who is verified, which credentials a gate accepts, age or membership) go to the deployment's policy hook or oracle, never into a core MUST. The oracle stays non-normative: [jmap-chat-vc-guide.md](jmap-chat-vc-guide.md) Section 9 describes one, with its unreachable behaviour as an operator setting. If an oracle interface ever becomes normative, the same change must specify its down behaviour. No trust-registry format, oracle protocol, or credential type is adopted as normative. (2) New data and new behaviour go to an extension capability in the proposer's own namespace (RFC 8620 Section 1.8 URL or registered URN), using the extension points each draft already has. (3) The core changes only with running code from two independent implementations. Rules 1 and 2 are stated in the core drafts' scope text and in the calendars, tasks, and graph-edit non-goal lists. Rule 3 is project governance and appears only here and in README.md.
 
 ## What NOT To Do
 

@@ -111,6 +111,8 @@ The following are out of scope for this revision:
 - Signing of ops and detection of forked histories.
 - Federation of edit logs between servers.
 
+Signing, end-to-end encryption, and federation are added by an extension with a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8), not by changing this document. An edit format needs no extension: it is named by its media type ({{formats}}).
+
 # Conventions and Definitions
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear in all capitals, as shown here.

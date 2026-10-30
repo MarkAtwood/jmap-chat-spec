@@ -277,6 +277,12 @@ The two specifications are complementary rather than competing. MIMI defines `ap
 
 The federation protocol defined in {{JMAP-CHAT-FED}} uses a mailbox-per-user architecture distinct from MIMI's hub-and-spoke room ownership model; see {{JMAP-CHAT-FED}} for discussion of that distinction.
 
+## Policy and Extensions {#policy-extensions}
+
+Trust and policy are the deployment's to decide, not this document's. Whether a user is verified, which credentials admit a user to a Space or Chat, and whether a user meets an age or membership condition are answered by the deployment's own policy, which may consult an external service; this document defines no interface to such a service. The protocol carries only the outcome, such as a `forbidden` error ({{space-permissions}}, {{space-deployment}}).
+
+New data and new behaviour are added by an extension, not by changing this document. An extension has a capability of its own, either registered in the JMAP Capabilities registry or a URL in a domain its author controls ({{RFC8620}}, Section 1.8). It can also use the extension points this document provides: Endpoint and MessageAction `type` URIs outside the reserved prefix ({{endpoint}}), their `metadata` maps, and additional `readDisposition` values ({{read-disposition-type}}).
+
 # Conventions and Definitions
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 {{RFC2119}} {{RFC8174}} when, and only when, they appear in all capitals, as shown here.

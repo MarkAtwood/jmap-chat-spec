@@ -178,6 +178,16 @@ Non-normative. These explain *how* to implement and deploy the specs, and what e
 
 ---
 
+## Scope and Extension Rules
+
+Three rules decide where a proposed change goes:
+
+1. **Trust and policy go to the deployment.** Who is verified, which credentials a gate accepts, and age or membership checks are answered by the deployment's policy hook or an oracle it consults, never by a MUST in a draft. The drafts fix only the wire outcome, such as `forbidden`. [jmap-chat-vc-guide.md](jmap-chat-vc-guide.md) Section 9 describes one such credential oracle. It is guidance: no trust-registry format, oracle protocol, or credential type is normative.
+2. **New data and new behaviour go to an extension.** The proposer defines an extension capability in their own namespace (a capability URL in a domain they control, per RFC 8620 Section 1.8, or a registered URN) and uses the extension points each draft already offers: type URIs, reverse-domain identifiers, and extension maps such as `metadata`, `worldState`, and Graph annotations. The core drafts do not grow to hold it.
+3. **The core changes only with running code.** A core draft changes only when two independent implementations have running code for the change.
+
+---
+
 ## Relationship to Other Standards
 
 **Built on:** [RFC 8620](https://www.rfc-editor.org/rfc/rfc8620) (JMAP Core) and, for the WebSocket bindings, [RFC 8887](https://www.rfc-editor.org/rfc/rfc8887). All data types, methods, and push mechanisms are JMAP capabilities, so clients use the standard JMAP request/response framing.
