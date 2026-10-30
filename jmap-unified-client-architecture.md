@@ -1025,9 +1025,10 @@ participant count.
 (see Section 7). The video grid may be replaced or supplemented by
 avatar-mounted video textures in the 3D scene.
 
-**Recording/livestream indicators:** When `VTCRecording` or
-`VTCLivestream` objects exist for the active call, the UI displays
-persistent indicators ("Recording" / "Live").
+**Recording/livestream indicators:** While a `VTCRecording` for the
+active call is in state `"recording"` or `"paused"`, or a
+`VTCLivestream` is in state `"live"`, the UI displays persistent
+indicators ("Recording" / "Live").
 
 ### 6.6 Tab System and Multi-View
 
