@@ -1,0 +1,22 @@
+{
+  "id": "jmap-chat-spec-xpzz.5",
+  "title": "vtc-00: captions and DRM in hosted streams",
+  "description": "Captions in hosted streams as an advertised, protocol-neutral track list (kind, language, format), alongside today's chat-message captions. DRM: optional and only signalled (e.g. encrypted flag plus key-system identifiers); the reference path stays unencrypted so free tools work. Key-provider protocols and packaging formats appear only as non-normative examples.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T21:34:14.955114052Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T21:46:51.998143005Z",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-xpzz.5",
+      "depends_on_id": "jmap-chat-spec-xpzz",
+      "type": "parent-child",
+      "created_at": "2026-10-21T21:34:16.275697714Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

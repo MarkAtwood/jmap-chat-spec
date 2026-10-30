@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-cvak",
+  "title": "chat-00: add jmap: strip to MessageAction forward rule",
+  "description": "draft-atwood-jmap-chat-00 L408 says servers MUST store and forward MessageAction records without inspection or transformation except user-reference mapping, but object-uri-00 L86 and federation-00 L337 require receiving servers to remove MessageActions/Endpoints whose uri is a jmap: URI. Add that removal to the L408 exception list. crate-jmap implements the strip (JMAP-0x0q.40).",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-20T22:58:37.760845887Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-20T22:58:37.760845887Z"
+}

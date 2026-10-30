@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-16rd",
+  "title": "federation: status for requests rejected by the replay restart rule",
+  "description": "draft-atwood-jmap-chat-federation-00 §Security (replay): 'A receiving server whose nonce cache is lost, for example on restart, SHOULD reject requests whose created precedes the restart'. §Request Signing says a request failing verification gets 403. The draft does not say which status the restart rule uses. Because created has one-second resolution, a request signed in the same second the receiver restarted is rejected by this rule; with 403 the sender treats it as permanent (is_transient retries only 5xx) and the message is lost. Found by chinwag's two-server test (chinwag bead chinwag-nuqe.7.23).\n\nDecision taken in chinwag (Mark, 2026-10-30): answer 503 for this case, so the sender re-signs with a fresh created/nonce and retries; nothing unverified is accepted. Proposed draft text: a request rejected only because its created precedes the receiver's restart MUST be answered with 503 (Service Unavailable), and the sender retries it as a transient failure with a new signature; 403 stays for every other verification failure.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-30T18:38:00.84072914Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-30T18:38:00.84072914Z",
+  "labels": [
+    "federation"
+  ]
+}

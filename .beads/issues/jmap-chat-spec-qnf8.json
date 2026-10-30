@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-qnf8",
+  "title": "State the three extension rules in scope/non-goals",
+  "description": "Mark 2026-10-21 discussion. Write three short rules side by side wherever the drafts state scope and non-goals (and in README/PROJECT): (1) trust and policy questions (who is verified, which credentials a gate accepts, age/membership) go to a deployment's oracle or policy hook, never into core MUSTs; (2) new data and new behaviour go to an extension capability in the proposer's own namespace (capability URN, extra maps, Other variants); (3) the core changes only with running code from two independent implementations. Keep the oracle interface minimal and non-normative: jmap-chat-vc-guide.md §9 already describes the credential oracle and makes unreachable behaviour (fail open/closed, keep-until-stale) an explicit operator setting (L380-393); per the operator-SHOULD rule this stays operator policy unless an oracle interface ever becomes normative, in which case its down-behaviour must be specified in the same change. Do not adopt any particular trust-registry format, oracle protocol or credential type as normative; defer to their own documents.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-21T23:32:29.44435621Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-21T23:32:29.44435621Z"
+}
