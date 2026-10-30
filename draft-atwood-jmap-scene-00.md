@@ -109,6 +109,59 @@ informative:
     seriesinfo:
       Internet-Draft: draft-ietf-jmap-metadata-04
     date: 2026-10-19
+  OMI-GLTF:
+    title: "OMI glTF Extensions"
+    author:
+      org: Open Metaverse Interoperability Group
+    target: https://github.com/omigroup/gltf-extensions
+  OPENSIM:
+    title: "OpenSimulator"
+    author:
+      org: OpenSimulator Project
+    target: http://opensimulator.org/
+  HYPERGRID:
+    title: "Hypergrid: Architecture and Protocol for Virtual World Interoperability"
+    author:
+      fullname: Cristina Videira Lopes
+    seriesinfo:
+      "IEEE Internet Computing": "Vol. 15, pp. 22-29"
+    date: 2011
+  VRM:
+    title: "VRM Specification"
+    author:
+      org: VRM Consortium
+    target: https://github.com/vrm-c/vrm-specification
+  WEBXR:
+    title: "WebXR Device API"
+    author:
+      - fullname: Brandon Jones
+        role: editor
+      - fullname: Manish Goregaokar
+        role: editor
+      - fullname: Rik Cabanier
+        role: editor
+    seriesinfo:
+      W3C: CRD-webxr-20261029
+    date: 2026-10-29
+    target: https://www.w3.org/TR/2026/CRD-webxr-20261029/
+  WEBXR-AR:
+    title: "WebXR Augmented Reality Module - Level 1"
+    author:
+      - fullname: Brandon Jones
+        role: editor
+      - fullname: Manish Goregaokar
+        role: editor
+      - fullname: Rik Cabanier
+        role: editor
+    seriesinfo:
+      W3C: CRD-webxr-ar-module-1-20250425
+    date: 2025-04-25
+    target: https://www.w3.org/TR/2025/CRD-webxr-ar-module-1-20250425/
+  MSF:
+    title: "Metaverse Standards Forum"
+    author:
+      org: Metaverse Standards Forum
+    target: https://metaverse-standards.org/
 
 --- abstract
 
@@ -309,6 +362,8 @@ glTF 2.0 is the baseline because:
 - The binary container (.glb) is a single self-contained file suitable for JMAP blob storage and CDN distribution via `assetUri`.
 
 Clients SHOULD prefer glTF when creating assets intended for cross-deployment portability. Assets in deployment-specific formats (gaussian splats, neural radiance fields, voxels, USD) are valid within deployments that advertise those media types in `supportedVisualTypes`, but are not guaranteed to be portable.
+
+glTF assets MAY carry the Open Metaverse Interoperability Group's glTF extensions ({{OMI-GLTF}}), such as `OMI_spawn_point` (spawn locations on nodes), `OMI_physics_body` and `OMI_physics_shape` (static, kinematic, or dynamic bodies, colliders, triggers, and their shapes), and `OMI_seat` (seats a humanoid avatar can sit on). The JMAP server treats asset contents as opaque and does not read these extensions. Where an extension and a Scene field describe the same thing, the Scene field is authoritative: a new avatar enters at the region's `spawnPosition` and `spawnOrientation` ({{scene-avatar-enter}}), not at a spawn point inside an asset, and an object's `physicsMode` governs how the simulation layer treats the object as a whole. Within those limits, the simulation layer can use extension data the Scene model lacks, such as collider shapes, seats, or per-team spawn points in a game.
 
 For security considerations related to asset fetching and glTF parsing, see {{security}}.
 
@@ -2972,6 +3027,7 @@ Description:
 
 - **Mozilla Hubs** provided the primary reference for a browser-based social 3D environment: WebRTC-based voice with spatial audio, room-based entry, avatar presence, and media sharing. The SceneRegion/SceneAvatar model mirrors Hubs' room/participant model.
 - **Second Life** informed the persistent-world model: user-created objects with permissions, land ownership (modeled as region access control), and the separation between the world server and the voice server (Vivox, later WebRTC). The SceneObject permission model (owner, region owner, admin) follows SL's pattern.
+- **OpenSimulator** ({{OPENSIM}}), an open-source server for Second Life-style worlds, and its **Hypergrid** ({{HYPERGRID}}) are the closest prior art for federated regions. An OpenSimulator grid tiles regions edge to edge and hands an avatar from one simulator to the next when it crosses a border. The Hypergrid lets an avatar teleport to a region on another operator's grid, admitted by that grid's Gatekeeper, while the user's identity and inventory stay with the home grid. JMAP Scene has no counterpart to either mechanism in this version. Each SceneRegion is self-contained: moving between regions means leaving one and entering another ({{scene-avatar-enter}}), and only users with access to the region's hosting account on the same JMAP server can enter it ({{account-model}}). Seamless border crossing, where a deployment wants it, belongs to the simulation layer behind `simulationUri`.
 - **glTF 2.0** ({{GLTF}}) provided the coordinate system convention (right-handed, Y-up, meters, quaternion orientation) and the mandatory-to-implement visual asset format.
 - **A-Frame / Three.js** informed the scene graph model: objects with position/orientation/scale, parent-child hierarchy, and component-like custom properties.
 - **Gather** (and similar 2D spatial-video products like Amazon Chime's experimental spatial view) demonstrated that top-down 2D worlds with proximity-based video and spatial audio are a compelling subset of 3D environments, particularly for virtual offices and social spaces. The `viewHint` field on SceneRegion was designed to support this use case natively without requiring a separate specification.
@@ -2979,6 +3035,8 @@ Description:
 - **Board games and tabletop simulators** (Tabletop Simulator, Board Game Arena) influenced the SceneObject permission model and the 2D top-down view hint. A board game is a scene region with a fixed set of objects (pieces, cards, dice) that players interact with via grab/release/activate actions, rendered top-down.
 - **Location-based AR games** (Niantic's Ingress and Pokemon Go, and earlier experiments like Geocaching) demonstrated that GPS-anchored virtual objects in physical space create compelling shared experiences. The `geoAnchor` field on SceneRegion and the `"ar"` view hint enable the same pattern as an open protocol rather than a proprietary platform.
 - **Game engine conventions** (Unity, Unreal, Godot) informed the physicsMode and interactable properties. The separation between physics modes (static, dynamic, kinematic, none) is standard across all major engines.
+
+The Metaverse Standards Forum ({{MSF}}) coordinates interoperability work among the standards bodies behind several of the formats cited here; it publishes no specification this document depends on.
 
 ## Explicit Non-Prescriptions
 
@@ -2989,7 +3047,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Rendering engine.** Three.js, Babylon.js, Unity, Unreal, native Vulkan/Metal, or any other renderer. The spec has no rendering-layer surface.
 - **Interest management algorithm.** Radius-based, frustum-based, occlusion-based, portal-based, or none. Deployment-defined.
 - **Physics engine.** Bullet, PhysX, Rapier, Cannon.js, or none. The `physicsMode` field signals intent; the simulation layer implements it.
-- **Avatar system.** Full-body tracking, head-and-hands, 2D sprites, abstract shapes. The `visualRef` points to whatever the deployment uses.
+- **Avatar system.** Full-body tracking, head-and-hands, 2D sprites, abstract shapes. The `visualRef` points to whatever the deployment uses. A humanoid avatar in VRM ({{VRM}}), a glTF 2.0 binary with avatar-specific extensions, fits this model as an ordinary glTF asset.
 - **Authentication for region entry.** OAuth, JMAP auth, tickets, or any other mechanism. The spec defines access policies; the auth mechanism is deployment infrastructure.
 - **Spatial audio.** How voice from {{JMAP-VTC}} is spatialized based on avatar positions. This is a simulation-layer concern at the intersection of VTC and Scene.
 - **Scripting and behaviors.** Object behaviors, triggers, animations, and interaction logic. Out of scope. May be modeled via `worldState` or a future companion specification.
@@ -2997,7 +3055,7 @@ The following design choices were left to deployments rather than prescribed:
 - **Terrain and heightmaps.** Terrain is a SceneObject with a visual representation. The spec does not define a terrain-specific data type.
 - **Building and editing tools.** Client-side concerns. Objects are created and modified via standard `SceneObject/set`; the UI for doing so is client-defined.
 - **2D rendering style.** For regions with `viewHint` of `"2d-topdown"` or `"2d-side"`, the rendering style (pixel art, vector, isometric projection, sprite sheets) is client-defined. The spec provides spatial coordinates and advisory view orientation; visual style is a client concern.
-- **AR experience.** For regions with `viewHint` of `"ar"` and a `geoAnchor`, the entire augmented reality user experience is client-defined. The spec provides geographic anchoring (where in the reference frame) and object positions (where relative to the anchor); everything else is the client's responsibility. This includes: compositing virtual objects onto the camera feed; occlusion, lighting estimation, and shadow casting; surface detection and plane tracking; GPS, visual-inertial odometry, or other tracking mechanisms; drift correction and relocalization; minimap or navigation UI; how to present the experience on phones, AR glasses, heads-up displays, or any other form factor. The spec says where objects are. The client decides how to show them.
+- **AR experience.** For regions with `viewHint` of `"ar"` and a `geoAnchor`, the entire augmented reality user experience is client-defined. The spec provides geographic anchoring (where in the reference frame) and object positions (where relative to the anchor); everything else is the client's responsibility. This includes: compositing virtual objects onto the camera feed; occlusion, lighting estimation, and shadow casting; surface detection and plane tracking; GPS, visual-inertial odometry, or other tracking mechanisms; drift correction and relocalization; minimap or navigation UI; how to present the experience on phones, AR glasses, heads-up displays, or any other form factor. The spec says where objects are. The client decides how to show them. A browser client, for example, might present an `"ar"` region in a WebXR `immersive-ar` session ({{WEBXR}}, {{WEBXR-AR}}) and a `"3d"` region in an `immersive-vr` or `inline` session.
 - **Game rules and turn logic.** For board-game or game use cases, rules enforcement, turn order, scoring, and win conditions are application logic outside the spec. Scene provides the spatial state layer; game logic runs above it.
 - **Color and color space.** The `environment` object is opaque; any color values within it are deployment-defined. Visual assets referenced by `visualRef` carry their own color data in whatever format and color space the asset format specifies. Where color values appear in deployment-defined fields (e.g., `environment.skyColor`, `environment.fogColor`), deployments can follow the color representation convention defined in {{JMAP-CHAT}}, Section 2.1: W3C Design Tokens format preferred, CAM16 as fallback, sRGB hex as baseline.
 
