@@ -1,0 +1,19 @@
+{
+  "id": "jmap-chat-spec-7muw",
+  "title": "guides: sync with hosted livestream model",
+  "description": "vtc-00 gained hosted livestreams (xpzz, commits 6af1b94..1e7e6f9): account capability livestreamModes, VTCLivestream.mode/failureReason/playbackEndpoints, embedded VTCPlaybackEndpoint and VTCStreamTrack. Stale text: jmap-unified-client-architecture.md L146 (capability example lacks livestreamModes), L538 ('outbound stream metadata' only), L541 (embedded-type list misses VTCPlaybackEndpoint, VTCStreamTrack); jmap-vtc-chat-integration-guide.md L60 and jmap-scene-vtc-integration-guide.md L75 (capability examples lack livestreamModes); jmap-vtc-e2ee-guide.md L319 ('bridge re-encodes for RTMP' assumes push mode).",
+  "status": "closed",
+  "priority": 3,
+  "issue_type": "task",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-30T18:53:58.612343922Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-30T18:55:07.5602749Z",
+  "started_at": "2026-10-30T18:54:28.440804254Z",
+  "closed_at": "2026-10-30T18:55:07.5602749Z",
+  "close_reason": "Closed",
+  "labels": [
+    "vtc"
+  ]
+}

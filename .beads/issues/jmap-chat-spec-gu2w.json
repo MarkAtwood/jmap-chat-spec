@@ -1,0 +1,25 @@
+{
+  "id": "jmap-chat-spec-gu2w",
+  "title": "scene-00: no cross-operator region entry",
+  "description": "Found while citing OpenSimulator Hypergrid (jmap-chat-spec-9k91). Scene admits a user to a region only via shared access to the hosting account on the same JMAP server (account-model). Hypergrid lets an avatar from one operator's grid teleport into another operator's region, admitted by the destination's Gatekeeper, with identity staying at the home grid. Scene has no way for a user of server A to enter a region hosted on server B. Decide: out of scope for -00 (say so), or design entry over the federation draft (visitor identity, admission, SceneAvatar for a remote user). Related: portals/world-graphs are application-layer per jmap-chat-spec-pdya.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-30T18:47:19.739653416Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-30T18:47:19.739653416Z",
+  "labels": [
+    "scene"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-gu2w",
+      "depends_on_id": "jmap-chat-spec-9k91",
+      "type": "discovered-from",
+      "created_at": "2026-10-30T18:47:29.027903144Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
