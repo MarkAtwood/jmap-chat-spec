@@ -538,7 +538,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-federation-00 §Key Publication
 **Severity:** MUST | **Round:** spec change (peer request signatures)
 
-**Test:** Send `GET /.well-known/jmap` with no `Signature` and no `Authorization` header. Verify 200 and that the Session contains a non-empty `peerSigningKeys`. If the server hosts a single mailbox, verify the Session contains that mailbox's `ownerUserId` (SHOULD). If it hosts more than one, verify the Session contains no `ownerUserId`, `ownerDirectAddress`, or `ownerEndpoints`. Then have the server under test receive a signed `Peer/deliver` from a test peer whose `/.well-known/jmap` answers 403 to any signed request. Verify the server under test fetches the peer's keys with an unsigned GET and accepts the delivery.
+**Test:** Send `GET /.well-known/jmap` with no `Signature` and no `Authorization` header. Verify 200 and that the Session contains a non-empty `peerSigningKeys`. If the server hosts more than one mailbox, verify the Session contains no `ownerUserId`, `ownerDirectAddress`, or `ownerEndpoints`. Then have the server under test receive a signed `Peer/deliver` from a test peer whose `/.well-known/jmap` answers 403 to any signed request. Verify the server under test fetches the peer's keys with an unsigned GET and accepts the delivery.
 
 **Common failure:** Requires authentication on `/.well-known/jmap` as for an ordinary RFC 8620 Session, or signs its own key fetches, so two such servers can never verify each other.
 
