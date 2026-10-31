@@ -130,9 +130,10 @@ publish the DNSSEC binding, and whether they add mutual TLS with DANE.
   however many users you host, and your unsigned `/.well-known/jmap`
   omits `ownerUserId`. To deliver one group message to several members
   hosted by the same peer, put one call per member in a single JMAP
-  request. Answer a call naming an unknown identity with the same
-  `forbidden` you give any other refused call, with no telling
-  `description`.
+  request. What you do with a call naming an unknown identity is up
+  to you: reject it, drop it, deliver it to a catch-all mailbox, or
+  forward it. If you reject it, use the same `forbidden` you give any
+  other refused call, with no telling `description`.
 
 ### Common patterns
 
