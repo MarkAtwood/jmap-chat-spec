@@ -114,8 +114,8 @@ informative:
     author:
       - fullname: Mauro De Gennaro
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-metadata-04
-    date: 2026-10-19
+      Internet-Draft: draft-ietf-jmap-metadata-05
+    date: 2026-10-28
   OMI-GLTF:
     title: "OMI glTF Extensions"
     author:
@@ -172,11 +172,11 @@ informative:
 
 --- abstract
 
-This document defines JMAP Scene, a JMAP capability ({{RFC8620}}) for managing three-dimensional spatial environments. It defines the `urn:ietf:params:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a `SceneObject/interact` method for object interactions; a coordinate system convention; and a visibility contract between server and client.
+This document defines JMAP Scene, a JMAP capability (RFC 8620) for managing three-dimensional spatial environments. It defines the `urn:ietf:params:jmap:scene` capability; four data types (SceneRegion, SceneObject, SceneAvatar, and SceneAsset); standard JMAP methods for managing spatial content including spatial query filters; a `SceneObject/interact` method for object interactions; a coordinate system convention; and a visibility contract between server and client.
 
 The specification models spatial *state* — what objects exist, where they are, and who is present — without prescribing the rendering technology or simulation protocol. Actual real-time position synchronization, physics, and rendering travel through a deployment-chosen simulation stack; the JMAP server is a spatial state database, not a rendering engine.
 
-The capability is standalone (`urn:ietf:params:jmap:scene`). When JMAP Chat ({{JMAP-CHAT}}) is also present, SceneRegion objects MAY carry back-references to Chat and Space objects for in-world text communication. When JMAP VTC ({{JMAP-VTC}}) is also present, SceneRegion objects MAY bind to VTCCall objects for in-world voice and video.
+The capability is standalone (`urn:ietf:params:jmap:scene`). When JMAP Chat is also present, SceneRegion objects MAY carry back-references to Chat and Space objects for in-world text communication. When JMAP VTC is also present, SceneRegion objects MAY bind to VTCCall objects for in-world voice and video.
 
 --- middle
 

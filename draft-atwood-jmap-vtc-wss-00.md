@@ -50,12 +50,11 @@ informative:
 --- abstract
 
 This document defines a WebSocket binding for the ephemeral in-call
-events specified by JMAP for Video/Voice Teleconferencing
-({{JMAP-VTC}}).  It registers the
+events specified by JMAP for Video/Voice Teleconferencing.  It registers the
 `urn:ietf:params:jmap:vtc:websocket` capability and introduces
 `VTCStreamEnable` and `VTCStreamDisable` control messages that give
 clients call-scoped, event-type-scoped subscription over a JMAP
-WebSocket connection ({{RFC8887}}).
+WebSocket connection (RFC 8887).
 
 --- middle
 

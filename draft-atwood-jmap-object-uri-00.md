@@ -45,7 +45,7 @@ informative:
 
 --- abstract
 
-This document defines the `jmap` URI scheme and, with it, JMAP object URIs: references of the form `jmap:<type>:<accountId>:<objectId>` that name one JMAP ({{RFC8620}}) object by data type, account, and id, for use in fields whose value is a single URI. It also creates the "JMAP Object URI Types" registry, which maps the type names used in these URIs to JMAP data types. A JMAP object URI is interpreted relative to the JMAP session or federation peer from which it was received; it is not globally unique and cannot be dereferenced on its own.
+This document defines the `jmap` URI scheme and, with it, JMAP object URIs: references of the form `jmap:<type>:<accountId>:<objectId>` that name one JMAP (RFC 8620) object by data type, account, and id, for use in fields whose value is a single URI. It also creates the "JMAP Object URI Types" registry, which maps the type names used in these URIs to JMAP data types. A JMAP object URI is interpreted relative to the JMAP session or federation peer from which it was received; it is not globally unique and cannot be dereferenced on its own.
 
 --- middle
 

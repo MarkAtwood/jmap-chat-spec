@@ -56,7 +56,7 @@ informative:
 
 --- abstract
 
-This document defines how JMAP Chat ({{JMAP-CHAT}}) operates over the WebSocket transport binding defined in {{RFC8887}}. It specifies the `urn:ietf:params:jmap:chat:websocket` capability, the interaction between JMAP Chat's authentication model and the WebSocket handshake, and the server-to-client message types for delivering ephemeral chat events — typing indicators and presence updates — over a WebSocket connection.
+This document defines how JMAP Chat operates over the WebSocket transport binding defined in RFC 8887. It specifies the `urn:ietf:params:jmap:chat:websocket` capability, the interaction between JMAP Chat's authentication model and the WebSocket handshake, and the server-to-client message types for delivering ephemeral chat events — typing indicators and presence updates — over a WebSocket connection.
 
 --- middle
 
