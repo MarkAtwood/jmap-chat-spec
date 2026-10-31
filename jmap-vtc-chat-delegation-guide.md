@@ -6,7 +6,7 @@ For VTC implementers leveraging JMAP Chat for in-call features with `draft-atwoo
 
 ## How to read this guide
 
-`draft-atwood-jmap-vtc-00` (the VTC spec) recommends that deployments co-advertise
+`draft-atwood-jmap-vtc-00` (the VTC spec) allows deployments to co-advertise
 `urn:ietf:params:jmap:chat` alongside `urn:ietf:params:jmap:vtc`. When both
 capabilities are present, several in-call collaboration features — text chat,
 reactions, live captions, lobby communication — are delegated to JMAP Chat's

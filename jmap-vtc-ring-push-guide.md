@@ -105,7 +105,7 @@ Apple provides two push mechanisms relevant to calling:
   and gives it CPU time to register the call with CallKit. The result is the native
   incoming-call screen: full-screen UI, "answer" / "decline" buttons, ringtone.
 
-The spec is explicit: servers MUST use `apns-push-type: voip` for ring notifications on
+The spec says servers SHOULD use `apns-push-type: voip` for ring notifications on
 iOS. Standard alert push is not an acceptable substitute for ring calls.
 
 ### The 2-second CallKit rule
@@ -536,7 +536,7 @@ short (at most a few seconds) to remain within the overall latency budget.
 
 ### Ring timeout
 
-The spec states that ring timeout is deployment-defined and recommends 30 seconds. A
+The spec states that ring timeout is deployment-defined and gives 30 seconds as an example. A
 range of 30–60 seconds is appropriate for most deployments:
 
 - 30 seconds is the minimum before a caller loses patience.

@@ -267,8 +267,8 @@ deployments. Log every policy change to an immutable audit trail.
 
 ### What the spec leaves open
 
-The federation draft (§Peer Discovery) requires servers to cache
-discovered session data and to re-run discovery when delivery fails,
+The federation draft (§Peer Discovery) lets servers cache
+discovered session data and recommends re-running discovery when delivery fails,
 but does not specify cache TTLs, refresh triggers beyond
 delivery-failure, or how to handle peers that are persistently
 unreachable. The main `jmap-chat-implementer-guide.md` §4.3 covers
@@ -480,7 +480,7 @@ the federation registry for observability.
 ### What the spec leaves open
 
 The federation draft requires rate-limiting on specific `Peer/*`
-methods (`Peer/typing` rate is hardcoded; `Peer/presence` outbound rate
+methods (`Peer/typing` rate is a suggested MAY; `Peer/presence` outbound rate
 is implementation-defined per main `jmap-chat-implementer-guide.md`
 §5.2) and requires blocked-sender suppression (federation draft, §Blocked Contacts).
 The draft does not specify how to detect hostile-peer behavior in
@@ -493,7 +493,7 @@ to coordinate abuse signals across multiple local accounts and Spaces.
   malformed messages, repeated SSRF attempts, identity-binding failures,
   spam volume).
 - Per-peer rate limits for `Peer/deliver` (the draft does not specify
-  one; the only hardcoded rate is `Peer/typing` for ephemeral signals).
+  one; the only suggested rate is `Peer/typing` for ephemeral signals).
 - Abuse-signal aggregation across multiple recipients: a peer that
   spams 100 separate recipients is hostile even if each individual
   recipient's rate-limit was not exceeded.

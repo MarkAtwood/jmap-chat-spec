@@ -266,8 +266,8 @@ Chat wire surface MUST remain identical whether or not the IdP is wired up.
 ### 1.4 Slow-mode exemption beyond `manage_channels`
 
 **What the spec leaves open.** The main draft (near {#chat} anchor)
-softened `slowModeSeconds` to require a `rateLimit` SetError for non-exempt
-senders but make the exemption clause itself a SHOULD: servers SHOULD exempt
+softened `slowModeSeconds` to recommend (SHOULD) a `rateLimit` SetError for non-exempt
+senders and make the exemption clause itself a MAY: servers MAY exempt
 members holding `"manage_channels"`, and deployments MAY define additional
 exempt principals.
 
@@ -1004,9 +1004,9 @@ unnecessary network and federation traffic.
 
 **Considerations.**
 
-- The 3s rate is federation-wide via `Peer/typing` rate limits (federation
-  draft, §Peer/typing rate-limit). If you deviate locally, your federated
-  peers still rate-limit at 3s; senders crossing the federation boundary
+- The 3s rate is the federation draft's suggested (MAY) `Peer/typing` rate
+  (§Peer/typing rate-limit). If you deviate locally, federated peers that
+  adopt it still rate-limit at 3s; senders crossing the federation boundary
   will see the federated rate even if your local rate is different.
 - The 10s decay is *client-side*. Different clients of the same account
   using different decay timers will look inconsistent ("desktop says still

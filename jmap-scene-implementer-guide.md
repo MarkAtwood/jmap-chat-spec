@@ -891,7 +891,7 @@ clients. At minimum, validate the glTF magic number (`0x46546C67`) and version
 field. Full validation (schema conformance, buffer bounds, texture references)
 is better but more expensive.
 
-**`assetUri` is a CDN optimization.** When present, clients SHOULD prefer
+**`assetUri` is a CDN optimization.** When present, clients MAY prefer
 `assetUri` over the JMAP blob download path. The server can populate
 `assetUri` automatically by mapping `blobId` to a CDN URL. If your blob
 store is backed by S3 or a similar service, generate a CDN URL at asset
@@ -1493,14 +1493,14 @@ clients that are actively rendering a region.
 
 **Coalescing is critical for SceneAvatar and SceneObject.** These types
 mutate frequently (avatar enter/leave, periodic position reconciliation,
-object creation/destruction). The spec recommends coalescing rapid
+object creation/destruction). The spec allows coalescing rapid
 mutations within a 1-5 second window before emitting a `StateChange`, to
 avoid overwhelming subscribers. Real-time position updates at simulation
 rates (10+ Hz) SHOULD NOT generate `StateChange` events at that frequency;
 only periodic reconciliation writes (every 5-30 seconds) produce state
 changes.
 
-**Push urgency assignments (RECOMMENDED):**
+**Push urgency assignments (suggested):**
 
 | Urgency | Event type |
 |---|---|
