@@ -540,7 +540,7 @@ A ChatContact represents a remote user known to this mailbox.
 : The contact's current status emoji. Mirrors `PresenceStatus.statusEmoji` on the contact's own server; updated when a presence event is received from that server. Absent when the contact has no active status emoji.
 
 `endpoints` (Endpoint[], optional, server-set):
-: Out-of-band capability endpoints advertised by this ChatContact. Servers populate this field from the ChatContact's `ownerEndpoints` at `/.well-known/jmap`. Clients MAY use these to initiate video calls, send payments, or fetch files outside the JMAP message channel. Clients SHOULD NOT act on these values automatically without explicit user intent.
+: Out-of-band capability endpoints advertised by this ChatContact. Servers populate this field from the `ownerEndpoints` in the `/.well-known/jmap` Session of the ChatContact's server, which only a server that hosts a single mailbox includes ({{JMAP-CHAT-FED}}). Clients MAY use these to initiate video calls, send payments, or fetch files outside the JMAP message channel. Clients SHOULD NOT act on these values automatically without explicit user intent.
 
 `blocked` (Boolean):
 : When `true`, messages from this ChatContact are silently dropped by this mailbox, including messages arriving in group chats. Default: `false`.
