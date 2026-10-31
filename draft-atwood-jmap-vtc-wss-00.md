@@ -32,7 +32,6 @@ normative:
     date: 2026
 
 informative:
-  RFC9325:
   JMAP-CHAT:
     title: JMAP for Chat
     author:
@@ -153,12 +152,12 @@ ephemeral VTC event subscription on the current WebSocket connection.
 
 - **`@type`** (String): MUST be `"VTCStreamEnable"`.
 
-- **`callIds`** (String[]|null): An explicit list of VTCCall ids
+- **`callIds`** (String\[]|null): An explicit list of VTCCall ids
   for which events are requested, or `null` to receive events for
   all calls in which the authenticated user is a current participant.
   Default: `null`.
 
-- **`eventTypes`** (String[]|null): An explicit list of event type
+- **`eventTypes`** (String\[]|null): An explicit list of event type
   names the client wishes to receive, or `null` to receive all
   event types.  Recognized values are: `"VTCRingEvent"`,
   `"VTCCallEndEvent"`, `"VTCGatewaySignal"`,

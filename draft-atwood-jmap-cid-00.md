@@ -108,12 +108,13 @@ A server supporting this extension MUST advertise the
 ({{RFC8620}} Section 2). The value of this capability is an object with
 no defined properties in this version of the specification.
 
-Example Session capability object:
+Example Session capability object (the properties of the
+`urn:ietf:params:jmap:core` capability are omitted):
 
 ~~~json
 {
   "capabilities": {
-    "urn:ietf:params:jmap:core": { ... },
+    "urn:ietf:params:jmap:core": {},
     "urn:ietf:params:jmap:cid": {}
   }
 }
@@ -149,7 +150,8 @@ Example upload response (field values are illustrative):
   "blobId":  "f5be7a7b-13f0-4b7c-bead-3c17de6812a2",
   "type":    "image/png",
   "size":    48291,
-  "sha256":  "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+  "sha256":
+  "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 }
 ~~~
 

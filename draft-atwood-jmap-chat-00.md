@@ -328,7 +328,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object
 `maxAttachmentsPerMessage` (UnsignedInt):
 : Maximum number of attachments per message.
 
-`supportedBodyTypes` (String[]):
+`supportedBodyTypes` (String\[]):
 : The MIME types a Message `bodyType` can take on this account. The server MUST accept in `Message/set` create every listed type except types a companion specification reserves for server-created Messages. MUST include `"text/plain"` unless the server accepts only end-to-end encrypted body types ({{e2ee-fields}}). End-to-end encrypted deployments SHOULD also include an appropriate encrypted-content type such as `"application/mls-ciphertext"`. Servers SHOULD support `"text/markdown"` (the CommonMark variant, {{RFC7763}} and {{RFC7764}} Section 3.5) and `"application/jmap-chat-rich"` (defined in {{rich-body}}). Servers participating in MIMI federation domains MAY also include `"application/mimi-content"` {{MIMI-CONTENT}}.
 
 `supportsThreads` (Boolean):
@@ -348,7 +348,7 @@ When the `urn:ietf:params:jmap:chat` capability is present, servers MAY include 
 `ownerLogin` (String):
 : A human-readable login name for the mailbox owner.
 
-`ownerEndpoints` (Endpoint[], optional):
+`ownerEndpoints` (Endpoint\[], optional):
 : The owner's advertised out-of-band capability endpoints (see {{endpoint}}). Peers that probe `/.well-known/jmap` SHOULD merge these into the `endpoints` field of the corresponding ChatContact record.
 
 The `ownerDirectAddress` field used in federation deployments is defined in {{JMAP-CHAT-FED}}.
@@ -539,7 +539,7 @@ A ChatContact represents a remote user known to this mailbox.
 `statusEmoji` (String, optional, server-set):
 : The contact's current status emoji. Mirrors `PresenceStatus.statusEmoji` on the contact's own server; updated when a presence event is received from that server. Absent when the contact has no active status emoji.
 
-`endpoints` (Endpoint[], optional, server-set):
+`endpoints` (Endpoint\[], optional, server-set):
 : Out-of-band capability endpoints advertised by this ChatContact. Servers populate this field from the `ownerEndpoints` in the `/.well-known/jmap` Session of the ChatContact's server, which only a server that hosts a single mailbox includes ({{JMAP-CHAT-FED}}). Clients MAY use these to initiate video calls, send payments, or fetch files outside the JMAP message channel. Clients SHOULD NOT act on these values automatically without explicit user intent.
 
 `blocked` (Boolean):
@@ -601,7 +601,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `avatarBlobId` (String, optional):
 : **Group chats only.** blobId of the group avatar image. Mutable by admins.
 
-`members` (ChatMember[], server-set):
+`members` (ChatMember\[], server-set):
 : **Group chats only.** Full membership list. Changed through the `addMembers`, `removeMembers` and `updateMemberRoles` patch keys of `Chat/set`.
 
 `closedAt` (UTCDate, optional, server-set):
@@ -622,7 +622,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `slowModeSeconds` (UnsignedInt, server-set):
 : **Channel Chats only.** Changed through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. When non-zero, the server SHOULD reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimit` SetError ({{RFC8620, Section 5.3}}) on the offending `Message/set` create. Servers MAY exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimit` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimit`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
 
-`permissionOverrides` (ChannelPermission[], server-set):
+`permissionOverrides` (ChannelPermission\[], server-set):
 : **Channel Chats only.** Per-channel permission overrides for specific roles or members. Evaluated after Space-level role permissions per {{space-permissions}}. Only members with `"manage_channels"` permission may modify this list, through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. Empty by default.
 
 `createdAt` (UTCDate, immutable, server-set):
@@ -634,7 +634,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 `unreadCount` (UnsignedInt, server-set):
 : The number of unread Messages in this Chat, derived server-side from the owner's ReadPosition record. Candidates are the Messages whose `id` ULID is lexicographically greater than `ReadPosition.lastReadMessageId`, or all Messages in the Chat if `lastReadMessageId` is absent. Which candidates count is implementation-defined; for example, a server MAY exclude Messages the owner sent. The value is advisory, for display such as badges. Servers SHOULD keep it accurate, but MAY update it some time after the change that affects it, MAY combine several such changes into one update, and MAY report a server-defined maximum in place of any larger count. Whenever the server changes the value, the Chat's state changes as for any other property ({{RFC8620}} Section 5.1). `unreadCount` is not necessarily exact.
 
-`pinnedMessageIds` (String[]):
+`pinnedMessageIds` (String\[]):
 : Ordered list of pinned Message ids, most-recently-pinned first. For group chats, only admins may modify this list. For direct chats, the owner may modify it freely. For channel chats, only members with the `"pin"` Space permission may modify this list. Each id MUST be the id of a Message in this Chat; the server MUST reject a `Chat/set` update that would add any other id with `invalidProperties`. When a pinned Message is hard-deleted, the server MUST remove its id from this list. Empty by default.
 
 `muted` (Boolean):
@@ -704,19 +704,19 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `bodyType` (String):
 : MIME type of `body`. MUST be in `supportedBodyTypes`.
 
-`attachments` (Attachment[]):
+`attachments` (Attachment\[]):
 : File attachments. Set only at creation: a `Message/set` update cannot change it. The server clears it to an empty array when the message is deleted.
 
-`mentions` (Mention[]):
+`mentions` (Mention\[]):
 : Structured per-user @mention annotations. Empty by default. Authoritative for every `bodyType`; see {{mention}}.
 
-`broadcastMentions` (BroadcastMention[]):
+`broadcastMentions` (BroadcastMention\[]):
 : Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). Empty by default. Authoritative for every `bodyType`; see {{broadcast-mention}}.
 
-`actions` (MessageAction[], immutable):
+`actions` (MessageAction\[], immutable):
 : Out-of-band action invitations associated with this message. Empty by default. Servers store and forward these without inspection, as {{message-action}} requires.
 
-`reactions` (Id[Reaction]):
+`reactions` (Id\[Reaction]):
 : Emoji reactions, keyed by `senderReactionId`. The `senderReactionId` is a client-assigned ULID for owner reactions, or a peer-supplied ULID for received reactions. Empty object by default.
 
 `replyTo` (String, optional, immutable):
@@ -772,7 +772,7 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 `editedAt` (UTCDate, optional, server-set):
 : Time of the most recent edit.
 
-`editHistory` (MessageRevision[], optional, server-set):
+`editHistory` (MessageRevision\[], optional, server-set):
 : Prior versions, oldest first. Servers MAY limit the number of retained revisions.
 
 Note: {{JMAP-OBJ-HISTORY}} defines a general JMAP mechanism for retrieving historical object versions via `Foo/get` with `includeReplaced` and `includeDestroyed`. This specification instead embeds edit history inline within the Message object, trading on-demand retrieval for always-available history at the cost of response size. Servers implementing both specifications MAY list `"Message"` in the `supportedTypes` of the {{JMAP-OBJ-HISTORY}} account capability, enabling `Message/get` with `includeReplaced` as an alternative retrieval path for clients that prefer on-demand history. Such a server SHOULD NOT return any prior or destroyed version of a Message once that Message is deleted (`deletedAt` set) or hard-deleted, and SHOULD permanently remove those versions at the same time. Otherwise {{JMAP-OBJ-HISTORY}} would expose content that deletion, `senderExpiresAt`, `burnOnRead`, and `expiresAfterReadSeconds` are required to remove.
@@ -798,7 +798,7 @@ A SpaceRole is a named set of permissions within a Space. Roles are ordered by `
 `color` (String|Object|null, optional):
 : Color for visually distinguishing role holders. Representations per {{color-convention}}: a Design Tokens color object, a CAM16 coordinate array, or an sRGB hex string (e.g., `"#5865f2"`). `null` means no color assigned.
 
-`permissions` (String[]):
+`permissions` (String\[]):
 : Named permissions this role grants. Defined permission names:
 
   - `"view"` — see the channel
@@ -824,7 +824,7 @@ A SpaceMember describes one participant in a Space.
 `id` (String):
 : The participant's ChatContact.id, or the accountId for the owner.
 
-`roleIds` (String[]):
+`roleIds` (String\[]):
 : SpaceRole ids held by this member. Order is not significant. An empty list means the member holds only the `@everyone` role.
 
 `nick` (String, optional):
@@ -846,7 +846,7 @@ A Category is a named grouping of channels within a Space.
 `position` (UnsignedInt):
 : Sort order among categories. Lower values appear first.
 
-`channelIds` (String[]):
+`channelIds` (String\[]):
 : Ordered list of channel Chat ids in this category.
 
 `Category.channelIds`, `Space.uncategorizedChannelIds`, and each channel Chat's `categoryId` describe the same assignment. The server MUST keep them consistent: a `Space/set` operation that changes one MUST update the others in the same operation. Where `Chat.position` and the order of the containing list disagree, the order of the list governs display.
@@ -861,10 +861,10 @@ A ChannelPermission record overrides Space-level role permissions for a specific
 `targetType` (String):
 : `"role"` or `"member"`.
 
-`allow` (String[]):
+`allow` (String\[]):
 : Permissions explicitly granted in this channel, overriding the Space-level role defaults.
 
-`deny` (String[]):
+`deny` (String\[]):
 : Permissions explicitly denied in this channel, overriding the Space-level role defaults.
 
 ## Space {#space}
@@ -883,16 +883,16 @@ A Space is a named container for channel Chats, members, roles, and categories. 
 `iconBlobId` (String, optional):
 : blobId of the Space icon. Mutable by members with `"manage_space"` permission.
 
-`roles` (SpaceRole[], server-set):
+`roles` (SpaceRole\[], server-set):
 : Named roles defined for this Space, ordered by `position` descending. Does not include the implicit `@everyone` role. Changed through the `addRoles`, `removeRoles` and `updateRoles` patch keys of `Space/set` ({{space-set}}).
 
-`members` (SpaceMember[], server-set):
+`members` (SpaceMember\[], server-set):
 : Full membership list. Changed through the `addMembers`, `removeMembers` and `updateMembers` patch keys of `Space/set` ({{space-set}}) and by `Space/join`.
 
-`categories` (Category[], server-set):
+`categories` (Category\[], server-set):
 : Categories, ordered by `position`. Changed through the `addCategories`, `removeCategories` and `updateCategories` patch keys of `Space/set` ({{space-set}}).
 
-`uncategorizedChannelIds` (String[], server-set):
+`uncategorizedChannelIds` (String\[], server-set):
 : Ordered list of channel Chat ids not assigned to any category. Changed as a side effect of the channel and category patch keys of `Space/set` ({{space-set}}).
 
 `createdAt` (UTCDate, immutable, server-set):
@@ -1102,7 +1102,7 @@ Standard JMAP `/set`.
 `name` (String, required):
 : Display name of the group.
 
-`memberIds` (String[], required):
+`memberIds` (String\[], required):
 : ChatContact.ids of additional initial members. If the resulting membership would exceed a server-defined limit on the number of members per group Chat, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 Optional at creation: `description` (String), `avatarBlobId` (String), `messageExpirySeconds` (UnsignedInt).
@@ -1121,15 +1121,15 @@ For group chats, admins additionally may update: `name`, `description`, `avatarB
 
 Member list changes use the following patch keys (all require admin role, except leaving the group as described under `removeMembers`):
 
-`addMembers` (Object[]):
+`addMembers` (Object\[]):
 : Each entry: `id` (String, ChatContact.id) and optional `role` (String, default `"member"`). If the resulting membership would exceed a server-defined limit on the number of members per group Chat, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3) for that entry. On success, the server MUST send `Peer/groupUpdate` to all current members.
 
-`removeMembers` (String[]):
+`removeMembers` (String\[]):
 : ChatContact.ids to remove. The server MUST send `Peer/groupUpdate` to all remaining members and to the removed members.
 
   The owner MAY leave the group by including only the accountId in `removeMembers`; the server MUST permit this whether or not the owner holds the admin role, and a server implementing {{JMAP-CHAT-FED}} MUST notify the other members with a `Peer/groupUpdate` of action `"leave"`. If the owner is the last admin and other members remain, leaving closes the group: the server MUST set `closedAt` ({{chat}}) in the same operation, and a server implementing {{JMAP-CHAT-FED}} MUST notify the other members with a `Peer/groupUpdate` of action `"close"` in place of `"leave"`. Clients can ask the user to confirm before the last admin leaves, stating that the group will close.
 
-`updateMemberRoles` (Object[]):
+`updateMemberRoles` (Object\[]):
 : Each entry: `id` (String) and `role` (String). The server MUST send `Peer/groupUpdate` to all members.
 
 The `role` value in `addMembers` and `updateMemberRoles` entries MUST be `"admin"` or `"member"` ({{chat-member}}); the server MUST reject any other value with an `invalidProperties` SetError.
@@ -1213,7 +1213,7 @@ Standard JMAP `/set`.
 
 `chatId` (String, required), `body` (String, required), `bodyType` (String, required), `sentAt` (UTCDate, required).
 
-Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `topicId` (String), `subject` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean), `expiresAfterReadSeconds` (UnsignedInt).
+Optional: `attachments` (Attachment\[]), `mentions` (Mention\[]), `broadcastMentions` (BroadcastMention\[]), `actions` (MessageAction\[]), `replyTo` (String), `threadRootId` (String), `topicId` (String), `subject` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean), `expiresAfterReadSeconds` (UnsignedInt).
 
 The server SHOULD verify the sender is a current member of the target Chat. For group chats, this means a ChatMember record exists; for channel chats, the sender must be a member of the containing Space. Non-members SHOULD receive a SetError of type `forbidden`.
 
@@ -1345,45 +1345,45 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 
 `update` supports the following patch keys:
 
-`name`, `description`, `iconBlobId`, `isPublic`, `isPubliclyPreviewable`:
-: Metadata fields. Require `"manage_space"` permission.
+Metadata keys:
+: `name`, `description`, `iconBlobId`, `isPublic`, and `isPubliclyPreviewable`. Require `"manage_space"` permission.
 
-`addRoles` (Object[]):
-: Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+`addRoles` (Object\[]):
+: Each entry: `name` (String), `permissions` (String\[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
-`removeRoles` (String[]):
+`removeRoles` (String\[]):
 : SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Servers MAY also remove each channel's `permissionOverrides` entries whose `targetId` is a removed role; a role id is never reused, so a remaining entry has no effect. Requires `"manage_roles"`.
 
-`updateRoles` (Object[]):
+`updateRoles` (Object\[]):
 : Each entry: `id` (String) and any of `name`, `color`, `permissions`, `position`. Requires `"manage_roles"`. Members may only modify roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this.
 
-`addMembers` (Object[]):
-: Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String[]). Requires `"manage_members"`. Members may only assign roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting membership would exceed a server-defined limit on the number of members per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+`addMembers` (Object\[]):
+: Each entry: `id` (ChatContact.id, String) and optional `roleIds` (String\[]). Requires `"manage_members"`. Members may only assign roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting membership would exceed a server-defined limit on the number of members per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
-`removeMembers` (String[]):
+`removeMembers` (String\[]):
 : ChatContact.ids to remove. Requires `"manage_members"`. Servers SHOULD refuse to remove another member when doing so would leave the Space without any member holding `"manage_members"` or `"manage_space"`; the specific last-administrator protection policy is server-defined. Servers MUST return an `invalidProperties` SetError ({{RFC8620}} §5.3) naming `removeMembers` when refusing on this basis. The same protection applies to an `updateMembers` role change, a `removeRoles` entry, or an `updateRoles` permission change that would leave the Space without any member holding `"manage_members"` or `"manage_space"`; a refusal names the patch key concerned.
 
   A member who does not hold `"manage_members"` permission MAY remove themselves from the Space by including only the accountId in `removeMembers`. The server MUST permit self-removal regardless of the caller's permission set. Last-administrator protection does not apply to self-removal. If the member removing themselves is the last member holding `"manage_space"` and other members remain, leaving closes the Space: the server MUST set `closedAt` ({{space}}) in the same operation. Clients can ask the user to confirm before the last administrator leaves, stating that the Space will close.
 
-`updateMembers` (Object[]):
+`updateMembers` (Object\[]):
 : Each entry: `id` (String) and any of `roleIds`, `nick`. Role changes require `"manage_roles"`. Members may only add or remove roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. Changing another member's `nick` requires `"manage_members"`. A member MAY set their own `nick` by submitting `updateMembers` with a single entry whose `id` is the accountId and which contains only `nick`; the server MUST permit this regardless of the caller's permission set.
 
-`addChannels` (Object[]):
+`addChannels` (Object\[]):
 : Each entry: `name` (String, required), optional `categoryId` (String), `position` (UnsignedInt), and `topic` (String). The server creates a Chat record of `kind: "channel"` with `spaceId` set to this Space's id and assigns a ULID as the chatId. Requires `"manage_channels"`. If the resulting channel count would exceed a server-defined limit on the number of channels per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
-`removeChannels` (String[]):
+`removeChannels` (String\[]):
 : Channel Chat ids to remove. Cascades to all Messages in those channels. Requires `"manage_channels"`.
 
-`updateChannels` (Object[]):
+`updateChannels` (Object\[]):
 : Each entry: `id` (String, channel Chat id) and any of `name`, `topic`, `categoryId`, `position`, `slowModeSeconds`, `permissionOverrides`. Requires `"manage_channels"`.
 
-`addCategories` (Object[]):
-: Each entry: `name` (String), optional `position` (UnsignedInt) and `channelIds` (String[]). Server assigns ULIDs. Requires `"manage_channels"`. If the resulting category count would exceed a server-defined limit on the number of categories per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
+`addCategories` (Object\[]):
+: Each entry: `name` (String), optional `position` (UnsignedInt) and `channelIds` (String\[]). Server assigns ULIDs. Requires `"manage_channels"`. If the resulting category count would exceed a server-defined limit on the number of categories per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
-`removeCategories` (String[]):
+`removeCategories` (String\[]):
 : Category ids to remove. Channels in removed categories move to `uncategorizedChannelIds`. Requires `"manage_channels"`.
 
-`updateCategories` (Object[]):
+`updateCategories` (Object\[]):
 : Each entry: `id` (String) and any of `name`, `position`, `channelIds`. Requires `"manage_channels"`.
 
 #### Destroying a Space
@@ -1544,7 +1544,7 @@ When `bodyType` is `"application/jmap-chat-rich"`, `body` MUST contain a JSON-en
 
 The body object contains a single field:
 
-`spans` (Span[]):
+`spans` (Span\[]):
 : An ordered array of Span objects representing the message content from left to right.
 
 Each Span has the following fields:
@@ -1623,7 +1623,8 @@ Servers that deliver push subscriptions via Web Push SHOULD also advertise the `
 
 ~~~
 event: state
-data: {"@type":"StateChange","changed":{"<accountId>":{"Message":"<s>","Chat":"<s>","ChatContact":"<s>"}}}
+data: {"@type":"StateChange","changed":{"<accountId>":{
+data:   "Message":"<s>","Chat":"<s>","ChatContact":"<s>"}}}
 ~~~
 
 The example shows three types. The `changed` object can name any data type registered by this document (`ChatContact`, `Chat`, `Message`, `Space`, `SpaceInvite`, `CustomEmoji`, `SpaceBan`, `ReadPosition`, `PresenceStatus`) and any type defined by a companion capability the server supports.
@@ -1643,7 +1644,8 @@ Not stored; carries no state token. Before delivering this event to a recipient,
 
 ~~~
 event: presence
-data: {"contactId":"<id>","presence":"<state>","lastActiveAt":"<ts>","statusText":"<string>|null","statusEmoji":"<string>|null"}
+data: {"contactId":"<id>","presence":"<state>","lastActiveAt":"<ts>",
+data:  "statusText":"<string>|null","statusEmoji":"<string>|null"}
 ~~~
 
 Before delivering this event, the server SHOULD silently drop it if the identified ChatContact (`contactId`) has `blocked: true` on the receiving owner's contact list. The remote contact is not informed.
@@ -1680,7 +1682,7 @@ Response (HTTP 200) — the standard RFC 8620 upload response, extended per {{JM
 {
   "blobId":  "<id>",
   "type":    "<mime-type>",
-  "size":    <bytes>,
+  "size":    4096,
   "sha256":  "<lowercase-hex>"
 }
 ~~~

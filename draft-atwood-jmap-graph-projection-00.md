@@ -209,7 +209,7 @@ This document adds the following property to GraphNode:
 
 This document adds the following property to the GraphNode/query FilterCondition defined in {{JMAP-GRAPH}}:
 
-`objectUri` (String[]):
+`objectUri` (String\[]):
 : The node's `objectUri` is one of these values.
 
 This lets a client that holds native object ids find their nodes, and so start a traversal from any native object.

@@ -145,7 +145,7 @@ A Graph is a container of nodes and edges, and the unit of sharing. A Graph obje
 `name` (String, default: `""`):
 : A user-visible name for the Graph.
 
-`annotations` (String[*], default: `{}`):
+`annotations` (String\[*], default: `{}`):
 : Application data about the Graph as a whole ({{annotations}}).
 
 `created` (UTCDate, server-set):
@@ -160,7 +160,7 @@ A Graph is a container of nodes and edges, and the unit of sharing. A Graph obje
 `myRights` (GraphRights, server-set):
 : The rights the user has on this Graph, as defined in {{RFC9670}} Section 4.
 
-`shareWith` (Id[GraphRights]|null, default: `null`):
+`shareWith` (Id\[GraphRights]|null, default: `null`):
 : As defined in {{RFC9670}} Section 4.
 
 A GraphRights object has the following properties:
@@ -186,7 +186,7 @@ A GraphNode is a vertex in a Graph. A GraphNode object has the following propert
 `graphId` (Id, immutable):
 : The id of the Graph the node belongs to.
 
-`annotations` (String[*], default: `{}`):
+`annotations` (String\[*], default: `{}`):
 : Application data about the node ({{annotations}}).
 
 `blobId` (Id|null, default: `null`):
@@ -229,7 +229,7 @@ A GraphEdge is a directed link from one node to another in the same Graph. A Gra
 `type` (String, default: `""`):
 : An application-defined edge type. The server attaches no meaning to it. See {{annotations}} for the recommended naming convention.
 
-`annotations` (String[*], default: `{}`):
+`annotations` (String\[*], default: `{}`):
 : Application data about the edge ({{annotations}}).
 
 `created`, `updated`, `createdBy`, `updatedBy`:
@@ -322,10 +322,10 @@ A FilterCondition for GraphEdge/query has the following properties. All properti
 `graphId` (Id):
 : The edge is in this Graph.
 
-`fromId` (Id[]):
+`fromId` (Id\[]):
 : The edge's `fromId` is one of these ids.
 
-`toId` (Id[]):
+`toId` (Id\[]):
 : The edge's `toId` is one of these ids.
 
 `type` (String):

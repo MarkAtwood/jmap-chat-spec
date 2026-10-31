@@ -163,7 +163,7 @@ A server supporting this extension MUST advertise the `urn:ietf:params:jmap:did`
 
 The value of `capabilities["urn:ietf:params:jmap:did"]` is a JSON object with the following fields:
 
-`supportedMethods` (String[]):
+`supportedMethods` (String\[]):
 : The DID methods the server is able to resolve and verify. Each value is a DID method name as defined in {{DID-CORE}} Section 8 (e.g., `"key"`, `"web"`). Servers MUST support at least one method. Every account's bound DID MUST use a listed method. Companion specifications that need to advertise DID method support reuse this field rather than defining their own.
 
 `verificationEndpoint` (String|null):
@@ -207,7 +207,8 @@ Example:
     "acct-001": {
       "accountCapabilities": {
         "urn:ietf:params:jmap:did": {
-          "did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+          "did":
+          "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
           "didDocumentUri": null,
           "previousDid": null,
           "keyCustody": "user"

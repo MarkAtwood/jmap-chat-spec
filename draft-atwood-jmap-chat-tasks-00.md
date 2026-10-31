@@ -199,7 +199,7 @@ The MessageAction object has the following shape when its `type` is `urn:ietf:pa
 
   - `progress` (String) — the Task's current `progress` value ({{RFC8984, Section 5.2.5}}; e.g., `"needs-action"`, `"in-process"`, `"completed"`, `"cancelled"`), or its `workflowStatus` ({{JMAP-TASKS, Section 4}}) when `progress` is not set.
   - `due` (UTCDate, optional) — the Task's due date.
-  - `assigneeIds` (String[], optional) — the assigned users: each entry is a ChatContact.id, or the accountId for the account owner ({{JMAP-CHAT}}). Between servers, entries carry identities ({{federation}}).
+  - `assigneeIds` (String\[], optional) — the assigned users: each entry is a ChatContact.id, or the accountId for the account owner ({{JMAP-CHAT}}). Between servers, entries carry identities ({{federation}}).
   - `priority` (Integer, optional) — priority value per {{JMAP-TASKS}}.
   Servers MAY include other type-specific keys; clients ignore unknown keys per the MessageAction definition in {{JMAP-CHAT}}.
 

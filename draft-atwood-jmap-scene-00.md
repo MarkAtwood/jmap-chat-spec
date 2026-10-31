@@ -277,7 +277,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:scene"]` is a JSON objec
 `mayCreateObject` (Boolean):
 : `true` if the authenticated user may create new SceneObject objects.
 
-`supportedVisualTypes` (String[]):
+`supportedVisualTypes` (String\[]):
 : Media types the deployment supports for visual representations. Servers MUST include at least `"model/gltf-binary"`.
 
 `maxRegionsPerAccount` (UnsignedInt|null):
@@ -303,10 +303,10 @@ Data types are defined in dependency order: embedded sub-types and referenced ty
 
 SceneBounds is an embedded object describing an axis-aligned bounding box. It is not a top-level JMAP data type.
 
-`min` (Number[3]):
+`min` (Number\[3]):
 : The minimum corner of the bounding box: `[x, y, z]` in region-local coordinates.
 
-`max` (Number[3]):
+`max` (Number\[3]):
 : The maximum corner of the bounding box: `[x, y, z]` in region-local coordinates. Each component MUST be greater than or equal to the corresponding component of `min`.
 
 Example:
@@ -407,10 +407,10 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 `inputUri` (String|null):
 : An optional high-frequency bidirectional input/response channel endpoint, separate from `simulationUri`. Intended for experiences that require I/O rates significantly above the simulation tick rate. Inbound: flight simulator control surfaces (HOTAS, rudder pedals), racing simulator wheel/pedal axes, VR hand/finger tracking, or other high-frequency HID devices. Outbound: force feedback, haptic rumble, indicator lights, cockpit instrument servos, and other actuator commands. The separate channel prevents high-frequency I/O traffic from starving avatar position synchronization, spatial events, and VTC media on the simulation channel. Same trust model as `simulationUri`: peer-supplied, opaque to the JMAP server, and untrusted (see {{simulation-uri-untrusted}}). `null` when the region does not require a dedicated input channel (the common case; standard keyboard/mouse input travels via `simulationUri`).
 
-`spawnPosition` (Number[3]):
+`spawnPosition` (Number\[3]):
 : Default position where new avatars appear when entering the region. Default: `[0, 0, 0]`.
 
-`spawnOrientation` (Number[4]):
+`spawnOrientation` (Number\[4]):
 : Default orientation for new avatars. Default: `[0, 0, 0, 1]` (identity).
 
 `activeAvatarCount` (UnsignedInt, server-set):
@@ -600,13 +600,13 @@ SceneObjects form a scene graph: each object has a position, orientation, and sc
 `name` (String|null):
 : Human-readable label for the object.
 
-`position` (Number[3]):
+`position` (Number\[3]):
 : Position as `[x, y, z]` in meters, region-local (or parent-relative when `parentId` is non-null). See {{coordinate-system}}.
 
-`orientation` (Number[4]):
+`orientation` (Number\[4]):
 : Orientation as a unit quaternion `[x, y, z, w]`. See {{coordinate-system}}.
 
-`scale` (Number[3]):
+`scale` (Number\[3]):
 : Scale factors `[sx, sy, sz]`. Default: `[1, 1, 1]`.
 
 `visualRef` (String|null):
@@ -687,10 +687,10 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 `displayName` (String):
 : Display name for this avatar.
 
-`position` (Number[3]):
+`position` (Number\[3]):
 : Last known position as `[x, y, z]`. Updated periodically by the server from the simulation layer. Not a real-time value; clients in the simulation layer receive real-time positions through the simulation protocol.
 
-`orientation` (Number[4]):
+`orientation` (Number\[4]):
 : Last known orientation as a unit quaternion `[x, y, z, w]`.
 
 `visualRef` (String|null):
@@ -797,8 +797,10 @@ Example create request with full JMAP envelope:
           "blobId": "Gc0f032d390a5d5fa8a35",
           "mediaType": "model/gltf-binary",
           "name": "Sculpture: Convergence",
-          "assetUri": "https://cdn.example.com/assets/sculpture-001.glb",
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "assetUri":
+            "https://cdn.example.com/assets/sculpture-001.glb",
+          "sha256":
+  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         }
       }
     }, "a0"]
@@ -1053,7 +1055,8 @@ Response:
             "ambientIntensity": 0.6,
             "gravity": 9.81
           },
-          "simulationUri": "wss://sim.example.com/regions/01J5ABC0001",
+          "simulationUri":
+            "wss://sim.example.com/regions/01J5ABC0001",
           "viewHint": "3d",
           "spawnPosition": [0, 0, 10],
           "spawnOrientation": [0, 0, 0, 1],
@@ -1078,7 +1081,8 @@ Response:
             "max": [20, 8, 20]
           },
           "environment": null,
-          "simulationUri": "wss://sim.example.com/regions/01J5ABC0002",
+          "simulationUri":
+            "wss://sim.example.com/regions/01J5ABC0002",
           "viewHint": "3d",
           "spawnPosition": [0, 0, 5],
           "spawnOrientation": [0, 0, 0, 1],
@@ -1120,7 +1124,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `bounds` (SceneBounds, required):
 : The spatial extent.
 
-Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number[3]), `spawnOrientation` (Number[4]), `accessPolicy` (String), `invitedUserIds` (String\[\]), `worldState` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
+Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number\[3]), `spawnOrientation` (Number\[4]), `accessPolicy` (String), `invitedUserIds` (String\[\]), `worldState` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
 
 The server sets `id`, `accountId`, `ownerId` (to the caller's userId), `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
 
@@ -1367,7 +1371,8 @@ Example error response -- invalidProperties (bounds validation):
     "r0": {
       "type": "invalidProperties",
       "properties": ["bounds"],
-      "description": "bounds.min[0] (100) is greater than bounds.max[0] (50); each min component must be <= the corresponding max component."
+      "description":
+        "bounds.min[0] (100) exceeds bounds.max[0] (50)"
     }
   },
   "notUpdated": null,
@@ -1556,7 +1561,8 @@ Response:
           "scale": [1, 1, 1],
           "visualRef": "blob-gltf-sculpture-001",
           "visualType": "model/gltf-binary",
-          "assetUri": "https://cdn.example.com/assets/sculpture-001.glb",
+          "assetUri":
+            "https://cdn.example.com/assets/sculpture-001.glb",
           "physicsMode": "static",
           "interactable": true,
           "visible": true,
@@ -1610,13 +1616,13 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 `regionId` (String, required):
 : The SceneRegion to place this object in.
 
-`position` (Number[3], required):
+`position` (Number\[3], required):
 : Initial position.
 
 `visualRef` (String), `visualType` (String):
 : Visual representation. Both MUST be present together or both absent.
 
-Optional: `parentId` (String), `name` (String), `orientation` (Number[4]), `scale` (Number[3]), `assetUri` (String), `physicsMode` (String), `interactable` (Boolean), `visible` (Boolean), `worldState` (Object).
+Optional: `parentId` (String), `name` (String), `orientation` (Number\[4]), `scale` (Number\[3]), `assetUri` (String), `physicsMode` (String), `interactable` (Boolean), `visible` (Boolean), `worldState` (Object).
 
 The server sets `id`, `ownerId`, `createdAt`, and `updatedAt`.
 
@@ -1662,7 +1668,8 @@ Example create request with full JMAP envelope:
           "scale": [1.2, 1.0, 1.2],
           "visualRef": "blob-gltf-pedestal-001",
           "visualType": "model/gltf-binary",
-          "assetUri": "https://cdn.example.com/assets/pedestal-001.glb",
+          "assetUri":
+            "https://cdn.example.com/assets/pedestal-001.glb",
           "physicsMode": "static",
           "interactable": false,
           "visible": true,
@@ -1900,7 +1907,8 @@ Example error response -- forbidden (non-owner modifying another user's object):
   "notUpdated": {
     "01J5QBJ0000000000000000001": {
       "type": "forbidden",
-      "description": "Caller is not the object owner, region owner, or an administrator."
+      "description":
+        "Caller is not the object owner, region owner, or admin"
     }
   },
   "notDestroyed": null
@@ -1959,13 +1967,13 @@ Servers MUST support the following spatial filter properties. These are the mand
 
 `withinRadius` (Object, optional):
 : Spatial proximity filter. Filter to objects whose position falls within a sphere. Properties:
-  - `center` (Number[3], required): Center point `[x, y, z]` in region-local coordinates.
+  - `center` (Number\[3], required): Center point `[x, y, z]` in region-local coordinates.
   - `radius` (Number, required): Radius in meters. MUST be positive.
 
 `withinBounds` (Object, optional):
 : Spatial bounding-box filter. Filter to objects whose position falls within an axis-aligned bounding box. Properties:
-  - `min` (Number[3], required): Minimum corner `[x, y, z]`.
-  - `max` (Number[3], required): Maximum corner `[x, y, z]`. Each component MUST be greater than or equal to the corresponding component of `min`.
+  - `min` (Number\[3], required): Minimum corner `[x, y, z]`.
+  - `max` (Number\[3], required): Maximum corner `[x, y, z]`. Each component MUST be greater than or equal to the corresponding component of `min`.
 
 Spatial filters compare the stored `position` value as-is. For an object with a non-null `parentId`, that value is relative to the parent ({{scene-object}}), so nested objects match on parent-relative coordinates, not on their position in the region.
 
@@ -2544,7 +2552,7 @@ Spatial filters:
 
 `withinRadius` (Object, optional):
 : Spatial proximity filter. Same syntax as SceneObject/query ({{spatial-filters}}): filter to avatars whose last known position falls within a sphere. Properties:
-  - `center` (Number[3], required): Center point `[x, y, z]` in region-local coordinates.
+  - `center` (Number\[3], required): Center point `[x, y, z]` in region-local coordinates.
   - `radius` (Number, required): Radius in meters. MUST be positive.
 
 `withinBounds` (Object, optional):
@@ -2789,7 +2797,9 @@ Example `StateChange` event via EventSource:
 
 ~~~
 event: state
-data: {"@type":"StateChange","changed":{"account-xyz":{"SceneRegion":"r41a","SceneObject":"o88f2","SceneAvatar":"av03c","SceneAsset":"as7e1"}}}
+data: {"@type":"StateChange","changed":{"account-xyz":{
+data: "SceneRegion":"r41a","SceneObject":"o88f2",
+data: "SceneAvatar":"av03c","SceneAsset":"as7e1"}}}
 ~~~
 
 A single `StateChange` MAY include state strings for a subset of the four types. Per {{RFC8620}} Section 7.1, a type's state string is included only when that type has changed since the last event delivered to that subscriber. If only SceneAvatar records changed (a user entered or left a region), the server MAY omit the other three types from the payload:
@@ -3117,7 +3127,8 @@ Alice's client fetches the JMAP Session object and finds the Scene capability ad
   },
   "apiUrl": "https://jmap.example.com/api/",
   "uploadUrl": "https://jmap.example.com/upload/{accountId}/",
-  "downloadUrl": "https://jmap.example.com/download/{accountId}/{blobId}/{name}"
+  "downloadUrl":
+    "https://jmap.example.com/download/{accountId}/{blobId}/{name}"
 }
 ~~~
 
@@ -3601,7 +3612,8 @@ The event is about to start. The admin restricts the region from public to invit
         "user:bob@example.com",
         "user:carol@example.com"
       ],
-      "description": "Annual product launch event venue (invite only)"
+      "description":
+        "Annual product launch event venue (invite only)"
     }
   }
 }, "0"]]

@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-9u5e.5",
   "title": "RFC9325 cited inline and in YAML header",
   "description": "kramdown '(informative reference RFC9325 is both inline and in YAML header)' in chat-wss-00, scene-wss-00, vtc-wss-00. Drop one of the two.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "task",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-31T20:21:32.380296047Z",
   "created_by": "agent",
-  "updated_at": "2026-10-31T20:21:32.380296047Z",
+  "updated_at": "2026-10-31T20:53:32.290766751Z",
+  "closed_at": "2026-10-31T20:53:32.290766751Z",
+  "close_reason": "Fixed; full rebuild has 0 warnings",
   "dependencies": [
     {
       "issue_id": "jmap-chat-spec-9u5e.5",

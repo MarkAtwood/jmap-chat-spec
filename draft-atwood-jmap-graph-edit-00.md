@@ -297,10 +297,10 @@ A client sends a `GraphEditStreamEnable` message to start or replace its subscri
 `@type` (String):
 : `"GraphEditStreamEnable"`.
 
-`nodeIds` (Id[]):
+`nodeIds` (Id\[]):
 : The GraphNodes whose ops and cursors the client wishes to receive. An id matches that id in every account the user can access; events carry `accountId` to tell accounts apart.
 
-`dataTypes` (String[]):
+`dataTypes` (String\[]):
 : A non-empty list of the event categories wanted: `"ops"` for `GraphNodeOpEvent` and `"cursors"` for `GraphCursorEvent`.
 
 `id` (String, optional):

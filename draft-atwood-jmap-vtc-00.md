@@ -233,7 +233,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 `supportsLivestream` (Boolean):
 : `true` if the server supports livestream metadata via VTCLivestream.
 
-`livestreamModes` (String[]):
+`livestreamModes` (String\[]):
 : The VTCLivestream modes the server accepts: one or both of `"push"` and `"hosted"` ({{vtc-livestream}}). Empty when `supportsLivestream` is `false`.
 
 `supportsLobby` (Boolean):
@@ -242,7 +242,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 `supportsBreakoutRooms` (Boolean):
 : `true` if the server supports breakout rooms (parent/child VTCCall relationships).
 
-`supportedMediaTypes` (String[]):
+`supportedMediaTypes` (String\[]):
 : Media types the deployment supports. Values: `"audio"`, `"video"`, `"screen"`. Servers MUST include at least `"audio"`.
 
 `maxParticipantsPerCall` (UnsignedInt|null):
@@ -254,7 +254,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 `maxBreakoutRooms` (UnsignedInt|null):
 : Maximum breakout rooms per call. `null` means no limit. Absent when `supportsBreakoutRooms` is `false`.
 
-`gateways` (VTCGateway[], optional):
+`gateways` (VTCGateway\[], optional):
 : Protocol gateways available for this deployment. See {{vtc-gateway}}.
 
 # Data Types
@@ -276,10 +276,10 @@ JMAP VTC defines the call lifecycle (create, join, leave, end) and participant s
 `supportsDialOut` (Boolean):
 : `true` if a moderator may initiate an outbound call through this gateway to bridge an external party into a VTCCall. See {{dial-out}}.
 
-`supportedMediaTypes` (String[]):
+`supportedMediaTypes` (String\[]):
 : Media types this gateway supports. Subset of the account-level `supportedMediaTypes`. A PSTN gateway typically supports only `["audio"]`; a SIP or H.323 gateway may support `["audio", "video"]`.
 
-`dialInNumbers` (VTCDialInEntry[], optional):
+`dialInNumbers` (VTCDialInEntry\[], optional):
 : For gateways that support inbound calls (PSTN, SIP): addresses external callers can use to reach a call. See {{dial-in-entry}}.
 
 `metadata` (Object, optional):
@@ -452,7 +452,7 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 `joinPassword` (String|null):
 : Optional password or PIN required to join the call at the media layer.
 
-`mediaTypes` (String[]):
+`mediaTypes` (String\[]):
 : Media types active for this call. Subset of `supportedMediaTypes`. Example: `["audio", "video"]`.
 
 `activeParticipantCount` (UnsignedInt, server-set):
@@ -467,7 +467,7 @@ VTCCall IDs are ULIDs {{ULID}} assigned by the server at the time the call is cr
 `parentCallId` (String|null, immutable):
 : For breakout rooms: the id of the parent VTCCall. `null` for top-level calls.
 
-`breakoutRoomIds` (String[], server-set):
+`breakoutRoomIds` (String\[], server-set):
 : For parent calls: ids of child breakout-room VTCCalls. Empty for non-parent calls and when breakout rooms are not in use.
 
 `scheduledStartAt` (UTCDate|null):
@@ -599,7 +599,7 @@ A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It 
 `streamKey` (String|null, immutable):
 : Push mode: the stream key or authentication credential for the ingest endpoint. This field is write-only for non-moderators: the server SHOULD return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}. Always `null` in hosted mode.
 
-`playbackEndpoints` (VTCPlaybackEndpoint[], server-set):
+`playbackEndpoints` (VTCPlaybackEndpoint\[], server-set):
 : Hosted mode: the endpoints from which viewers can play the stream ({{vtc-playback-endpoint}}). The server chooses which protocols to offer. The list MAY be empty while the livestream is `"starting"`, and is empty once it is `"stopped"` or `"failed"`. Always empty in push mode.
 
 `startedAt` (UTCDate|null, server-set):
@@ -649,13 +649,13 @@ A VTCPlaybackEndpoint is a place from which a viewer's player can receive a host
   - `mediaTimeMs` (UnsignedInt): A position on the endpoint's media timeline, in milliseconds.
   - `wallClock` (UTCDate): The time, on the server's clock, at which the call produced the media found at `mediaTimeMs`.
 
-`tracks` (VTCStreamTrack[]):
+`tracks` (VTCStreamTrack\[]):
 : The selectable tracks this endpoint carries, such as alternative audio languages or caption tracks. Empty when the endpoint offers no choice, or when the server does not describe its tracks.
 
 `encrypted` (Boolean):
 : `true` if the endpoint's media is encrypted under a content protection system and a player needs a key system to play it ({{content-protection}}). Default: `false`.
 
-`keySystems` (String[]):
+`keySystems` (String\[]):
 : When `encrypted` is `true`, the key systems any one of which can decrypt the media, as key system identifiers ({{EME}}), which are reverse-domain names. Empty when `encrypted` is `false`.
 
 How the deployment produces an endpoint (packaging, transcoding, origin, distribution network) is outside the scope of this document.
@@ -768,10 +768,10 @@ The following checks apply to every `create`. When `chatId` is supplied but `urn
 
 `create` with `callType: "ring"` accepts:
 
-`targetParticipantIds` (String[], required):
+`targetParticipantIds` (String\[], required):
 : The userIds of the participants to ring. The server creates a VTCParticipant record for each target (with `joinedAt: null` and `callResponse: "pending"`) and one for the initiator (with `joinedAt` set to the creation time, since the initiator is in the call from the start), dispatches ring notifications (see {{ring-notification}}) to all targets, and transitions the call to `"ringing"`.
 
-`mediaTypes` (String[], required):
+`mediaTypes` (String\[], required):
 : The media types for this call (e.g., `["audio", "video"]`).
 
 Optional: `subject` (String), `e2eeEnabled` (Boolean), `chatId` (String), `spaceId` (String), `channelId` (String).
@@ -818,7 +818,7 @@ Servers MUST return `invalidProperties` naming `targetParticipantIds` when `targ
 
 `create` with `callType: "room"` accepts:
 
-`mediaTypes` (String[], required):
+`mediaTypes` (String\[], required):
 : The media types for this call.
 
 Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String), `e2eeEnabled` (Boolean), `chatId` (String), `spaceId` (String), `channelId` (String).
@@ -850,7 +850,7 @@ Servers SHOULD return `forbidden` when `mayCreateCall` is `false`. Servers MUST 
 `scheduledStartAt` (UTCDate, required):
 : The intended start time, normally in the future. Servers MAY reject past values with an `invalidProperties` SetError naming `scheduledStartAt`.
 
-`mediaTypes` (String[], required):
+`mediaTypes` (String\[], required):
 : The media types for this call.
 
 Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String), `e2eeEnabled` (Boolean), `chatId` (String), `spaceId` (String), `channelId` (String), `calendarEventId` (String).
@@ -1443,8 +1443,8 @@ A hosted livestream as JMAP data looks like this once it is live:
           "format": null },
         { "kind": "audio", "language": "es", "label": "Espanol",
           "format": null },
-        { "kind": "captions", "language": "en", "label": "English CC",
-          "format": "text/vtt" }
+        { "kind": "captions", "language": "en",
+          "label": "English CC", "format": "text/vtt" }
       ],
       "encrypted": false,
       "keySystems": []
@@ -1529,7 +1529,7 @@ When a ring call is created, the server constructs a `VTCCallPush` payload and d
 `subject` (String|null):
 : The call subject, if set.
 
-`mediaTypes` (String[]):
+`mediaTypes` (String\[]):
 : The media types for this call.
 
 `joinUri` (String):
@@ -1613,7 +1613,7 @@ When the target participant has a WebSocket connection with an active VTC subscr
 `initiatorId` (String):
 : The userId of the caller.
 
-`mediaTypes` (String[]):
+`mediaTypes` (String\[]):
 : The media types for this call.
 
 `joinUri` (String):

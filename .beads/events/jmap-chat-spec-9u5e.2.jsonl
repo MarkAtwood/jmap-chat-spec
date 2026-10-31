@@ -1,1 +1,2 @@
 {"id":"01a1939f-e549-702e-8265-464d4f1714d8","issue_id":"jmap-chat-spec-9u5e.2","event_type":"created","actor":"agent","old_value":"","new_value":"","created_at":"2026-10-31T20:21:32.105012479Z"}
+{"id":"01a193bd-30bf-7e7b-8cf7-0aa06d2e5fb8","issue_id":"jmap-chat-spec-9u5e.2","event_type":"closed","actor":"agent","old_value":"","new_value":"Fixed; full rebuild has 0 warnings","created_at":"2026-10-31T20:53:31.967950101Z"}

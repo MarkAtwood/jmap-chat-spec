@@ -2,13 +2,15 @@
   "id": "jmap-chat-spec-9u5e.4",
   "title": "Invalid JSON in ~~~json examples",
   "description": "kramdown JSON check fails on placeholder content: chat-00 Blob upload response (~line 1679: \"size\": \u003cbytes\u003e) and cid-00 Session capability example (~line 113: { ... }). Use valid JSON values or a non-json fence tag.",
-  "status": "open",
+  "status": "closed",
   "priority": 3,
   "issue_type": "task",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-10-31T20:21:32.294666914Z",
   "created_by": "agent",
-  "updated_at": "2026-10-31T20:21:32.294666914Z",
+  "updated_at": "2026-10-31T20:53:32.201949372Z",
+  "closed_at": "2026-10-31T20:53:32.201949372Z",
+  "close_reason": "Fixed; full rebuild has 0 warnings",
   "dependencies": [
     {
       "issue_id": "jmap-chat-spec-9u5e.4",
