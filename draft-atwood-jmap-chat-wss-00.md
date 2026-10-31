@@ -32,7 +32,6 @@ normative:
     date: 2026
 
 informative:
-  RFC9325:
   JMAP-CHAT-FED:
     title: "JMAP Chat Federation"
     author:
@@ -171,15 +170,15 @@ A client enables ephemeral event delivery by sending a `ChatStreamEnable` object
 `@type` (String):
 : MUST be `"ChatStreamEnable"`.
 
-`dataTypes` (String[]):
+`dataTypes` (String\[]):
 : A non-empty list of ephemeral event categories the client wishes to receive. This specification defines `"typing"` and `"presence"`. It also defines two companion values: `"vtc"` for the VTC events (ring and in-call) defined by {{JMAP-VTC-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:vtc:websocket`, and `"scene"` for spatial events defined by {{JMAP-SCENE-WSS}}, recognized only when the server advertises `urn:ietf:params:jmap:scene:websocket`.
 
 > **Implementation Note:** The `"vtc"` and `"scene"` dataTypes in ChatStreamEnable are convenience aliases. When one is present, the Chat WSS server delegates event delivery to the VTC WSS or Scene WSS event pipeline. The Chat WSS implementation treats this as an opaque delegation — it activates the companion's event delivery for the connection without the Chat WSS layer needing to understand the companion's event semantics. When the companion capability is not present in the server's capabilities, the value in `dataTypes` is silently ignored under the unrecognized-value rule below.
 
-`chatIds` (String[]|null):
+`chatIds` (String\[]|null):
 : Applicable when `"typing"` is in `dataTypes`. An explicit list of Chat ids for which typing events are requested, or `null` to receive typing events for all Chats of which the owner is a current member. Ignored if `"typing"` is not in `dataTypes`.
 
-`contactIds` (String[]|null):
+`contactIds` (String\[]|null):
 : Applicable when `"presence"` is in `dataTypes`. An explicit list of ChatContact ids for which presence events are requested, or `null` to receive presence events for all known ChatContacts. Ignored if `"presence"` is not in `dataTypes`.
 
 `id` (String, optional):
@@ -310,7 +309,7 @@ A client-to-server message with an unrecognized `@type` value is a request-level
 The following example shows a WebSocket JMAP Chat session. TLS negotiation and initial JMAP Session fetch are assumed complete. The client enables both state-change push and ephemeral push, sends a chat message, and receives a typing event followed by a state-change notification.
 
 ~~~
-[[ From Client ]]                 [[ From Server ]]
+[[ From Client ]]  [[ From Server ]]
 
 GET /jmap/ws/ HTTP/1.1
 Host: chat.example.com
@@ -322,11 +321,11 @@ Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 Sec-WebSocket-Protocol: jmap
 Sec-WebSocket-Version: 13
 
-                                  HTTP/1.1 101 Switching Protocols
-                                  Upgrade: websocket
-                                  Connection: Upgrade
-                                  Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
-                                  Sec-WebSocket-Protocol: jmap
+                   HTTP/1.1 101 Switching Protocols
+                   Upgrade: websocket
+                   Connection: Upgrade
+                   Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+                   Sec-WebSocket-Protocol: jmap
 
 [WebSocket connection established]
 
@@ -365,45 +364,45 @@ WS_DATA
   }, "0"]]
 }
 
-                                  WS_DATA
-                                  {
-                                    "@type": "ChatTypingEvent",
-                                    "accountId": "u1",
-                                    "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
-                                    "senderId": "c8xq2m",
-                                    "typing": true
-                                  }
+                   WS_DATA
+                   {
+                     "@type": "ChatTypingEvent",
+                     "accountId": "u1",
+                     "chatId": "01J3XKZQN4MWVT8PPBEHTJ3HX0",
+                     "senderId": "c8xq2m",
+                     "typing": true
+                   }
 
-                                  WS_DATA
-                                  {
-                                    "@type": "Response",
-                                    "requestId": "R1",
-                                    "methodResponses": [
-                                      ["Message/set", {
-                                        "accountId": "u1",
-                                        "created": {
-                                          "m1": {
-                                            "id": "01J3YKZQP..."
-                                          }
-                                        }
-                                      }, "0"]
-                                    ]
-                                  }
+                   WS_DATA
+                   {
+                     "@type": "Response",
+                     "requestId": "R1",
+                     "methodResponses": [
+                       ["Message/set", {
+                         "accountId": "u1",
+                         "created": {
+                           "m1": {
+                             "id": "01J3YKZQP..."
+                           }
+                         }
+                       }, "0"]
+                     ]
+                   }
 
-                                  WS_DATA
-                                  {
-                                    "@type": "StateChange",
-                                    "changed": {
-                                      "u1": {
-                                        "Message": "d35ecb040aab"
-                                      }
-                                    },
-                                    "pushState": "bbb"
-                                  }
+                   WS_DATA
+                   {
+                     "@type": "StateChange",
+                     "changed": {
+                       "u1": {
+                         "Message": "d35ecb040aab"
+                       }
+                     },
+                     "pushState": "bbb"
+                   }
 
 WS_CLOSE
 
-                                  WS_CLOSE
+                   WS_CLOSE
 
 [WebSocket connection closed]
 ~~~

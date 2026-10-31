@@ -133,7 +133,7 @@ The value of `capabilities["urn:ietf:params:jmap:graph:search"]` at the session 
 
 The value of `accountCapabilities["urn:ietf:params:jmap:graph:search"]` is a JSON object with the following fields:
 
-`languages` (String[]):
+`languages` (String\[]):
 : The identifiers, from the "JMAP Graph Query Languages" registry ({{iana-languages}}), of the additional query languages the server supports on this account. May be empty. Clients ignore identifiers they do not recognize.
 
 `maxDepth` (UnsignedInt):
@@ -224,10 +224,10 @@ When the field is an array and the operand of `$eq`, `$gt`, `$gte`, `$lt`, `$lte
 
 ## Logical Operators {#logical}
 
-`$and` (Expression[]):
+`$and` (Expression\[]):
 : True if every expression in the array is true. An empty array is true.
 
-`$or` (Expression[]):
+`$or` (Expression\[]):
 : True if at least one expression in the array is true. An empty array is false.
 
 `$not` (Expression):

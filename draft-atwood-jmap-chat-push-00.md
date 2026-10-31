@@ -94,7 +94,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:push"]` is a JSON o
 `maxSnippetBytes` (UnsignedInt):
 : Maximum byte length of the `bodySnippet` field in a `ChatMessageEntry`. Servers MUST truncate body snippets to this length before including them in the payload. Truncation MUST occur on a UTF-8 character boundary.
 
-`supportedUrgencyValues` (String[]):
+`supportedUrgencyValues` (String\[]):
 : The set of Web Push urgency values ({{RFC8030}} Section 5.3) the server supports. Valid values are `"very-low"`, `"low"`, `"normal"`, and `"high"`. Servers MUST support at least `"normal"` and `"high"`.
 
 `maxMessagesPerPush` (UnsignedInt, optional):
@@ -104,7 +104,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:push"]` is a JSON o
 
 This document extends the `PushSubscription` object defined in {{RFC8620}} Section 7.2 with one additional property:
 
-`chatPush` (Id[ChatPushConfig], optional):
+`chatPush` (Id\[ChatPushConfig], optional):
 : A map of accountId to `ChatPushConfig` object. When present for an account, the server delivers `ChatMessagePush` payloads to the push endpoint for new inbound messages in that account that match the configuration. A `ChatMessagePush` stands in for the `StateChange` that the arrival of the messages it carries would otherwise cause. Every other change in the account is still announced by a standard `StateChange`, as {{RFC8620}} Section 7 describes: this includes Message changes that the payload does not carry (edits, destroys, the owner's own messages, and messages excluded by `ChatPushConfig`, mute, or block) and changes to every other data type. When `chatPush` is absent or null for an account, the server delivers standard `StateChange` notifications for that account without inline message content.
 
 If a `PushSubscription/set` create or update includes a `chatPush` entry for an account whose `accountCapabilities` does not include `urn:ietf:params:jmap:chat:push`, the server MUST return an `invalidProperties` SetError whose `properties` names the offending entry (e.g., `chatPush/<id>`) and MUST NOT store the subscription change.
@@ -113,13 +113,13 @@ If a `PushSubscription/set` create or update includes a `chatPush` entry for an 
 
 A `ChatPushConfig` specifies which messages trigger inline push and what content is included. It has the following fields:
 
-`kinds` (String[], optional):
+`kinds` (String\[], optional):
 : The Chat kinds for which push is enabled. Each entry is one of `"direct"`, `"group"`, or `"channel"`. If absent or null, push is enabled for all kinds.
 
-`chatIds` (String[], optional):
+`chatIds` (String\[], optional):
 : An explicit list of Chat ids for which push is enabled. If absent or null, push is enabled for all Chats of the matching kinds that the account is a member of. If both `kinds` and `chatIds` are present, a Chat matches only if its id appears in `chatIds` and its kind appears in `kinds`. A Chat whose id is in `chatIds` but whose kind is not in `kinds` receives no push; keeping the two fields consistent avoids unexpected gaps in coverage.
 
-`properties` (String[], optional):
+`properties` (String\[], optional):
 : The `ChatMessageEntry` fields to include in each payload entry. If absent, the server uses the default set: `messageId`, `chatId`, `chatKind`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, `encrypted`, and `bodySnippet`. The `properties` list is authoritative: the server returns exactly the requested fields. The server MUST support at minimum the following properties: `messageId`, `chatId`, `chatKind`, `chatName`, `spaceId`, `spaceName`, `senderId`, `senderDisplayName`, `sentAt`, `hasMention`, `mentionScopes`, `encrypted`, and `bodySnippet`.
 
 `urgency` (String, optional):
@@ -143,7 +143,7 @@ A `ChatMessagePush` object is the push payload delivered directly to the registe
 `state` (String):
 : The `Message` state string for this account after all messages in the `messages` array have been applied, equivalent to the value that would appear in `StateChange.changed[accountId]["Message"]` following those deliveries. The server MUST set this field to the post-delivery state. This state also covers Message changes that the payload does not carry, such as the owner's own messages and messages excluded by `ChatPushConfig`, mute, or block (see {{delivery}}), so clients SHOULD NOT replace their cached `Message` state with it. As with `StateChange` ({{RFC8620}} Section 7.1), state strings are opaque and are compared only for equality: if `state` differs from the client's cached `Message` state, the client calls `Message/changes` with its cached state as `sinceState`. This also handles pushes delivered out of order, whose relative age `state` cannot show.
 
-`messages` (ChatMessageEntry[]):
+`messages` (ChatMessageEntry\[]):
 : MUST be a non-empty array of message entries that triggered this push. Contains exactly one entry for a single new message, or multiple entries when the server batches messages that arrived in quick succession (see {{delivery}}).
 
 `unreadCount` (UnsignedInt|null, optional):
@@ -184,7 +184,7 @@ A `ChatMessageEntry` carries the inline notification data for one message. The f
 `hasMention` (Boolean, optional):
 : `true` if the account owner is directly @-mentioned in the message; `false` otherwise. MUST be absent when `encrypted` is `true` (see {{e2ee}}). The server MUST set this to `true` when the accountId, which identifies the account owner ({{JMAP-CHAT}}), appears as a Mention `id` in the message's `Message.mentions` array, for every `bodyType`. The server MUST NOT derive mentions from the message body, including a rich body's spans ({{JMAP-CHAT}}). Clients MAY use this to render direct-mention notifications with a distinct sound or badge style.
 
-`mentionScopes` (String[], optional):
+`mentionScopes` (String\[], optional):
 : The broadcast-mention scopes by which the account owner was targeted in this message. MUST be absent when `encrypted` is `true` (see {{e2ee}}). Each element is one of `"everyone"`, `"here"`, or `"admins"` as defined by the `BroadcastMention` type in {{JMAP-CHAT}}. The server MUST compute the candidate scopes as the deduplicated `scope` values appearing in `Message.broadcastMentions[]`, for every `bodyType`; a rich body's `"broadcast"` spans are display-only and are not consulted ({{JMAP-CHAT}}). The server MUST then filter this candidate set to those scopes for which the receiving account owner is in the locally-resolved recipient set: `"everyone"` is included whenever the owner is a member of the Chat; `"here"` is included only when the owner satisfies the deployment-defined "active" predicate at delivery time; `"admins"` is included only when the owner satisfies the deployment-defined "administrative authority" predicate at delivery time. The empty array means either that no broadcast scopes were used or that the owner was not targeted by any of them. A message MAY have both `hasMention: true` and a non-empty `mentionScopes`. Order within the array is not significant. Send-side authorization for any non-empty broadcast mention is gated by the `"mention_broadcast"` permission in {{JMAP-CHAT}}; per-recipient resolution is described in Broadcast Mention Resolution in {{JMAP-CHAT-FED}}.
 
 `encrypted` (Boolean):
@@ -287,7 +287,7 @@ The following variant shows the payload when the same channel message also tags 
       "hasMention": true,
       "mentionScopes": ["here"],
       "encrypted": false,
-      "bodySnippet": "Hey @bob and @here, the deploy is ready for review"
+      "bodySnippet": "Hey @bob and @here, the deploy is ready"
     }
   ]
 }

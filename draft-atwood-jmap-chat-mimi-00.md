@@ -165,7 +165,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `hubSender` (String):
 : The ExternalSender ({{RFC9420, Section 12.1.8.1}}) with which this server signs as hub of the rooms it hosts.
 
-`cipherSuites` (UnsignedInt[]):
+`cipherSuites` (UnsignedInt\[]):
 : The MLS cipher suites ({{RFC9420, Section 17.1}}) this server accepts in KeyPackages and new rooms. MUST NOT be empty.
 
 `maxKeyPackages` (UnsignedInt):
@@ -241,7 +241,7 @@ The response has the following arguments, decoded from the KeyMaterialResponse:
 `userUri` (String):
 : The target user URI.
 
-`clients` (Object[]):
+`clients` (Object\[]):
 : One object per ClientKeyMaterial, with the fields `clientStatus` (String, the code name), `clientUri` (String), `keyPackage` (String, present when `clientStatus` is `"success"`), and `clientCapabilities` (String, the MLS Capabilities, present when the provider included it).
 
 # Rooms {#rooms}
@@ -333,7 +333,7 @@ The response has the following arguments, decoded from the hub's response:
 `currentEpoch` (UnsignedInt):
 : When `responseCode` is `"wrongEpoch"`: the hub's current epoch.
 
-`invalidProposals` (String[]):
+`invalidProposals` (String\[]):
 : When `responseCode` is `"invalidProposal"`: the ProposalRefs of the invalid proposals.
 
 On success the server MUST store, in every Chat of a local account bound to the room, a Message ({{fanout-messages}}) whose body is the FanoutMessage with `timestamp` set to `accepted_timestamp`, `message` set to `proposalOrCommit`, and `moreProposals` copied from the request (or an empty `externalProposals` for a commit), unless {{fanout-messages}} forbids storing it. The hub does not forward the owner's own handshake to the owner's provider ({{MIMI-PROTOCOL, Section 5.5}}), so this is how the owner's other clients and the room's other local participants receive it. When the hub staples `externalProposals` to the owner's external commit, the owner's other clients and the room's other local participants do not receive them.

@@ -32,7 +32,6 @@ normative:
     date: 2026
 
 informative:
-  RFC9325:
   JMAP-CHAT-WSS:
     title: JMAP Chat over WebSocket
     author:
@@ -246,7 +245,7 @@ object changes; the full object state is available via
   server-initiated changes (e.g., physics simulation, scripted
   behavior).
 
-`position` (Number[3]|null):
+`position` (Number\[3]|null):
 : The object's position after the change.  Present for `"created"`
   and `"updated"` events; `null` for `"destroyed"`.
 
@@ -436,12 +435,12 @@ connection.
 
 - **`@type`** (String): MUST be `"SceneStreamEnable"`.
 
-- **`regionIds`** (String[]|null): An explicit list of SceneRegion
+- **`regionIds`** (String\[]|null): An explicit list of SceneRegion
   ids for which events are requested, or `null` to receive events
   for all regions in which the authenticated user has an active
   avatar.  Default: `null`.
 
-- **`eventTypes`** (String[]|null): An explicit list of event type
+- **`eventTypes`** (String\[]|null): An explicit list of event type
   names the client wishes to receive, or `null` to receive all
   event types.  Recognized values are: `"SceneAvatarEvent"`,
   `"SceneObjectEvent"`, and `"SceneInteractionEvent"`.

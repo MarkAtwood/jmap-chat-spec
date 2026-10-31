@@ -371,7 +371,7 @@ The ChatContact data type defined in {{JMAP-CHAT}} includes the following fields
 
 Servers implementing this specification MUST include the following field in their JMAP Session object (advertised at `/.well-known/jmap`):
 
-`peerSigningKeys` (JWK[]):
+`peerSigningKeys` (JWK\[]):
 : The public keys with which this server signs peer requests ({{key-publication}}). Each entry is a JSON Web Key {{RFC7517}} with `kty` `"OKP"`, `crv` `"Ed25519"` {{RFC8037}}, `x`, and `kid` equal to the key's base64url-encoded SHA-256 JWK Thumbprint {{RFC7638}}. Servers MUST advertise this field with at least one key. For example:
 
 ~~~ json
@@ -451,10 +451,10 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `body` (String) — Message content. Validated per step 8 of {{new-message-validation}}.
   - `bodyType` (String) — MIME type of `body`. Validated against `supportedBodyTypes`.
   - `sentAt` (UTCDate) — Sender's claimed composition time. Stored as-is; SHOULD NOT be used for ordering.
-  - `attachments` (Object[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob, with a signed request ({{blob-fetch}}).
-  - `mentions` (Mention[], optional) — Structured per-user @mention annotations. Each Mention `id` carries an identity string ({{identity-mapping}}).
-  - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). The receiving server is authoritative for computing the local recipient set; the sending server's set is informational only. See {{broadcast-mention-resolution}}.
-  - `actions` (MessageAction[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection, except that user-reference fields the server recognises are mapped, and MessageActions whose `uri` is a JMAP object URI are removed, per {{identity-mapping}}.
+  - `attachments` (Object\[]) — Each entry carries Attachment fields (as defined in {{JMAP-CHAT}}) plus `fetchUrl` (String): the URL from which the receiver fetches the blob, with a signed request ({{blob-fetch}}).
+  - `mentions` (Mention\[], optional) — Structured per-user @mention annotations. Each Mention `id` carries an identity string ({{identity-mapping}}).
+  - `broadcastMentions` (BroadcastMention\[], optional) — Structured broadcast-scope mention annotations (`@everyone`, `@here`, `@admins`). The receiving server is authoritative for computing the local recipient set; the sending server's set is informational only. See {{broadcast-mention-resolution}}.
+  - `actions` (MessageAction\[], optional) — Out-of-band action invitations. Servers MUST store and forward without inspection, except that user-reference fields the server recognises are mapped, and MessageActions whose `uri` is a JMAP object URI are removed, per {{identity-mapping}}.
   - `replyTo` (String, optional) — The `senderMsgId` of the message being replied to, as assigned by the sending server. The receiver resolves this to a local message `id` via the `senderMsgId` index. See {{outbound-preparation}} for how the sending server constructs this value.
   - `threadRootId` (String, optional) — The `senderMsgId` of the thread root message, as assigned by the sending server. The receiver resolves this similarly. See {{outbound-preparation}}. If the receiver cannot resolve a `replyTo` or `threadRootId` senderMsgId to a local message id (because the referenced message was never received or was hard-deleted), the receiver MUST store the message with `replyTo` and/or `threadRootId` set to null. The message MUST NOT be rejected on this basis.
   - `topicId` (String, optional): Topic identifier, carried unchanged. Validated per `topicId` in {{JMAP-CHAT}}; reject with `invalidArguments` if invalid.
@@ -471,8 +471,8 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `body` (String) — New body content. Validated against `maxBodyBytes`.
   - `bodyType` (String) — MIME type of the new body. Validated against `supportedBodyTypes`.
   - `editedAt` (UTCDate) — Claimed edit time. Stored as-is.
-  - `mentions` (Mention[], optional) — Structured per-user @mention annotations for the new body. Each Mention `id` carries an identity string ({{identity-mapping}}).
-  - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations for the new body. Receiver-side resolution rules are identical to the new-message case (see {{broadcast-mention-resolution}}).
+  - `mentions` (Mention\[], optional) — Structured per-user @mention annotations for the new body. Each Mention `id` carries an identity string ({{identity-mapping}}).
+  - `broadcastMentions` (BroadcastMention\[], optional) — Structured broadcast-scope mention annotations for the new body. Receiver-side resolution rules are identical to the new-message case (see {{broadcast-mention-resolution}}).
 
   The receiver SHOULD verify the sender is the original sender of the identified message before applying the edit.
 
@@ -922,16 +922,16 @@ Method name: `Peer/groupUpdate`
   - `"leave"` — The sender is voluntarily departing the group. Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list without requiring admin authorization. This is equivalent to `"removeMembers"` with `removedMemberIds: [senderUserId]` but does not require admin role.
   - `"close"` — The sender, the group's last admin, is departing while other members remain, which closes the group ({{JMAP-CHAT}}). Arguments: none beyond the standard fields. The receiver MUST remove the sender from the group's member list and set the local Chat record's `closedAt`. The sending server sends `"close"` in place of `"leave"`.
 
-`members` (ChatMember[], required for `"create"`):
+`members` (ChatMember\[], required for `"create"`):
 : Full membership list at the time of this update, including the sender. Each ChatMember `id` and `invitedBy` carries an identity string. The receiver resolves each one per {{identity-mapping}}, creating a placeholder ChatContact for each identity it does not know.
 
-`addedMembers` (ChatMember[], required for `"addMembers"`):
+`addedMembers` (ChatMember\[], required for `"addMembers"`):
 : The newly added members. Each ChatMember `id` and `invitedBy` is resolved as for `members`, including placeholder creation.
 
-`removedMemberIds` (String[], required for `"removeMembers"`):
+`removedMemberIds` (String\[], required for `"removeMembers"`):
 : The identity strings of the members who were removed ({{identity-mapping}}).
 
-`updatedRoles` (Object[], required for `"updateRoles"`):
+`updatedRoles` (Object\[], required for `"updateRoles"`):
 : Each entry MUST contain `id` (String, the identity string of the member, per {{identity-mapping}}) and `role` (String, the new role value: `"admin"` or `"member"`).
 
 `name` (String, optional):
