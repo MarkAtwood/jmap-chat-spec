@@ -36,8 +36,8 @@ informative:
     author:
       - fullname: Neil Jenkins
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-emailpush-03
-    date: 2026-05-03
+      Internet-Draft: draft-ietf-jmap-emailpush-04
+    date: 2026-10-30
   JMAP-CHAT-FED:
     title: "JMAP Chat Federation"
     author:
@@ -49,7 +49,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat Push Notifications, a companion specification to JMAP Chat ({{JMAP-CHAT}}). It extends the RFC 8620 PushSubscription mechanism to deliver inline message content in push notification payloads, enabling mobile and background clients to display a notification without a follow-up server request. The extension defines a per-account push configuration, a notification payload object carrying message metadata and an optional body snippet, per-chat and per-kind filtering, mention-aware urgency, and behavior for end-to-end encrypted deployments where body content must not leave the server.
+This document defines JMAP Chat Push Notifications, a companion specification to JMAP Chat. It extends the RFC 8620 PushSubscription mechanism to deliver inline message content in push notification payloads, enabling mobile and background clients to display a notification without a follow-up server request. The extension defines a per-account push configuration, a notification payload object carrying message metadata and an optional body snippet, per-chat and per-kind filtering, mention-aware urgency, and behavior for end-to-end encrypted deployments where body content must not leave the server.
 
 --- middle
 

@@ -50,11 +50,11 @@ informative:
 --- abstract
 
 This document defines a WebSocket binding for ephemeral spatial
-events in JMAP for Scenes ({{JMAP-SCENE}}).  It registers the
+events in JMAP for Scenes.  It registers the
 `urn:ietf:params:jmap:scene:websocket` capability and introduces
 `SceneStreamEnable` and `SceneStreamDisable` control messages that
 give clients region-scoped, event-type-scoped subscription over a
-JMAP WebSocket connection ({{RFC8887}}).
+JMAP WebSocket connection (RFC 8887).
 
 These ephemeral events supplement the real-time simulation layer
 (which carries high-frequency position updates) and JMAP

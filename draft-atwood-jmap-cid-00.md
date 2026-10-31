@@ -27,8 +27,8 @@ normative:
     author:
       - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-17
-    date: 2026-10-18
+      Internet-Draft: draft-ietf-jmap-filenode-19
+    date: 2026-10-28
 
 informative:
   RFC9404:
@@ -53,8 +53,8 @@ informative:
 
 This document defines the `urn:ietf:params:jmap:cid` JMAP capability.
 When a server advertises this capability, it extends the blob upload
-response defined in {{RFC8620}} with a `sha256` field carrying the
-SHA-256 digest of the uploaded content. When {{JMAP-FILENODE}} is also
+response defined in RFC 8620 with a `sha256` field carrying the
+SHA-256 digest of the uploaded content. When the JMAP File Storage extension is also
 supported, a `sha256` property is added to FileNode objects. These
 additions enable clients to verify blob integrity, detect duplicate
 content, and use content-addressed storage patterns without downloading

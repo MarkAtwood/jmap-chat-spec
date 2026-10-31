@@ -56,7 +56,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat Tasks, a companion specification to JMAP Chat ({{JMAP-CHAT}}) and JMAP for Tasks ({{JMAP-TASKS}}). It specifies how a Space in JMAP Chat may be associated with a JMAP Tasks TaskList, how tasks are surfaced and linked from chat messages, and how a Task may carry a back-reference to a discussion Chat. The integration is optional: a JMAP Chat deployment without this capability remains fully functional; deployments that advertise it expose richer task-aware behavior.
+This document defines JMAP Chat Tasks, a companion specification to JMAP Chat and JMAP for Tasks. It specifies how a Space in JMAP Chat may be associated with a JMAP Tasks TaskList, how tasks are surfaced and linked from chat messages, and how a Task may carry a back-reference to a discussion Chat. The integration is optional: a JMAP Chat deployment without this capability remains fully functional; deployments that advertise it expose richer task-aware behavior.
 
 --- middle
 

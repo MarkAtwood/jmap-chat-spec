@@ -56,7 +56,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat Calendars, a companion specification to JMAP Chat ({{JMAP-CHAT}}) and JMAP for Calendars ({{JMAP-CALENDARS}}). It specifies how a Space in JMAP Chat may be associated with a JMAP Calendars Calendar, how calendar events are surfaced and acted upon within chat messages, how .ics attachments may be recognized, and how availability information is exposed for in-chat scheduling. The integration is optional: a JMAP Chat deployment without this capability remains fully functional; deployments that advertise it expose richer calendar-aware behavior.
+This document defines JMAP Chat Calendars, a companion specification to JMAP Chat and JMAP for Calendars. It specifies how a Space in JMAP Chat may be associated with a JMAP Calendars Calendar, how calendar events are surfaced and acted upon within chat messages, how .ics attachments may be recognized, and how availability information is exposed for in-chat scheduling. The integration is optional: a JMAP Chat deployment without this capability remains fully functional; deployments that advertise it expose richer calendar-aware behavior.
 
 --- middle
 

@@ -105,8 +105,8 @@ informative:
     author:
       - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-17
-    date: 2026-10-18
+      Internet-Draft: draft-ietf-jmap-filenode-19
+    date: 2026-10-28
   JMAP-CHAT-FILENODE:
     title: "JMAP Chat File Storage"
     author:
@@ -140,8 +140,8 @@ informative:
     author:
       - fullname: Mauro De Gennaro
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-metadata-04
-    date: 2026-10-19
+      Internet-Draft: draft-ietf-jmap-metadata-05
+    date: 2026-10-28
   JMAP-REFPLUS:
     title: "JMAP Enhanced Result References"
     author:
@@ -242,9 +242,9 @@ informative:
 
 --- abstract
 
-This document defines JMAP for Chat, a JMAP capability ({{RFC8620}}) for direct and group text messaging. It supports two deployment topologies: a mailbox-per-user model in which each user operates their own server, and a relay model in which a shared server routes end-to-end encrypted messages.
+This document defines JMAP for Chat, a JMAP capability (RFC 8620) for direct and group text messaging. It supports two deployment topologies: a mailbox-per-user model in which each user operates their own server, and a relay model in which a shared server routes end-to-end encrypted messages.
 
-The specification defines the `urn:ietf:params:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in {{JMAP-CHAT-FED}}.
+The specification defines the `urn:ietf:params:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in a companion JMAP Chat federation specification.
 
 The protocol covers the feature set common to contemporary messaging systems: group chat with membership roles, message reactions, editing, deletion, threading, @mentions, typing indicators, read receipts per participant, presence, pinned messages, per-chat notification settings, sender-controlled message expiry, and burn-on-read. Spaces provide a named multi-channel container with a role-based permission system, analogous to what other systems call a server, workspace, or team.
 

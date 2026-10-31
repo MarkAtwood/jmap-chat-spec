@@ -86,7 +86,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Graph Live Editing, a companion to JMAP Graph ({{JMAP-GRAPH}}) that lets several users edit the content of one GraphNode at the same time, character by character, and replay its editing history. The server assigns a total order to edit operations and stores them, but never reads, transforms, or merges them; clients merge them using an edit format named by the node. This keeps the server independent of any one format and allows the operations to be encrypted end to end. The document defines a GraphNodeOp data type, extensions to GraphNode for format, snapshots, and history, and a WebSocket stream of operations and cursor positions.
+This document defines JMAP Graph Live Editing, a companion to JMAP Graph that lets several users edit the content of one GraphNode at the same time, character by character, and replay its editing history. The server assigns a total order to edit operations and stores them, but never reads, transforms, or merges them; clients merge them using an edit format named by the node. This keeps the server independent of any one format and allows the operations to be encrypted end to end. The document defines a GraphNodeOp data type, extensions to GraphNode for format, snapshots, and history, and a WebSocket stream of operations and cursor positions.
 
 --- middle
 

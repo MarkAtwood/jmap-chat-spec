@@ -93,7 +93,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Graph Search, a companion to JMAP Graph ({{JMAP-GRAPH}}) that adds search to GraphNode/query and GraphEdge/query. It defines a small built-in filter language, written as JSON in the style of document-database query filters, that every implementation supports; it covers comparisons on any property, including annotations, as well as bounded graph traversal and optional full-text matching. It also lets a server advertise further query languages, such as ISO GQL, openCypher, Gremlin, SPARQL, and the DocumentDB query language, from a new IANA registry, and defines how a Graph is presented to them. No new methods are defined; results are ordinary query results.
+This document defines JMAP Graph Search, a companion to JMAP Graph that adds search to GraphNode/query and GraphEdge/query. It defines a small built-in filter language, written as JSON in the style of document-database query filters, that every implementation supports; it covers comparisons on any property, including annotations, as well as bounded graph traversal and optional full-text matching. It also lets a server advertise further query languages, such as ISO GQL, openCypher, Gremlin, SPARQL, and the DocumentDB query language, from a new IANA registry, and defines how a Graph is presented to them. No new methods are defined; results are ordinary query results.
 
 --- middle
 

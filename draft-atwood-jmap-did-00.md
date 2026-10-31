@@ -65,8 +65,8 @@ informative:
     author:
       - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-17
-    date: 2026-10-18
+      Internet-Draft: draft-ietf-jmap-filenode-19
+    date: 2026-10-28
   JMAP-CHAT:
     title: "JMAP for Chat"
     author:
@@ -132,7 +132,7 @@ informative:
 
 --- abstract
 
-This document defines the `urn:ietf:params:jmap:did` JMAP capability. When a server advertises this capability, every JMAP account is bound to a Decentralized Identifier (DID) as defined in {{DID-CORE}}. The capability adds a `did` property to JMAP data types designated by consuming specifications, enabling globally resolvable, cryptographically verifiable identity across JMAP servers. The account-to-DID binding is server-authoritative; clients MAY independently verify the binding by resolving the DID document.
+This document defines the `urn:ietf:params:jmap:did` JMAP capability. When a server advertises this capability, every JMAP account is bound to a Decentralized Identifier (DID) as defined in W3C Decentralized Identifiers (DIDs) v1.0. The capability adds a `did` property to JMAP data types designated by consuming specifications, enabling globally resolvable, cryptographically verifiable identity across JMAP servers. The account-to-DID binding is server-authoritative; clients MAY independently verify the binding by resolving the DID document.
 
 --- middle
 

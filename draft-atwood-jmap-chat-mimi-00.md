@@ -87,7 +87,7 @@ informative:
 
 --- abstract
 
-This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format ({{MIMI-CONTENT}}) and JMAP Chat ({{JMAP-CHAT}}). It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider ({{MIMI-PROTOCOL}}): it publishes KeyPackages, fetches key material, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
+This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format and JMAP Chat. It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider: it publishes KeyPackages, fetches key material, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
 
 --- middle
 

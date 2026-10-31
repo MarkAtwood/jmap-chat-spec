@@ -32,8 +32,8 @@ normative:
     author:
       - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-filenode-17
-    date: 2026-10-18
+      Internet-Draft: draft-ietf-jmap-filenode-19
+    date: 2026-10-28
 
 informative:
   JMAP-OBJECT-URI:
@@ -61,7 +61,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat File Storage, a companion specification to JMAP Chat ({{JMAP-CHAT}}) and the JMAP File Storage extension ({{JMAP-FILENODE}}). It specifies how a Space in JMAP Chat is associated with a hierarchical file tree managed by {{JMAP-FILENODE}}, how Space permissions govern access to that tree, how message attachments may optionally link to FileNode entries, and how the file tree is treated when a Space is destroyed.
+This document defines JMAP Chat File Storage, a companion specification to JMAP Chat and the JMAP File Storage extension. It specifies how a Space in JMAP Chat is associated with a hierarchical file tree managed by the JMAP File Storage extension, how Space permissions govern access to that tree, how message attachments may optionally link to FileNode entries, and how the file tree is treated when a Space is destroyed.
 
 --- middle
 

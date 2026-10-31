@@ -51,7 +51,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Graph, a JMAP capability ({{RFC8620}}) for storing and synchronizing general-purpose directed graphs. It defines the `urn:ietf:params:jmap:graph` capability and three data types: Graph, a shareable container; GraphNode, a vertex with an open set of annotations and optional blob content; and GraphEdge, a directed, typed, annotated link between two nodes of the same Graph. The specification deliberately assigns no meaning to node content, edge types, or annotations, and imposes no structural constraints such as acyclicity or ordering, so that outlines, threaded conversations, mind maps, knowledge graphs, and other structures can be built on it as conventions rather than as protocol extensions.
+This document defines JMAP Graph, a JMAP capability (RFC 8620) for storing and synchronizing general-purpose directed graphs. It defines the `urn:ietf:params:jmap:graph` capability and three data types: Graph, a shareable container; GraphNode, a vertex with an open set of annotations and optional blob content; and GraphEdge, a directed, typed, annotated link between two nodes of the same Graph. The specification deliberately assigns no meaning to node content, edge types, or annotations, and imposes no structural constraints such as acyclicity or ordering, so that outlines, threaded conversations, mind maps, knowledge graphs, and other structures can be built on it as conventions rather than as protocol extensions.
 
 --- middle
 

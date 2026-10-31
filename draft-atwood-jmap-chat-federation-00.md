@@ -45,8 +45,8 @@ normative:
       - fullname: Shumon Huque
       - fullname: Viktor Dukhovni
     seriesinfo:
-      Internet-Draft: draft-ietf-dance-client-auth-14
-    date: 2026-09-11
+      Internet-Draft: draft-ietf-dance-client-auth-15
+    date: 2026-10-28
 
 informative:
   JMAP-OBJECT-URI:
@@ -105,7 +105,7 @@ informative:
 
 --- abstract
 
-This document defines the server-to-server federation protocol for JMAP Chat ({{JMAP-CHAT}}). It specifies peer discovery via `/.well-known/jmap`, the peer authentication model, the `role` field in the JMAP Chat account capability, ChatContact and Session object extensions required for federation, and the Peer/* methods used to exchange messages and events between mailbox servers. Five methods are REQUIRED: `Peer/deliver`, `Peer/receipt`, `Peer/typing`, `Peer/retract`, and `Peer/groupUpdate`. Three additional methods for federated presence are OPTIONAL: `Peer/subscribePresence`, `Peer/unsubscribePresence`, and `Peer/presence`. This document is a companion to {{JMAP-CHAT}} and is intended to be read alongside it.
+This document defines the server-to-server federation protocol for JMAP Chat. It specifies peer discovery via `/.well-known/jmap`, the peer authentication model, the `role` field in the JMAP Chat account capability, ChatContact and Session object extensions required for federation, and the Peer/* methods used to exchange messages and events between mailbox servers. Five methods are REQUIRED: `Peer/deliver`, `Peer/receipt`, `Peer/typing`, `Peer/retract`, and `Peer/groupUpdate`. Three additional methods for federated presence are OPTIONAL: `Peer/subscribePresence`, `Peer/unsubscribePresence`, and `Peer/presence`. This document is a companion to JMAP Chat and is intended to be read alongside it.
 
 --- middle
 

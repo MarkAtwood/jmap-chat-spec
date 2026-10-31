@@ -140,11 +140,11 @@ informative:
 
 --- abstract
 
-This document defines JMAP VTC, a standalone JMAP capability ({{RFC8620}}) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) and the objects embedded in them; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
+This document defines JMAP VTC, a standalone JMAP capability (RFC 8620) for managing video and voice teleconferencing sessions. It defines the `urn:ietf:params:jmap:vtc` capability; four top-level data types (VTCCall, VTCParticipant, VTCRecording, and VTCLivestream) and the objects embedded in them; standard JMAP methods for managing calls and participants; push notification payloads for incoming-call ring events; and ephemeral WebSocket events for call state changes.
 
 The specification models call *state* — who is in a call, what state the call is in, and how to join it — without prescribing the media transport. Actual voice and video media travel through a deployment-chosen stack (WebRTC, SIP/RTP, or any other media framework); the JMAP server is a call-state database, not a media server.
 
-The capability is standalone (`urn:ietf:params:jmap:vtc`). When JMAP Chat ({{JMAP-CHAT}}) is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars ({{JMAP-CALENDARS}}) is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
+The capability is standalone (`urn:ietf:params:jmap:vtc`). When JMAP Chat is also present, VTCCall objects MAY carry optional back-references to Chat and Space objects. When JMAP Calendars is also present, VTCCall objects MAY bind to CalendarEvent objects for scheduled meetings.
 
 --- middle
 

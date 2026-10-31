@@ -85,7 +85,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Graph Projection, a companion to JMAP Graph ({{JMAP-GRAPH}}). A server MAY present the other JMAP data in an account (mail, contacts, and any other data type with a registered object URI type name) as a single Graph: each object becomes a GraphNode that refers back to it, and each reference from one object to another becomes a GraphEdge. Clients can then explore the relationships among all of an account's data with the GraphNode and GraphEdge methods, without knowing each data type in advance. The projection is filtered for each user by that user's rights on the underlying data. Whether a server accepts writes to the projection, and what a write means, is server-defined in this revision.
+This document defines JMAP Graph Projection, a companion to JMAP Graph. A server MAY present the other JMAP data in an account (mail, contacts, and any other data type with a registered object URI type name) as a single Graph: each object becomes a GraphNode that refers back to it, and each reference from one object to another becomes a GraphEdge. Clients can then explore the relationships among all of an account's data with the GraphNode and GraphEdge methods, without knowing each data type in advance. The projection is filtered for each user by that user's rights on the underlying data. Whether a server accepts writes to the projection, and what a write means, is server-defined in this revision.
 
 --- middle
 
