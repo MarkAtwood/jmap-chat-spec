@@ -664,7 +664,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** SHOULD | **Round:** 3
 
-**Test:** Send 5 messages. Set ReadPosition to message 3. Call `Chat/get`, repeating after a short delay if needed. Verify `unreadCount` becomes 2 (messages 4 and 5). A server that caps the count reports its maximum only when the true count exceeds it.
+**Test:** Have a member other than the owner send 5 messages. Set the owner's ReadPosition to message 3. Call `Chat/get`, repeating after a short delay if needed. Verify `unreadCount` becomes 2 (messages 4 and 5). A server that caps the count reports its maximum only when the true count exceeds it.
 
 ---
 
