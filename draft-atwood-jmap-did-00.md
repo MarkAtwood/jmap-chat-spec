@@ -426,13 +426,13 @@ Deployments where the DID binding is security-critical SHOULD use DID methods wi
 
 A user who presents the same DID to multiple JMAP servers enables those servers (and any observers) to correlate the user's activity across servers. This is inherent to globally unique identifiers and is a feature, not a bug, for use cases like cross-server identity continuity and portable reputation.
 
-Users who require unlinkability across servers SHOULD use different DIDs for different servers. `did:key` supports this naturally: a user can generate a fresh keypair for each server. However, this sacrifices cross-server identity continuity — the user is a different identity on each server.
+Users who require unlinkability across servers can use different DIDs for different servers. `did:key` supports this naturally: a user can generate a fresh keypair for each server. However, this sacrifices cross-server identity continuity — the user is a different identity on each server.
 
 Users can make informed choices only if they know a deployment's DID correlation properties, which the protocol does not expose. A deployment that requires a single DID across all servers (e.g., an enterprise deployment) should disclose this requirement at enrollment time.
 
 ## DID Method Security
 
-The security properties of the `did` field depend entirely on the DID method used. This document does not mandate any specific DID method. Deployments SHOULD evaluate:
+The security properties of the `did` field depend entirely on the DID method used. This document does not mandate any specific DID method. Considerations for deployments:
 
 - **Key compromise recovery.** `did:key` has no recovery mechanism; if the private key is lost, the identity is lost. `did:web` can rotate keys by updating the hosted DID document. `did:webvh` rotates keys through signed DID log entries; with pre-rotation (`nextKeyHashes`), the keys authorized for the next update are committed in advance.
 - **Censorship resistance.** `did:web` depends on DNS and HTTP infrastructure; a domain seizure disables the DID. `did:webvh` has the same dependency, but a DID whose log enables portability can move to another domain and keep its log ({{migration}}). `did:key` has no external dependency.

@@ -192,7 +192,7 @@ The MessageAction object has the following shape when its `type` is `urn:ietf:pa
   - A standard `https://` URL pointing to an external task representation (for example, a link to a third-party issue tracker that bridges to JMAP Tasks).
 
 `label` (String, optional):
-: Display label (typically the Task's title). Servers SHOULD set this to the Task's `title` when constructing MessageActions from Task records they have access to.
+: Display label (typically the Task's title). Servers MAY set this to the Task's `title` when constructing MessageActions from Task records they have access to.
 
 `metadata` (Object, optional):
 : MAY include the following type-specific keys:

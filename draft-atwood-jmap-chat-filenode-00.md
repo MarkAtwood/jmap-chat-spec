@@ -140,7 +140,7 @@ When a client creates a FileNode with `role: "chatspace"`, it MUST supply `space
 
 - The Space identified by `spaceId` exists and the requesting user is a member. If not, the server SHOULD return `forbidden` in both cases — Space not found and user not a member — to avoid revealing Space existence to non-members.
 - No file tree root already exists for that Space (at most one root per Space is permitted). If one exists, the server MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) with `existingId` set to the id of the existing root.
-- The requesting user holds sufficient permission to create the root (see {{permissions}}). If not, the server MUST return `forbidden`.
+- The requesting user holds sufficient permission to create the root (see {{permissions}}). If not, the server SHOULD return `forbidden`.
 
 The `role` value `"chatspace"` can be set only when a FileNode is created. A server MUST reject a `FileNode/set` update that changes `role` to or from `"chatspace"` with an `invalidProperties` SetError ({{RFC8620}} Section 5.3) naming `role`. Otherwise an update could bypass the checks above, producing a root without `spaceId` or a second root for a Space, and discovery ({{discovery}}) would no longer find exactly one root.
 
@@ -171,7 +171,7 @@ No role is granted `mayShare`. Access to a Space file tree comes from Space memb
 
 This document does not record who uploaded a file, so there are no per-uploader rights. Replacing an existing file, including by the overwrite behaviors of {{JMAP-FILENODE}}, needs the rights that document requires for it, which here only `"manage_channels"` and above hold. A member with only `"send"` uploads a new file instead, even to replace one they uploaded.
 
-Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation SHOULD use separate Spaces.
+Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation can use separate Spaces.
 
 Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission, and so, by the table above, does destroying it. This is a higher bar than the `mayAddChildren` grant to `"send"` and the `mayDelete` grant to `"manage_channels"`, because creating or removing the root is a structural operation that affects all Space members.
 
@@ -195,7 +195,7 @@ The FileNode is not modified when linked as an attachment. The message's attachm
 ## thumbnailBlobId {#thumbnail}
 
 `thumbnailBlobId` (String, optional):
-: The `blobId` of a thumbnail or preview image derived from the FileNode's blob. SHOULD be set only when `filenodeId` is also present. Receiving clients MAY display this blob as an inline preview without fetching the full attachment. Servers MUST store and return `thumbnailBlobId` without modification.
+: The `blobId` of a thumbnail or preview image derived from the FileNode's blob. SHOULD be set only when `filenodeId` is also present. Receiving clients MAY display this blob as an inline preview without fetching the full attachment. Servers store and return `thumbnailBlobId` without modification.
 
 When a FileNode contains an image blob, clients MAY generate a thumbnail for inline preview using `Blob/convert` as defined in {{JMAP-BLOBEXT}}, provided the server advertises the `urn:ietf:params:jmap:blob2` capability. The workflow is:
 

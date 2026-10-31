@@ -272,7 +272,8 @@ Each supported DID method carries its own trust assumptions, which operators nee
 When a DID's signing key is compromised, the DID's controller is expected to publish an updated DID Document removing the compromised verification method. This is a key rotation as defined in {{JMAP-DID}}: the DID is unchanged. Receiving servers learn of the rotation by refreshing their cached DID Document, which is mandated ({{resolution}}) only when the signing key is missing from the cached document. Between the time of compromise and the time the receiving server's cache refreshes, the compromised key may continue to authenticate fraudulent requests. Implementations SHOULD therefore:
 
 - Use cache TTLs no longer than what their threat model tolerates.
-- Implement out-of-band signaling for high-priority rotations where the controller can notify resolving peers proactively (such mechanisms are deployment-defined and not part of this protocol).
+
+Implementations MAY also implement out-of-band signaling for high-priority rotations where the controller can notify resolving peers proactively (such mechanisms are deployment-defined and not part of this protocol).
 
 ## did:plc operation log integrity
 
@@ -280,11 +281,11 @@ When a DID's signing key is compromised, the DID's controller is expected to pub
 
 ## did:web DNS and TLS dependency
 
-`did:web` resolution depends on DNS and TLS. A compromise of the DNS resolver, the TLS infrastructure, or the HTTPS host serving the DID Document is a compromise of any `did:web` DID resolved through that path. Implementations SHOULD pin TLS chains for `did:web` resolutions where operator policy permits and SHOULD treat TLS handshake failures as resolution failures. `did:web` also keeps no verifiable key history; `did:webvh` ({{methods}}) addresses this.
+`did:web` resolution depends on DNS and TLS. A compromise of the DNS resolver, the TLS infrastructure, or the HTTPS host serving the DID Document is a compromise of any `did:web` DID resolved through that path. Implementations SHOULD pin TLS chains for `did:web` resolutions where operator policy permits; TLS handshake failures are resolution failures. `did:web` also keeps no verifiable key history; `did:webvh` ({{methods}}) addresses this.
 
 ## did:key non-rotatability
 
-`did:key` DIDs are deterministically derived from the public key encoded in the DID URI. There is no key-rotation mechanism: changing the key creates a new DID, which is a DID migration ({{JMAP-DID}}). A `did:key` whose private key is compromised cannot be recovered or rotated; the DID itself must be retired and a new DID adopted. Deployments using `did:key` as a long-term identity SHOULD plan for key-loss as a likely event and SHOULD provide deployment-level migration paths (typically out of scope for this protocol; see the companion implementer guide).
+`did:key` DIDs are deterministically derived from the public key encoded in the DID URI. There is no key-rotation mechanism: changing the key creates a new DID, which is a DID migration ({{JMAP-DID}}). A `did:key` whose private key is compromised cannot be recovered or rotated; the DID itself must be retired and a new DID adopted. Deployments using `did:key` as a long-term identity need to plan for key-loss as a likely event and to provide deployment-level migration paths (typically out of scope for this protocol; see the companion implementer guide).
 
 ## Cross-method consistency
 

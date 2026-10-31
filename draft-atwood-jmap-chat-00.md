@@ -305,7 +305,7 @@ identity / id:
 
 ## Color Representation {#color-convention}
 
-Where this specification or companion specifications define color-valued fields, implementations SHOULD represent colors using the W3C Design Tokens Community Group color token format {{DTCG-COLOR}} (a JSON object with `"$type": "color"` and a `"$value"` that is a Design Tokens color object with `colorSpace` and `components` members and optional `alpha` and `hex` members, not a CSS color string; `colorSpace` names a color space defined in CSS Color Level 4 {{CSS-COLOR-4}}). For example: `{"$type": "color", "$value": {"colorSpace": "srgb", "components": [0.345, 0.396, 0.949], "hex": "#5865f2"}}`. When the Design Tokens format is not practical, implementations SHOULD use CAM16 uniform color space coordinates {{CAM16}} (`[J, a, b]` or `[J, M, h]`). As a baseline fallback, implementations MAY use sRGB hex strings (e.g., `"#5865f2"`). Servers MUST accept all three representations in color-valued fields and MUST preserve the representation provided by the client. Clients MUST handle all three representations gracefully.
+Where this specification or companion specifications define color-valued fields, implementations SHOULD represent colors using the W3C Design Tokens Community Group color token format {{DTCG-COLOR}} (a JSON object with `"$type": "color"` and a `"$value"` that is a Design Tokens color object with `colorSpace` and `components` members and optional `alpha` and `hex` members, not a CSS color string; `colorSpace` names a color space defined in CSS Color Level 4 {{CSS-COLOR-4}}). For example: `{"$type": "color", "$value": {"colorSpace": "srgb", "components": [0.345, 0.396, 0.949], "hex": "#5865f2"}}`. When the Design Tokens format is not practical, implementations SHOULD use CAM16 uniform color space coordinates {{CAM16}} (`[J, a, b]` or `[J, M, h]`). As a baseline fallback, implementations MAY use sRGB hex strings (e.g., `"#5865f2"`). Servers MUST accept all three representations in color-valued fields and MUST preserve the representation provided by the client. Clients SHOULD handle all three representations gracefully.
 
 # The urn:ietf:params:jmap:chat Capability {#capability}
 
@@ -336,7 +336,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object
 
 The `role` field used to distinguish owner and peer accounts in federation deployments is defined in {{JMAP-CHAT-FED}}.
 
-Note: {{RFC9425}} defines a `Quota` data type for exposing account-level storage and object-count limits to clients. Servers SHOULD implement the JMAP Quota extension and include relevant chat data types — for example `"Message"` (storage), `"Chat"` (count of group and direct chats), or `"Space"` (count of Spaces) — in the `types` field of relevant Quota records. JMAP Quotas express account-level (or domain/global) limits; servers additionally enforce per-aggregate limits (members per group Chat, members/roles/channels/categories per Space) by returning an `overQuota` SetError ({{RFC8620}} §5.3) on the relevant `Chat/set` or `Space/set` entry at the time the limit would be exceeded.
+Note: {{RFC9425}} defines a `Quota` data type for exposing account-level storage and object-count limits to clients. Servers MAY implement the JMAP Quota extension and include relevant chat data types — for example `"Message"` (storage), `"Chat"` (count of group and direct chats), or `"Space"` (count of Spaces) — in the `types` field of relevant Quota records. JMAP Quotas express account-level (or domain/global) limits; servers additionally enforce per-aggregate limits (members per group Chat, members/roles/channels/categories per Space) by returning an `overQuota` SetError ({{RFC8620}} §5.3) on the relevant `Chat/set` or `Space/set` entry at the time the limit would be exceeded.
 
 ## Session Object Extensions
 
@@ -371,7 +371,7 @@ An Attachment carries metadata for a file blob associated with a Message.
 : Valid MIME type string.
 
 `size` (UnsignedInt):
-: Blob size in bytes. Servers MUST verify against actual content.
+: Blob size in bytes. Servers SHOULD verify against actual content.
 
 `sha256` (String):
 : Lowercase hex SHA-256 of blob content. Servers SHOULD verify.
@@ -459,7 +459,7 @@ The canonical textual forms presented by composers are `@everyone`, `@here`, and
 
 The set of recipients targeted by a BroadcastMention is computed at delivery time on each receiving server, against that server's local view of membership, presence, and administrative permissions. The sending server MAY compute its own set at send time for sender-side UX (for example, displaying "you mentioned N people") but its send-time set is informational only; the receiving server's delivery-time set is authoritative for push urgency, notification routing, and badging. Where the sending and receiving servers reside on different deployments and disagree on which members qualify for `"here"` or `"admins"`, each receiving server's view governs delivery on its own owners' accounts.
 
-Sending a Message with a non-empty `broadcastMentions` array requires the `"mention_broadcast"` Space permission. Servers MUST reject `Message/set` create or update requests that would write a broadcast mention from a sender lacking this permission with `forbidden`. For group chats that are not part of any Space (and thus have no SpaceRole permission graph), broadcast mentions are unrestricted; the `"mention_broadcast"` permission check applies only to channel chats within a Space.
+Sending a Message with a non-empty `broadcastMentions` array requires the `"mention_broadcast"` Space permission. Servers SHOULD reject `Message/set` create or update requests that would write a broadcast mention from a sender lacking this permission with `forbidden`. For group chats that are not part of any Space (and thus have no SpaceRole permission graph), broadcast mentions are unrestricted; the `"mention_broadcast"` permission check applies only to channel chats within a Space.
 
 ## MessageRevision {#message-revision}
 
@@ -620,7 +620,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : **Channel Chats only.** Short description shown in the channel header. Mutable by members with `"manage_channels"` permission through the `addChannels` and `updateChannels` patch keys of `Space/set` ({{space-set}}), not through `Chat/set`.
 
 `slowModeSeconds` (UnsignedInt, server-set):
-: **Channel Chats only.** Changed through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. When non-zero, the server MUST reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimit` SetError ({{RFC8620, Section 5.3}}) on the offending `Message/set` create. Servers SHOULD exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimit` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimit`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
+: **Channel Chats only.** Changed through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. When non-zero, the server SHOULD reject messages from non-exempt members sent within this many seconds of their previous message in this channel, with a `rateLimit` SetError ({{RFC8620, Section 5.3}}) on the offending `Message/set` create. Servers MAY exempt members holding the `"manage_channels"` permission, since channel managers are the principals who configure `slowModeSeconds` in the first place and should not be rate-limited by their own settings. Deployments MAY define additional exempt principals (for example, server administrators, members of dedicated moderator roles, or specific automated systems); the wire contract is only that the exempt decision is server-side and that non-exempt senders receive `rateLimit` when they exceed the rate. Clients can display a countdown to the next permitted send time. Clients MAY simply attempt the send and react to `rateLimit`; this is functionally equivalent and avoids the client needing to know its own exempt status. Default: `0`.
 
 `permissionOverrides` (ChannelPermission[], server-set):
 : **Channel Chats only.** Per-channel permission overrides for specific roles or members. Evaluated after Space-level role permissions per {{space-permissions}}. Only members with `"manage_channels"` permission may modify this list, through the `updateChannels` patch key of `Space/set` ({{space-set}}), not through `Chat/set`. Empty by default.
@@ -632,7 +632,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : Received time of the most recent message.
 
 `unreadCount` (UnsignedInt, server-set):
-: The number of unread Messages in this Chat, derived server-side from the owner's ReadPosition record. Candidates are the Messages whose `id` ULID is lexicographically greater than `ReadPosition.lastReadMessageId`, or all Messages in the Chat if `lastReadMessageId` is absent. Which candidates count is implementation-defined; for example, a server MAY exclude Messages the owner sent. The value is advisory, for display such as badges. Servers SHOULD keep it accurate, but MAY update it some time after the change that affects it, MAY combine several such changes into one update, and MAY report a server-defined maximum in place of any larger count. Whenever the server changes the value, the Chat's state changes as for any other property ({{RFC8620}} Section 5.1). Clients MUST NOT rely on `unreadCount` being exact.
+: The number of unread Messages in this Chat, derived server-side from the owner's ReadPosition record. Candidates are the Messages whose `id` ULID is lexicographically greater than `ReadPosition.lastReadMessageId`, or all Messages in the Chat if `lastReadMessageId` is absent. Which candidates count is implementation-defined; for example, a server MAY exclude Messages the owner sent. The value is advisory, for display such as badges. Servers SHOULD keep it accurate, but MAY update it some time after the change that affects it, MAY combine several such changes into one update, and MAY report a server-defined maximum in place of any larger count. Whenever the server changes the value, the Chat's state changes as for any other property ({{RFC8620}} Section 5.1). `unreadCount` is not necessarily exact.
 
 `pinnedMessageIds` (String[]):
 : Ordered list of pinned Message ids, most-recently-pinned first. For group chats, only admins may modify this list. For direct chats, the owner may modify it freely. For channel chats, only members with the `"pin"` Space permission may modify this list. Each id MUST be the id of a Message in this Chat; the server MUST reject a `Chat/set` update that would add any other id with `invalidProperties`. When a pinned Message is hard-deleted, the server MUST remove its id from this list. Empty by default.
@@ -646,7 +646,7 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 : Muting expires at this time. Servers SHOULD clear `muted` and `muteUntil` automatically when the time passes.
 
 `receiveTypingIndicators` (Boolean):
-: When `false`, the server MUST silently drop any typing push event (see {{push}}) for this Chat before delivering it to the owner. The sender is not informed; `Chat/typing` succeeds normally from the sender's perspective. Applies to direct and group chats only; for channel chats, servers MUST store the value if set via `Chat/set` but MUST NOT use it to suppress typing events. Default: `true`. Owner-side preference; not shared with peers.
+: When `false`, the server SHOULD silently drop any typing push event (see {{push}}) for this Chat before delivering it to the owner. The sender is not informed; `Chat/typing` succeeds normally from the sender's perspective. Applies to direct and group chats only; for channel chats, servers MUST store the value if set via `Chat/set` but SHOULD NOT use it to suppress typing events. Default: `true`. Owner-side preference; not shared with peers.
 
 `receiptSharing` (Boolean, optional):
 : Per-Chat override of the account-level `PresenceStatus.receiptSharing` preference (see {{presence-status}}). When present, this value takes precedence over the account-level setting for this Chat only. When absent, the account-level preference applies. Owner-side preference; not shared with peers.
@@ -660,9 +660,9 @@ For a **group chat**, the creating server assigns the chatId and distributes it 
 
   The server MUST NOT deliver a `StateChange` for the Chat type with an updated `activeCallId` until the corresponding VTCCall state transition has also been committed. If the VTCCall `StateChange` and Chat `StateChange` are delivered separately, the VTCCall `StateChange` MUST be delivered first or simultaneously.
 
-  Servers SHOULD coalesce rapid `activeCallId` transitions within a short window (e.g., 1-2 seconds) before emitting a Chat `StateChange`. This is particularly important for high-membership Chats where the fan-out cost of each `StateChange` is proportional to the subscriber count.
+  Servers MAY coalesce rapid `activeCallId` transitions within a short window (e.g., 1-2 seconds) before emitting a Chat `StateChange`. This is particularly important for high-membership Chats where the fan-out cost of each `StateChange` is proportional to the subscriber count.
 
-  When a VTCCall ends, clients subscribed to both VTCCall and Chat state changes will receive two `StateChange` notifications for the same logical event (the call ending and `activeCallId` clearing). Clients SHOULD deduplicate by correlating the VTCCall id with the Chat's previous `activeCallId` value within a 5-second window.
+  When a VTCCall ends, clients subscribed to both VTCCall and Chat state changes will receive two `StateChange` notifications for the same logical event (the call ending and `activeCallId` clearing). Clients MAY deduplicate by correlating the VTCCall id with the Chat's previous `activeCallId` value within a 5-second window.
 
 `activeCallAccountId` (Id|null, server-set):
 : The id of the account hosting the VTCCall named by `activeCallId`, so a client can join a call held in another account. The server sets and clears this field together with `activeCallId`, in the same state change: it is non-null exactly when `activeCallId` is non-null. Like `activeCallId`, it is not a `Chat/set` patch key.
@@ -744,13 +744,13 @@ The **sender-assigned ULID** (`senderMsgId`) is set by the originating mailbox a
 : Time this mailbox stored the message. Authoritative for ordering and expiry calculations.
 
 `senderExpiresAt` (UTCDate, optional, immutable):
-: Sender-set hard-deletion deadline. When present, servers MUST permanently delete this message — removing the row entirely, not leaving a tombstone — at or before this time. A hard-deleted message appears in the `destroyed` list of subsequent `Message/changes` responses, not `updated`. Receiving servers MUST honor this field regardless of local `messageExpirySeconds` policy; whichever deadline arrives first takes effect. Servers MUST NOT use this field for ordering. Servers MUST reject a `senderExpiresAt` value that is already in the past at delivery time; in `Message/set` the rejection is an `invalidProperties` SetError with `properties: ["senderExpiresAt"]`. After hard deletion, stored attachment blobs referenced by the message SHOULD also be purged.
+: Sender-set hard-deletion deadline. When present, servers SHOULD permanently delete this message — removing the row entirely, not leaving a tombstone — at or before this time. A hard-deleted message appears in the `destroyed` list of subsequent `Message/changes` responses, not `updated`. Receiving servers SHOULD honor this field regardless of local `messageExpirySeconds` policy; whichever deadline arrives first takes effect. Servers MUST NOT use this field for ordering. Servers MUST reject a `senderExpiresAt` value that is already in the past at delivery time; in `Message/set` the rejection is an `invalidProperties` SetError with `properties: ["senderExpiresAt"]`. After hard deletion, stored attachment blobs referenced by the message SHOULD also be purged.
 
 `burnOnRead` (Boolean, optional, immutable):
-: When `true`, the receiving server MUST permanently hard-delete this message (row removal, not tombstone) immediately after setting `readAt`. Applies only to the receiving mailbox; the sender's own copy is not affected. In E2EE relay deployments, the relay cannot observe read events; the bridge or client layer MUST enforce this rule after receiving the read acknowledgement from the owner. When the recipient's effective `receiptSharing` preference is `false`, the receiver's server still sets `readAt` locally and the `burnOnRead` hard-delete fires as normal — the message IS deleted from the receiving mailbox. However, the sending server receives no `Peer/receipt` confirmation and cannot verify the deletion occurred. Senders cannot rely on `Peer/receipt` delivery to confirm that a `burnOnRead` message was destroyed.
+: When `true`, the receiving server SHOULD permanently hard-delete this message (row removal, not tombstone) immediately after setting `readAt`. Applies only to the receiving mailbox; the sender's own copy is not affected. In E2EE relay deployments, the relay cannot observe read events; the bridge or client layer SHOULD enforce this rule after receiving the read acknowledgement from the owner. When the recipient's effective `receiptSharing` preference is `false`, the receiver's server still sets `readAt` locally and the `burnOnRead` hard-delete fires as normal — the message IS deleted from the receiving mailbox. However, the sending server receives no `Peer/receipt` confirmation and cannot verify the deletion occurred. Senders cannot rely on `Peer/receipt` delivery to confirm that a `burnOnRead` message was destroyed.
 
 `expiresAfterReadSeconds` (UnsignedInt, optional, immutable):
-: When present, the receiving server MUST permanently hard-delete this message (row removal, not tombstone) this many seconds after setting `readAt`. Applies only to the receiving mailbox; the sender's own copy is not affected. If `burnOnRead` is also `true`, `burnOnRead` takes precedence and the message is hard-deleted immediately after `readAt` is set. In E2EE relay deployments, the relay cannot observe read events; the bridge or client layer MUST enforce this rule after receiving the read acknowledgement from the owner. When the recipient's effective `receiptSharing` preference is `false`, the receiver's server still sets `readAt` locally and the hard-delete still occurs, but the sending server receives no `Peer/receipt` confirmation and cannot verify the deletion occurred. Senders cannot rely on `Peer/receipt` delivery to confirm that an `expiresAfterReadSeconds` message was destroyed.
+: When present, the receiving server SHOULD permanently hard-delete this message (row removal, not tombstone) this many seconds after setting `readAt`. Applies only to the receiving mailbox; the sender's own copy is not affected. If `burnOnRead` is also `true`, `burnOnRead` takes precedence and the message is hard-deleted immediately after `readAt` is set. In E2EE relay deployments, the relay cannot observe read events; the bridge or client layer SHOULD enforce this rule after receiving the read acknowledgement from the owner. When the recipient's effective `receiptSharing` preference is `false`, the receiver's server still sets `readAt` locally and the hard-delete still occurs, but the sending server receives no `Peer/receipt` confirmation and cannot verify the deletion occurred. Senders cannot rely on `Peer/receipt` delivery to confirm that an `expiresAfterReadSeconds` message was destroyed.
 
 `deliveryState` (String, server-set):
 : `"pending"`, `"delivered"`, `"failed"`, or `"received"`. For group chats, reflects aggregate state across all recipients; see `deliveryReceipts` for per-recipient detail.
@@ -958,10 +958,10 @@ A SpaceInvite grants a new member access to a Space via a shared invite code.
 : ChatContact.id of the member who created this invite.
 
 `expiresAt` (UTCDate, optional):
-: Expiry time. Servers MUST reject redemption after this time.
+: Expiry time. Servers SHOULD reject redemption after this time.
 
 `maxUses` (UnsignedInt, optional):
-: Maximum redemption count. Servers MUST reject redemption when `uses` equals `maxUses`.
+: Maximum redemption count. Servers SHOULD reject redemption when `uses` equals `maxUses`.
 
 `uses` (UnsignedInt, server-set):
 : Number of times this invite has been redeemed.
@@ -1039,7 +1039,7 @@ A PresenceStatus represents the owner's self-reported availability and custom st
 
 # Methods
 
-Note: Implementations SHOULD support the `urn:ietf:params:jmap:refplus` capability {{JMAP-REFPLUS}} for ergonomic multi-step batch operations. RefPlus allows result references inside `/set` create/update bodies and `/query` filter conditions, enabling patterns such as creating a Message and immediately using its returned `id` in a `Message/query` within the same JMAP request array.
+Note: Implementations MAY support the `urn:ietf:params:jmap:refplus` capability {{JMAP-REFPLUS}} for ergonomic multi-step batch operations. RefPlus allows result references inside `/set` create/update bodies and `/query` filter conditions, enabling patterns such as creating a Message and immediately using its returned `id` in a `Message/query` within the same JMAP request array.
 
 ## ChatContact Methods
 
@@ -1113,7 +1113,7 @@ Creating a Chat with `kind: "channel"` via `Chat/set` is not supported; the serv
 
 #### Updating a Chat
 
-`update` supports the following patch keys for all chat kinds: `muted`, `muteUntil`, `receiveTypingIndicators`, `pinnedMessageIds`, `messageExpirySeconds`, `receiptSharing`. Changes to `pinnedMessageIds` are subject to the per-kind restrictions in {{chat}}; the server MUST reject an unauthorized change with a `forbidden` SetError.
+`update` supports the following patch keys for all chat kinds: `muted`, `muteUntil`, `receiveTypingIndicators`, `pinnedMessageIds`, `messageExpirySeconds`, `receiptSharing`. Changes to `pinnedMessageIds` are subject to the per-kind restrictions in {{chat}}; the server SHOULD reject an unauthorized change with a `forbidden` SetError.
 
 The `receiveTypingIndicators` field is described in {{chat}}; it applies to direct and group chats only.
 
@@ -1161,7 +1161,7 @@ Method name: `Chat/typing`
 : The account making the request.
 
 `chatId` (String):
-: The Chat ID of the conversation in which typing is occurring. The server MUST return an `invalidArguments` method error if `chatId` does not exist or the account is not a participant in that Chat, and SHOULD NOT distinguish the two cases.
+: The Chat ID of the conversation in which typing is occurring. The server SHOULD return an `invalidArguments` method error if `chatId` does not exist or the account is not a participant in that Chat, and SHOULD NOT distinguish the two cases.
 
 `typing` (Boolean):
 : `true` if the user has started typing; `false` if typing has stopped.
@@ -1175,11 +1175,11 @@ Method name: `Chat/typing`
 
 Before delivering a typing push event to each potential recipient, the server applies that recipient's `receiveTypingIndicators` field for this Chat as {{chat}} specifies. For channel chats, `receiveTypingIndicators` has no effect. The server SHOULD also check whether the requesting account corresponds to a ChatContact whose `blocked` field is `true` on the recipient's contact list; if so, the server SHOULD silently drop the event for that recipient and not deliver it to any of that recipient's connected clients. The sender is not informed. On success, the server SHOULD deliver a `typing` push event (see {{push}}) to all connected clients of each local participant in the Chat other than the requesting account, subject to the `receiveTypingIndicators` and blocked-sender checks above. For federated Chats, the server SHOULD invoke `Peer/typing` ({{JMAP-CHAT-FED}}) on each remote participant's home server.
 
-Servers SHOULD rate-limit `Chat/typing` calls per account per chat. Servers SHOULD accept no more than one call per account per chat per 3 seconds; calls that exceed this rate MAY be silently discarded without error.
+Servers SHOULD rate-limit `Chat/typing` calls per account per chat. Servers MAY accept no more than one call per account per chat per 3 seconds; calls that exceed this rate MAY be silently discarded without error.
 
 The recommended 3-second value pairs with the 10-second client-side decay timer described later in this section: with one accepted event per 3 seconds while a sender is actively typing, the receiver's decay timer sees at least three events before deciding the sender has stopped. Servers using a significantly lower rate impose unnecessary load on themselves and on federated peers; servers using a significantly higher rate risk receivers clearing the typing indicator while the sender is still active.
 
-Changes to `receiveTypingIndicators` via `Chat/set` MUST take effect for all typing push events delivered after the `Chat/set` response is returned.
+Changes to `receiveTypingIndicators` via `Chat/set` SHOULD take effect for all typing push events delivered after the `Chat/set` response is returned.
 
 When `receiveTypingIndicators` transitions from `false` to `true`, the server does not synthesize `typing: false` events for previously suppressed senders. Clients SHOULD use a decay timer to recover from any stale typing state; if no typing event is received for a given `(chatId, senderId)` pair within approximately 10 seconds, the client SHOULD hide the typing indicator for that pair.
 
@@ -1215,9 +1215,9 @@ Standard JMAP `/set`.
 
 Optional: `attachments` (Attachment[]), `mentions` (Mention[]), `broadcastMentions` (BroadcastMention[]), `actions` (MessageAction[]), `replyTo` (String), `threadRootId` (String), `topicId` (String), `subject` (String), `senderExpiresAt` (UTCDate), `burnOnRead` (Boolean), `expiresAfterReadSeconds` (UnsignedInt).
 
-The server MUST verify the sender is a current member of the target Chat. For group chats, this means a ChatMember record exists; for channel chats, the sender must be a member of the containing Space. Non-members MUST receive a SetError of type `forbidden`.
+The server SHOULD verify the sender is a current member of the target Chat. For group chats, this means a ChatMember record exists; for channel chats, the sender must be a member of the containing Space. Non-members SHOULD receive a SetError of type `forbidden`.
 
-For channel Chats, the server MUST verify the sender holds the `"send"` permission (resolved per {{space-permissions}}) before accepting the message; if absent, the server MUST return a SetError of type `forbidden`.
+For channel Chats, the server SHOULD verify the sender holds the `"send"` permission (resolved per {{space-permissions}}) before accepting the message; if absent, the server SHOULD return a SetError of type `forbidden`.
 
 The server sets `id`, `senderMsgId`, `senderId`, `receivedAt`, `deliveryState`, and delivery timestamp fields, then enqueues the message for outbound delivery.
 
@@ -1298,7 +1298,7 @@ Filter properties:
 `hasMention` (Boolean, optional):
 : Filter to messages that mention the owner: the accountId appears in `mentions`, OR `broadcastMentions` contains a scope whose resolved recipient set includes the owner.
 
-For channel Chats, the server MUST verify the caller holds the `"view"` permission before returning messages in `Message/get` or `Message/query` responses; messages in channels the caller cannot view MUST be omitted.
+For channel Chats, the server SHOULD verify the caller holds the `"view"` permission before returning messages in `Message/get` or `Message/query` responses; messages in channels the caller cannot view SHOULD be omitted.
 
 Default sort: `receivedAt` ascending when `chatId` is present; `receivedAt` descending when `chatId` is absent.
 
@@ -1314,8 +1314,8 @@ Standard JMAP `/get`, with the following additional rules for non-member callers
 
 When the caller is not a member of a requested Space:
 
-* If the Space has `isPubliclyPreviewable: true`, the server MUST return a restricted view of the Space containing only the fields `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, `isPubliclyPreviewable`, and `closedAt` (when set). All other Space fields MUST be omitted from the returned object, even if explicitly requested via the `properties` argument. The server MUST NOT include the Space `id` in the `notFound` array.
-* If the Space has `isPubliclyPreviewable: false` (or the Space does not exist), the server MUST include the requested Space `id` in the `notFound` array of the response and MUST NOT include the Space in the `list` array.
+* If the Space has `isPubliclyPreviewable: true`, the server MUST return a restricted view of the Space containing only the fields `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, `isPubliclyPreviewable`, and `closedAt` (when set). All other Space fields SHOULD be omitted from the returned object, even if explicitly requested via the `properties` argument. The server MUST NOT include the Space `id` in the `notFound` array.
+* If the Space has `isPubliclyPreviewable: false` (or the Space does not exist), the server SHOULD include the requested Space `id` in the `notFound` array of the response and SHOULD NOT include the Space in the `list` array.
 
 When the caller is a member of a requested Space, the full Space object is returned subject to the standard JMAP `/get` `properties` filter; the restricted view above does not apply.
 
@@ -1352,7 +1352,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 : Each entry: `name` (String), `permissions` (String[]), `position` (UnsignedInt), and optionally `color` (String\|Object\|null, optional) — per the color convention ({{color-convention}}). Server assigns ULIDs. Requires `"manage_roles"`. Members may only add roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this. If the resulting role count would exceed a server-defined limit on the number of roles per Space, the server MUST return an `overQuota` SetError ({{RFC8620}} §5.3).
 
 `removeRoles` (String[]):
-: SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Servers SHOULD also remove each channel's `permissionOverrides` entries whose `targetId` is a removed role; a role id is never reused, so a remaining entry has no effect. Requires `"manage_roles"`.
+: SpaceRole ids to remove. Members holding only removed roles are demoted to `@everyone`. Servers MAY also remove each channel's `permissionOverrides` entries whose `targetId` is a removed role; a role id is never reused, so a remaining entry has no effect. Requires `"manage_roles"`.
 
 `updateRoles` (Object[]):
 : Each entry: `id` (String) and any of `name`, `color`, `permissions`, `position`. Requires `"manage_roles"`. Members may only modify roles whose `position` is strictly less than their own highest-position role; servers SHOULD enforce this.
@@ -1388,7 +1388,7 @@ The server assigns the Space's `id` and adds the caller to `members` with at lea
 
 #### Destroying a Space
 
-Cascades to all channel Chats and their Messages. Hard-deletes all records; no tombstones are retained. The caller MUST hold `"manage_space"`; servers MAY impose additional deployment-defined requirements (multi-administrator approval, dedicated controller principal, etc.) before honoring the destroy. Servers MUST return a `forbidden` SetError when the caller does not satisfy the deployment's destroy-authorization rules.
+Cascades to all channel Chats and their Messages. Hard-deletes all records; no tombstones are retained. The caller SHOULD hold `"manage_space"`; servers MAY impose additional deployment-defined requirements (multi-administrator approval, dedicated controller principal, etc.) before honoring the destroy. Servers SHOULD return a `forbidden` SetError when the caller does not satisfy the deployment's destroy-authorization rules.
 
 ### Space/query
 
@@ -1413,11 +1413,11 @@ Method name: `Space/join`
 
 Request: `accountId` (String), and exactly one of `inviteCode` (String) or `spaceId` (String). Supplying both or neither MUST cause the server to return an `invalidArguments` method error.
 
-**Joining via invite code:** `inviteCode` resolves only within the request's `accountId`, which names the account hosting the Space; invite links therefore carry both the `accountId` and the code. The server MUST resolve `inviteCode` to a SpaceInvite record in that account by matching against the `code` field (not the `id` field), verify the invite has not expired and has not reached `maxUses`, and then atomically increment `uses` and add the caller to the Space's member list. The `uses` increment and membership insertion MUST be performed within a single atomic operation so that concurrent redemptions cannot exceed `maxUses`. The caller is assigned no roles beyond `@everyone`. If the invite has expired (`expiresAt` is in the past) or has reached its redemption limit (`uses` equals `maxUses`), the server MUST return an `invalidArguments` method error. If the `inviteCode` does not correspond to any SpaceInvite record in that account, the server MUST return an `invalidArguments` method error.
+**Joining via invite code:** `inviteCode` resolves only within the request's `accountId`, which names the account hosting the Space; invite links therefore carry both the `accountId` and the code. The server MUST resolve `inviteCode` to a SpaceInvite record in that account by matching against the `code` field (not the `id` field), verify the invite has not expired and has not reached `maxUses`, and then atomically increment `uses` and add the caller to the Space's member list. The `uses` increment and membership insertion SHOULD be performed within a single atomic operation so that concurrent redemptions cannot exceed `maxUses`. The caller is assigned no roles beyond `@everyone`. If the invite has expired (`expiresAt` is in the past) or has reached its redemption limit (`uses` equals `maxUses`), the server MUST return an `invalidArguments` method error. If the `inviteCode` does not correspond to any SpaceInvite record in that account, the server MUST return an `invalidArguments` method error.
 
-**Joining a public Space:** When `spaceId` is supplied, the server MUST verify that the identified Space has `isPublic: true`. If the Space does not exist or has `isPublic: false`, the server MUST return a `notPermitted` method error. On success, the server adds the caller to the Space's member list with no roles beyond `@everyone`.
+**Joining a public Space:** When `spaceId` is supplied, the server SHOULD verify that the identified Space has `isPublic: true`. If the Space does not exist or has `isPublic: false`, the server MUST return a `notPermitted` method error. On success, the server adds the caller to the Space's member list with no roles beyond `@everyone`.
 
-The server MUST verify that no active SpaceBan exists for the requesting account's owner in the target Space. If a ban exists, the server MUST reject the request with a `forbidden` method error.
+The server SHOULD verify that no active SpaceBan exists for the requesting account's owner in the target Space. If a ban exists, the server SHOULD reject the request with a `forbidden` method error.
 
 If the target Space has `closedAt` set ({{space}}), the server MUST reject the request with a `forbidden` method error, whether the caller supplied `inviteCode` or `spaceId`.
 
@@ -1475,7 +1475,7 @@ Standard JMAP `/changes` ({{RFC8620}} Section 5.2).
 
 Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
-Authorization for `CustomEmoji/set` (`create`, `update`, and `destroy`) is implementation-defined, for both Space-scoped and server-global emoji. Servers MUST return a `forbidden` SetError ({{RFC8620}} §5.3) when the caller is not authorized to act on the targeted emoji.
+Authorization for `CustomEmoji/set` (`create`, `update`, and `destroy`) is implementation-defined, for both Space-scoped and server-global emoji. Servers SHOULD return a `forbidden` SetError ({{RFC8620}} §5.3) when the caller is not authorized to act on the targeted emoji.
 
 `create` accepts: `name` (String, required), `blobId` (String, required), `spaceId` (String, optional).
 
@@ -1658,13 +1658,13 @@ The RFC 8620 push model delivers a `StateChange` containing an opaque state toke
 
 Standard JMAP blob upload and download per {{RFC8620}} Section 6, using the `uploadUrl` and `downloadUrl` Session templates.
 
-`Blob/copy` is defined in {{RFC8620}} Section 6.3. Implementations requiring additional blob operations (such as `Blob/get`) SHOULD refer to {{JMAP-BLOBEXT}} (`urn:ietf:params:jmap:blob2`), which obsoletes {{RFC9404}} (`urn:ietf:params:jmap:blob`) and adds substantial new capabilities; servers SHOULD advertise `urn:ietf:params:jmap:blob2` where available. A server MAY advertise both capabilities, but a client uses only one of them in a request, per {{JMAP-BLOBEXT}}.
+`Blob/copy` is defined in {{RFC8620}} Section 6.3. Implementations requiring additional blob operations (such as `Blob/get`) SHOULD refer to {{JMAP-BLOBEXT}} (`urn:ietf:params:jmap:blob2`), which obsoletes {{RFC9404}} (`urn:ietf:params:jmap:blob`) and adds substantial new capabilities; servers MAY advertise `urn:ietf:params:jmap:blob2` where available. A server MAY advertise both capabilities, but a client uses only one of them in a request, per {{JMAP-BLOBEXT}}.
 
 The upload response defined here includes the `sha256` field as specified
 in {{JMAP-CID}}; see that document for the normative definition, client
 verification guidance, and security considerations.
 
-Servers SHOULD support `Blob/lookup` (defined in {{JMAP-BLOBEXT}}) and register `"Message"` as a participating data type, enabling clients to perform reverse lookups from a blobId to all Messages that reference it as an attachment.
+Servers MAY support `Blob/lookup` (defined in {{JMAP-BLOBEXT}}) and register `"Message"` as a participating data type, enabling clients to perform reverse lookups from a blobId to all Messages that reference it as an attachment.
 
 Servers MAY support `Blob/convert` (defined in {{JMAP-BLOBEXT}}) for image media types, enabling server-side thumbnail generation for chat attachment previews.
 
@@ -1700,7 +1700,7 @@ Authentication is handled at the transport layer as described in {{introduction}
 - **Owner** (identity equals the mailbox owner's identity): all methods.
 - **Other**: HTTP 401.
 
-Beyond this transport-level distinction, all Space-internal authorization — the "Requires `X`" clauses on `Space/set`, `Chat/set`, and related methods, and the "Mutable by members with `X` permission" clauses on object fields — is enforced server-side. Clients MUST NOT be trusted to enforce their own access; servers MUST evaluate authorization independently on every request and return `forbidden` to unauthorized callers (see {{space-permissions}}).
+Beyond this transport-level distinction, all Space-internal authorization — the "Requires `X`" clauses on `Space/set`, `Chat/set`, and related methods, and the "Mutable by members with `X` permission" clauses on object fields — is enforced server-side. Clients are not trusted to enforce their own access; servers SHOULD evaluate authorization independently on every request and return `forbidden` to unauthorized callers (see {{space-permissions}}).
 
 The permission vocabulary defined in {{space-role}} appears on the wire in `SpaceRole.permissions` arrays and `SpaceMember.roleIds` references. This exposure is for client-side presentation and pre-flight UX (rendering admin controls, displaying role membership, avoiding obviously-doomed requests), not as a client-enforced security layer. A spec-compliant client MAY ignore the vocabulary entirely and rely on `forbidden` responses; this is functionally equivalent but produces less responsive UI.
 
@@ -1722,7 +1722,7 @@ Role hierarchy enforcement: members may only create or modify SpaceRoles whose `
 
 The "Requires `X`" and "Mutable by members with `X` permission" clauses elsewhere in this specification describe the recommended mapping from the closed permission vocabulary defined in {{space-role}} to the actions those permissions gate. Deployments MAY substitute or augment these mappings with deployment-specific authorization policy — for example, gating an action on a different permission, requiring additional authorization beyond merely holding the named permission, or recognizing an internal capability not present in the closed vocabulary. The wire-level contract is that unauthorized callers MUST receive `forbidden`; the permission names defined in {{space-role}} retain their stated meanings when they appear in `SpaceRole.permissions` values returned to clients.
 
-Some MUST constraints in this specification are not subject to this latitude because they define wire-level behaviour rather than server-internal authorization: the sender-only constraints on `Message/set update` and on Reaction creation and removal, the mailbox-owner constraint inherited from {{RFC8620}}, and all input validation requirements in {{security}}.
+Some MUST constraints in this specification are not subject to this latitude because they define wire-level behaviour rather than server-internal authorization: the sender-only constraints on `Message/set update` and on Reaction creation and removal, and the mailbox-owner constraint inherited from {{RFC8620}}.
 
 ## Space Governance: Deployment Variation {#space-deployment}
 
@@ -1744,7 +1744,7 @@ Clients cannot assume a specific governance model. Where the UI needs to surface
 
 ## Input Validation
 
-All peer-supplied fields are attacker-controlled. Servers MUST validate:
+All peer-supplied fields are attacker-controlled. Servers SHOULD validate:
 
 - `body`: validate UTF-8 for plaintext body types; enforce `maxBodyBytes`.
 - `bodyType`: reject a value not listed in `supportedBodyTypes` ({{capability}}); in `Message/set` create, also reject a type that a companion specification reserves for server-created Messages.
@@ -1804,7 +1804,7 @@ Clients SHOULD NOT expose sub-minute precision for `readAt`, `lastReadAt`, or `d
 - Clients do not fetch or connect to any OOB URI automatically; all OOB interactions require explicit user initiation ({{message-action}}, {{chat-contact}}). Auto-joining a call is a privacy violation.
 - Payment URIs (`urn:ietf:params:jmap:chat:cap:payment`) are validated by the client wallet before any funds are transferred. Servers store and forward payment URI values without inspection ({{message-action}}).
 - Blob/file URIs (`urn:ietf:params:jmap:chat:cap:blob`) used for OOB fetch are an SSRF vector; servers that fetch from peer-supplied blob endpoints SHOULD restrict connections to the known peer address space.
-- `metadata` values are peer-supplied and MUST be ignored if they do not conform to the expected shape for the known `type`.
+- `metadata` values are peer-supplied and SHOULD be ignored if they do not conform to the expected shape for the known `type`.
 - Clients ignore unknown `type` URIs, as {{endpoint}} and {{message-action}} require; servers SHOULD silently ignore them.
 
 ## End-to-End Encrypted Deployments {#e2ee}
@@ -1818,7 +1818,7 @@ In relay deployments, the relay routes Peer/* messages but SHOULD NOT have acces
 
 ### Fields Inside the Ciphertext {#e2ee-fields}
 
-When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, and `subject` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information MUST carry it inside the ciphertext. Because no server can remove a JMAP object URI from ciphertext, and such a URI is meaningful only on the server that issued it ({{JMAP-OBJECT-URI}}), a client MUST NOT place one in encrypted content; a client that finds one after decryption treats it as unresolvable. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers MUST reject a `Message/set` create or update that has an encrypted `bodyType` and any of these fields non-empty with an `invalidProperties` SetError whose `properties` lists each such field, and MUST reject such a `Peer/deliver` payload with an `invalidArguments` method error ({{JMAP-CHAT-FED}}).
+When `bodyType` indicates an encrypted type, in any topology, the Message fields `mentions`, `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, and `subject` MUST be empty or absent, and the federation causal hint ({{JMAP-CHAT-FED}}) MUST be absent. A client that needs any of this information carries it inside the ciphertext. Because no server can remove a JMAP object URI from ciphertext, and such a URI is meaningful only on the server that issued it ({{JMAP-OBJECT-URI}}), a client SHOULD NOT place one in encrypted content; a client that finds one after decryption treats it as unresolvable. For attachments this includes the filename, content type, size, `sha256`, and the location from which the blob is fetched. An Attachment carried inside the ciphertext carries the key and location fields defined by the end-to-end encryption scheme in use as extension properties; this document defines none. The server never sees these properties, since they exist only inside the ciphertext. Servers SHOULD reject a `Message/set` create or update that has an encrypted `bodyType` and any of these fields non-empty with an `invalidProperties` SetError whose `properties` lists each such field, and SHOULD reject such a `Peer/deliver` payload with an `invalidArguments` method error ({{JMAP-CHAT-FED}}).
 
 As a consequence, the server cannot validate mentions, broadcast-mention scopes, or attachment hashes for an encrypted message, and skips those checks (steps 11 through 13 of new-message validation in {{JMAP-CHAT-FED}}). The server also cannot compute mention-based push elevation, broadcast-mention recipient sets, `replyCount`, or thread membership for encrypted messages; clients compute these after decryption. Likewise, the `topicId` filter of `Message/query` matches only messages with a non-encrypted `bodyType`; clients group encrypted messages into topics after decryption. The `"mention_broadcast"` check of {{broadcast-mention}} cannot be applied by the server to content inside the ciphertext; clients enforce it as described in {{e2ee-enforcement}}.
 

@@ -161,7 +161,7 @@ digest of the bytes that were sent and compare it against the returned
 clients SHOULD treat this as a fatal upload error, discard the returned
 `blobId`, and surface the failure to the user or calling application.
 Clients MAY retry the upload; a persistent mismatch indicates a server
-implementation defect. Clients SHOULD log the discrepancy and SHOULD NOT
+implementation defect. Clients MAY log the discrepancy and SHOULD NOT
 silently retry indefinitely.
 
 When downloading a blob, clients that stored the `sha256` at upload time
@@ -279,7 +279,7 @@ respond more quickly (no write needed), and the returned `sha256`
 confirms which content was detected. This timing channel does not require
 access to FileNode objects and complements the metadata-based probing
 risk described in {{blob-probing}}. Servers that perform cross-account
-deduplication SHOULD consider uniform-duration upload responses or other
+deduplication MAY consider uniform-duration upload responses or other
 countermeasures if this channel is a concern.
 
 ## Plaintext Hash Disclosure {#plaintext-hash}
