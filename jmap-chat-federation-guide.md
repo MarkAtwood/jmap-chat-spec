@@ -452,8 +452,8 @@ the operator handbook.
    `peerSigningKeys` thumbprints out of band.
 3. **Discovery probe** from each side: each operator fetches the
    other's `/.well-known/jmap` and validates that it returns a
-   well-formed Session object with `peerSigningKeys` (and, for a peer
-   that hosts a single mailbox, the expected `ownerUserId`).
+   well-formed Session object with `peerSigningKeys` (and, if it lists
+   one, the expected `ownerUserId`).
 4. **Identity binding verification**: the federation draft's
    §Identity Binding check applied at first contact. A failure here
    indicates a configuration error; federation cannot proceed.
