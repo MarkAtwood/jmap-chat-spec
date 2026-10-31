@@ -166,7 +166,7 @@ The MessageAction object has the following shape when its `type` is `urn:ietf:pa
   - A standard `webcal://` or `https://` URL pointing to an iCalendar object retrievable out-of-band.
 
 `label` (String, optional):
-: Display label (for example, the event's summary). Servers SHOULD set this to the event's `title` when constructing MessageActions from CalendarEvent records they have access to.
+: Display label (for example, the event's summary). Servers MAY set this to the event's `title` when constructing MessageActions from CalendarEvent records they have access to.
 
 `metadata` (Object, optional):
 : MAY include the following type-specific keys:
@@ -196,7 +196,7 @@ This specification does not define a new method for RSVPing to events. RSVPs are
 
 ## Recommended client flow
 
-A client receiving a chat message with a calendar-event MessageAction and wishing to expose an RSVP UI SHOULD:
+A client receiving a chat message with a calendar-event MessageAction and wishing to expose an RSVP UI can:
 
 1. Identify the recipient user's `Principal.id` on the relevant account.
 2. Compose a `CalendarEvent/set` request patching the `participants/{participantKey}/participationStatus` field on the referenced CalendarEvent to one of `"accepted"`, `"declined"`, `"tentative"`, or `"delegated"` per {{JMAP-CALENDARS}} (where `{participantKey}` is the map key of the current user's participant entry, which the client looks up by matching its own identity within the participants map).
@@ -270,7 +270,7 @@ Real-world deployments choose along axes including: same-Space membership; same-
 The wire contract this specification establishes is:
 
 - Servers MAY expose `Principal/getAvailability` in response to chat-context queries.
-- Servers SHOULD reject (with the appropriate JMAP Calendars error) any query that violates their configured policy.
+- Servers reject (with the appropriate JMAP Calendars error) any query that violates their configured policy.
 - The protocol does not expose this policy, so users learn who can see their free/busy state only from the deployment's product documentation.
 
 ## Granularity
@@ -307,7 +307,7 @@ The size limit and the auto-RSVP rule in {{ics-parsing}} also apply.
 
 ## Calendar binding integrity
 
-A Space's `calendarId` is set by members holding the `"manage_space"` permission. A compromised admin account could bind a malicious Calendar to a Space or unbind the legitimate one. Deployments SHOULD audit `Space/set` patches that change `calendarId` to a separate log; deployments can notify users of the affected Space when the binding changes. The chat wire protocol does not require this notification; it is a deployment-side UX choice.
+A Space's `calendarId` is set by members holding the `"manage_space"` permission. A compromised admin account could bind a malicious Calendar to a Space or unbind the legitimate one. Deployments MAY audit `Space/set` patches that change `calendarId` to a separate log; deployments can notify users of the affected Space when the binding changes. The chat wire protocol does not require this notification; it is a deployment-side UX choice.
 
 ## Federation surface
 

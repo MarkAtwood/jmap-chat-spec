@@ -126,7 +126,7 @@ Example Session object fragment:
 
 {{JMAP-CHAT}} requires the transport layer to supply a stable, opaque user identity string for each connection. When JMAP Chat is used over a WebSocket connection, this identity is established at the WebSocket handshake per {{RFC8887}} Section 4.1. The identity string supplied by the server's authentication layer for the HTTP request that initiates the handshake becomes the `ownerUserId` for the duration of the WebSocket connection.
 
-Servers SHOULD NOT accept JMAP Chat requests over a WebSocket connection that was not successfully authenticated. The credential-expiry rules of {{RFC8887}} Section 4.2 apply. If the server closes the connection when credentials expire, it SHOULD use Close frame status code 1008 (Policy Violation), which {{RFC8887}} leaves optional, so that clients can reliably detect and recover from credential expiry on a long-lived chat connection.
+The credential-expiry rules of {{RFC8887}} Section 4.2 apply. If the server closes the connection when credentials expire, it SHOULD use Close frame status code 1008 (Policy Violation), which {{RFC8887}} leaves optional, so that clients can reliably detect and recover from credential expiry on a long-lived chat connection.
 
 Ephemeral events are pushed, not requested, so treating subsequent requests as unauthenticated does not by itself stop them. A server that does not close the connection when credentials expire SHOULD NOT deliver further ephemeral events on that connection.
 
@@ -154,7 +154,7 @@ State-change push notifications for JMAP Chat data types work without modificati
 - `"SpaceBan"` — new or updated SpaceBan objects
 - `"SpaceInvite"` — new or updated SpaceInvite objects
 
-Upon receiving a `StateChange` for a Chat data type, clients SHOULD issue the corresponding `/changes` call to retrieve updated objects. On `cannotCalculateChanges`, clients fall back to `/get` ({{RFC8620}} Section 5.2).
+Upon receiving a `StateChange` for a Chat data type, clients issue the corresponding `/changes` call to retrieve updated objects. On `cannotCalculateChanges`, clients fall back to `/get` ({{RFC8620}} Section 5.2).
 
 The `pushState` token mechanism defined in {{RFC8887}} Section 4.3.5.1 applies to Chat data types and enables clients to catch up on missed changes after reconnection without issuing a full `/changes` sweep.
 
@@ -189,11 +189,11 @@ An absent `chatIds` or `contactIds` is equivalent to `null`, following the {{RFC
 
 A subsequent `ChatStreamEnable` message replaces the previous ephemeral subscription in its entirety. There is no partial-update mechanism; the client re-sends the full desired subscription state.
 
-The server does not send an explicit acknowledgment for `ChatStreamEnable`. As with `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure produces a `RequestError`. A client that sends several control messages in succession SHOULD give each an `id` so that it can attribute any `RequestError` to the message that caused it.
+The server does not send an explicit acknowledgment for `ChatStreamEnable`. As with `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure produces a `RequestError`. A client that sends several control messages in succession MAY give each an `id` so that it can attribute any `RequestError` to the message that caused it.
 
 If `dataTypes` is empty, or contains only unrecognized values (i.e., none of `"typing"`, `"presence"`, or a companion value whose capability the server advertises), the server MUST respond with a `RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of `"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update the current ephemeral subscription state. Unrecognized values in `dataTypes` that appear alongside recognized values MUST be silently ignored; only the recognized values take effect.
 
-> **Note:** When a companion capability (e.g., `urn:ietf:params:jmap:vtc:websocket`) is not present, its corresponding `dataTypes` value (e.g., `"vtc"`) is treated as unrecognized and silently ignored. Clients SHOULD check the server's capability list before relying on companion dataTypes, as no error feedback is provided for absent capabilities.
+> **Note:** When a companion capability (e.g., `urn:ietf:params:jmap:vtc:websocket`) is not present, its corresponding `dataTypes` value (e.g., `"vtc"`) is treated as unrecognized and silently ignored. Clients check the server's capability list before relying on companion dataTypes, as no error feedback is provided for absent capabilities.
 
 ~~~json
 {

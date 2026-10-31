@@ -339,7 +339,7 @@ SceneAsset provides queryable metadata for assets referenced by SceneObject and 
 : The JMAP blob reference for the asset file. The blob is uploaded via the standard JMAP upload mechanism ({{RFC8620}} Section 6.1).
 
 `assetUri` (String|null):
-: An optional deployment-provided URI for retrieving the asset, typically a CDN endpoint. When present, clients SHOULD prefer `assetUri` over the JMAP blob download path for performance. Peer-supplied and untrusted; see {{asset-uri-untrusted}}.
+: An optional deployment-provided URI for retrieving the asset, typically a CDN endpoint. When present, clients MAY prefer `assetUri` over the JMAP blob download path for performance. Peer-supplied and untrusted; see {{asset-uri-untrusted}}.
 
 `mediaType` (String, immutable):
 : The media type of the asset (e.g., `"model/gltf-binary"`, `"image/png"`, `"audio/mpeg"`).
@@ -358,7 +358,7 @@ SceneAsset provides queryable metadata for assets referenced by SceneObject and 
 
 ### Preferred Asset Format {#preferred-asset-format}
 
-glTF 2.0 ({{GLTF}}) is the preferred and mandatory-to-implement visual asset format. The IANA media type `model/gltf-binary` (.glb) is always listed in `supportedVisualTypes` (see {{capability}}); servers SHOULD also support `model/gltf+json` (.gltf).
+glTF 2.0 ({{GLTF}}) is the preferred and mandatory-to-implement visual asset format. The IANA media type `model/gltf-binary` (.glb) is always listed in `supportedVisualTypes` (see {{capability}}); servers MAY also support `model/gltf+json` (.gltf).
 
 glTF 2.0 is the baseline because:
 
@@ -420,7 +420,7 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 : Advisory rendering mode for clients. Values defined by this specification: `"3d"` (standard 3D perspective), `"2d-topdown"` (top-down 2D view, as in virtual offices or board games), `"2d-side"` (side-scrolling 2D view, as in platformer games), `"ar"` (augmented reality overlay on the physical world; region coordinates are anchored to a physical location via `geoAnchor`). `null` is treated as `"3d"`. This field is advisory; clients MAY ignore it and render the region in any mode they support. Clients MUST NOT fail when encountering an unrecognized value; they SHOULD fall back to `"3d"`. Deployment-specific view hints SHOULD use reverse-domain notation (e.g., `"com.example.isometric"`).
 
 `geoAnchor` (GeoAnchor|null): {#geo-anchor}
-: When non-null, anchors the region's local coordinate system to a position within a reference frame. The region's coordinate origin `[0, 0, 0]` maps to the specified anchor point. `null` for purely virtual regions with no external anchoring. When `geoAnchor` is present, `viewHint` SHOULD be `"ar"` but MAY be `"3d"` (for VR experiences anchored to physical locations) or any other value.
+: When non-null, anchors the region's local coordinate system to a position within a reference frame. The region's coordinate origin `[0, 0, 0]` maps to the specified anchor point. `null` for purely virtual regions with no external anchoring. When `geoAnchor` is present, `viewHint` is typically `"ar"`, though `"3d"` (for VR experiences anchored to physical locations) or any other value also works.
 
 A GeoAnchor object has the following fields:
 
@@ -616,7 +616,7 @@ SceneObjects form a scene graph: each object has a position, orientation, and sc
 : Media type of the visual representation (e.g., `"model/gltf-binary"`). MUST be present when `visualRef` is non-null. MUST be null when `visualRef` is null.
 
 `assetUri` (String|null):
-: CDN or static-server URI for the visual asset. When present, clients SHOULD prefer this over the JMAP blob download path.
+: CDN or static-server URI for the visual asset. When present, clients MAY prefer this over the JMAP blob download path.
 
 `physicsMode` (String):
 : How the simulation layer should treat this object's physics. Values: `"static"` (immovable collider), `"dynamic"` (physics-simulated), `"kinematic"` (moves via script/server, not physics), `"none"` (no collision). Default: `"static"`. Enforcement is simulation-layer-defined.
@@ -733,7 +733,7 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 
 ## Extension Properties in Updates {#scene-extension-properties}
 
-The `update` lists in this section name the properties this document defines that a client may patch. A server that stores vendor extension properties on a Scene object (properties this document does not define) MAY also accept patches to them. It MUST NOT accept patches to a property this document defines as immutable or server-set.
+The `update` lists in this section name the properties this document defines that a client may patch. A server that stores vendor extension properties on a Scene object (properties this document does not define) MAY also accept patches to them. Patches to a property this document defines as immutable or server-set are rejected as {{RFC8620}} Section 5.3 describes.
 
 ## SceneAsset Methods {#scene-asset-methods}
 
@@ -2711,7 +2711,7 @@ Clients SHOULD verify asset integrity using the `sha256` field on SceneAsset whe
 
 Avatar positions reported by the client (via `SceneAvatar/set` or the simulation layer) are self-reported and unverifiable by the server. A malicious client could report a position it is not actually at, potentially bypassing proximity-based access controls or eavesdropping on proximity chat.
 
-Deployments that require position integrity SHOULD implement server-side position validation in the simulation layer (e.g., maximum movement speed, collision with barriers). This is a simulation-layer concern, not a JMAP Scene concern.
+Deployments that require position integrity can implement server-side position validation in the simulation layer (e.g., maximum movement speed, collision with barriers). This is a simulation-layer concern, not a JMAP Scene concern.
 
 ## Spatial Metadata Exposure
 
@@ -2765,7 +2765,7 @@ Servers SHOULD enforce at least one of the following mitigations to prevent disp
 
 - **Visual differentiation.** The server MAY provide system-assigned badges, name colors, or other visual metadata (via `worldState` or a deployment-defined mechanism) that distinguish authenticated identity from user-chosen display names. These differentiators help only when clients render them prominently.
 
-- **Reserved name lists.** The server SHOULD maintain a list of reserved display names that correspond to system roles or administrative functions and SHOULD reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
+- **Reserved name lists.** The server MAY maintain a list of reserved display names that correspond to system roles or administrative functions and MAY reject `SceneAvatar/set` operations that attempt to use a reserved name with a `SetError` of type `forbidden`.
 
 In deployments where `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) is co-deployed, the server MAY enforce that `SceneAvatar.displayName` matches the user's ChatContact display name. This provides a single authoritative source for display names across chat and spatial contexts, reducing the impersonation surface. When this enforcement is active, `SceneAvatar/set` operations that attempt to set a `displayName` different from the ChatContact display name SHOULD be rejected with an `invalidProperties` SetError naming `displayName`.
 
@@ -2827,21 +2827,21 @@ Clients call the corresponding `/changes` method for each type whose state strin
 
 Scene data types differ significantly in mutation frequency:
 
-- **SceneAvatar** changes frequently: avatar enter, leave, and periodic position reconciliation from the simulation layer all produce mutations. The server SHOULD coalesce rapid SceneAvatar mutations within a deployment-defined window (RECOMMENDED: 1-5 seconds) before emitting a `StateChange`, to avoid overwhelming subscribers with per-avatar state changes during high-traffic periods.
+- **SceneAvatar** changes frequently: avatar enter, leave, and periodic position reconciliation from the simulation layer all produce mutations. The server MAY coalesce rapid SceneAvatar mutations within a deployment-defined window (for example, 1-5 seconds) before emitting a `StateChange`, to avoid overwhelming subscribers with per-avatar state changes during high-traffic periods.
 
-- **SceneObject** changes at moderate frequency: object creation, destruction, and position/property updates. The server SHOULD coalesce rapid SceneObject mutations similarly.
+- **SceneObject** changes at moderate frequency: object creation, destruction, and position/property updates. The server MAY coalesce rapid SceneObject mutations similarly.
 
-- **SceneRegion** changes whenever a user enters or leaves a region, because `activeAvatarCount` changes, in addition to the less frequent region creation and configuration updates. The server SHOULD coalesce rapid SceneRegion mutations in the same way as SceneAvatar mutations.
+- **SceneRegion** changes whenever a user enters or leaves a region, because `activeAvatarCount` changes, in addition to the less frequent region creation and configuration updates. The server MAY coalesce rapid SceneRegion mutations in the same way as SceneAvatar mutations.
 
 - **SceneAsset** changes infrequently: asset uploads and metadata updates are low-frequency operations. Coalescing is generally unnecessary but remains at the server's discretion.
 
 Real-time avatar and object position synchronization at simulation-layer rates (10+ Hz) SHOULD NOT generate `StateChange` events at that frequency. The periodic position reconciliation described in {{simulation-layer}} produces JMAP-layer mutations at a much lower rate (every 5-30 seconds); only those reconciliation writes produce state changes. Clients connected to the simulation layer receive real-time positions through the simulation protocol; `StateChange` events for SceneAvatar and SceneObject serve clients that are not connected to the simulation layer or that need to detect structural changes (new avatars, removed objects).
 
-When Scene and Chat are co-deployed, the server SHOULD coalesce `StateChange` events across both capabilities to avoid overwhelming Chat-only clients. Clients that do not use Scene types can ignore state tokens for types they do not track, avoiding unnecessary `/changes` calls.
+When Scene and Chat are co-deployed, the server MAY coalesce `StateChange` events across both capabilities to avoid overwhelming Chat-only clients. Clients that do not use Scene types can ignore state tokens for types they do not track, avoiding unnecessary `/changes` calls.
 
 ## Push Urgency {#push-urgency}
 
-When delivering `StateChange` notifications via Web Push, the server SHOULD set the `Urgency` header ({{RFC8030}} Section 5.3) based on the nature of the change. The following urgency assignments are RECOMMENDED:
+When delivering `StateChange` notifications via Web Push, the server MAY set the `Urgency` header ({{RFC8030}} Section 5.3) based on the nature of the change. The following urgency assignments are suggested:
 
 `high`:
 : Region destruction (`SceneRegion/set destroy`) when the receiving user has SceneObject records in the destroyed region. The user's objects have been removed as a side effect and the user should be informed promptly.

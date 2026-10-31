@@ -179,7 +179,7 @@ Host: <peer-hostname>
 
 The response is the peer's JMAP Session object as defined in {{RFC8620}} Section 2. The Session object of a server that hosts a single mailbox can include an `ownerUserId` field identifying that mailbox's owner; {{session-extensions}} says when it does.
 
-Servers SHOULD cache discovered session data, including the session URL and any `ownerUserId`, to avoid redundant discovery on each request. Servers SHOULD re-run discovery when delivery fails, as the peer's session URL or capabilities may have changed.
+Servers MAY cache discovered session data, including the session URL and any `ownerUserId`, to avoid redundant discovery on each request. Servers SHOULD re-run discovery when delivery fails, as the peer's session URL or capabilities may have changed.
 
 ## Direct Address Hints
 
@@ -353,7 +353,7 @@ The serving server MUST NOT redirect a blob fetch to another origin, because onl
 The value of `accountCapabilities["urn:ietf:params:jmap:chat"]` is a JSON object. This document defines the following field within that object, which is relevant to federation:
 
 `role` (String):
-: Either `"owner"` or `"peer"`. An account with `role: "owner"` has full access to all JMAP Chat methods. An account with `role: "peer"` is granted access only to the Peer/* methods defined in this document. Callers authenticated as a peer and operating against an account where `role` is `"peer"` MUST receive `forbidden` for any method not listed in {{peer-methods}}.
+: Either `"owner"` or `"peer"`. An account with `role: "owner"` has full access to all JMAP Chat methods. An account with `role: "peer"` is granted access only to the Peer/* methods defined in this document. Callers authenticated as a peer and operating against an account where `role` is `"peer"` SHOULD receive `forbidden` for any method not listed in {{peer-methods}}.
 
 The local server MUST include this field in the account capability for any account it provisions for peer use.
 
@@ -391,13 +391,13 @@ The following fields describe a single mailbox owner. `ownerUserId` and `ownerEn
 : The identity string of the mailbox owner. This value equals the `identity` of the owner's ChatContact on any peer server that has recorded this mailbox as a contact; the `id` of that ChatContact is assigned by the peer server. A server that hosts several mailboxes serves each owner a Session with that owner's `ownerUserId`. On the advertising server, the owner's local id is the `accountId` of the owner's account ({{JMAP-CHAT}}); in Peer/* arguments that `accountId` maps to `ownerUserId` and back ({{identity-mapping}}).
 
 `ownerDirectAddress` (String, optional):
-: A deployment-specific address at which the owner's client may be reachable directly. Peers that probe `/.well-known/jmap` SHOULD store this value as the `directAddress` on the corresponding ChatContact record (see {{chat-contact-extensions}}). The format and semantics are deployment-defined. This value is advisory only (see {{direct-address-security}}).
+: A deployment-specific address at which the owner's client may be reachable directly. Peers that probe `/.well-known/jmap` MAY store this value as the `directAddress` on the corresponding ChatContact record (see {{chat-contact-extensions}}). The format and semantics are deployment-defined. This value is advisory only (see {{direct-address-security}}).
 
 In the Session with which a server answers an unsigned GET of `/.well-known/jmap` ({{key-publication}}), a server that hosts a single mailbox MAY include that mailbox's `ownerUserId`, `ownerDirectAddress`, and `ownerEndpoints`. A server that hosts more than one mailbox omits all three: they describe a single owner, and listing owners there would disclose them to anyone. Identity binding does not use these fields ({{identity-binding}}). A peer uses them to update the ChatContact whose `identity` equals `ownerUserId`, and SHOULD do so only if that `ownerUserId` binds to the peer domain the Session was fetched from as {{identity-binding}} describes, taking, for a host-less DID, any usable signing key of that peer domain ({{key-publication}}) as the key that DID-bound verification checks.
 
 # Server-to-Server Methods {#peer-methods}
 
-The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role MUST receive `forbidden` for all methods in this section.
+The following methods are used between mailbox servers only. An authenticated peer server accesses these methods using the JMAP account in which `role: "peer"` is set in the `urn:ietf:params:jmap:chat` accountCapabilities (see {{account-capability}}). Callers without the `"peer"` role SHOULD receive `forbidden` for all methods in this section.
 
 All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`, `subscriberId`, or `identity` depending on the method). Despite the varying names, all serve the same role: the identity of the user on the calling server for whom the call is made. Servers MUST check every such field by {{identity-binding}}, and MUST reject the call with `forbidden` if its value is not a peer identity of the request.
 
@@ -436,7 +436,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
 : The identity string of the owner of the mailbox the message, edit, or reaction is delivered to ({{peer-methods}}).
 
 `chatId` (String):
-: The Chat ID. For direct chats, if the receiving server already has a direct Chat whose `contactId` is the id of the sender's ChatContact, it MUST verify that `chatId` matches the stored chatId, or resolve a mismatch per {{direct-chat-race}}. For group and channel chats, the receiver MUST verify this value matches the chatId of a known chat of which the sender is a current member.
+: The Chat ID. For direct chats, if the receiving server already has a direct Chat whose `contactId` is the id of the sender's ChatContact, it MUST verify that `chatId` matches the stored chatId, or resolve a mismatch per {{direct-chat-race}}. For group and channel chats, the receiver SHOULD verify this value matches the chatId of a known chat of which the sender is a current member.
 
 `senderUserId` (String):
 : The sender's identity string ({{identity-mapping}}). MUST be a peer identity of the request's authenticated peer domain ({{identity-binding}}). The receiver MUST check this and MUST reject the request if it is not.
@@ -474,7 +474,7 @@ Delivers a new message, an edit, or a reaction update from a remote mailbox. Exa
   - `mentions` (Mention[], optional) — Structured per-user @mention annotations for the new body. Each Mention `id` carries an identity string ({{identity-mapping}}).
   - `broadcastMentions` (BroadcastMention[], optional) — Structured broadcast-scope mention annotations for the new body. Receiver-side resolution rules are identical to the new-message case (see {{broadcast-mention-resolution}}).
 
-  The receiver MUST verify the sender is the original sender of the identified message before applying the edit.
+  The receiver SHOULD verify the sender is the original sender of the identified message before applying the edit.
 
 `reactionUpdate` (Object, optional):
 : A reaction change on an existing message. Fields:
@@ -506,17 +506,17 @@ Before populating the `message` fields of an outbound `Peer/deliver` call, the s
 
 ### New Message Validation {#new-message-validation}
 
-Before storing a new message, the server MUST perform the following steps in order:
+Before storing a new message, the server MUST perform the following steps in order, except that the group and channel membership check in step 3, steps 4 through 6, and the deletion scheduling in step 14 are SHOULD, matching the corresponding requirements in {{JMAP-CHAT}}:
 
 1. Verify the request signature and the identity binding ({{peer-authentication}}).
 2. Confirm `senderUserId` is a peer identity of the request ({{identity-binding}}). Reject immediately if it is not. Resolve `recipientUserId` to a mailbox ({{peer-methods}}); a call that names no mailbox is handled as {{peer-methods}} describes. The remaining steps apply when the call is processed in a mailbox, and take place in that mailbox. Resolve `senderUserId` to the sender's local ChatContact per {{identity-mapping}}; the remaining steps refer to that ChatContact as the sender.
 3. For direct chats: if a chat with this sender already exists, confirm `chatId` matches its stored id or resolve a mismatch per {{direct-chat-race}}; otherwise create a new Chat record with this chatId and set `contactId` to the sender's ChatContact `id` (see {{direct-chat-race}} for the simultaneous-initiation race condition). For group and channel chats: confirm `chatId` matches a known chat and the sender is a current member of that chat. If the group chat's `closedAt` is set, or the channel's Space has `closedAt` set ({{JMAP-CHAT}}), reject with `forbidden`.
 4. For channel chats: verify that no active SpaceBan exists for the sender in the Space containing the identified channel. If a SpaceBan exists, silently drop the message and return success.
 5. For channel chats: verify that the sender holds the `"send"` permission in the identified channel per the Space permission resolution defined in {{JMAP-CHAT}}. If the sender lacks `"send"`, reject with `forbidden`.
-6. For channel chats where the channel's `slowModeSeconds` is non-zero: verify that the sender is not rate-limited by the slow-mode policy. If the sender's last accepted message in this channel was received within `slowModeSeconds` seconds and the sender is not exempt, reject the `Peer/deliver` call with the method-level error `rateLimited`. Servers SHOULD exempt senders holding the `"manage_channels"` permission, and deployments MAY exempt others (see `slowModeSeconds` in {{JMAP-CHAT}}).
+6. For channel chats where the channel's `slowModeSeconds` is non-zero: verify that the sender is not rate-limited by the slow-mode policy. If the sender's last accepted message in this channel was received within `slowModeSeconds` seconds and the sender is not exempt, reject the `Peer/deliver` call with the method-level error `rateLimited`. Servers can exempt senders holding the `"manage_channels"` permission, as {{JMAP-CHAT}} allows, and deployments MAY exempt others (see `slowModeSeconds` in {{JMAP-CHAT}}).
 7. Confirm the sender is not blocked by the owner. If `blocked` is `true` on the sender's ChatContact record, silently drop the message and return success (to avoid disclosing block status to the sender).
 8. Validate `body` byte length against `maxBodyBytes`; reject with `invalidArguments` if exceeded. For plaintext `bodyType` values, also validate UTF-8 encoding. For encrypted `bodyType` values (e.g., `"application/mls-ciphertext"`), `body` is opaque ciphertext; servers MUST NOT parse or transform it beyond byte-length checking.
-9. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type SHOULD include it in `supportedBodyTypes`.
+9. Validate `bodyType` against the server's `supportedBodyTypes`; reject with `invalidArguments` if not present. Servers implementing {{JMAP-CHAT}} that support the `application/jmap-chat-rich` body type include it in `supportedBodyTypes`.
 10. Validate each attachment `filename`, `contentType`, and `size` per Attachment in {{JMAP-CHAT}}.
 11. Fetch each attachment blob from its `fetchUrl` with a signed request ({{blob-fetch}}); verify the byte count against `size` and the content against `sha256`. How the request is rejected depends on why the fetch failed, so that a temporary failure does not lose the message ({{error-handling}}):
     - The connection fails, the request times out, or the serving server answers with a 5xx status: reject with `serverFail`, which the sender retries.
@@ -529,7 +529,7 @@ Before storing a new message, the server MUST perform the following steps in ord
 13. Validate each `broadcastMentions` entry. Reject with `invalidArguments` if any entry's `scope` is not one of `"everyone"`, `"here"`, or `"admins"`. The recipient set is computed by the receiving server at delivery time, not taken from the sending server's send-time set ({{broadcast-mention-resolution}}).
 14. If `senderExpiresAt` is present, confirm it is strictly in the future; reject with `invalidArguments` if it is in the past or equal to the current time. Schedule hard deletion at that time. Whether or not `senderExpiresAt` is present, if `burnOnRead` is `true`, register a trigger to hard-delete the message when `readAt` is set; otherwise, if `expiresAfterReadSeconds` is present, register a trigger to hard-delete the message that many seconds after `readAt` is set.
 
-When `bodyType` indicates an encrypted type (e.g., `"application/mls-ciphertext"`), the server MUST, at step 10, reject with `invalidArguments` any message in which `attachments`, `mentions`, `broadcastMentions`, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, or `lastSeenSenderMsgId` is present and non-empty, and MUST skip steps 11 through 13. That information, if any, is carried inside the ciphertext, as specified in the End-to-End Encrypted Deployments section of {{JMAP-CHAT}}.
+When `bodyType` indicates an encrypted type (e.g., `"application/mls-ciphertext"`), the server SHOULD, at step 10, reject with `invalidArguments` any message in which `attachments`, `mentions`, `broadcastMentions`, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, or `lastSeenSenderMsgId` is present and non-empty, and MUST skip steps 11 through 13. That information, if any, is carried inside the ciphertext, as specified in the End-to-End Encrypted Deployments section of {{JMAP-CHAT}}.
 
 Failure at any step MUST result in rejection with no data stored and no side effects.
 
@@ -779,11 +779,11 @@ clients. The calling server has no visibility into this preference and
 need not account for it when invoking `Peer/typing`; the efficiency cost
 is accepted as a consequence of the privacy-preserving design.
 
-If all checks pass, the server MUST forward a typing push event (as
+If all checks pass, the server SHOULD forward a typing push event (as
 defined in {{JMAP-CHAT}}) to the owner's connected clients.
 
 Servers SHOULD rate-limit inbound `Peer/typing` calls per peer to prevent
-abuse. Servers SHOULD accept no more than one `Peer/typing` call per
+abuse. Servers MAY accept no more than one `Peer/typing` call per
 peer per chat per 3 seconds; calls received above this rate MAY be
 silently discarded without error.
 
@@ -847,7 +847,7 @@ When a `Message/set` update sets `deletedForAll: true` on a message whose `sende
 
 ### Receiver Behavior
 
-The receiving server MUST look up the message by `senderMsgId` within `chatId`. It MUST verify that the stored message's `senderId` is the `id` of the ChatContact that `senderUserId` resolves to ({{identity-mapping}}) before applying any changes. If the sender does not match, the server MUST reject the request.
+The receiving server MUST look up the message by `senderMsgId` within `chatId`. It SHOULD verify that the stored message's `senderId` is the `id` of the ChatContact that `senderUserId` resolves to ({{identity-mapping}}) before applying any changes. If the sender does not match, the server SHOULD reject the request.
 
 On success, the server MUST: clear `body` to an empty string, clear `attachments` to an empty array, remove `editHistory`, set `deletedAt` to the current time, and set `deletedForAll` to `true`. The message record is retained as a tombstone.
 
@@ -909,7 +909,7 @@ Method name: `Peer/groupUpdate`
 : The group chat ULID.
 
 `senderUserId` (String):
-: The identity string of the user making the change ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}). The sending server SHOULD also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
+: The identity string of the user making the change ({{identity-mapping}}). MUST be a peer identity of the request ({{identity-binding}}). The sending server MAY also verify locally that `senderUserId` is authorized to perform the action under its own group-chat admin model before invoking `Peer/groupUpdate`; this courtesy check avoids needless network traffic for operations the receiver will reject. The wire contract is the receiver-side admin verification described in the Receiver Behavior subsection below and in {{security}}.
 
 `action` (String):
 : One of the following values:
@@ -945,7 +945,7 @@ Method name: `Peer/groupUpdate`
 
 ### Receiver Behavior
 
-For all actions other than `"create"` and `"leave"`, the receiving server MUST verify that the ChatContact that `senderUserId` resolves to ({{identity-mapping}}) holds an admin role in the named group on the receiving server's local Chat record before applying any changes. For `"create"`, it MUST verify that `senderUserId` is one of the members listed in `members`. For `"leave"`, it MUST verify that that ChatContact is a current member.
+For all actions other than `"create"` and `"leave"`, the receiving server SHOULD verify that the ChatContact that `senderUserId` resolves to ({{identity-mapping}}) holds an admin role in the named group on the receiving server's local Chat record before applying any changes. For `"create"`, it SHOULD verify that `senderUserId` is one of the members listed in `members`. For `"leave"`, it SHOULD verify that that ChatContact is a current member.
 
 Once the local Chat record has `closedAt` set, the receiving server MUST reject every subsequent `Peer/groupUpdate` for that chat with `forbidden`.
 

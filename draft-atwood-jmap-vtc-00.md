@@ -175,7 +175,7 @@ Protocol-specific signaling beyond the core lifecycle — call transfer (SIP REF
 
 ## Relationship to JMAP Chat (recommended) {#chat-delegation}
 
-Deployments SHOULD advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:ietf:params:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
+Deployments MAY advertise `urn:ietf:params:jmap:chat` ({{JMAP-CHAT}}) alongside `urn:ietf:params:jmap:vtc`. When both are present, VTCCall objects carry `chatId`, `spaceId`, and `channelId` back-references, and several collaboration features are delegated to JMAP Chat rather than re-defined in this specification:
 
 - **In-call text chat** is the Chat bound via `chatId`. When `chatId` is supplied, the call is bound to that Chat for in-call text messaging; when omitted, the call has no text backchannel. Messages sent to the bound Chat appear as in-call chat.
 - **In-call reactions** (emoji floats) are reactions on Messages in the bound Chat.
@@ -618,7 +618,7 @@ A livestream is created in `"starting"`. From there:
 
 `"stopped"` and `"failed"` are final: to stream again, a client creates a new VTCLivestream. It places no bound on how long a livestream stays in `"starting"`: some media pipelines take minutes to provision. A client learns the outcome from the state change, not from a timer. When a livestream ends for any reason other than those listed for `"stopped"`, the server SHOULD move it to `"failed"` rather than `"stopped"`, so that clients can tell a failure from a deliberate stop.
 
-To limit cost, the server SHOULD stop a livestream, as if a moderator had set it to `"stopped"`, once it has carried no media from the call for a deployment-defined period (for example, after every participant has left a room call that remains active). The server SHOULD limit the number of livestreams per account that are in state `"starting"` or `"live"`, rejecting a create over the limit with `overQuota` ({{RFC8620}} Section 5.3).
+To limit cost, the server MAY stop a livestream, as if a moderator had set it to `"stopped"`, once it has carried no media from the call for a deployment-defined period (for example, after every participant has left a room call that remains active). The server SHOULD limit the number of livestreams per account that are in state `"starting"` or `"live"`, rejecting a create over the limit with `overQuota` ({{RFC8620}} Section 5.3).
 
 ### VTCPlaybackEndpoint {#vtc-playback-endpoint}
 
@@ -812,7 +812,7 @@ The server creates VTCParticipant records for each target and for the initiator,
 }
 ~~~
 
-Servers MUST return `invalidProperties` naming `targetParticipantIds` when `targetParticipantIds` is empty. Servers MUST return `invalidProperties` naming `mediaTypes` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers MUST return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets. If all targets are blocked, the server creates the call as usual and lets it end by ring timeout, so that the initiator cannot tell a block from an unanswered call. The common `chatId` and `"start_call"` checks in {{vtc-call-set}} also apply.
+Servers MUST return `invalidProperties` naming `targetParticipantIds` when `targetParticipantIds` is empty. Servers MUST return `invalidProperties` naming `mediaTypes` when `mediaTypes` contains values not present in the account-level `supportedMediaTypes`. Servers SHOULD return `forbidden` when the account's `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRingCalls` is `false`. Servers SHOULD silently drop targets that correspond to blocked contacts ({{ring-notification}}) and proceed with the remaining targets. If all targets are blocked, the server creates the call as usual and lets it end by ring timeout, so that the initiator cannot tell a block from an unanswered call. The common `chatId` and `"start_call"` checks in {{vtc-call-set}} also apply.
 
 #### Creating a Room Call
 
@@ -841,7 +841,7 @@ Example create:
 }
 ~~~
 
-Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsRoomCalls` is `false`. The common `chatId` and `"start_call"` checks in {{vtc-call-set}} also apply.
+Servers SHOULD return `forbidden` when `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsRoomCalls` is `false`. The common `chatId` and `"start_call"` checks in {{vtc-call-set}} also apply.
 
 #### Creating a Scheduled Call
 
@@ -874,7 +874,7 @@ Example create:
 }
 ~~~
 
-Servers MUST return `forbidden` when `mayCreateCall` is `false` or `supportsScheduledCalls` is `false`. The common `chatId` and `"start_call"` checks in {{vtc-call-set}} also apply.
+Servers SHOULD return `forbidden` when `mayCreateCall` is `false`. Servers MUST return `forbidden` when `supportsScheduledCalls` is `false`. The common `chatId` and `"start_call"` checks in {{vtc-call-set}} also apply.
 
 #### Ending a Call {#ending-a-call}
 
@@ -979,8 +979,9 @@ For ring calls, the server creates VTCParticipant records for all targets (with 
 The server MUST validate that:
 
 1. The call is in state `"ringing"` or `"active"`.
-2. The caller's userId matches the VTCParticipant record's userId.
-3. The record's `callResponse` is `"pending"`.
+2. The record's `callResponse` is `"pending"`.
+
+The server SHOULD also validate that the caller's userId matches the VTCParticipant record's userId.
 
 On success, if the call is `"ringing"`, the server transitions it to `"active"`. In either case the server dispatches a `VTCCallEndEvent` with `endReason: "answered_elsewhere"` to the answering user's other ringing devices (see {{multi-device-forking}}). Accepting answers while the call is `"active"` lets every target of a multi-target ring call join, not only the first to answer.
 
@@ -1143,7 +1144,7 @@ Participants with `role: "moderator"` on the same VTCCall MAY use `VTCParticipan
 : Update the target's `lobbyState` from `"waiting"` to `"rejected"`. The server sets the target's `leftAt` to the current time.
 
 **Grant or revoke moderator role:**
-: Update a participant's `role` between `"moderator"` and `"participant"`. A moderator MUST NOT revoke their own moderator role if they are the last moderator; the server MUST reject this with `forbidden`.
+: Update a participant's `role` between `"moderator"` and `"participant"`. A moderator SHOULD NOT revoke their own moderator role if they are the last moderator; the server SHOULD reject this with `forbidden`.
 
 **Assign to a breakout room:**
 : Update the participant's `breakoutCallId` on their parent-call record to the id of a child breakout-room call, or to `null` to withdraw the assignment. The server MUST return `invalidProperties` naming `breakoutCallId` if a non-null value is not in the parent call's `breakoutRoomIds`. The assigned participant's client joins the child call through the normal join path ({{joining}}, or {{reconnection}} if it already has a record there) and leaves the parent call by setting its own `leftAt` on the parent-call record.
@@ -1213,7 +1214,7 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 Filter properties:
 
 `callId` (String, optional):
-: Filter to participants in this call. Servers SHOULD require this property on every query unless combined with `userId`; a query that omits both `callId` and `userId` MAY be rejected with `unsupportedFilter`.
+: Filter to participants in this call. Servers MAY require this property on every query unless combined with `userId`; a query that omits both `callId` and `userId` MAY be rejected with `unsupportedFilter`.
 
 `userId` (String, optional):
 : Filter to a specific user across calls. When used without `callId`, returns the user's participation history.
@@ -1588,12 +1589,12 @@ Example content-free `VTCCallPush` payload:
 Ring-call push notifications are time-critical: a ring that arrives five seconds late is a missed call. Servers SHOULD use the highest available urgency for ring notifications:
 
 - **Web Push ({{RFC8030}}):** `Urgency: high`, `TTL` SHOULD be 30–60 seconds.
-- **APNs:** `apns-push-type: voip` {{APNS-REQUEST}}. VoIP pushes trigger PushKit, which wakes the app and presents the CallKit incoming-call UI. Servers MUST use the VoIP push type, not the standard alert type, for ring notifications on iOS.
+- **APNs:** `apns-push-type: voip` {{APNS-REQUEST}}. VoIP pushes trigger PushKit, which wakes the app and presents the CallKit incoming-call UI. Servers SHOULD use the VoIP push type, not the standard alert type, for ring notifications on iOS.
 - **FCM:** `priority: high` with a data message. Android apps typically use `ConnectionService` or `TelecomManager` to present the native incoming-call UI.
 
 Room-call and scheduled-call notifications (e.g., "A huddle started in #general") use normal urgency and are not ring-priority. Servers SHOULD deliver these as standard `StateChange` notifications or as `ChatMessagePush` payloads ({{JMAP-CHAT-PUSH}}) rather than `VTCCallPush`.
 
-When a room or scheduled call starts in a Chat that has push subscribers, the server SHOULD suppress the VTCCall `StateChange` for users who will receive the event via `ChatMessagePush` or Chat `StateChange` (for `activeCallId` update). Clients receiving multiple notifications for the same call-start event can deduplicate them by `VTCCall.id` within a 5-second window.
+When a room or scheduled call starts in a Chat that has push subscribers, the server MAY suppress the VTCCall `StateChange` for users who will receive the event via `ChatMessagePush` or Chat `StateChange` (for `activeCallId` update). Clients receiving multiple notifications for the same call-start event can deduplicate them by `VTCCall.id` within a 5-second window.
 
 ### Blocked-Sender Suppression
 
@@ -1815,7 +1816,7 @@ When a call targets multiple participants, the first answer by any target transi
 
 ## Ring Timeout
 
-Servers SHOULD enforce a ring timeout. If no target participant answers within a deployment-defined period (RECOMMENDED: 30 seconds), the server transitions the call to `"ended"` with `endReason: "missed"` and dispatches `VTCCallEndEvent` with `endReason: "timeout"` to all ringing devices. If the call is already `"active"` when the period expires, the call continues; the server dispatches `VTCCallEndEvent` with `endReason: "timeout"` to the devices of targets whose `callResponse` is still `"pending"`.
+Servers SHOULD enforce a ring timeout. If no target participant answers within a deployment-defined period (for example, 30 seconds), the server transitions the call to `"ended"` with `endReason: "missed"` and dispatches `VTCCallEndEvent` with `endReason: "timeout"` to all ringing devices. If the call is already `"active"` when the period expires, the call continues; the server dispatches `VTCCallEndEvent` with `endReason: "timeout"` to the devices of targets whose `callResponse` is still `"pending"`.
 
 # End-to-End Encrypted Calls {#e2ee-calls}
 
@@ -1911,7 +1912,7 @@ A participant can leave a call at any time by setting their own `leftAt` (see Le
 
 ## Call Metadata Exposure
 
-Even without access to the media stream, the JMAP server observes: who called whom, when, for how long, from which device, and who else was on the call. This metadata is privacy-sensitive. Deployments requiring metadata privacy SHOULD apply the same mitigations noted in the E2EE section of {{JMAP-CHAT}}: message padding, cover traffic, and other transport-layer techniques outside the scope of this document.
+Even without access to the media stream, the JMAP server observes: who called whom, when, for how long, from which device, and who else was on the call. This metadata is privacy-sensitive. Deployments requiring metadata privacy can apply the same mitigations noted in the E2EE section of {{JMAP-CHAT}}: message padding, cover traffic, and other transport-layer techniques outside the scope of this document.
 
 `e2eeEnabled: true` protects media content, not call metadata. The server still knows the participant list, join and leave times, and `activeParticipantCount`. If it maps media streams to participants it also learns `speakerTimeMs` and the active speaker, which can reveal the shape of a conversation. {{e2ee-active-speaker}} and {{e2ee-participant-visibility}} limit this exposure. A full `VTCCallPush` also discloses call metadata to the push platform operator; see {{ring-push-content-free}}. A key-holding recorder, bridge, or gateway ({{e2ee-media-participants}}) holds plaintext media by design; its presence in the participant list is what keeps the E2EE claim honest.
 

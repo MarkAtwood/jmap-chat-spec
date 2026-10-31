@@ -553,7 +553,7 @@ accounts apart.
 The server does not acknowledge `SceneStreamEnable`.  As with
 `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure
 produces a `RequestError`.  A client that sends several control
-messages in succession SHOULD give each an `id` so that it can
+messages in succession MAY give each an `id` so that it can
 attribute any `RequestError` to the message that caused it.
 
 Unrecognized values in `eventTypes` that appear alongside recognized
@@ -915,7 +915,7 @@ events:
 If the client has an active `ChatStreamEnable` subscription that
 includes `"scene"` AND an active `SceneStreamEnable` subscription,
 the server MUST deliver the union of both subscriptions.  The
-server MUST NOT deliver duplicate events; if an event matches both
+server SHOULD NOT deliver duplicate events; if an event matches both
 subscriptions, it is delivered exactly once.
 
 ### Subscription Independence

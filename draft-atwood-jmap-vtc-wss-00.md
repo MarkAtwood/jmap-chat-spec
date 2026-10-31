@@ -215,7 +215,7 @@ accounts apart.
 The server does not acknowledge `VTCStreamEnable`.  As with
 `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure
 produces a `RequestError`.  A client that sends several control
-messages in succession SHOULD give each an `id` so that it can
+messages in succession MAY give each an `id` so that it can
 attribute any `RequestError` to the message that caused it.
 
 Unrecognized values in `eventTypes` that appear alongside recognized
@@ -336,7 +336,7 @@ Servers MAY apply additional rate limits to other event types.
 Events are delivered in best-effort order.  The server SHOULD
 deliver events in the order they were generated, but ordering is
 not guaranteed.  Each event is self-contained; clients
-SHOULD use the event's `callId` and `participantId` fields to
+can use the event's `callId` and `participantId` fields to
 correlate events with local state.
 
 ## Blocked-Sender Suppression {#blocked-sender}
@@ -412,7 +412,7 @@ events:
 If the client has an active `ChatStreamEnable` subscription that
 includes `"vtc"` AND an active `VTCStreamEnable` subscription, the
 server MUST deliver the union of both subscriptions.  The server
-MUST NOT deliver duplicate events; if an event matches both
+SHOULD NOT deliver duplicate events; if an event matches both
 subscriptions, it is delivered exactly once.
 
 ## Subscription Independence
@@ -429,7 +429,7 @@ active `VTCStreamEnable` subscription are unaffected.
 ## Recommendation
 
 Clients that need events from a single call (e.g., the call
-currently displayed in the UI) SHOULD prefer `VTCStreamEnable` with
+currently displayed in the UI) MAY prefer `VTCStreamEnable` with
 an explicit `callIds` list.  This minimizes server fan-out and
 network traffic in multi-call scenarios.
 
