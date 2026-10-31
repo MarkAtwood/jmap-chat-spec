@@ -58,6 +58,7 @@ informative:
     date: 2026
   RFC9420:
   RFC8552:
+  RFC8792:
   JMAP-CHAT-DID:
     title: "JMAP Chat DID"
     author:
@@ -216,6 +217,84 @@ A receiving server MUST reject, without processing any method call, a request th
 
 The receiving server rejects a request that fails any of these checks with HTTP status 403 (Forbidden). The exception is a request rejected only by the restart rule in {{replay}}: the receiving server MUST answer it with HTTP status 503 (Service Unavailable), and the sender retries it as a transient failure ({{error-handling}}) with a new signature. The peer domain named in a verified `keyid` is the request's authenticated peer domain.
 
+### Example {#signing-example}
+
+The following request is a `Peer/deliver` call ({{peer-deliver}}) from the server of peer domain `alice.example` to the server of `bob.example`, whose Session gives `https://bob.example/jmap/api/` as its `apiUrl`. It is signed at 2026-10-30T17:00:00Z with the key shown in {{session-extensions}}, which is the Ed25519 key of {{RFC8037}} Appendix A.1, so the signature can be reproduced and checked. The content is the JSON text shown, without a final line ending (605 octets). Long lines are folded as {{RFC8792}} Section 7 describes.
+
+~~~
+NOTE: '\' line wrapping per RFC 8792
+
+POST /jmap/api/ HTTP/1.1
+Host: bob.example
+Content-Type: application/json
+Content-Length: 605
+Content-Digest: \
+  sha-256=:Y/RYJOBS9YmOB1mfLE/98BAV1DrlwrxZrSEQLJ0MIrE=:
+Signature-Input: peer=("@method" "@target-uri" \
+  "content-digest");created=1793379600;expires=1793379900\
+  ;nonce="WYVxNuwz3RBEhnJKM4LvVg";alg="ed25519"\
+  ;keyid="alice.example#kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k"\
+  ;tag="jmap-chat-peer"
+Signature: peer=:Fpre0jRx0QQUiIwvNev/Z0GvVXXlGaf1Eb1+BToB0kpQ\
+  M5fGZUVBigNh76Rmxb5SR8Gvz5YzRWmInQgvcjT0Bg==:
+
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/deliver", {
+      "accountId": "P5f2",
+      "recipientUserId": "bob@bob.example",
+      "chatId": "01M63F1WH01Y0REYVGR2JXN81Y",
+      "senderUserId": "alice@alice.example",
+      "chatKind": "direct",
+      "message": {
+        "senderMsgId": "01M66W1ZNG06Y60M4QKTWMP8P8",
+        "body": "Lunch at noon, Bob?",
+        "bodyType": "text/plain",
+        "sentAt": "2026-10-30T16:59:58Z",
+        "attachments": [],
+        "mentions": [{"id": "bob@bob.example"}]
+      }
+    }, "c1"]
+  ]
+}
+~~~
+
+The signature base ({{RFC9421}} Section 2.5) is:
+
+~~~
+NOTE: '\' line wrapping per RFC 8792
+
+"@method": POST
+"@target-uri": https://bob.example/jmap/api/
+"content-digest": \
+  sha-256=:Y/RYJOBS9YmOB1mfLE/98BAV1DrlwrxZrSEQLJ0MIrE=:
+"@signature-params": ("@method" "@target-uri" "content-digest")\
+  ;created=1793379600;expires=1793379900\
+  ;nonce="WYVxNuwz3RBEhnJKM4LvVg";alg="ed25519"\
+  ;keyid="alice.example#kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k"\
+  ;tag="jmap-chat-peer"
+~~~
+
+The response is not signed:
+
+~~~
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "methodResponses": [
+    ["Peer/deliver", {
+      "accountId": "P5f2",
+      "receivedMsgId": "01M66W22K8QSZ6YW5FNRGPAX4A",
+      "receivedAt": "2026-10-30T17:00:01Z"
+    }, "c1"]
+  ],
+  "sessionState": "b7q3"
+}
+~~~
+
 ## Key Publication {#key-publication}
 
 A server publishes its signing public keys in the `peerSigningKeys` field of its Session object ({{session-extensions}}). Each key is a JSON Web Key {{RFC7517}} with `kty` `"OKP"` and `crv` `"Ed25519"` {{RFC8037}}, and its `kid` member MUST be the base64url-encoded SHA-256 JWK Thumbprint {{RFC7638}} of the key. A JWK in `peerSigningKeys` SHOULD NOT contain private key members.
@@ -325,6 +404,8 @@ All Peer/* methods carry a caller-identity field (`senderUserId`, `readerUserId`
 All Peer/* methods also carry `recipientUserId` (String): the identity string of the owner of the mailbox on the receiving server for which the call is made. An `accountId` is local to the server that assigns it, so Peer/* calls do not name a mailbox by account; the `accountId` argument of every Peer/* call is the id of the single peer-role account in the caller's session ({{peer-authentication}}), and every response returns it. The receiving server processes the call in the mailbox whose owner's identity (its `ownerUserId`, {{session-extensions}}) equals `recipientUserId`, compared octet for octet. If no mailbox on the receiving server has that identity, the receiving server rejects the call with `forbidden`. It SHOULD give that rejection the same form, including any `description`, as a `forbidden` rejection of a call to an existing mailbox, so that the rejection does not show which identities have mailboxes there ({{mailbox-enumeration}}).
 
 A sending server with calls for several mailboxes on one peer domain, for example one group message for each member hosted there, MAY send them in one request, one method call per recipient ({{RFC8620}} Section 3.3).
+
+Each method below ends with an example. Apart from {{signing-example}}, the examples show only the JMAP Request and Response objects ({{RFC8620}} Sections 3.3 and 3.4); each request is sent signed, as {{signing-example}} shows. In them, `alice@alice.example`, `bob@bob.example`, and `carol@carol.example` are users of the peer domains `alice.example`, `bob.example`, and `carol.example`. `P5f2` is the peer-role account in the session that `alice.example` holds at `bob.example`, and `P9c1` the one that `bob.example` holds at `alice.example`.
 
 ## User References in Peer Methods {#identity-mapping}
 
@@ -472,6 +553,84 @@ For `reactionUpdate` payloads: perform steps 1 through 7. Validate `emoji` as a 
 `canonicalChatId` (String, optional):
 : Present only when the receiving server has resolved a direct-chat simultaneous-initiation race (see {{direct-chat-race}}). Contains the canonical chatId that both servers MUST adopt. Absent in all other cases.
 
+### Examples
+
+{{signing-example}} shows a request that delivers a new message, and its response; `receivedMsgId` is the id that `bob.example` assigned to its copy. Alice then edits the message:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/deliver", {
+      "accountId": "P5f2",
+      "recipientUserId": "bob@bob.example",
+      "chatId": "01M63F1WH01Y0REYVGR2JXN81Y",
+      "senderUserId": "alice@alice.example",
+      "chatKind": "direct",
+      "edit": {
+        "senderMsgId": "01M66W1ZNG06Y60M4QKTWMP8P8",
+        "body": "Lunch at 12:30, Bob?",
+        "bodyType": "text/plain",
+        "editedAt": "2026-10-30T17:01:05Z",
+        "mentions": [{"id": "bob@bob.example"}]
+      }
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/deliver", {
+      "accountId": "P5f2",
+      "receivedMsgId": "01M66W22K8QSZ6YW5FNRGPAX4A",
+      "receivedAt": "2026-10-30T17:01:06Z"
+    }, "c1"]
+  ],
+  "sessionState": "b7q4"
+}
+~~~
+
+Bob adds a reaction, U+1F44D THUMBS UP SIGN, to the same message. On `alice.example` the message was composed by the owner, so its local `id`, returned in `receivedMsgId`, equals its `senderMsgId` ({{outbound-preparation}}):
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/deliver", {
+      "accountId": "P9c1",
+      "recipientUserId": "alice@alice.example",
+      "chatId": "01M63F1WH01Y0REYVGR2JXN81Y",
+      "senderUserId": "bob@bob.example",
+      "chatKind": "direct",
+      "reactionUpdate": {
+        "senderMsgId": "01M66W1ZNG06Y60M4QKTWMP8P8",
+        "senderReactionId": "01M66W53907GDA344GN3NHT6HN",
+        "emoji": "\ud83d\udc4d",
+        "action": "add",
+        "sentAt": "2026-10-30T17:01:40Z"
+      }
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/deliver", {
+      "accountId": "P9c1",
+      "receivedMsgId": "01M66W1ZNG06Y60M4QKTWMP8P8",
+      "receivedAt": "2026-10-30T17:01:41Z"
+    }, "c1"]
+  ],
+  "sessionState": "a4k8"
+}
+~~~
+
 ## Peer/receipt
 
 Notifies the sending mailbox that a message has been stored and/or read by a recipient.
@@ -537,6 +696,39 @@ acknowledgement is not affected by the receipt-sharing preference.
 The calling server is not informed of this suppression; `Peer/receipt`
 SHOULD return a normal success response regardless.
 
+### Example
+
+`bob.example` reports that Bob read the message of {{signing-example}}:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/receipt", {
+      "accountId": "P9c1",
+      "recipientUserId": "alice@alice.example",
+      "senderMsgId": "01M66W1ZNG06Y60M4QKTWMP8P8",
+      "deliveredAt": "2026-10-30T17:00:01Z",
+      "readAt": "2026-10-30T17:01:30Z",
+      "readDisposition": "displayed",
+      "readerUserId": "bob@bob.example"
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/receipt", {
+      "accountId": "P9c1"
+    }, "c1"]
+  ],
+  "sessionState": "a4k7"
+}
+~~~
+
 ## Peer/typing
 
 Notifies a remote mailbox that a user of the calling server is or is not currently typing in a shared chat.
@@ -595,6 +787,37 @@ abuse. Servers SHOULD accept no more than one `Peer/typing` call per
 peer per chat per 3 seconds; calls received above this rate MAY be
 silently discarded without error.
 
+### Example
+
+Alice starts typing in the direct chat:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/typing", {
+      "accountId": "P5f2",
+      "recipientUserId": "bob@bob.example",
+      "chatId": "01M63F1WH01Y0REYVGR2JXN81Y",
+      "senderUserId": "alice@alice.example",
+      "typing": true
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/typing", {
+      "accountId": "P5f2"
+    }, "c1"]
+  ],
+  "sessionState": "b7q3"
+}
+~~~
+
 ## Peer/retract
 
 Requests that a remote mailbox tombstone a specific message on behalf of the original sender.
@@ -635,6 +858,38 @@ On success, the server MUST: clear `body` to an empty string, clear `attachments
 
 `retractedAt` (UTCDate):
 : The time at which the retraction was applied.
+
+### Example
+
+Alice retracts the message of {{signing-example}}:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/retract", {
+      "accountId": "P5f2",
+      "recipientUserId": "bob@bob.example",
+      "chatId": "01M63F1WH01Y0REYVGR2JXN81Y",
+      "senderUserId": "alice@alice.example",
+      "senderMsgId": "01M66W1ZNG06Y60M4QKTWMP8P8"
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/retract", {
+      "accountId": "P5f2",
+      "retractedAt": "2026-10-30T17:05:12Z"
+    }, "c1"]
+  ],
+  "sessionState": "b7q5"
+}
+~~~
 
 ## Peer/groupUpdate {#peer-groupupdate}
 
@@ -707,6 +962,48 @@ On success, the receiving server updates its local Chat record to reflect the ch
 
 This specification defines federation for group chats only. Space-level operations (channel creation, permission changes, SpaceBan propagation) are enforced by the Space-hosting server at delivery time (per the validation steps in Peer/deliver) but are not proactively federated to remote members. Remote members discover Space-level changes through rejected delivery attempts or via periodic `Space/get` synchronization. This includes Space closure ({{JMAP-CHAT}} `Space.closedAt`): no Peer/* method signals it, and the Space-hosting server rejects deliveries to a closed Space's channels with `forbidden` (see {{new-message-validation}}).
 
+### Example
+
+Alice creates a group with Bob and Carol. `alice.example` sends this request to `bob.example`, and a like request naming `carol@carol.example` in `recipientUserId`, with its own peer-role account at `carol.example` in `accountId`, to `carol.example`:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/groupUpdate", {
+      "accountId": "P5f2",
+      "recipientUserId": "bob@bob.example",
+      "chatId": "01M66WMBJ06WNHVQK3HVZ7ZF52",
+      "senderUserId": "alice@alice.example",
+      "action": "create",
+      "name": "Lunch crew",
+      "members": [
+        {"id": "alice@alice.example", "role": "admin",
+         "joinedAt": "2026-10-30T17:10:00Z"},
+        {"id": "bob@bob.example", "role": "member",
+         "joinedAt": "2026-10-30T17:10:00Z",
+         "invitedBy": "alice@alice.example"},
+        {"id": "carol@carol.example", "role": "member",
+         "joinedAt": "2026-10-30T17:10:00Z",
+         "invitedBy": "alice@alice.example"}
+      ]
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/groupUpdate", {
+      "accountId": "P5f2"
+    }, "c1"]
+  ],
+  "sessionState": "b7q6"
+}
+~~~
+
 ## Peer/subscribePresence {#peer-subscribepresence}
 
 Requests that the remote server push presence updates for the user that `recipientUserId` names to a subscriber on the calling server. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not.
@@ -753,6 +1050,39 @@ A subscription is identified by its `subscriberId` and `recipientUserId`. Which 
 
 Calling `Peer/subscribePresence` again before the TTL expires renews the subscription and SHOULD reset the TTL to the newly granted value.
 
+### Example
+
+Bob subscribes to Alice's presence for an hour:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/subscribePresence", {
+      "accountId": "P9c1",
+      "recipientUserId": "alice@alice.example",
+      "subscriberId": "bob@bob.example",
+      "ttl": 3600
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/subscribePresence", {
+      "accountId": "P9c1",
+      "presence": "online",
+      "lastActiveAt": "2026-10-30T17:11:20Z",
+      "ttl": 3600
+    }, "c1"]
+  ],
+  "sessionState": "a4k8"
+}
+~~~
+
 ## Peer/unsubscribePresence {#peer-unsubscribepresence}
 
 Cancels a presence subscription before its TTL expires. Servers MAY implement this method; callers receive `unknownMethod` ({{RFC8620}} Section 3.6.2) from servers that do not. Servers MUST succeed if no active subscription exists for the given `subscriberId` and `recipientUserId`.
@@ -774,6 +1104,35 @@ Method name: `Peer/unsubscribePresence`
 
 `accountId` (String):
 : The account ID from the request.
+
+### Example
+
+Bob cancels the subscription:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/unsubscribePresence", {
+      "accountId": "P9c1",
+      "recipientUserId": "alice@alice.example",
+      "subscriberId": "bob@bob.example"
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/unsubscribePresence", {
+      "accountId": "P9c1"
+    }, "c1"]
+  ],
+  "sessionState": "a4k8"
+}
+~~~
 
 ## Peer/presence {#peer-presence}
 
@@ -815,6 +1174,38 @@ If the ChatContact whose `identity` equals the `identity` argument has its `bloc
 
 Otherwise, the receiving server MUST update the `presence`, `lastActiveAt`, `statusText`, and `statusEmoji` fields on the ChatContact record whose `identity` equals the `identity` argument. The `statusText` and `statusEmoji` fields mirror `PresenceStatus.statusText` and `PresenceStatus.statusEmoji` from the remote owner's server; a `null` value in the request MUST clear the corresponding ChatContact field (setting it to absent). The server MUST then fire a local presence push event (as defined in {{JMAP-CHAT}}) to the owner's connected clients.
 
+### Example
+
+Alice's presence changes, and `alice.example` updates Bob, a subscriber:
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/presence", {
+      "accountId": "P5f2",
+      "recipientUserId": "bob@bob.example",
+      "identity": "alice@alice.example",
+      "presence": "away",
+      "lastActiveAt": "2026-10-30T17:25:00Z",
+      "statusText": "At lunch"
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["Peer/presence", {
+      "accountId": "P5f2"
+    }, "c1"]
+  ],
+  "sessionState": "b7q6"
+}
+~~~
+
 # Outbox and Delivery {#outbox}
 
 ## Persistent Queue
@@ -853,6 +1244,35 @@ Cross-server references to a message use its `senderMsgId` (see {{outbound-prepa
 ### Error Handling {#error-handling}
 
 Errors in Peer/* methods follow the standard JMAP method-level error format ({{RFC8620}} Section 3.6.2). Error types used: `invalidArguments` (permanent — do not retry), `forbidden` (permanent — do not retry), `rateLimited` (transient — retry after backoff), `serverFail` (transient — retry with exponential backoff). HTTP-level 5xx responses or timeouts are treated as transient failures. Error responses MAY include a `description` field for debugging but SHOULD NOT disclose private information such as block status.
+
+For example, `bob.example` hosts no mailbox for `nobody@bob.example`, so it rejects this call with `forbidden` ({{peer-methods}}):
+
+~~~ json
+{
+  "using": ["urn:ietf:params:jmap:core",
+            "urn:ietf:params:jmap:chat"],
+  "methodCalls": [
+    ["Peer/typing", {
+      "accountId": "P5f2",
+      "recipientUserId": "nobody@bob.example",
+      "chatId": "01M63F1WH01Y0REYVGR2JXN81Y",
+      "senderUserId": "alice@alice.example",
+      "typing": true
+    }, "c1"]
+  ]
+}
+~~~
+
+~~~ json
+{
+  "methodResponses": [
+    ["error", {
+      "type": "forbidden"
+    }, "c1"]
+  ],
+  "sessionState": "b7q3"
+}
+~~~
 
 # Security Considerations {#security}
 
