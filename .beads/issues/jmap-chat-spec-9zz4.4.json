@@ -1,0 +1,23 @@
+{
+  "id": "jmap-chat-spec-9zz4.4",
+  "title": "BCP14 downgrades: Scene + Scene-WSS drafts",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-31T19:51:05.13381218Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-31T20:02:28.008185015Z",
+  "closed_at": "2026-10-31T20:02:28.008185015Z",
+  "close_reason": "Applied in BCP14 sweep",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9zz4.4",
+      "depends_on_id": "jmap-chat-spec-9zz4",
+      "type": "parent-child",
+      "created_at": "2026-10-31T19:51:05.17723717Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}

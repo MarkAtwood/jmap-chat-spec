@@ -1,0 +1,23 @@
+{
+  "id": "jmap-chat-spec-9zz4.6",
+  "title": "BCP14 downgrades: calendars/tasks/DID/CID drafts",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-31T19:51:05.478837167Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-31T20:02:28.172585415Z",
+  "closed_at": "2026-10-31T20:02:28.172585415Z",
+  "close_reason": "Applied in BCP14 sweep",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9zz4.6",
+      "depends_on_id": "jmap-chat-spec-9zz4",
+      "type": "parent-child",
+      "created_at": "2026-10-31T19:51:05.518421805Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
