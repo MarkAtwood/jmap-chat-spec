@@ -332,9 +332,9 @@ is recommended by the spec and also simpler — implementations need not track m
 changes and update subscriptions when a user leaves a chat or blocks a contact. Just
 check at the moment of delivery and drop silently if unauthorized.
 
-In addition to the membership check, each handler MUST check `Chat.receiveTypingIndicators`
+In addition to the membership check, each handler SHOULD check `Chat.receiveTypingIndicators`
 for the recipient account before sending a `ChatTypingEvent` frame. If the field is
-`false`, the handler MUST silently drop the event. This check applies to direct and group
+`false`, the handler SHOULD silently drop the event. This check applies to direct and group
 chats only; channel chats are exempt. Perform this check in the delivery path alongside
 the membership check, not at subscribe time.
 
@@ -363,7 +363,7 @@ way.
 
 ### Rate limiting
 
-The spec recommends (SHOULD) rate limiting typing events to one per sender per chat per 3 seconds
+The spec recommends (SHOULD) rate limiting typing events (permitting (MAY) one per sender per chat per 3 seconds)
 and presence events to one per contact per 30 seconds. These limits are per outbound
 connection: each connected client has its own independent rate-limit budget, so two
 simultaneously connected clients can each receive the same event at the full rate.
@@ -428,6 +428,6 @@ suppression at delivery.
 
 Typing and presence signals are metadata about user behavior. Even without message
 content, these signals can reveal whether a user is online and active, and with whom they
-are communicating. Servers MUST honor `Chat.receiveTypingIndicators` and implement
+are communicating. Servers SHOULD honor `Chat.receiveTypingIndicators` and implement
 presence visibility controls accordingly. Clients SHOULD make these controls visible and
 accessible to users.

@@ -244,7 +244,7 @@ the hash that makes deduplication possible.
   the same user uploads the same file twice, store it once.
 - *Cross-account dedup* saves storage but creates the side-channel risks
   described in the spec's Security Considerations (blob probing, upload timing).
-  Implement the countermeasures the spec recommends if you go this route.
+  Implement the countermeasures the spec describes if you go this route.
 - *Reference counting*: when deduplicating, track how many references point to
   each blob. Garbage-collect only when the count reaches zero.
 

@@ -242,25 +242,25 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 4.7 Broadcast mention permission check
 **Spec:** draft-atwood-jmap-chat-00 §BroadcastMention, §Creating a Message
-**Severity:** MUST | **Round:** 2
+**Severity:** SHOULD | **Round:** 2
 
 **Test:** In a channel chat, send a message with broadcastMentions from a user lacking `mention_broadcast` permission. Verify `forbidden` error.
 
 ### 4.8 Channel send permission check
 **Spec:** draft-atwood-jmap-chat-00 §Creating a Message
-**Severity:** MUST | **Round:** 3
+**Severity:** SHOULD | **Round:** 3
 
 **Test:** In a channel chat, send a message from a user lacking `send` permission. Verify rejection.
 
 ### 4.9 Channel view permission check
 **Spec:** draft-atwood-jmap-chat-00 §Message/query
-**Severity:** MUST | **Round:** 5
+**Severity:** SHOULD | **Round:** 5
 
 **Test:** Call `Message/get` for messages in a channel where the caller lacks `view` permission. Verify messages are not returned (treated as notFound).
 
 ### 4.10 Slow mode integration in Message/set
 **Spec:** draft-atwood-jmap-chat-00
-**Severity:** MUST | **Round:** 3
+**Severity:** SHOULD | **Round:** 3
 
 **Test:** Set slowModeSeconds on a channel. Send two messages in rapid succession from a non-admin. Verify the second is rejected with a `rateLimit` SetError (RFC 8620 Section 5.3) in `notCreated`, not the method-level `rateLimited`.
 
@@ -288,7 +288,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 5.1 Space/set destroy uses manage_space permission
 **Spec:** draft-atwood-jmap-chat-00
-**Severity:** MUST | **Round:** 3
+**Severity:** SHOULD | **Round:** 3
 
 **Test:** A user with `manage_space` permission (but not role="owner") destroys a space. Verify success. A user without the permission is rejected.
 
@@ -304,9 +304,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 5.3 Peer/* methods role-gated on /jmap endpoint
 **Spec:** draft-atwood-jmap-chat-federation-00 §Server-to-Server Methods
-**Severity:** MUST | **Round:** 4
+**Severity:** SHOULD | **Round:** 4
 
-**Test:** Authenticate as a normal (owner) account. Call `Peer/deliver` via `/jmap`. Verify `forbidden` error. Peer methods must only be accessible to peer-role accounts.
+**Test:** Authenticate as a normal (owner) account. Call `Peer/deliver` via `/jmap`. Verify `forbidden` error. Peer methods should only be accessible to peer-role accounts.
 
 ### 5.4 Chat/set channel destroy forbidden
 **Spec:** draft-atwood-jmap-chat-00
@@ -400,9 +400,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 6.12 Encrypted message omits hasMention and mentionScopes
 **Spec:** draft-atwood-jmap-chat-push-00 ChatMessageEntry; End-to-End Encrypted Deployments
-**Severity:** MUST | **Round:** spec change (E2EE field visibility)
+**Severity:** MUST (field omission, urgency), SHOULD (no push when muted) | **Round:** spec change (E2EE field visibility)
 
-**Test:** With default `properties`, send a message with `bodyType: "application/mls-ciphertext"`. Verify the entry has `encrypted: true` and that `bodySnippet`, `hasMention`, and `mentionScopes` are all absent. Set `mentionUrgency` above `urgency`. Verify the push uses `urgency`. Mute the Chat and send another encrypted message. Verify no push is delivered.
+**Test:** With default `properties`, send a message with `bodyType: "application/mls-ciphertext"`. Verify the entry has `encrypted: true` and that `bodySnippet`, `hasMention`, and `mentionScopes` are all absent. Set `mentionUrgency` above `urgency`. Verify the push uses `urgency`. Mute the Chat and send another encrypted message. Verify no push is delivered (SHOULD).
 
 **Common failure:** Server emits `hasMention: false` and `mentionScopes: []` for encrypted messages, which claims knowledge the server does not have.
 
@@ -432,9 +432,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 7.4 Peer/deliver edit validates steps 3-7
 **Spec:** draft-atwood-jmap-chat-federation-00 §Edit and Reaction Validation
-**Severity:** MUST | **Round:** 3
+**Severity:** MUST (blocked sender), SHOULD (send permission) | **Round:** 3
 
-**Test:** Send a `Peer/deliver` edit from a blocked sender. Verify silent drop. Send edit to a channel where sender lacks `send` permission. Verify rejection.
+**Test:** Send a `Peer/deliver` edit from a blocked sender. Verify silent drop. Send edit to a channel where sender lacks `send` permission. Verify rejection (SHOULD).
 
 ### 7.5 Peer/deliver stores mentions
 **Spec:** draft-atwood-jmap-chat-00 §Mention
@@ -480,7 +480,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 7.11 Encrypted bodyType carries no plaintext structure
 **Spec:** draft-atwood-jmap-chat-federation-00 New Message Validation; draft-atwood-jmap-chat-00 End-to-End Encrypted Deployments, Fields Inside the Ciphertext
-**Severity:** MUST | **Round:** spec change (E2EE field visibility)
+**Severity:** SHOULD | **Round:** spec change (E2EE field visibility)
 
 **Test:** Deliver a message via `Peer/deliver` with `bodyType: "application/mls-ciphertext"` and a non-empty `mentions` array. Verify `invalidArguments`. Repeat with non-empty `broadcastMentions`, `attachments`, `actions`, `replyTo`, `threadRootId`, `topicId`, `subject`, and `lastSeenSenderMsgId` in turn; verify each is rejected. Repeat each case with `Message/set` create (omitting `lastSeenSenderMsgId`, which is federation-only). Then deliver an encrypted message with all of those fields empty or absent. Verify it is accepted and that no attachment fetch is attempted.
 
@@ -576,7 +576,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 8.3 receiveTypingIndicators re-checked at delivery time
 **Spec:** draft-atwood-jmap-chat-wss-00 §ChatTypingEvent; draft-atwood-jmap-chat-00 §Chat/typing Server Behavior
-**Severity:** MUST | **Round:** 4
+**Severity:** SHOULD | **Round:** 4
 
 **Test:** Same pattern: a user has `receiveTypingIndicators: false` at the moment of delivery (not just at subscription time). Verify they don't receive typing events.
 
@@ -598,7 +598,7 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 9.1 burnOnRead immediate hard-delete
 **Spec:** draft-atwood-jmap-chat-00 §Message (`burnOnRead`)
-**Severity:** MUST | **Round:** 6
+**Severity:** SHOULD | **Round:** 6
 
 **Test:** Create a message with `burnOnRead: true`. Mark it as read (set `readAt`). Immediately query `Message/get` for that id. Verify it is GONE (hard-deleted, not tombstoned).
 
@@ -634,9 +634,9 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 ### 10.2 Space/get restricted view for non-members
 **Spec:** draft-atwood-jmap-chat-00
-**Severity:** MUST | **Round:** 3
+**Severity:** MUST (restricted view returned, not `notFound`), SHOULD (other fields omitted, `notFound` when not previewable) | **Round:** 3
 
-**Test:** Call `Space/get` for a space with `isPubliclyPreviewable: true` that the caller is NOT a member of. Verify the returned object contains only `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, `isPubliclyPreviewable`, and `closedAt` (when set), even when other properties are requested. Repeat for a space with `isPubliclyPreviewable: false`. Verify its id is in `notFound`.
+**Test:** Call `Space/get` for a space with `isPubliclyPreviewable: true` that the caller is NOT a member of. Verify the returned object contains only `id`, `name`, `description`, `iconBlobId`, `memberCount`, `createdAt`, `isPublic`, `isPubliclyPreviewable`, and `closedAt` (when set), even when other properties are requested (SHOULD). Repeat for a space with `isPubliclyPreviewable: false`. Verify its id is in `notFound` (SHOULD).
 
 ### 10.3 Space/query includes public spaces
 **Spec:** draft-atwood-jmap-chat-00
@@ -700,11 +700,11 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 ### 13.3 ChatMember role restricted to admin|member
 **Spec:** draft-atwood-jmap-chat-00 §ChatMember, §Updating a Chat
-**Severity:** MUST | **Round:** 18
+**Severity:** MUST (role values), SHOULD (admin verification) | **Round:** 18
 
 **Test:** Via `Peer/groupUpdate` create, send members with `role: "owner"` or `role: "guest"`. Verify the server either rejects or normalizes to "member". Only `"admin"` and `"member"` are valid.
 
-**Test:** Verify the admin-verification check for group updates only accepts `role == "admin"` (not "owner").
+**Test:** Verify the admin-verification check for group updates only accepts `role == "admin"` (not "owner") (SHOULD).
 
 **Common failure:** Implementation defines "owner"/"guest" roles from internal design that don't exist in the spec's wire protocol.
 
@@ -734,9 +734,9 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 ### 13.7 Broadcast gate on update uses broadcastMentions
 **Spec:** draft-atwood-jmap-chat-00 §Editing a Message
-**Severity:** MUST | **Round:** 9
+**Severity:** MUST (span-only update accepted), SHOULD (`forbidden` for added `broadcastMentions`) | **Round:** 9
 
-**Test:** In a channel where the sender lacks `"mention_broadcast"`, send `Message/set` update on a rich-body message adding `broadcastMentions: [{"scope": "everyone"}]`. Verify `forbidden`. Send an update that only adds a `"broadcast"` span. Verify acceptance.
+**Test:** In a channel where the sender lacks `"mention_broadcast"`, send `Message/set` update on a rich-body message adding `broadcastMentions: [{"scope": "everyone"}]`. Verify `forbidden` (SHOULD). Send an update that only adds a `"broadcast"` span. Verify acceptance.
 
 **Common failure:** Gate only on the create path, or gating on spans.
 
@@ -756,9 +756,9 @@ These tests catch subtle issues that survived 14+ audit rounds. They represent t
 
 **Common failure:** Storing `mentions` but dropping `broadcastMentions`.
 
-### 13.10 Slow mode must use received_at, not sent_at
+### 13.10 Slow mode uses received_at, not sent_at
 **Spec:** draft-atwood-jmap-chat-00 §Message (`sentAt`, `receivedAt`), §Chat (`slowModeSeconds`); draft-atwood-jmap-chat-federation-00 §New Message Validation step 6
-**Severity:** MUST | **Round:** 21
+**Severity:** SHOULD | **Round:** 21
 
 **Test:** Send two messages via `Peer/deliver` to a channel with slowModeSeconds=60. The second message has `sentAt` backdated 120 seconds but arrives immediately. Verify the server rejects the second message (rate limited by actual arrival time, not the forged sentAt).
 
@@ -900,17 +900,17 @@ Tests that mix MUST and SHOULD checks are counted under MUST. Optional tests are
 | Data types | 10 | 0 | 0 | 0 | 10 |
 | Wire format | 5 | 0 | 0 | 0 | 5 |
 | Session/capabilities | 6 | 0 | 1 | 0 | 7 |
-| Validation | 12 | 1 | 0 | 0 | 13 |
-| Permissions | 5 | 0 | 0 | 0 | 5 |
+| Validation | 8 | 5 | 0 | 0 | 13 |
+| Permissions | 3 | 2 | 0 | 0 | 5 |
 | Push | 11 | 1 | 0 | 0 | 12 |
-| Federation | 16 | 2 | 1 | 0 | 19 |
-| WebSocket | 3 | 2 | 0 | 0 | 5 |
-| Scheduling | 2 | 2 | 0 | 0 | 4 |
+| Federation | 15 | 3 | 1 | 0 | 19 |
+| WebSocket | 2 | 3 | 0 | 0 | 5 |
+| Scheduling | 1 | 3 | 0 | 0 | 4 |
 | Space | 5 | 0 | 0 | 0 | 5 |
 | Other (unreadCount, PushSubscription) | 1 | 1 | 0 | 0 | 2 |
-| Late-discovery edge cases | 9 | 1 | 0 | 0 | 10 |
+| Late-discovery edge cases | 8 | 2 | 0 | 0 | 10 |
 | Security/robustness | 0 | 0 | 0 | 17 | 17 |
-| **Total** | **85** | **10** | **2** | **17** | **114** |
+| **Total** | **75** | **20** | **2** | **17** | **114** |
 
 ---
 
