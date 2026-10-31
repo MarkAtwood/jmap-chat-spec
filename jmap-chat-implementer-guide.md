@@ -905,17 +905,15 @@ products; users will assume the history is there unless told otherwise.
 
 ### 4.3 Federation contact resolution caching
 
-**What the spec leaves open.** The federation draft softened the
-`receiveTypingIndicators` cache TTL guidance to remove the hardcoded
-60-second value. The current wording: "Servers that cache a remote
-participant's receiveTypingIndicators value SHOULD use a short TTL; the
-specific value is implementation-defined." More broadly, every server that
-caches peer-supplied data (Session objects, ChatContact attributes,
-preferences) chooses its own freshness vs traffic trade-off.
+**What the spec leaves open.** Every server that caches peer-supplied
+data (Session objects, ChatContact attributes, endpoint advertisements)
+chooses its own freshness vs traffic trade-off. The federation draft lets
+servers cache discovered session data (MAY) and says they SHOULD re-run
+discovery when delivery fails. `receiveTypingIndicators` is not peer data:
+it is an owner-side preference never sent to peers (see §5.3).
 
 **What you must decide.**
 
-- TTL for cached remote `receiveTypingIndicators` values.
 - TTL for `ChatContact` records derived from peer `/.well-known/jmap`
   Session objects.
 - TTL for peer endpoint advertisements (`Session.ownerEndpoints`).
@@ -952,10 +950,6 @@ preferences) chooses its own freshness vs traffic trade-off.
 
 **Recommended starting point.**
 
-- `receiveTypingIndicators` cache TTL: **60 seconds**. This matches the
-  value previously hardcoded in the federation draft before it was softened
-  to implementation-defined; deployments SHOULD treat it as a sensible
-  default and tune based on volume and acceptable staleness window.
 - `ChatContact` record cache from peer Session: **1 hour** with on-demand
   refresh when the user explicitly initiates a contact interaction.
 - `Session.ownerEndpoints` cache: **1 hour**; the spec already treats these
@@ -972,7 +966,7 @@ preferences) chooses its own freshness vs traffic trade-off.
 
 The spec specifies a few hardcoded values (3-second typing rate, 10-second
 client decay) and leaves others impl-defined (federation outbound presence
-rate, receiveTypingIndicators cache TTL, retry/backoff intervals). Even the
+rate, retry/backoff intervals). Even the
 hardcoded values are recommended defaults with documented calibration; you may
 deviate with reason.
 
@@ -1087,10 +1081,13 @@ Implementations SHOULD batch frequent transitions: if a user goes
 `online → away → online` within the rate-limit window, only the most
 recent state SHOULD be sent at the end of the window.
 
-### 5.3 `receiveTypingIndicators` cache TTL
+### 5.3 `receiveTypingIndicators` caching
 
-This topic is covered in §4.3 (Federation contact resolution caching).
-The recommended starting point is **60 seconds**.
+There is no TTL to choose. `receiveTypingIndicators` is an owner-side
+preference that never leaves the owner's server, so no server caches a
+remote copy. The chat draft notes that an implementation can cache each
+participant's value in memory and invalidate the entry on `Chat/set`,
+which needs no time-based expiry.
 
 ### 5.4 Retry and backoff intervals
 
