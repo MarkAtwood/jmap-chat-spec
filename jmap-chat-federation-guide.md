@@ -849,7 +849,7 @@ ongoing operational visibility is essential.
 | The JMAP Chat federation spec | `draft-atwood-jmap-chat-federation-00.md` |
 | Outbox durability mechanism | `jmap-chat-implementer-guide.md` §4.1 |
 | Edit-history retention | `jmap-chat-implementer-guide.md` §4.2 |
-| Federation cache TTLs (`receiveTypingIndicators`, ChatContact, endpoints) | `jmap-chat-implementer-guide.md` §4.3 |
+| Federation cache TTLs (ChatContact, endpoints) | `jmap-chat-implementer-guide.md` §4.3 |
 | Federation `Peer/presence` outbound rate | `jmap-chat-implementer-guide.md` §5.2 |
 | Retry and backoff intervals | `jmap-chat-implementer-guide.md` §5.4 |
 | Broadcast-mention suppression in federated contexts | `jmap-chat-implementer-guide.md` §6.1 |
