@@ -177,7 +177,7 @@ GET /.well-known/jmap HTTP/1.1
 Host: <peer-hostname>
 ~~~
 
-The response is the peer's JMAP Session object as defined in {{RFC8620}} Section 2. The Session object of a server that hosts a single mailbox includes an `ownerUserId` field identifying that mailbox's owner (see {{session-extensions}}).
+The response is the peer's JMAP Session object as defined in {{RFC8620}} Section 2. The Session object of a server that hosts a single mailbox can include an `ownerUserId` field identifying that mailbox's owner; {{session-extensions}} says when it does.
 
 Servers SHOULD cache discovered session data, including the session URL and any `ownerUserId`, to avoid redundant discovery on each request. Servers SHOULD re-run discovery when delivery fails, as the peer's session URL or capabilities may have changed.
 
