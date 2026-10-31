@@ -1,0 +1,23 @@
+{
+  "id": "jmap-chat-spec-9zz4.2",
+  "title": "BCP14 downgrades: federation draft",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-31T19:51:04.806222806Z",
+  "created_by": "agent",
+  "updated_at": "2026-10-31T20:02:27.835531251Z",
+  "closed_at": "2026-10-31T20:02:27.835531251Z",
+  "close_reason": "Applied in BCP14 sweep",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-9zz4.2",
+      "depends_on_id": "jmap-chat-spec-9zz4",
+      "type": "parent-child",
+      "created_at": "2026-10-31T19:51:04.849861369Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
