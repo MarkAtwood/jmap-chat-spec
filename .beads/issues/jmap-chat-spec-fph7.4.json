@@ -1,0 +1,23 @@
+{
+  "id": "jmap-chat-spec-fph7.4",
+  "title": "Review emailpush-04",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-31T21:31:41.524617869Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-01T05:06:52.403562305Z",
+  "closed_at": "2026-11-01T05:06:52.403562305Z",
+  "close_reason": "Filed on jmapio/jmap, last batch #475-#482",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-fph7.4",
+      "depends_on_id": "jmap-chat-spec-fph7",
+      "type": "parent-child",
+      "created_at": "2026-10-31T21:31:41.552639543Z",
+      "created_by": "agent",
+      "metadata": "{}"
+    }
+  ]
+}
