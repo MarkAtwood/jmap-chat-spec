@@ -13,12 +13,12 @@ This is a spec-writing project. All deliverables are Markdown files. There is no
 
 **Normative drafts** (`draft-atwood-*.md`): IETF Internet-Draft format (kramdown-rfc). Use BCP 14 keywords per the discipline in `PROJECT.md`. The drafts are the source of truth for all protocol behavior.
 
-Twenty drafts are in the corpus, in five families (`README.md` lists each one):
+Twenty-one drafts are in the corpus, in five families (`README.md` lists each one):
 
 - **Chat:** core `draft-atwood-jmap-chat-00` plus `-federation`, `-push`, `-wss`, `-filenode`, `-calendars`, `-tasks`, `-did`, `-mimi`
 - **VTC:** `draft-atwood-jmap-vtc-00`, `draft-atwood-jmap-vtc-wss-00`
 - **Scene:** `draft-atwood-jmap-scene-00`, `draft-atwood-jmap-scene-wss-00`
-- **Graph:** `draft-atwood-jmap-graph-00` plus `-projection`, `-search`, `-edit`
+- **Graph:** `draft-atwood-jmap-graph-00` plus `-projection`, `-search`, `-edit`, `-provenance`
 - **Shared building blocks:** `draft-atwood-jmap-cid-00`, `draft-atwood-jmap-did-00`, `draft-atwood-jmap-object-uri-00`
 
 Every draft except `-chat-federation` (extends the core capability) and `-object-uri` (a URI scheme) has its own capability URN. Each companion is optional.
@@ -71,7 +71,7 @@ To check for upstream changes: `git -C ~/GIT/<clone> fetch` and diff, then confi
 | VTC call state, recording, ring push, gateways | The matching `jmap-vtc-*-guide.md`; `jmap-vtc-chat-*-guide.md` if Chat links change |
 | VTC or Scene WebSocket events | `jmap-chat-wss-guide.md` and `jmap-scene-wss-guide.md` interop sections, plus the draft's own guide |
 | Scene data types, simulation, or visibility | `jmap-scene-*-guide.md` (implementer, simulation, 2d, board-games, vtc-integration) |
-| Graph data types or companions | The other Graph drafts (projection, search, edit build on graph-00) |
+| Graph data types or companions | The other Graph drafts (projection, search, edit, provenance build on graph-00) |
 | Which capabilities exist | `jmap-unified-client-architecture.md`, `README.md` |
 
 Always `grep -r <term> . --include='*.md'` before and after a change to catch all occurrences.
