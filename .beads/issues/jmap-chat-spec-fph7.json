@@ -1,0 +1,14 @@
+{
+  "id": "jmap-chat-spec-fph7",
+  "title": "Implementation review pass on cited JMAP drafts",
+  "description": "Review the JMAP drafts JMAP Chat cites for spec bugs found from an implementer's view (crate-jmap-server). Findings go to Mark for approval before any issue/PR/list post. Sources: ~/GIT/jmapio-jmap (calendars-33, tasks-06, emailpush-04), ~/GIT/draft-gondwana-jmap-filenode (filenode-19), ~/GIT/ietf-jmap-drafts/*.txt (metadata-05, refplus-02, blobext-02, object-history-02; repos missing or stale -\u003e mailing list).",
+  "status": "closed",
+  "priority": 2,
+  "issue_type": "epic",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-10-31T21:31:40.63046631Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-01T05:06:52.625503866Z",
+  "closed_at": "2026-11-01T05:06:52.625503866Z",
+  "close_reason": "All review findings filed or sent"
+}
