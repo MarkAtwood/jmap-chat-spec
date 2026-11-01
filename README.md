@@ -168,6 +168,12 @@ Non-normative. These explain *how* to implement and deploy the specs, and what e
 | [jmap-scene-board-games-guide.md](jmap-scene-board-games-guide.md) | Board, card, and arcade games mapped onto Scene primitives |
 | [jmap-scene-landscape-guide.md](jmap-scene-landscape-guide.md) | Comparison with prior spatial systems, protocols, and platforms |
 
+### Graph
+
+| Document | For |
+|---|---|
+| [jmap-graph-provenance-guide.md](jmap-graph-provenance-guide.md) | Using provenance records: choosing a `basis`, agents reading records, curation, retention, mapping to DTG rooms, E2EE deployments |
+
 ### Shared building blocks and cross-cutting
 
 | Document | For |

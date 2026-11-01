@@ -71,7 +71,7 @@ To check for upstream changes: `git -C ~/GIT/<clone> fetch` and diff, then confi
 | VTC call state, recording, ring push, gateways | The matching `jmap-vtc-*-guide.md`; `jmap-vtc-chat-*-guide.md` if Chat links change |
 | VTC or Scene WebSocket events | `jmap-chat-wss-guide.md` and `jmap-scene-wss-guide.md` interop sections, plus the draft's own guide |
 | Scene data types, simulation, or visibility | `jmap-scene-*-guide.md` (implementer, simulation, 2d, board-games, vtc-integration) |
-| Graph data types or companions | The other Graph drafts (projection, search, edit, provenance build on graph-00) |
+| Graph data types or companions | The other Graph drafts (projection, search, edit, provenance build on graph-00); `jmap-graph-provenance-guide.md` for the provenance draft |
 | Which capabilities exist | `jmap-unified-client-architecture.md`, `README.md` |
 
 Always `grep -r <term> . --include='*.md'` before and after a change to catch all occurrences.
