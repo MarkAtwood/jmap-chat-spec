@@ -62,6 +62,7 @@ The drafts are the normative specifications. Every draft is at revision `-00`.
 | [draft-atwood-jmap-graph-projection-00](draft-atwood-jmap-graph-projection-00.md) | `urn:ietf:params:jmap:graph:projection` | Optional projection of an account's other JMAP data as a Graph |
 | [draft-atwood-jmap-graph-search-00](draft-atwood-jmap-graph-search-00.md) | `urn:ietf:params:jmap:graph:search` | Built-in JSON filter language plus advertised query languages (GQL, openCypher, Gremlin, DocumentDB, SPARQL) |
 | [draft-atwood-jmap-graph-edit-00](draft-atwood-jmap-graph-edit-00.md) | `urn:ietf:params:jmap:graph:edit` | Live co-editing of node content: server-ordered op log the server never merges, snapshots, WebSocket stream of ops and cursors |
+| [draft-atwood-jmap-graph-provenance-00](draft-atwood-jmap-graph-provenance-00.md) | `urn:ietf:params:jmap:graph:provenance` | Provenance records: basis, confidence, evidence edges, validity, curation right, and age-based retention |
 
 ### Shared building blocks
 
