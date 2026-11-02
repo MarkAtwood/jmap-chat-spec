@@ -61,7 +61,7 @@ informative:
 
 --- abstract
 
-This document defines JMAP Chat File Storage, a companion specification to JMAP Chat and the JMAP File Storage extension. It specifies how a Space in JMAP Chat is associated with a hierarchical file tree managed by the JMAP File Storage extension, how Space permissions govern access to that tree, how message attachments may optionally link to FileNode entries, and how the file tree is treated when a Space is destroyed.
+This document defines JMAP Chat File Storage, a companion specification to JMAP Chat and the JMAP File Storage extension. It specifies how a Space in JMAP Chat is associated with zero or more hierarchical file trees managed by the JMAP File Storage extension, how Space permissions govern access to that tree, how message attachments may optionally link to FileNode entries, and how the file tree is treated when a Space is destroyed.
 
 --- middle
 
@@ -69,7 +69,7 @@ This document defines JMAP Chat File Storage, a companion specification to JMAP 
 
 {{JMAP-CHAT}} defines Spaces as named containers for channel conversations, members, and roles — analogous to what other systems call workspaces, servers, or teams. A common feature of such platforms is a shared file storage area where members can upload, browse, and download files independently of individual messages.
 
-{{JMAP-FILENODE}} defines a JMAP extension for hierarchical file storage, surfacing blobs as a navigable filesystem with metadata including names, timestamps, and media types. This document binds those two extensions: a Space may have an associated FileNode tree that is governed by the Space's membership and role permissions, giving members a shared file library alongside their channels.
+{{JMAP-FILENODE}} defines a JMAP extension for hierarchical file storage, surfacing blobs as a navigable filesystem with metadata including names, timestamps, and media types. This document binds those two extensions: a Space may have associated FileNode trees that are governed by the Space's membership and role permissions, giving members a shared file library alongside their channels.
 
 {{JMAP-CHAT}} refers to this document for Space-scoped file storage, which associates a FileNode namespace with each Space.
 
@@ -78,7 +78,7 @@ This document defines JMAP Chat File Storage, a companion specification to JMAP 
 This specification is intentionally narrow:
 
 - File storage is defined for Spaces only. Group chats and direct chats are out of scope.
-- The Space object is not modified. The association between a Space and its file tree is discovered through the FileNode role mechanism defined in {{JMAP-FILENODE}}, not through a new field on the Space.
+- The Space object is not modified. The association between a Space and its file trees is discovered through the `spaceId` extension property on FileNode, not through a new field on the Space.
 - The permission model maps Space roles to FileNode access in a flat table. Per-channel FileNode ACL overrides are not defined.
 - Message attachment integration is opt-in. Attachments are not automatically mirrored into the file tree.
 - The upload and download flow is entirely that of {{JMAP-FILENODE}}, without modification.
@@ -86,7 +86,7 @@ This specification is intentionally narrow:
 
 ## Relationship to JMAP FileNode
 
-This document defines a profile of {{JMAP-FILENODE}} for use with JMAP Chat Spaces. It registers a new well-known FileNode role, defines a Space-to-FileNode permission mapping, and adds optional fields to the JMAP Chat Attachment type. It does not redefine any FileNode methods, data types, or error codes.
+This document defines a profile of {{JMAP-FILENODE}} for use with JMAP Chat Spaces. It defines a FileNode extension property that marks Space file tree roots, defines a Space-to-FileNode permission mapping, and adds optional fields to the JMAP Chat Attachment type. It does not redefine any FileNode methods, data types, or error codes.
 
 Implementations MUST support {{JMAP-FILENODE}} as a prerequisite for implementing this document. Implementations MUST also support {{JMAP-CHAT}} as a prerequisite.
 
@@ -100,8 +100,11 @@ The capability identifier defined by this document is a name in the `urn:ietf:pa
 
 The following term is specific to this document:
 
+Space root:
+: A Directory FileNode whose `spaceId` matches the Space's `id`.
+
 Space file tree:
-: The FileNode subtree associated with a given Space, rooted at the FileNode whose `role` is `"chatspace"` and whose `spaceId` matches the Space's `id`.
+: All FileNodes associated with a given Space: its Space roots and every FileNode below them.
 
 # Capability {#capability}
 
@@ -116,39 +119,37 @@ The value of `capabilities["urn:ietf:params:jmap:chat:filenode"]` at the session
 The value of `accountCapabilities["urn:ietf:params:jmap:chat:filenode"]` is a JSON object with the following fields:
 
 `maxSpaceStorageBytes` (UnsignedInt, optional):
-: Maximum total blob storage in bytes across all FileNodes in a single Space's file tree. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{RFC9425}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
+: Maximum total blob storage in bytes across all FileNodes in a single Space's file tree, counting all of its Space roots. If absent, the server does not advertise a per-Space limit; limits from the JMAP Quota extension {{RFC9425}} MAY apply. When a `FileNode/set` create would cause the Space file tree to exceed this limit, the server MUST return an `overQuota` SetError (as defined in {{RFC8620}} Section 5.3).
 
 `autoCreateFileTree` (Boolean):
-: When `true`, the server automatically creates a Space file tree root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no file tree is created until a client or administrator explicitly does so via `FileNode/set`. This field is REQUIRED in the account-level capability object when `urn:ietf:params:jmap:chat:filenode` is advertised.
+: When `true`, the server automatically creates one Space root for each new Space at Space creation time and includes the new FileNode in subsequent `FileNode/changes` responses. When `false`, no Space root is created until a client or administrator explicitly does so via `FileNode/set`. This field is REQUIRED in the account-level capability object when `urn:ietf:params:jmap:chat:filenode` is advertised.
 
 # Space File Tree {#space-file-tree}
 
-A Space's file tree is rooted at a single FileNode identified by the well-known `role` value `"chatspace"` and the `spaceId` extension property defined below.
+A Space has zero, one, or more Space roots, each a Directory identified by the `spaceId` extension property defined below. How many a Space has is up to the implementation; a server MAY limit the number of Space roots per Space.
 
 ## The `spaceId` Extension Property {#filenode-extension}
 
-This document defines the following extension property on FileNode objects that serve as Space file tree roots (i.e., where `role` is `"chatspace"`):
+This document defines the following extension property on FileNode objects that serve as Space roots:
 
 `spaceId` (String, immutable):
-: The `id` of the JMAP Chat Space this FileNode is associated with. Supplied by the client at creation and treated as immutable thereafter. Absent on all FileNode objects that are not Space file tree roots.
+: The `id` of the JMAP Chat Space this FileNode is associated with. Supplied by the client at creation and treated as immutable thereafter. Absent on all FileNode objects that are not Space roots. Because it is immutable, {{RFC8620}} Section 5.3 has the server reject an update that changes it with `invalidProperties`.
 
-Servers MUST support `spaceId` as a filter criterion in `FileNode/query`, enabling clients to efficiently locate the root for a given Space.
+Servers MUST support `spaceId` as a filter criterion in `FileNode/query`, enabling clients to efficiently locate the roots of a given Space.
 
-## Creating the File Tree Root {#root-creation}
+## Creating a Space Root {#root-creation}
 
-When a client creates a FileNode with `role: "chatspace"`, it MUST supply `spaceId`, and its `@type` ({{JMAP-FILENODE}} requires one on create) MUST be `"Directory"`. The server MUST validate:
+When a client creates a FileNode with `spaceId`, its `@type` ({{JMAP-FILENODE}} requires one on create) MUST be `"Directory"`. The server MUST validate:
 
 - The Space identified by `spaceId` exists and the requesting user is a member. If not, the server SHOULD return `forbidden` in both cases — Space not found and user not a member — to avoid revealing Space existence to non-members.
-- No file tree root already exists for that Space (at most one root per Space is permitted). If one exists, the server MUST return an `alreadyExists` SetError ({{RFC8620}} Section 5.4) with `existingId` set to the id of the existing root.
+- Creating another root would not exceed any limit the server places on the number of Space roots per Space. If it would, the server SHOULD return `forbidden`.
 - The requesting user holds sufficient permission to create the root (see {{permissions}}). If not, the server SHOULD return `forbidden`.
 
-The `role` value `"chatspace"` can be set only when a FileNode is created. A server MUST reject a `FileNode/set` update that changes `role` to or from `"chatspace"` with an `invalidProperties` SetError ({{RFC8620}} Section 5.3) naming `role`. Otherwise an update could bypass the checks above, producing a root without `spaceId` or a second root for a Space, and discovery ({{discovery}}) would no longer find exactly one root.
+## Discovering Space Roots {#discovery}
 
-## Discovering the File Tree Root {#discovery}
+To locate the Space roots of a given Space, clients issue a `FileNode/query` request filtering on `spaceId: <id>`. The result contains every Space root of that Space, and is empty when the Space has none; clients MAY then attempt to create one via `FileNode/set` (subject to the rules in {{root-creation}}), or MAY present the absence of a file tree as an informational state to the user.
 
-To locate the file tree root for a given Space, clients issue a `FileNode/query` request filtering on `role: "chatspace"` and `spaceId: <id>`. When a file tree exists for the Space, exactly one matching FileNode is returned. When no file tree exists, the result is empty; clients MAY attempt to create one via `FileNode/set` (subject to the rules in {{root-creation}}), or MAY present the absence of a file tree as an informational state to the user.
-
-Clients MAY cache the file tree root `id` for the duration of the session and re-query on `cannotCalculateChanges`.
+Clients MAY cache the Space root ids for the duration of the session and re-query on `cannotCalculateChanges`.
 
 FileNode/changes responses SHOULD be scoped to file trees the requesting user has access to, so that a user who is not a member of a Space receives no change notifications for that Space's file tree.
 
@@ -166,7 +167,7 @@ For Space members, the following table maps role permissions to the `FilesRights
 | Member with `"send"` | The above, plus `mayAddChildren` (upload new files and directories) |
 | Member with `"manage_channels"` or `"manage_space"` | The above, plus `mayDelete`, `mayRename`, and `mayModifyContent` (remove, rename, move, and replace the content of any file or directory) |
 
-The tree root reports these rights like any other Directory, so they govern the files and directories directly inside it. They do not let anyone destroy, rename, or move the root itself (see below).
+A Space root reports these rights like any other Directory, so they govern the files and directories directly inside it. They do not decide who may destroy, rename, or move the Space root itself (see below).
 
 No role is granted `mayShare`. Access to a Space file tree comes from Space membership alone, so FileNode-level sharing has no effect there; the server rejects a `FileNode/set` update that changes `shareWith` on a node in a Space file tree with a `forbidden` SetError.
 
@@ -174,7 +175,7 @@ This document does not record who uploaded a file, so there are no per-uploader 
 
 Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation can use separate Spaces.
 
-Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission. This is a higher bar than the `mayAddChildren` grant to `"send"`, because creating the root is a structural operation that affects all Space members. No member can destroy, rename, or move the root through `FileNode/set`: {{JMAP-FILENODE}} rejects these with `forbidden` for any Directory with a role. The root is removed only when its Space is destroyed ({{deletion}}).
+Creating, renaming, or destroying a Space root requires `"manage_space"` permission, whatever the root's `myRights` report; the server SHOULD reject these from other members with `forbidden`. This is a higher bar than the `mayAddChildren` grant to `"send"`, because these are structural operations that affect all Space members. Moving a Space root to a different parent would carry its Space's files into another tree, so the server SHOULD reject a `FileNode/set` update that changes a Space root's `parentId` with `forbidden`. Destroying a Space root follows {{JMAP-FILENODE}} for its children; a Space may be left with no Space roots.
 
 The server SHOULD enforce this mapping on every FileNode operation, deriving the requesting user's membership and roles from its own authoritative state. When a Space member's roles change, the server SHOULD reflect the updated FileNode access immediately, without requiring any client action.
 
@@ -212,7 +213,7 @@ Clients MAY include `filenodeId` in outbound `Peer/deliver` calls as an informat
 
 # Space Deletion {#deletion}
 
-When a Space is destroyed via `Space/set` destroy, the server SHOULD also destroy the associated file tree and all FileNodes within it.
+When a Space is destroyed via `Space/set` destroy, the server SHOULD also destroy all of its Space roots and all FileNodes within them.
 
 The server MAY instead retain the file tree for an implementation-defined grace period, during which former Space members MAY continue to access files they had access to before the Space was destroyed. After the grace period, the server SHOULD destroy the file tree. Servers SHOULD NOT leave file trees permanently accessible after Space destruction, as orphaned trees with no governing membership model create access control ambiguity.
 
@@ -260,19 +261,6 @@ Specification document:
 
 Security and privacy considerations:
 : See {{security}} of this document.
-
-## JMAP FileNode Roles Registry
-
-IANA is requested to register the following entry in the "JMAP FileNode Roles" registry defined by {{JMAP-FILENODE}}:
-
-Role:
-: `chatspace`
-
-Description:
-: Root directory of the file storage tree associated with a JMAP Chat Space. At most one FileNode with this role exists per Space (when file storage is enabled for that Space). The associated Space is identified by the `spaceId` extension property defined in this document.
-
-Reference:
-: This document.
 
 ## JMAP Object URI Type Registrations
 
