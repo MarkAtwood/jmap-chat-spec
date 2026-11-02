@@ -2,11 +2,12 @@
   "id": "jmap-chat-spec-8g3r",
   "title": "chat-filenode: chatspace role vs filenode-20 one-role-per-account",
   "description": "Editor's draft-ietf-jmap-filenode-20 (unposted as of 2026-11-01, ~/GIT/draft-gondwana-jmap-filenode) adds: 'At most one Directory in an account has a given role.' draft-atwood-jmap-chat-filenode-00 gives every Space root role 'chatspace', so two Spaces whose trees live in the same account would violate it. Act when -20 is posted. Options: per-Space files account (removes the role entirely), or a non-role marker. -20 also lets clients set/clear role with mayRename; our existing chatspace role-immutability rule remains a valid server policy refusal.",
+  "notes": "2026-11-02: Mark chose to wait for -20 to post. Checked editor's copy (brong/draft-gondwana-jmap-filenode master c299423, after 3 'Version 20' passes today): rule still present ('At most one Directory in an account has a given role', ~L406; violating it is invalidProperties). Also: role Directories cannot be destroyed/renamed/moved (forbidden) until the role is cleared (~L1062); policy refusals of role set/clear use 'forbidden' (~L412), so chat-filenode L145's invalidProperties for chatspace role changes is a second mismatch. Recommended fix when -20 posts: drop the chatspace role and its IANA entry; a Space root is the Directory with spaceId set; discovery queries spaceId; add a rule that the server rejects destroy/rename/move of a Space root with forbidden (except on Space destruction). Scope: draft-atwood-jmap-chat-filenode-00.md (L81, 89, 104, 126, 130, 139, 145, 149, 177, IANA ~L268-272) + jmap-chat-filenode-guide.md L14. Rejected: per-account chatspace container (adds a level and cross-Space rights questions); per-Space accounts (changes the chat account model).",
   "status": "open",
   "priority": 3,
   "issue_type": "bug",
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-11-02T04:18:18.303119236Z",
   "created_by": "agent",
-  "updated_at": "2026-11-02T04:18:18.303119236Z"
+  "updated_at": "2026-11-02T18:23:20.659101389Z"
 }
