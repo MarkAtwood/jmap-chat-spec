@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-utk6",
+  "title": "chat-filenode: Space root placement gaps vs FileNode -19",
+  "description": "Found while making Space roots 0..n (8g3r fix, 2026-11-02); predates that change, not fixed there. Verified against editor's copy ~/GIT/draft-gondwana-jmap-filenode (566c2b6) - confirm against posted -19 before acting.\n1. Name collisions: FileNode forbids two siblings with the same parent and name (~L265); top-level nodes (parentId null) are all siblings in an account, so roots of different Spaces in one account cannot share a name (e.g. two 'Files'). More roots per Space makes this likelier. Options: roots need not be top-level (but then a root could sit inside another Space's tree), server-chosen names, or document that clients pick unique names.\n2. Top-level create needs mayCreateTopLevelFileNode (~L135, L617, L1872); chat-filenode only requires manage_space. Say how they combine.\n3. Cross-Space moves: nothing stops moving a non-root node from one Space's tree into another Space's tree (or out to account top level), which changes who can see it. Draft forbids moving roots only.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "bug",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-02T21:36:03.251400473Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-02T21:36:03.251400473Z",
+  "labels": [
+    "spec",
+    "filenode"
+  ]
+}
