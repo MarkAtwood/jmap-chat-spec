@@ -11,8 +11,8 @@ storage as a service.
 
 The filenode draft itself defines the wire surface: the
 `urn:ietf:params:jmap:chat:filenode` capability, the
-`chatspace` FileNode role, the `spaceId` extension
-property, the Space-role-to-FileNode-access permission mapping, the
+`spaceId` FileNode extension property (marking zero or
+more Space roots per Space), the Space-role-to-FileNode-access permission mapping, the
 attachment-link fields (`filenodeId`, `thumbnailBlobId`), and the
 Space-destruction grace-period contract. The main
 `jmap-chat-implementer-guide.md` covers core deployment topics
@@ -41,7 +41,7 @@ specification:
 ## How to read this guide
 
 `draft-atwood-jmap-chat-filenode-00` deliberately specifies a minimal
-wire contract (one new capability, one well-known FileNode role, one
+wire contract (one new capability, one
 extension property, two attachment fields, one permission mapping) and
 defers backend choice, content policy, malware scanning, quota
 management, preview generation, retention mechanism, performance
