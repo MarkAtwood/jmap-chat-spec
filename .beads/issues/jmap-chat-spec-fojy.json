@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-fojy",
+  "title": "watch: draft-gulbrandsen-jmap-ai thread",
+  "description": "Arnt Gulbrandsen posted draft-gulbrandsen-jmap-ai-00 ('JMAP for AI', read-only profile) to jmap@ietf.org on 2026-11-02 ('The path forward for JMAP'). Mark replied the same day: no AI profile needed; useful work is best-practice OAuth scoping (read-only mail scope, mail without submission, short-lived revocable tokens, mailbox-limited access via RFC 9670 sharing) in draft-ietf-mailmaint-oauth-public's scope registry, and maybe better search (matching-feature capability, relevance sort). Watch replies; may come up at the IETF 127 JMAP session, Thu 2026-11-19 09:00 PT.",
+  "status": "deferred",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-02T19:18:12.695213717Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-02T19:18:12.695213717Z",
+  "defer_until": "2026-11-09T00:00:00-08:00",
+  "labels": [
+    "upstream-watch"
+  ]
+}
