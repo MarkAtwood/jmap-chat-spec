@@ -158,14 +158,15 @@ Access to a Space's file tree is governed entirely by the requesting user's Spac
 
 Users who are not members of the Space — including authenticated users on the same server — SHOULD NOT be granted access to the Space file tree, regardless of any FileNode-level ACL entries that may exist. An exception applies during any grace period defined in {{deletion}}: former members retain the access level they held immediately before the Space was destroyed until the grace period expires.
 
-For Space members, the following table maps role permissions to the `FilesRights` flags ({{JMAP-FILENODE}}) the server reports in `myRights` and enforces on each FileNode in the Space file tree. Each row includes the grants of the rows above it. A member holding multiple roles receives the union of all applicable grants. A flag no applicable row grants is `false`. A flag that does not apply to a node's `@type` is also `false`: as {{JMAP-FILENODE}} requires, `mayAddChildren` is always `false` on nodes whose `@type` does not permit children, and `mayModifyContent` is `false` on a Directory, including the tree root.
+For Space members, the following table maps role permissions to the `FilesRights` flags ({{JMAP-FILENODE}}) the server reports in the `myRights` of every Directory in the Space file tree, including the tree root, and enforces. As {{JMAP-FILENODE}} defines, only nodes whose `@type` permits children have `myRights`; a File or SymLink takes its rights from its parent Directory. Each row includes the grants of the rows above it. A member holding multiple roles receives the union of all applicable grants. A flag no applicable row grants is `false`.
 
 | Space condition | FilesRights flags set to true |
 |---|---|
-| Member with `"view"` | `mayRead` on every node (list directories, read file content) |
+| Member with `"view"` | `mayRead` (list directories, read file content) |
 | Member with `"send"` | The above, plus `mayAddChildren` (upload new files and directories) |
-| Member with `"manage_channels"` | The above, plus `mayDelete`, `mayRename`, and `mayModifyContent` on every node except the tree root (remove, rename, move, and replace the content of any file or directory) |
-| Member with `"manage_space"` | The above, plus `mayDelete` and `mayRename` on the tree root |
+| Member with `"manage_channels"` or `"manage_space"` | The above, plus `mayDelete`, `mayRename`, and `mayModifyContent` (remove, rename, move, and replace the content of any file or directory) |
+
+The tree root reports these rights like any other Directory, so they govern the files and directories directly inside it. They do not let anyone destroy, rename, or move the root itself (see below).
 
 No role is granted `mayShare`. Access to a Space file tree comes from Space membership alone, so FileNode-level sharing has no effect there; the server rejects a `FileNode/set` update that changes `shareWith` on a node in a Space file tree with a `forbidden` SetError.
 
@@ -173,7 +174,7 @@ This document does not record who uploaded a file, so there are no per-uploader 
 
 Note: Space-scoped ChannelPermission per-channel overrides do not restrict file-tree access. A member who has been denied `"view"` on a specific channel via ChannelPermission can still read the Space's file tree, because file-tree access is governed by Space-level permissions only. Deployments requiring per-channel file isolation can use separate Spaces.
 
-Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission, and so, by the table above, does destroying it. This is a higher bar than the `mayAddChildren` grant to `"send"` and the `mayDelete` grant to `"manage_channels"`, because creating or removing the root is a structural operation that affects all Space members.
+Creating the Space file tree root (a FileNode with `role: "chatspace"`) requires `"manage_space"` permission. This is a higher bar than the `mayAddChildren` grant to `"send"`, because creating the root is a structural operation that affects all Space members. No member can destroy, rename, or move the root through `FileNode/set`: {{JMAP-FILENODE}} rejects these with `forbidden` for any Directory with a role. The root is removed only when its Space is destroyed ({{deletion}}).
 
 The server SHOULD enforce this mapping on every FileNode operation, deriving the requesting user's membership and roles from its own authoritative state. When a Space member's roles change, the server SHOULD reflect the updated FileNode access immediately, without requiring any client action.
 

@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-l73c",
+  "title": "chat-filenode: mayModifyContent false on Directories blocks all file edits",
+  "description": "draft-atwood-jmap-chat-filenode-00 #permissions says mayModifyContent is false on every Directory. Under draft-ietf-jmap-filenode-19 (and -18), Files have no myRights and take their parent Directory's rights, so no File content in a Space tree can ever be replaced (FileNode/set blobId or Direct HTTP Write).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-02T04:13:44.351782115Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-02T04:14:25.836227001Z",
+  "started_at": "2026-11-02T04:13:56.197203397Z",
+  "closed_at": "2026-11-02T04:14:25.836227001Z",
+  "close_reason": "Fixed permission table and root rules in draft-atwood-jmap-chat-filenode-00 #permissions to match filenode-19 rights model"
+}
