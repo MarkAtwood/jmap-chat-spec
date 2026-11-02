@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-jzk9",
+  "title": "chat-filenode: manage_channels cannot delete files in tree root",
+  "description": "draft-atwood-jmap-chat-filenode-00 #permissions withholds mayDelete/mayRename on the tree root below manage_space. Under filenode-19 Files directly in the root take the root's myRights, so manage_channels members cannot delete, rename or move top-level files, contrary to the table's intent.",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-02T04:13:44.399425607Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-02T04:14:25.8787681Z",
+  "started_at": "2026-11-02T04:13:56.254578658Z",
+  "closed_at": "2026-11-02T04:14:25.8787681Z",
+  "close_reason": "Fixed permission table and root rules in draft-atwood-jmap-chat-filenode-00 #permissions to match filenode-19 rights model"
+}

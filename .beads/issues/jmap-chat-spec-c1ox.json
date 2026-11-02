@@ -1,0 +1,16 @@
+{
+  "id": "jmap-chat-spec-c1ox",
+  "title": "chat-filenode: chatspace root destroy conflicts with filenode-19",
+  "description": "draft-atwood-jmap-chat-filenode-00 grants manage_space mayDelete/mayRename on the chatspace root and says manage_space can destroy it. filenode-19 Access Control: a Directory with a role cannot be destroyed, renamed or moved (forbidden). The root can only go away with the Space (#deletion).",
+  "status": "closed",
+  "priority": 1,
+  "issue_type": "bug",
+  "assignee": "agent",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-02T04:13:44.444876102Z",
+  "created_by": "agent",
+  "updated_at": "2026-11-02T04:14:25.921519639Z",
+  "started_at": "2026-11-02T04:13:56.313399723Z",
+  "closed_at": "2026-11-02T04:14:25.921519639Z",
+  "close_reason": "Fixed permission table and root rules in draft-atwood-jmap-chat-filenode-00 #permissions to match filenode-19 rights model"
+}
