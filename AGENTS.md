@@ -27,16 +27,16 @@ Every draft except `-chat-federation` (extends the core capability) and `-object
 
 ## Upstream draft sources
 
-Editor's copies of the IETF drafts this corpus cites, cloned in `~/GIT` (shallow, `--depth 50`). They are often ahead of the posted revision; read them to see changes coming, but cite only posted revisions from datatracker. Checked 2026-10-18.
+Editor's copies of the IETF drafts this corpus cites, cloned in `~/GIT` (shallow, `--depth 50`). They are often ahead of the posted revision; read them to see changes coming, but cite only posted revisions from datatracker. Checked 2026-11-01.
 
 | Local clone (`~/GIT/`) | Origin | Holds | Notes |
 |---|---|---|---|
 | `draft-ietf-mimi-content` | github.com/ietf-wg-mimi/draft-ietf-mimi-content | -09 | Detached at tag `draft-ietf-mimi-content-09` on purpose (the cited revision); `main` is ahead |
-| `mimi-protocol` | github.com/ietf-wg-mimi/mimi-protocol | -06 | |
+| `mimi-protocol` | github.com/ietf-wg-mimi/mimi-protocol | -06 | Checked out on branch `notify-from-hub`, not `main` |
 | `mimi-room-policy` | github.com/ietf-wg-mimi/mimi-room-policy | -04 | |
 | `jmapio-jmap` | github.com/jmapio/jmap | calendars -33 | Fastmail-edited drafts under `spec/`: calendars, contacts, sharing, tasks |
-| `draft-gondwana-jmap-filenode` | github.com/brong/draft-gondwana-jmap-filenode | -16 | Repo name predates WG adoption; file is `draft-ietf-jmap-filenode.mkd` |
-| `draft-gondwana-jmap-conditional` | github.com/brong/draft-gondwana-jmap-conditional | -01 | Not cited; overlap check only |
+| `draft-gondwana-jmap-filenode` | github.com/brong/draft-gondwana-jmap-filenode | -20 | Repo name predates WG adoption; file is `draft-ietf-jmap-filenode.mkd`. -19 is the posted revision |
+| `draft-gondwana-jmap-conditional` | github.com/brong/draft-gondwana-jmap-conditional | -02 | Not cited; overlap check only |
 | `draft-gondwana-jmap-object-history` | github.com/brong/draft-gondwana-jmap-object-history | individual -00 | Stale: posted WG -02 is not in this repo; its source location is unknown |
 | `draft-gondwana-jmap-blobext` | github.com/brong/draft-gondwana-jmap-blobext | individual -06 | Stale: posted WG -02 is not here (branch `msater` is older too); source unknown |
 
