@@ -15,6 +15,10 @@ pi: [toc, sortrefs, symrefs]
 author:
   -
     fullname: Mark Atwood
+    organization: Review Commit, LLC
+    city: Seattle
+    region: WA
+    country: US
     email: mark@reviewcommit.com
 
 normative:
