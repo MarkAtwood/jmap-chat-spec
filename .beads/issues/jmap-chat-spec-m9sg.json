@@ -1,0 +1,15 @@
+{
+  "id": "jmap-chat-spec-m9sg",
+  "title": "chat-filenode: cite filenode-20; adapt to deep copy, quota and move rules",
+  "description": "filenode-20 (posted 2026-11-02; Bron's 566c2b6/686e240/020da7f). (1) Bump refs to -20: draft-atwood-jmap-chat-filenode-00.md:39, draft-atwood-jmap-chat-00.md:112, draft-atwood-jmap-did-00.md:72, plus date lines. (2) chat-filenode:126 maxSpaceStorageBytes covers only FileNode/set create; extend to FileNode/copy (now a subtree copy that copies blobs), Blob/convert extraction into parentNodeId, and Direct HTTP Write (filenode's 507, not an overQuota SetError). (3) chat-filenode:137-152: say FileNode/copy does not copy spaceId, or that copying a Space root follows root-creation rules, so a deep copy can't create an unchecked Space root. (4) chat-filenode:158/182: moving a node into/out of a Space tree changes inherited rights, which -20 requires reporting in FileNode/changes (or as destroyed to users losing access). Pairs with crate-jmap JMAP-3kbu.2 (drop the chatspace role).",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-12T21:18:08.415446708Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-11-12T21:18:08.415446708Z",
+  "labels": [
+    "spec-sync"
+  ]
+}
