@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-hl0h",
+  "title": "JMAP Chat drafts: SHOULD RFC 9457 problem details for HTTP errors, and cite 9457 not 7807",
+  "description": "Mark, 2026-11-14: the JMAP specs should say SHOULD RFC 9457, as for MIMI (IETF repo bead).\n\nJMAP core (RFC 8620 §3.6.1) already returns request-level errors as problem details, but cites RFC 7807, which RFC 9457 obsoletes. The JMAP Chat family adds HTTP surfaces outside the JMAP API endpoint (push, federation, WSS upgrade failures, filenode, VTC, the MIMI bridge, DID/CID resolution), and those drafts don't say what an error body is.\n\nDo: (1) in each draft that defines an HTTP endpoint or HTTP-level failure, add 'an error response SHOULD be an RFC 9457 problem details object (application/problem+json)', with a type URI, and say title/detail are diagnostic and not for display (no English in the UX); (2) where a draft refers to RFC 8620 §3.6.1 request errors, cite RFC 9457 as the current problem-details spec; (3) check the implementer and compliance-test guides for matching text. SHOULD, not MUST.",
+  "status": "open",
+  "priority": 2,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-14T21:38:05.143538765Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-11-14T21:38:05.143538765Z"
+}
