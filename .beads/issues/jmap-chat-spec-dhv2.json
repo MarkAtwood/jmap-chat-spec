@@ -1,0 +1,26 @@
+{
+  "id": "jmap-chat-spec-dhv2",
+  "title": "JMAP Core has no client language preference: specify how a client asks for a language for localized and server-written text",
+  "description": "Split out of jmap-chat-spec-qb21 (2026-11-15). Not Chat-specific: JMAP Core (RFC 8620) has no way for a client to say which language(s) it wants, so every JMAP extension that wants localized server output would have to invent one. Fix it once, generically.\n\nToday:\n- RFC 8620 has no request-side language. Server-written text (method-level and SetError 'description', HTTP-level problem details) carries no language tag either.\n- Data types that carry several languages (JSCalendar/JSContact 'localizations', and qb21's proposal for Chat, Space, etc.) return all of them and leave the choice to the client. That works, but it costs bandwidth and every client reimplements BCP 47 lookup (RFC 4647).\n- Accept-Language (RFC 9110 s12.5.4) exists on the HTTP POST, but RFC 8620 gives it no meaning, it is per-HTTP-request rather than per-session, and it does not reach the EventSource or WebSocket (RFC 8887) push channels.\n\nOptions to weigh:\n1. Say Accept-Language on the API request is honoured (MAY) for server-written text, and Content-Language on the response tags it. Smallest change; nothing new on the wire. Doesn't cover push.\n2. A request-level 'language' (BCP 47 priority list) next to 'using' in the Request object, or a core capability argument. Covers WebSocket; needs a Core extension or erratum-level change.\n3. An account/session preference (a JMAP 'UserPreference' or similar settings object), so servers can also localize push notification text when no request is in flight. Overlaps with push-platform guides.\n4. A get-time selector: a 'language' argument to /get that collapses 'localizations' into the base properties server-side. Optional; clients that want all languages omit it.\n\nKeyword strength per bcp14-keyword-discipline: everything here is MAY/SHOULD; clients that send nothing get today's behaviour.\n\nDeliverable: decide which option(s), then either a short standalone draft (draft-atwood-jmap-language-00 or similar) or a jmap@ietf.org thread first to see if the WG wants it in Core. Chat (qb21) and mimid-1wgh.51 should cite whatever this settles rather than each defining an Accept-Language rule.\n",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "task",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-15T01:35:53.472710502Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-11-15T01:35:53.472710502Z",
+  "labels": [
+    "design",
+    "i18n"
+  ],
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-dhv2",
+      "depends_on_id": "jmap-chat-spec-qb21",
+      "type": "related",
+      "created_at": "2026-11-15T01:35:53.56961656Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
+}
