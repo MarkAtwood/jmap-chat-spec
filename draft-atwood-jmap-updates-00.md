@@ -352,7 +352,9 @@ Lookup removes subtags from the end of a range but never adds them: the
 range "de" matches a key "de" and not a key "de-CH" ({{RFC4647}}
 Section 3.4). A client SHOULD therefore include a range for each
 language it accepts in its general form, for example
-`[ "de-CH", "de", "en" ]`. Lookup ignores the range "*".
+`[ "de-CH", "de", "en" ]`. Lookup skips a range "*" that other ranges
+follow, and a final "*" selects the default, which here is the base
+values ({{RFC4647}} Section 3.4).
 
 The returned object is then a view in one language, not the stored
 object. Its `state` and the `/changes` state are those of the stored
