@@ -65,8 +65,8 @@ normative:
     author:
       - fullname: Raphael Robert
     seriesinfo:
-      Internet-Draft: draft-ietf-mls-extensions-10
-    date: 2026-07-06
+      Internet-Draft: draft-ietf-mls-extensions-11
+    date: 2026-11-02
   ULID:
     title: "Universally Unique Lexicographically Sortable Identifier"
     target: https://github.com/ulid/spec
@@ -348,6 +348,9 @@ The request arguments are:
 `accountId` (Id):
 : The account to use.
 
+`roomId` (String):
+: The room ID the client chose for the room.
+
 `groupInfo` (String):
 : An MLSMessage ({{RFC9420, Section 6}}) of wire format `mls_group_info` carrying the group's GroupInfo, which MUST NOT contain the `ratchet_tree` extension ({{MIMI-PROTOCOL, Section 5.6}}).
 
@@ -360,11 +363,13 @@ The server MUST reject the call with `invalidArguments` unless all of the follow
 2. The `ratchetTree` matches the tree hash in the GroupInfo's GroupContext and contains exactly one leaf, whose credential identity is `userUri` and whose signature key is bound to the account ({{keypackage}}).
 3. The `external_senders` extension contains exactly one ExternalSender, equal to `hubSender`.
 4. The participant list ({{MIMI-PROTOCOL, Section 7.5}}) contains exactly one participant, `userUri`.
-5. The `room_uri` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) is `roomIdPrefix` followed by the unpadded lowercase base32 encoding ({{RFC4648, Section 6}}) of 16 octets, and no room this server hosts has that room ID.
+5. `roomId` is `roomIdPrefix` followed by the unpadded lowercase base32 encoding ({{RFC4648, Section 6}}) of 16 octets, and no room this server hosts has that room ID. If the group carries room metadata ({{MIMI-PROTOCOL, Section 7.6}}), its `room_uri` is `roomId`.
 6. The group ID is 16 octets and no room this server hosts uses it.
 7. The group's `app_data_dictionary` extension ({{MLS-EXTENSIONS, Section 4.6}}) contains a `franking_agent` component ({{MIMI-PROTOCOL, Section 5.4.1}}) whose `franking_signature_key` and `credential` are those of `hubSender`, and a `base_room_policy` component ({{MIMI-ROOM-POLICY, Section 5}}) that parses.
 
 Clients SHOULD generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and SHOULD use a fresh group ID for every MLS group of a room.
+
+Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, or add it later with an AppDataUpdate once it knows every member supports it.
 
 On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), and returns:
 
@@ -585,6 +590,7 @@ Alice's client creates a room:
 ~~~json
 ["Room/create", {
   "accountId": "u1",
+  "roomId": "mimi://a.example/r/k5qwmzlqmfsgk3tbnvsxi2lf4a",
   "groupInfo": "AAEABEAAEJr1...",
   "ratchetTree": "QAABAQ..."
 }, "c3"]
