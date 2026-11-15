@@ -91,7 +91,7 @@ informative:
 
 --- abstract
 
-This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format and JMAP Chat. It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider: it publishes KeyPackages, fetches key material, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
+This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format and JMAP Chat. It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider: it publishes KeyPackages, fetches key material, asks for and gives consent to be added to rooms, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
 
 --- middle
 
@@ -211,7 +211,7 @@ Each client has at most one last-resort KeyPackage. Creating a last-resort KeyPa
 
 ## Handing Out KeyPackages {#keypackage-claim}
 
-When this server answers a key material request for the owner ({{MIMI-PROTOCOL, Section 5.2}}), it returns at most one KeyPackage for each of the owner's clients. For each client it returns a KeyPackage compatible with the request that is not last-resort and destroys that record in the same transaction, so that no KeyPackage is handed out twice. When the client has no such KeyPackage, the server returns the client's compatible last-resort KeyPackage, if any, and keeps it. Returning a last-resort KeyPackage more than once departs from {{MIMI-PROTOCOL, Section 5.2}}, which forbids repeating key material across responses, and follows {{RFC9420, Section 16.8}}.
+When this server answers a key material request for the owner ({{MIMI-PROTOCOL, Section 5.2}}) and the requester has consent ({{consent-received}}), it returns at most one KeyPackage for each of the owner's clients. For each client it returns a KeyPackage compatible with the request that is not last-resort and destroys that record in the same transaction, so that no KeyPackage is handed out twice. When the client has no such KeyPackage, the server returns the client's compatible last-resort KeyPackage, if any, and keeps it. Returning a last-resort KeyPackage more than once departs from {{MIMI-PROTOCOL, Section 5.2}}, which forbids repeating key material across responses, and follows {{RFC9420, Section 16.8}}.
 
 The `clientUri` the server returns for each client ({{MIMI-PROTOCOL, Section 5.2}}) is implementation-defined, but MUST be stable and unique per leaf: the server MUST return the same `clientUri` in every response for a given signature key ({{keypackage}}), and different `clientUri` values for different signature keys.
 
@@ -247,6 +247,82 @@ The response has the following arguments, decoded from the KeyMaterialResponse:
 
 `clients` (Object\[]):
 : One object per ClientKeyMaterial, with the fields `clientStatus` (String, the code name), `clientUri` (String), `keyPackage` (String, present when `clientStatus` is `"success"`), and `clientCapabilities` (String, the MLS Capabilities, present when the provider included it).
+
+# Consent {#consent}
+
+A provider can refuse to hand out a user's KeyPackages to a user of another provider unless the target user has consented ({{MIMI-PROTOCOL, Section 8}}). A Consent record lets the owner see and change explicit consent ({{MIMI-PROTOCOL, Section 5.7}}): requests the owner sent or received, and decisions the owner made or received. How a server determines consent implicitly, for example from contacts or shared rooms, is a deployment choice outside this document.
+
+Each record has one ConsentScope ({{MIMI-PROTOCOL, Section 5.7}}): a requester, a target, and optionally a room. The owner is either the requester or the target of every record, not both. An account holds at most one record per ConsentScope.
+
+## Consent Object Fields
+
+`id` (Id, immutable, server-set):
+: The id of the record.
+
+`requesterUri` (String, immutable):
+: The user who would fetch the target's KeyPackages.
+
+`targetUri` (String, immutable):
+: The user whose KeyPackages would be fetched.
+
+`roomId` (String\|null, immutable, default: null):
+: The room the scope is limited to, or `null` for any room.
+
+`requested` (Boolean):
+: `true` while a request for this scope is outstanding: one the owner sent, when the owner is the requester, or one the owner received, when the owner is the target. Server-set when the owner is the target.
+
+`decision` (String\|null, default: null):
+: `"grant"`, `"revoke"`, or `null` when no decision is known. A revoke also covers a denial given before any request. When the owner is the target, this is the owner's decision. When the owner is the requester, it is the decision the target's provider sent, and it is server-set.
+
+`updated` (UTCDate, server-set):
+: When the record last changed.
+
+## Consent/get
+
+Standard JMAP `/get` ({{RFC8620, Section 5.1}}).
+
+## Consent/changes
+
+Standard JMAP `/changes` ({{RFC8620, Section 5.2}}). A client that watches the Consent type in `StateChange` events learns of requests the owner receives.
+
+## Consent/query
+
+Standard JMAP `/query` ({{RFC8620, Section 5.5}}). A FilterCondition has the following properties, each optional:
+
+`asTarget` (Boolean):
+: Whether the owner is the target (`true`) or the requester (`false`).
+
+`requested` (Boolean):
+: The value of `requested`.
+
+`decision` (String):
+: The value of `decision`; the condition matches no record whose `decision` is `null`.
+
+The only sort property is `updated`.
+
+## Consent/set {#consent-set}
+
+Standard JMAP `/set` ({{RFC8620, Section 5.3}}), with the following rules. The server rejects, with `invalidProperties`, a create in which neither or both of `requesterUri` and `targetUri` is `userUri`, and a create or update that sets a property this section does not let the owner set. It rejects a create whose ConsentScope matches an existing record with `alreadyExists` ({{RFC8620, Section 5.4}}), giving that record's id in `existingId`.
+
+When the owner is the requester:
+
+- A create asks the target for consent. `requested` is `true` or omitted, and `decision` is `null` or omitted. The server sends a requestConsent with operation `request` for the record's ConsentScope.
+- An update can change `requested`. Setting it to `false` withdraws the request: the server sends a requestConsent with operation `cancel`. Setting it to `true` sends a new request.
+- A destroy removes the record. If `requested` is `true`, the server first sends a `cancel`.
+
+When the owner is the target:
+
+- A create records a decision that answers no request, such as a grant made in advance or a denial. `decision` is `"grant"` or `"revoke"`.
+- An update can change `decision`. Setting it to `"grant"` or `"revoke"` sends an updateConsent with that operation, and the server sets `requested` to `false`. A server MAY skip sending a revoke, because a revoke tells the requester that it was refused ({{MIMI-PROTOCOL, Section 5.7}}). Setting `decision` to `null` sends nothing, and the server goes back to its own policy for that scope.
+- A destroy removes the record and sends nothing.
+
+The server sends each ConsentEntry ({{MIMI-PROTOCOL, Section 5.7}}) to the other user's provider before it answers. When the other user is an account of this server, the server changes that account's record as if it had sent and received the ConsentEntry. In a grant, the server MAY include KeyPackages of the owner's clients, chosen and destroyed as in {{keypackage-claim}}; otherwise the list is empty. If the other provider answers 404, the server rejects the create or update with `invalidProperties`, naming the other user's URI. If the other provider cannot be reached or answers with another error, the server rejects it with the SetError type `consentNotSent`, and the record does not change.
+
+## Consent From Other Providers {#consent-received}
+
+When this server accepts a requestConsent for the owner as target, it creates or updates the record for its ConsentScope with `requested` set to `true`, and a `cancel` sets it to `false`. When it accepts an updateConsent for the owner as requester, it creates or updates the record for its ConsentScope with that `decision`, and sets `requested` to `false`. A server MAY destroy a record whose `requested` is `false` and whose `decision` is `null`.
+
+When this server answers a key material request for the owner from a user of another provider ({{keypackage-claim}}), a record with the owner as target whose ConsentScope matches the request's requester and room decides consent: a record for that room before a record for any room. A `"grant"` allows the request, and a `"revoke"` refuses it with `noConsent` or `noConsentForThisRoom` as {{MIMI-PROTOCOL, Section 5.2}} describes. With no matching decision, the server applies its own policy.
 
 # Rooms {#rooms}
 
@@ -594,6 +670,49 @@ Bob's client processes a commit that removes Bob's last client from the room, an
 }, "c7"]
 ~~~
 
+Alice asks Erin, a user of another provider, for consent to add her to rooms:
+
+~~~json
+["Consent/set", {
+  "accountId": "u1",
+  "create": {
+    "c1": { "requesterUri": "mimi://a.example/u/alice",
+            "targetUri": "mimi://e.example/u/erin" }
+  }
+}, "c5"]
+~~~
+
+The server sends a requestConsent to Erin's provider and answers:
+
+~~~json
+["Consent/set", {
+  "accountId": "u1",
+  "oldState": "q3",
+  "newState": "q4",
+  "created": {
+    "c1": { "id": "cs7", "roomId": null, "requested": true,
+            "decision": null, "updated": "2026-11-15T08:00:00Z" }
+  }
+}, "c5"]
+~~~
+
+When Erin's provider later sends an updateConsent with a grant, the record changes, and Alice's client sees it after a `StateChange` for the Consent type:
+
+~~~json
+["Consent/get", {
+  "accountId": "u1",
+  "state": "q5",
+  "list": [
+    { "id": "cs7",
+      "requesterUri": "mimi://a.example/u/alice",
+      "targetUri": "mimi://e.example/u/erin",
+      "roomId": null, "requested": false, "decision": "grant",
+      "updated": "2026-11-15T08:03:12Z" }
+  ],
+  "notFound": []
+}, "c6"]
+~~~
+
 # Security Considerations {#security}
 
 A converting party that relays end-to-end encrypted MIMI messages ({{RFC9420}}) into JMAP Chat must decrypt them to convert their content, and so holds plaintext. It SHOULD join each MLS group as a member visible to the other members, so that users can see that a gateway holds plaintext, rather than obtaining keys by any path that does not appear in the group membership.
@@ -609,6 +728,8 @@ As hub, a MIMI provider's `hubSender` is an external sender of every room it hos
 Every request that consumes a KeyPackage brings the owner's clients closer to their last-resort KeyPackages, whose reuse weakens the protection that single-use KeyPackages give ({{RFC9420, Section 16.8}}). Servers SHOULD rate-limit key material requests per requester.
 
 `Room/unbind` is not checked against the MLS group. A client that calls it while other clients of the account remain in the group cuts those clients off from the room: the server stores no further FanoutMessage for them, and they cannot use `GroupInfo/fetch` to rejoin by external join. Only a later Welcome binds the Chat again.
+
+Anyone on a peer provider can send the owner a consent request, so requests are themselves a way to reach a user who has not agreed to be contacted. Servers SHOULD rate-limit requests per requester and per provider, and MAY drop requests without creating a record. A Consent record is visible only to its owner, but sending a revoke tells the requester's provider that the owner refused; a server can withhold revokes ({{consent-set}}).
 
 A Welcome is stored in the owner's account, so all of the owner's clients receive it, and each can open only the part encrypted to its own KeyPackage. This exposes the Welcome's existence and size to the owner's other clients only.
 
@@ -639,6 +760,23 @@ IANA is requested to register the following entry in the "JMAP Data Types" regis
 
 Type Name:
 : KeyPackage
+
+Can Reference Blobs:
+: No
+
+Can Use for State Change:
+: Yes
+
+Capability:
+: `urn:ietf:params:jmap:chat:mimi`
+
+Reference:
+: This document
+
+IANA is requested to register the following entry in the "JMAP Data Types" registry:
+
+Type Name:
+: Consent
 
 Can Reference Blobs:
 : No
