@@ -13,13 +13,13 @@ This is a spec-writing project. All deliverables are Markdown files. There is no
 
 **Normative drafts** (`draft-atwood-*.md`): IETF Internet-Draft format (kramdown-rfc). Use BCP 14 keywords per the discipline in `PROJECT.md`. The drafts are the source of truth for all protocol behavior.
 
-Twenty-one drafts are in the corpus, in five families (`README.md` lists each one):
+Twenty-two drafts are in the corpus, in five families (`README.md` lists each one):
 
 - **Chat:** core `draft-atwood-jmap-chat-00` plus `-federation`, `-push`, `-wss`, `-filenode`, `-calendars`, `-tasks`, `-did`, `-mimi`
 - **VTC:** `draft-atwood-jmap-vtc-00`, `draft-atwood-jmap-vtc-wss-00`
 - **Scene:** `draft-atwood-jmap-scene-00`, `draft-atwood-jmap-scene-wss-00`
 - **Graph:** `draft-atwood-jmap-graph-00` plus `-projection`, `-search`, `-edit`, `-provenance`
-- **Shared building blocks:** `draft-atwood-jmap-cid-00`, `draft-atwood-jmap-did-00`, `draft-atwood-jmap-object-uri-00`
+- **Shared building blocks:** `draft-atwood-jmap-cid-00`, `draft-atwood-jmap-did-00`, `draft-atwood-jmap-updates-00`, `draft-atwood-jmap-object-uri-00`
 
 Every draft except `-chat-federation` (extends the core capability) and `-object-uri` (a URI scheme) has its own capability URN. Each companion is optional.
 

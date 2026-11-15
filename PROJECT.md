@@ -8,7 +8,7 @@ A corpus of individual Internet-Drafts (`draft-atwood-jmap-*-00`) defining JMAP 
 - **VTC:** video/voice call state and its WebSocket binding
 - **Scene:** spatial (3D/2D) state and its WebSocket binding
 - **Graph:** unopinionated shareable graphs, plus projection, search, live-edit, and provenance companions
-- **Shared building blocks:** CID (blob SHA-256), DID (account-to-DID binding), and the `jmap:` object URI scheme
+- **Shared building blocks:** CID (blob SHA-256), DID (account-to-DID binding), Updates (localized display text, and RFC 8620 updates on text, URIs and problem details), and the `jmap:` object URI scheme
 
 [README.md](README.md) lists every draft and guide. The deliverables are Markdown only. There is no code, build system, or test suite in this repo; the reference implementation lives elsewhere (crate-jmap).
 

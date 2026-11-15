@@ -1,6 +1,6 @@
 # JMAP Chat and Companion Specifications
 
-A suite of IETF-style Internet-Draft specifications built as JMAP capability extensions on top of [RFC 8620](https://www.rfc-editor.org/rfc/rfc8620). The centre of the suite is JMAP Chat, a real-time chat protocol. Around it sit companion capabilities for video/voice calling (VTC), shared 3D/2D spaces (Scene), general-purpose graphs (Graph), and small shared building blocks (content identifiers, Decentralized Identifiers, object URIs).
+A suite of IETF-style Internet-Draft specifications built as JMAP capability extensions on top of [RFC 8620](https://www.rfc-editor.org/rfc/rfc8620). The centre of the suite is JMAP Chat, a real-time chat protocol. Around it sit companion capabilities for video/voice calling (VTC), shared 3D/2D spaces (Scene), general-purpose graphs (Graph), and small shared building blocks (content identifiers, Decentralized Identifiers, JMAP core updates, object URIs).
 
 Each capability is optional and advertised in the JMAP Session object. A deployment implements the ones it needs.
 
@@ -70,6 +70,7 @@ The drafts are the normative specifications. Every draft is at revision `-00`.
 |---|---|---|
 | [draft-atwood-jmap-cid-00](draft-atwood-jmap-cid-00.md) | `urn:ietf:params:jmap:cid` | SHA-256 digests on blob upload responses and FileNode objects |
 | [draft-atwood-jmap-did-00](draft-atwood-jmap-did-00.md) | `urn:ietf:params:jmap:did` | Binds every JMAP account to a Decentralized Identifier; `did` property on types designated by consuming specs |
+| [draft-atwood-jmap-updates-00](draft-atwood-jmap-updates-00.md) | `urn:ietf:params:jmap:i18n` | Localized display text (`locale`, `localizations`, `language` argument) for existing JMAP data types; updates RFC 8620 on text handling, URIs (RFC 3986) and problem details (RFC 9457) |
 | [draft-atwood-jmap-object-uri-00](draft-atwood-jmap-object-uri-00.md) | — (URI scheme) | The `jmap:<type>:<accountId>:<objectId>` URI scheme for context-relative object references, and the JMAP Object URI Types registry |
 
 ---

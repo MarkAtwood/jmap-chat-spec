@@ -8,5 +8,15 @@
   "owner": "mark@reviewcommit.com",
   "created_at": "2026-11-14T21:38:05.143538765Z",
   "created_by": "Mark Atwood",
-  "updated_at": "2026-11-14T21:38:05.143538765Z"
+  "updated_at": "2026-11-14T21:38:05.143538765Z",
+  "dependencies": [
+    {
+      "issue_id": "jmap-chat-spec-hl0h",
+      "depends_on_id": "jmap-chat-spec-dhv2",
+      "type": "related",
+      "created_at": "2026-11-15T01:45:30.251128622Z",
+      "created_by": "Mark Atwood",
+      "metadata": "{}"
+    }
+  ]
 }

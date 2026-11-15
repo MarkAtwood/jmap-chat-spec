@@ -2028,6 +2028,7 @@ capabilities).
 | Scene | `urn:ietf:params:jmap:scene` | SceneRegion, SceneObject, SceneAvatar, SceneAsset |
 | Scene WSS | `urn:ietf:params:jmap:scene:websocket` | (events: SceneAvatarEvent, SceneObjectEvent, SceneInteractionEvent) |
 | CID | `urn:ietf:params:jmap:cid` | (extends blob upload response with sha256) |
+| I18N | `urn:ietf:params:jmap:i18n` | (adds `locale`, `localizations` to existing data types; `language` argument on /get and /query) |
 
 ## Appendix B: Cross-Capability Binding Reference
 
