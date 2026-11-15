@@ -369,7 +369,7 @@ The server MUST reject the call with `invalidArguments` unless all of the follow
 
 Clients SHOULD generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and SHOULD use a fresh group ID for every MLS group of a room.
 
-Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, or add it later with an AppDataUpdate once it knows every member supports it.
+Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, and `room_metadata` out of the room's `app_components`, or add both later with AppDataUpdates once it knows every member supports it.
 
 On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), and returns:
 
