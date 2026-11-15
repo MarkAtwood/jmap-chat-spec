@@ -4,7 +4,7 @@ abbrev: JMAP Updates
 docname: draft-atwood-jmap-updates-00
 category: std
 submissiontype: IETF
-updates: 8620
+updates: 8620, 9425
 
 ipr: trust200902
 
@@ -149,9 +149,10 @@ questions, and this document does not change them:
 {{capability}} defines the `urn:ietf:params:jmap:i18n` capability.
 {{localization}} defines the `locale` and `localizations` properties
 and the `language` argument, and {{applicability}} lists the
-properties of existing data types that they apply to. Future
-specifications can adopt them by listing their own localizable
-properties ({{new-specs}}).
+properties of existing data types that they apply to. For clients
+that opt in, this updates how {{RFC9425}} selects the Quota
+`description` ({{quotas}}). Future specifications can adopt them by
+listing their own localizable properties ({{new-specs}}).
 
 {{text-handling}} and {{uris-problems}} update {{RFC8620}} with
 guidance on text, URIs, and errors that applies to every JMAP
@@ -201,7 +202,12 @@ includes `urn:ietf:params:jmap:i18n` in the `using` property of the
 Request. When the capability is not in `using`, the server behaves
 as if this document did not exist: it neither returns nor accepts
 `locale` and `localizations`, and it rejects the `language` argument
-as it would any unknown argument.
+with `invalidArguments`, as it would any unknown argument ({{RFC8620}}
+Section 3.9). The same applies to an account whose
+`accountCapabilities` does not include `urn:ietf:params:jmap:i18n`,
+even when the capability is in `using`: a `/set` that names `locale` or
+`localizations` is rejected with an `invalidProperties` SetError, and a
+`language` argument with `invalidArguments`.
 
 Example Session excerpt:
 
@@ -242,9 +248,9 @@ A server MAY use `preferredLanguages` to choose the language of such
 text. How the preference is set is outside the scope of this document;
 a server might take it from an account setting, from a directory, or
 from the Accept-Language of the owner's recent requests. A server
-SHOULD NOT use `preferredLanguages` to change the result of `/get` or
-`/query` ({{language-argument}}); a client that wants a language for
-data passes `language`.
+MUST NOT use `preferredLanguages` to change the result of `/get` or
+`/query`, for the reason given in {{language-argument}}; a client that
+wants a language for data passes `language`.
 
 A client MAY read `preferredLanguages` as a default for `language` and
 for its own user interface.
@@ -265,11 +271,22 @@ properties when `urn:ietf:params:jmap:i18n` is in `using`:
 : A map from a language tag to a PatchObject ({{RFC8984}} Section
   1.4.9) that, applied to the object, gives its localizable properties
   in that language. This has the meaning of `localizations` in
-  {{RFC8984}} Section 4.6.1, with one restriction: each key of a
-  PatchObject is the name of a localizable property of the data type,
-  and its value is of that property's type. A PatchObject need not
-  cover every localizable property; a property it omits keeps the base
-  value in that language.
+  {{RFC8984}} Section 4.6.1, with the restrictions below.
+
+The restrictions on `localizations` are:
+
+- Each key of a PatchObject is the name of a localizable property of
+  the data type, and its value is of that property's type.
+- A PatchObject need not cover every localizable property; a property
+  it omits keeps the base value in that language.
+- A null value is allowed only for a property whose type allows null,
+  and means that the property has no value in that language; for
+  example, `{"description": null}` says there is no description in
+  that language.
+- Language tags are case-insensitive ({{RFC5646}} Section 2.1.1). No
+  two keys of `localizations` may differ only in case, and no key may
+  equal `locale`, ignoring case. Servers SHOULD store tags in the
+  canonical case that {{RFC5646}} Section 2.1.1 recommends.
 
 The values of the localizable properties on the object itself are the
 base values. Rules that the defining specification places on a
@@ -280,19 +297,26 @@ rules apply only to base values unless the defining specification says
 otherwise.
 
 A server rejects a `/set` create or update whose `localizations`
-contains a key that is not a language tag, or a PatchObject key that
-is not a localizable property of the type, with an `invalidProperties`
-SetError naming `localizations`. A server MAY limit the number of
+breaks these restrictions, or has a key that is not a language tag,
+with an `invalidProperties` SetError naming `localizations`. This
+differs from {{RFC8984}} Section 4.6.1, under which a recipient ignores
+an invalid patch: a JMAP server can report the error to the client
+that sent it. A server MAY limit the number of
 localizations it stores per object and reject more with the same
 error.
 
-When an update changes the base value of a localizable property and
-does not also set `localizations` or any path inside it, the existing
-localized values of that property no longer translate the new base
-value. The server SHOULD remove that property from every PatchObject in
-`localizations`, and remove any PatchObject left empty, as part of the
-same update. This keeps a client that does not use this capability
-from leaving stale translations behind when it renames an object.
+When an update changes the base value of a localizable property, the
+existing localized values of that property no longer translate the new
+base value. For each language whose PatchObject the update does not
+set, neither by setting `localizations` as a whole, nor the key for
+that language, nor that property inside it, the server SHOULD remove
+the property from that PatchObject, and remove the PatchObject if it is
+left empty, as part of the same update. This keeps a client that does
+not use this capability, or that updates only some languages, from
+leaving stale translations behind when it renames an object. When the
+server removes anything, it includes `localizations` in the object it
+returns in `updated` ({{RFC8620}} Section 5.3) to clients that have
+the capability in `using`.
 
 For a server-set localizable property, such as Quota `name`, the server
 populates `locale` and `localizations` itself. A server MAY also
@@ -301,9 +325,10 @@ default Mailboxes of a new account.
 
 ## The language Argument {#language-argument}
 
-When `urn:ietf:params:jmap:i18n` is in `using`, the standard `/get`
-and `/query` methods ({{RFC8620}} Sections 5.1 and 5.5) of a data type
-with localizable properties take one additional argument:
+When `urn:ietf:params:jmap:i18n` is in `using`, the standard `/get`,
+`/query`, and `/queryChanges` methods ({{RFC8620}} Sections 5.1, 5.5,
+and 5.6) of a data type with localizable properties take one
+additional argument:
 
 `language`: `String[]|null` (default: null)
 : A list of language ranges ({{RFC4647}} Section 2.1), most preferred
@@ -322,19 +347,27 @@ When `language` is non-null, for each returned object the server:
    chosen tag applied, when the chosen tag is a key of
    `localizations`, and with their base values otherwise.
 4. Sets `locale` in the returned object to the chosen tag.
-5. Omits `localizations` from the returned object unless the request
-   names it explicitly in `properties`.
+
+Lookup removes subtags from the end of a range but never adds them: the
+range "de" matches a key "de" and not a key "de-CH" ({{RFC4647}}
+Section 3.4). A client SHOULD therefore include a range for each
+language it accepts in its general form, for example
+`[ "de-CH", "de", "en" ]`. Lookup ignores the range "*".
 
 The returned object is then a view in one language, not the stored
 object. Its `state` and the `/changes` state are those of the stored
 object; choosing a different language does not change them.
 
-The Accept-Language header of the request does not change the result
-of `/get` for any localizable property. A server applies a language
+When `urn:ietf:params:jmap:i18n` is in `using`, the server MUST NOT
+let the Accept-Language header of the request change the result of
+`/get` or `/query` for any localizable property; it applies a language
 only when the client passes `language`. A client that caches objects
 by id and state would otherwise hold a mix of languages and could not
-tell. {{RFC8620}} Section 3.8 still applies to custom strings that are
-not properties of a data type, such as error messages.
+tell. For the Quota `description`, this replaces the selection by
+Accept-Language in {{RFC9425}} Section 4.1 for clients that opt in
+({{quotas}}). {{RFC8620}} Section 3.8 still applies to custom strings
+that are not properties of a data type, such as the `title` and
+`detail` of a problem details object ({{problems}}).
 
 A client that edits an object it obtained through `language` SHOULD
 send only the properties it means to change. Writing a localized value
@@ -350,6 +383,14 @@ no `collation`, the server MAY choose one suited to the language
 chosen for each object, as {{RFC8620}} Section 5.5 already allows it to
 do from Accept-Language.
 
+### In /queryChanges
+
+The `language` argument of `/queryChanges` has the same meaning as in
+`/query`. The `queryState` of a `/query` result reflects the `language`
+it was computed with. When the `language` of a `/queryChanges` differs
+from that of the `/query` that produced `sinceQueryState`, the server
+returns a `cannotCalculateChanges` error ({{RFC8620}} Section 5.6).
+
 ## Language of Responses over WebSocket {#websocket}
 
 A Request sent over a WebSocket ({{RFC8887}} Section 4.3.2) has no Accept-Language
@@ -357,20 +398,12 @@ header of its own. A server SHOULD treat the Accept-Language header of
 the WebSocket opening handshake as the Accept-Language of every Request
 on that connection, for the purposes of {{RFC8620}} Section 3.8.
 
-A Response sent over a WebSocket has no Content-Language header. When
-`urn:ietf:params:jmap:i18n` is in `using` and the server has localized
-any custom string in the Response, it SHOULD add the following property
-to the Response object, alongside the properties that {{RFC8887}}
-Section 4.3.3 adds:
-
-`contentLanguage`: `String`
-: The language tag of the user-visible strings in this Response, with
-  the meaning that Content-Language has for an HTTP response in
-  {{RFC8620}} Section 3.8.
-
-A server MAY add the same property to a Response sent over HTTP. The
-`locale` of each object ({{properties}}) gives the language of its
-display text; `contentLanguage` does not.
+A Response sent over a WebSocket has no Content-Language header. The
+display text in it is labelled by the `locale` of each object
+({{properties}}), which serves both transports. This document defines
+no response-level label: the custom strings of {{RFC8620}} Section 3.8
+that a Response might carry, such as an error `description`, are
+non-localized ({{RFC8620}} Sections 3.6.2 and 5.3).
 
 # Applicability to Existing Data Types {#applicability}
 
@@ -384,11 +417,12 @@ properties.
 | Data type | Localizable properties | Defined in |
 |---|---|---|
 | Mailbox | `name` | {{RFC8621}} Section 2 |
-| Identity | `name`, `textSignature`, `htmlSignature` | {{RFC8621}} Section 6 |
 
 A Mailbox `name` is a Net-Unicode string {{RFC5198}} ({{RFC8621}}
 Section 2); localized names SHOULD meet the same rule. The rule that
-sibling Mailboxes have distinct names applies to base names only.
+sibling Mailboxes have distinct names applies to base names only, so
+two siblings can share a localized name; a client that shows localized
+names MAY add the base name to tell them apart.
 Clients that today show a translated name for a Mailbox with a `role`
 can continue to do so; `localizations` lets a user or server give names
 to Mailboxes that have no role.
@@ -396,17 +430,26 @@ to Mailboxes that have no role.
 Email content is not affected. Body parts already carry `charset` and
 `language` ({{RFC8621}} Section 4.1.4).
 
+Identity is not listed. Its `name` is the sender's own name as other
+people see it in messages, so choosing it by the reader's `language`
+is the wrong choice, and its signatures are message content, one of
+them HTML. VacationResponse (Section 8 of {{RFC8621}}) is not listed
+either: a vacation reply in several languages would be chosen by the
+language of each incoming message, not by a client's `language`, and
+is left to a future specification.
+
 ## JMAP Quotas {#quotas}
 
 | Data type | Localizable properties | Defined in |
 |---|---|---|
 | Quota | `name`, `description` | {{RFC9425}} Section 4.1 |
 
-Both properties are server-set. When the capability is in `using` and
-`language` is null, the server returns the base values with their
-`locale` and all `localizations`. When the capability is not in
+Both properties are server-set. When the capability is not in
 `using`, the server selects `description` from Accept-Language as
-{{RFC9425}} Section 4.1 describes.
+{{RFC9425}} Section 4.1 describes. When it is in `using`, this
+document updates {{RFC9425}}: with `language` null, the server returns
+the base values with their `locale` and all `localizations`, and with
+`language` set, it selects as {{language-argument}} describes.
 
 ## JMAP Contacts {#contacts}
 
@@ -437,7 +480,9 @@ is, the following apply:
 | Data type | Localizable properties |
 |---|---|
 | Calendar | `name`, `description` |
-| ParticipantIdentity | `name` |
+
+ParticipantIdentity is not listed, for the reason Identity is not
+({{mail}}).
 
 CalendarEvent objects are JSCalendar objects {{RFC8984}} and already
 have `locale` and `localizations`. The `language` argument does not
@@ -487,16 +532,18 @@ with an `invalidProperties` SetError.
 
 ## Normalization {#normalization}
 
-A server SHOULD NOT normalize text that it stores and returns.
+A server SHOULD NOT normalize text that it stores and returns, unless
+the defining specification requires a normalization form, as
+Net-Unicode {{RFC5198}} does for Mailbox names.
 Normalization changes the bytes of text that may be signed, encrypted,
 hashed, or compared with an earlier version, and it is not always
 reversible.
 
 Clients SHOULD send display text in Normalization Form C (NFC), as
-{{RFC5198}} and {{MNU}} recommend. A server that compares display text, for example
-to enforce a uniqueness rule, compares code point sequences unless the
-defining specification names another comparison. Identifiers and
-keywords compare as exact code point sequences.
+{{RFC5198}} and {{MNU}} recommend. A new specification that compares
+display text, for example to enforce a uniqueness rule, SHOULD say how;
+comparing code point sequences is the simplest choice. This document
+does not change the comparisons of existing specifications.
 
 ## Display Text Carries No Meaning {#no-meaning}
 
@@ -515,15 +562,18 @@ SHOULD state limits in octets.
 When a server shortens text, for example to produce a preview such as
 the Email `preview` of {{RFC8621}}, a notification body, or a push
 payload, it SHOULD cut at an extended grapheme cluster boundary
-({{UAX29}}). It never splits a UTF-8 sequence, since the result would
-not be valid I-JSON.
+({{UAX29}}), and never splits a code point. In particular it never
+separates the two halves of a UTF-16 surrogate pair in an
+implementation that holds strings as UTF-16, since the result would not
+be valid I-JSON.
 
 ## Collation and Search {#collation}
 
 {{RFC8620}} Section 5.5 already defines collation for sorting.
-Specifications that define a text filter on display text SHOULD match
-case-insensitively according to the collation the server would use to
-sort that property. Tokenization and stemming for text search depend on
+Specifications that define a text filter on display text SHOULD
+compare using the collation the server would use to sort that
+property, so that a case-insensitive sort gives a case-insensitive
+filter. Tokenization and stemming for text search depend on
 the language and are implementation-defined; a server MAY use `locale`
 to choose them.
 
@@ -531,9 +581,9 @@ to choose them.
 
 Instants on the wire are UTCDate ({{RFC8620}} Section 1.4) and carry
 no locale. A property that holds a wall-clock or recurring time SHOULD
-carry an IANA Time Zone Database identifier, as the TimeZoneId of
-{{RFC8984}} Section 1.4.8 and the Principal `timeZone` of {{RFC9670}}
-do. Formatting dates, times, and numbers for display is the client's
+carry a time zone identifier from the IANA Time Zone Database, as the
+Principal `timeZone` of {{RFC9670}} does and as {{RFC8984}} Section
+1.4.8 recommends for TimeZoneId. Formatting dates, times, and numbers for display is the client's
 business.
 
 # URIs and Problem Details in JMAP {#uris-problems}
@@ -545,9 +595,9 @@ to every JMAP specification and implementation, whether or not
 ## URIs {#uris}
 
 A property, argument, or Session member whose value is a URI or URL
-SHOULD hold a URI as defined in {{RFC3986}}. Unless its defining
-specification allows a relative reference, it SHOULD be an absolute
-URI ({{RFC3986}} Section 4.3). A URI Template ({{RFC6570}}), such as
+SHOULD hold a URI as defined in {{RFC3986}} Section 3. Unless its
+defining specification allows a relative reference, it SHOULD be a URI
+and not a relative reference ({{RFC3986}} Section 4.2). A URI Template ({{RFC6570}}), such as
 the `downloadUrl` of the Session, SHOULD expand to such a URI.
 
 URIs in JMAP are ASCII. A client or server that holds an
@@ -555,8 +605,10 @@ Internationalized Resource Identifier ({{RFC3987}}), for example one a
 user typed, SHOULD map it to a URI ({{RFC3987}} Section 3.1) before
 sending it, and a client MAY convert a URI back to an IRI for display
 ({{RFC3987}} Section 3.2). Characters outside ASCII in a path, query,
-or fragment are therefore sent as percent-encoded UTF-8, and a domain
-name as its A-label form.
+or fragment are therefore sent as percent-encoded UTF-8. A domain name
+SHOULD be sent in its A-label form, which {{RFC3987}} Section 3.1
+permits, because many URI consumers do not accept a percent-encoded
+host.
 
 A server compares URIs that identify things, such as capability URIs,
 as exact strings ({{RFC3986}} Section 6.2.1) unless the defining
@@ -583,11 +635,10 @@ registry, which gives them the `urn:ietf:params:jmap:error:` prefix in
 problem details ({{RFC8620}} Section 9.5).
 
 The `title` and `detail` members are display text. A server MAY
-localize them using Accept-Language ({{RFC9457}} Sections 3.1.3 and
-3.1.4), and
-SHOULD label the response with Content-Language when it does
-({{RFC8620}} Section 3.8). Clients act on `type` and `status`, never on
-`title` or `detail` ({{no-meaning}}).
+localize them using Accept-Language ({{RFC9457}} Sections 3 and
+3.1.3), and SHOULD label the response with Content-Language when it
+does ({{RFC8620}} Section 3.8). Clients act on `type` and the HTTP
+status code, never on `title` or `detail` ({{no-meaning}}).
 
 # Security Considerations {#security}
 
@@ -613,8 +664,8 @@ value: a shared address book could be named "Team contacts" in English
 and something unrelated in another language. Readers who use different
 languages can be told different things about the same object. Clients
 that let a user act on a shared object, for example by accepting a
-share or granting rights, MAY show the base value and its `locale`
-next to the localized value.
+share or granting rights, SHOULD show the base value and its `locale`
+next to the localized value when they differ.
 
 ## Resource Use {#resources}
 
@@ -655,7 +706,7 @@ Intended Use:
 Change Controller:
 : IETF
 
-Reference:
+Specification document:
 : This document.
 
 Security and Privacy Considerations:
