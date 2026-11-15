@@ -51,6 +51,7 @@ informative:
     seriesinfo:
       Internet-Draft: draft-bormann-dispatch-modern-network-unicode-09
     date: 2026-09-02
+  RFC2277:
   RFC4790:
   RFC5051:
   RFC5198:
@@ -74,6 +75,21 @@ informative:
     author:
       - org: The Unicode Consortium
     target: https://www.unicode.org/reports/tr9/
+  GENART-QUOTAS:
+    title: "Genart last call review of draft-ietf-jmap-quotas-06"
+    author:
+      - fullname: Thomas Fossati
+    date: 2022-11-10
+    target: https://mailarchive.ietf.org/arch/msg/jmap/7D_qXgNy2hyLK9MdiedC8u5mdkI/
+  STRING-META:
+    title: "Strings on the Web: Language and Direction Metadata"
+    author:
+      - fullname: Richard Ishida
+      - fullname: Addison Phillips
+    seriesinfo:
+      W3C: First Public Working Draft
+    date: 2026-07-16
+    target: https://www.w3.org/TR/string-meta/
   UTS39:
     title: "Unicode Technical Standard #39: Unicode Security Mechanisms"
     author:
@@ -131,6 +147,8 @@ questions, and this document does not change them:
   Mailbox, an AddressBook, a Calendar, or a Principal is a single
   string. A shared address book used by French and German speakers can
   have only one name, and nothing says which language that name is in.
+  BCP 18 {{RFC2277}} asks that a protocol that transfers text be able
+  to carry the language of that text (Section 4.2).
 - **Content-Language describes a whole response.** One HTTP response
   can carry objects in several languages, and a response sent over a
   WebSocket {{RFC8887}} has no header at all.
@@ -153,6 +171,13 @@ properties of existing data types that they apply to. For clients
 that opt in, this updates how {{RFC9425}} selects the Quota
 `description` ({{quotas}}). Future specifications can adopt them by
 listing their own localizable properties ({{new-specs}}).
+
+This brings JMAP display text in line with BCP 18 {{RFC2277}}. The
+`localizations` map follows the language-map pattern that
+{{STRING-META}} recommends for JSON formats that carry more than one
+language version of a field. This document does not add the
+per-string direction metadata that {{STRING-META}} also recommends;
+see {{confusables}}.
 
 {{text-handling}} and {{uris-problems}} update {{RFC8620}} with
 guidance on text, URIs, and errors that applies to every JMAP
@@ -190,12 +215,7 @@ empty object.
 
 The same capability appears in the `accountCapabilities` of each
 account for which the server supports localizations. Its value there is
-an object with one property:
-
-`preferredLanguages`: `String[]|null`
-: The languages the account's owner prefers, as language tags
-  ({{RFC5646}}), most preferred first, or null when the server has no
-  preference recorded. See {{account-preference}}.
+also an empty object.
 
 A client that wants the properties and arguments of this document
 includes `urn:ietf:params:jmap:i18n` in the `using` property of the
@@ -227,33 +247,18 @@ Example Session excerpt:
       "isReadOnly": false,
       "accountCapabilities": {
         "urn:ietf:params:jmap:mail": {},
-        "urn:ietf:params:jmap:i18n": {
-          "preferredLanguages": [ "fr-CH", "de" ]
-        }
+        "urn:ietf:params:jmap:i18n": {}
       }
     }
   }
 }
 ~~~
 
-## Account Language Preference {#account-preference}
-
-Some text is produced when no request is in progress: the text of a
-push notification sent through a push service, a message the server
-sends on the user's behalf, or a server-set property computed in the
-background. Accept-Language and the `language` argument are not
-available then.
-
-A server MAY use `preferredLanguages` to choose the language of such
-text. How the preference is set is outside the scope of this document;
-a server might take it from an account setting, from a directory, or
-from the Accept-Language of the owner's recent requests. A server
-MUST NOT use `preferredLanguages` to change the result of `/get` or
-`/query`, for the reason given in {{language-argument}}; a client that
-wants a language for data passes `language`.
-
-A client MAY read `preferredLanguages` as a default for `language` and
-for its own user interface.
+This document does not define an account-level language preference.
+Text that a server produces when no request is in progress, such as
+the text of a push notification, has no Accept-Language or `language`
+argument to go by; choosing its language is left to a specification of
+account settings.
 
 # Localized Display Text {#localization}
 
@@ -532,6 +537,16 @@ property, as {{RFC8621}} does for Mailbox names with Net-Unicode
 {{RFC5198}}. A server MAY reject display text that breaks these rules
 with an `invalidProperties` SetError.
 
+{{RFC9610}} Section 5 and {{RFC9670}} Section 5 already let a server
+restrict the characters of otherwise unconstrained String fields,
+starting from the PRECIS FreeformClass ({{RFC8264}} Section 4.3), and
+strip or replace what falls outside that set or reject it. This
+section gives the same latitude, with the same choices, to display
+text in every JMAP specification, so that a server does not need
+different rules for free-text fields of different specifications. A
+server that changes a value returns the changed property in the
+`/set` response ({{RFC8620}} Section 5.3).
+
 ## Normalization {#normalization}
 
 A server SHOULD NOT normalize text that it stores and returns, unless
@@ -654,7 +669,13 @@ SHOULD isolate display text from other users when they place it in
 surrounding text, for example with U+2068 FIRST STRONG ISOLATE and
 U+2069 POP DIRECTIONAL ISOLATE, or the HTML `bdi` element. Clients MAY
 apply the confusable detection of {{UTS39}} to names they show next to
-each other. Deployments that want enforcement can apply the PRECIS
+each other. This document carries the language of display text but
+not its base direction. When a client knows no direction, it SHOULD
+use the first strong directional character, as {{STRING-META}}
+recommends, and not derive the direction from the language tag
+alone. Review of {{RFC9425}} asked for the direction of display text
+to be established ({{GENART-QUOTAS}}); carrying it is left for future
+work. Deployments that want enforcement can apply the PRECIS
 Nickname profile {{RFC8266}} to names of people and the
 IdentifierClass of {{RFC8264}} to identifiers.
 
@@ -686,11 +707,6 @@ reveals to the same server.
 Localizations of a shared object are visible to everyone who can read
 the object. A user who adds a localization reveals the languages they
 use to those readers.
-
-The Session lists shared accounts as well as the user's own. A server
-SHOULD return `preferredLanguages` as null for an account that the
-requesting user does not own, so that sharing an account does not
-reveal its owner's languages ({{account-preference}}).
 
 # IANA Considerations {#iana}
 
