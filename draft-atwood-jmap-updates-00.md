@@ -318,10 +318,12 @@ that language, nor that property inside it, the server SHOULD remove
 the property from that PatchObject, and remove the PatchObject if it is
 left empty, as part of the same update. This keeps a client that does
 not use this capability, or that updates only some languages, from
-leaving stale translations behind when it renames an object. When the
-server removes anything, it includes `localizations` in the object it
-returns in `updated` ({{RFC8620}} Section 5.3) to clients that have
-the capability in `using`.
+leaving stale translations behind when it renames an object. An
+update that changes only `locale`, and no base value, removes nothing.
+When the server removes anything, it includes `localizations` in the
+object it returns in `updated` ({{RFC8620}} Section 5.3) to clients
+that have the capability in `using`. The value returned is the whole
+of `localizations` after the removal, not a patch.
 
 For a server-set localizable property, such as Quota `name`, the server
 populates `locale` and `localizations` itself. A server MAY also
@@ -352,6 +354,12 @@ When `language` is non-null, for each returned object the server:
    chosen tag applied, when the chosen tag is a key of
    `localizations`, and with their base values otherwise.
 4. Sets `locale` in the returned object to the chosen tag.
+5. Returns `localizations` as null.
+
+The view returns `localizations` as null because the chosen tag would
+otherwise be both the `locale` and a key of `localizations`, which
+{{properties}} does not allow. A client that wants every language
+omits `language`.
 
 Lookup removes subtags from the end of a range but never adds them: the
 range "de" matches a key "de" and not a key "de-CH" ({{RFC4647}}
@@ -378,8 +386,9 @@ that are not properties of a data type, such as the `title` and
 
 A client that edits an object it obtained through `language` SHOULD
 send only the properties it means to change. Writing a localized value
-back to a base property replaces the base value, and writing back the
-returned `locale` changes the base language.
+back to a base property replaces the base value, writing back the
+returned `locale` changes the base language, and writing back the
+returned null `localizations` removes every localization.
 
 ### In /query
 
