@@ -107,8 +107,9 @@ stored string is in. This document defines the
 `urn:ietf:params:jmap:i18n` capability, which adds `locale` and
 `localizations` properties, modelled on JSCalendar (RFC 8984), to the
 display text of existing JMAP data types, and a `language` argument
-with which a client asks for one language. It also updates RFC 8620
-with guidance for all JMAP specifications on text profiles, Unicode
+with which a client asks for one language. For clients that use that
+argument, this document updates RFC 9425, which selects the Quota
+description by Accept-Language. It also updates RFC 8620 with guidance for all JMAP specifications on text profiles, Unicode
 normalization, truncation, and the use of display text, and asks that
 URI-valued properties follow RFC 3986 and that every JMAP HTTP
 resource report errors as RFC 9457 problem details.
