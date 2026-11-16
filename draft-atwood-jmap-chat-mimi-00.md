@@ -78,9 +78,8 @@ informative:
     author:
       - fullname: Rohan Mahy
     seriesinfo:
-      Internet-Draft: draft-mahy-mimi-message-status-01
-    date: 2026-03-02
-    annotation: "Work in progress; this individual draft expired on 2026-09-03."
+      Internet-Draft: draft-mahy-mimi-message-status-02
+    date: 2026-11-01
   JMAP-CHAT-FED:
     title: "JMAP Chat Federation"
     author:
@@ -146,7 +145,20 @@ A MIMI media reaction (a reaction that is not an emoji) is carried in JMAP Chat 
 
 # Message Status {#status}
 
-MIMI message statuses `expired`, `hidden`, and `error` {{MIMI-MESSAGE-STATUS}} are not read acknowledgements, so a converting party does not set `readAt` or a ReadDisposition for them.
+A MIMI message status report {{MIMI-MESSAGE-STATUS}} is an application message from one member that gives a status for each of several message IDs. A converting party maps it to and from the JMAP Chat read state ({{JMAP-CHAT}}) as follows. It resolves each message ID as for any other MIMI reference ({{message-ids}}) and ignores an entry that does not resolve.
+
+A report from another member about a message the owner sent:
+
+* `delivered` (1) sets that member's `deliveredAt` in the Message's `deliveryReceipts`.
+* `read` (2) sets that member's `readAt` there, with ReadDisposition `"displayed"`, and also `deliveredAt` if it is not set.
+* `unread` (0) clears that member's `readAt` and `readDisposition`.
+* `expired` (3), `deleted` (4), `hidden` (5) and `error` (6) are not read acknowledgements: a converting party does not set `readAt` or a ReadDisposition for them, and does not change the owner's own copy. A status of 7 or more is ignored.
+
+The time recorded is the time the converting party received the report, since the report carries none. The aggregate `deliveryStatus` follows from `deliveryReceipts` as {{JMAP-CHAT}} describes.
+
+A report from another of the owner's own clients is the owner's own read state: `read` (2) sets `readAt` on the named Messages, and the converting party MAY advance the owner's ReadPosition to the latest of them. Other statuses from the owner's own clients change nothing.
+
+When the owner sets `readAt` on a Message another member sent, the converting party MAY send a report with `read` (2) for it, and on receiving a message it MAY send `delivered` (1). It does not send either when the owner's effective `receiptSharing` is `false`, or when the room's status notification policy ({{MIMI-ROOM-POLICY, Section 6.1}}) forbids them. It MAY combine several messages in one report.
 
 # The urn:ietf:params:jmap:chat:mimi Capability {#capability}
 
