@@ -349,7 +349,7 @@ A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and meta
 
 The server does not mirror the participant list into ChatMember records: `members` of a Chat with a `roomId` is the empty list, whether `Room/create` ({{room-create}}) or a Welcome ({{fanout-messages}}) created it.
 
-A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every leaf whose credential identity is the account's `userUri` ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients SHOULD then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch`, `Room/send`, `Room/update`, and `GroupInfo/fetch` treat it as if no Chat in the account had that `roomId`. A later Welcome for the account binds the Chat again ({{fanout-messages}}).
+A Chat is bound to its room from its creation until it is unbound. The account leaves the room's MLS group when a commit removes from the group every leaf whose credential identity is the account's `userUri` ({{keypackage}}). A server that is not a member of the group cannot in general tell which clients a commit removes, so the client unbinds the Chat: a client that processes a commit removing the last of its account's clients SHOULD then call `Room/unbind` ({{room-unbind}}). A server that can determine from a commit it has stored that the commit removed the last of the account's clients MAY unbind the Chat itself. An unbound Chat keeps its `roomId` and its Messages. The server stores no further FanoutMessage in it, and `KeyMaterial/fetch` and `Room/send` treat it as if no Chat in the account had that `roomId`; `Room/update` accepts only an external Commit for it ({{room-update}}). A later Welcome for the account binds the Chat again ({{fanout-messages}}), and so does an external Commit the hub accepts.
 
 ## Room/create {#room-create}
 
@@ -406,12 +406,14 @@ The request arguments are:
 : The account to use.
 
 `roomId` (String):
-: The `roomId` of a Chat in this account.
+: The MIMI room ID. Unless `request` carries an external Commit, the `roomId` of a Chat in this account bound to its room.
 
 `request` (String):
 : An UpdateRequest.
 
-The server MUST reject the call with `invalidArguments` if `request` does not parse as an UpdateRequest or if no Chat in the account is bound to `roomId`. Otherwise it processes the request as hub, or submits it to the hub, and returns `serverUnavailable` if the hub cannot be reached.
+An external Commit ({{MIMI-PROTOCOL, Section 3.5}}) joins the account's user to a room, whether or not the account is in it: this is how a client joins an open room or by a join link, rejoins after leaving, or adds another of its own clients. Its signature key is bound to no KeyPackage the account published ({{keypackage}}), so the server checks the credential instead.
+
+The server MUST reject the call with `invalidArguments` if `request` does not parse as an UpdateRequest, if it carries an external Commit whose UpdatePath leaf's credential identity is not `userUri`, or if it does not carry an external Commit and no Chat in the account is bound to `roomId`. Otherwise it processes the request as hub, or submits it to the hub, and returns `serverUnavailable` if the hub cannot be reached. When the hub accepts an external Commit from an account that has no Chat bound to the room, the server creates a Chat bound to it, or binds the account's unbound Chat with that `roomId` again.
 
 The response has the following arguments, decoded from the hub's response:
 
@@ -495,12 +497,12 @@ The request arguments are:
 : The account to use.
 
 `roomId` (String):
-: The `roomId` of a Chat in this account.
+: The MIMI room ID of the room to join. The account need not have a Chat for it: the hub decides by its room policy whether to answer ({{MIMI-ROOM-POLICY}}).
 
 `request` (String):
 : A GroupInfoRequest signed by the client.
 
-The server MUST reject the call with `invalidArguments` if `request` does not parse as a GroupInfoRequest or if no Chat in the account is bound to `roomId`. Otherwise it answers as hub, or forwards the request to the hub, and returns `serverUnavailable` if the hub cannot be reached.
+The server MUST reject the call with `invalidArguments` if `request` does not parse as a GroupInfoRequest, if `roomId` is not a MIMI room ID, or if the hub hosts no such room. Otherwise it answers as hub, or forwards the request to the hub, and returns `serverUnavailable` if the hub cannot be reached.
 
 The response arguments are:
 
