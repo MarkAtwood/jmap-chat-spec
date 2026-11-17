@@ -210,6 +210,15 @@ This document defines no client-visible indication that a server has verified a 
 
 The `did` field is OPTIONAL. Implementations MAY ignore it entirely if their deployment topology does not require pseudonymous DID binding; in that case, deployments SHOULD use the `identity`-as-DID form ({{did-as-identity}}) instead.
 
+## DID changes {#did-changes}
+
+`didChangedAt` (UTCDate, optional):
+: Server-set. The time the server last saw the DID bound to this ChatContact change: a different `did`, or `did` added or removed. Absent if it has never changed.
+
+A server that binds DIDs to ChatContacts remembers the DID it bound. When it later finds a different DID for the same `identity`, or none, it updates `did` and sets `didChangedAt`, so `ChatContact/changes` reports the record. A client MAY tell the user when `didChangedAt` changes, since the contact may now be someone else.
+
+A change can be legitimate, as when a user who lost their keys makes a new DID, or it can be a takeover, for example by the contact's provider. The server cannot tell which. A client that shows the change MAY keep showing it until the user has seen it.
+
 # Federation Authentication {#federation-auth}
 
 A federated peer signs every request that obtains a peer-role session or invokes a Peer/* method with an Ed25519 key that its peer domain publishes, and the receiving server verifies the signature and binds each caller identity of a Peer/* call (for example, `senderUserId`) to the authenticated peer domain, all as defined in {{JMAP-CHAT-FED}}. This document does not change that mechanism and defines no other. When a caller identity is a DID without a host (for example, a `did:key` or `did:plc` DID), the peer domain does not vouch for it, and {{JMAP-CHAT-FED}} accepts it only after the DID-bound verification defined here succeeds.

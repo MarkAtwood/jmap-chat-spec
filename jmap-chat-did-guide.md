@@ -832,6 +832,13 @@ are linked, and what UX surfaces these relationships.
   plus a bound `did` for crypto. This is NOT a multi-DID case; it is a
   single-DID-with-opaque-handle case. Multi-DID handling is
   separate.
+- *A bound DID that changes (DID draft, §DID changes).* When the
+  server finds a different DID, or none, for a ChatContact whose `did`
+  it had bound, it sets `didChangedAt`. A client may show this as a
+  warning, since the contact may now be someone else: a user who made a
+  new DID after losing keys looks the same as a takeover. A server
+  serving clients that ignore the field can also post a notice in the
+  affected chats.
 
 ### Common patterns
 
