@@ -55,8 +55,8 @@ informative:
     author:
       - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-object-history-02
-    date: 2026-10-16
+      Internet-Draft: draft-ietf-jmap-object-history-03
+    date: 2026-11-02
   DPV:
     title: "Data Privacy Vocabulary (DPV)"
     author:
