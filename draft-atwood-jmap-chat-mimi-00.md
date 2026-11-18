@@ -87,6 +87,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
+  JMAP-OBJ-HISTORY:
+    title: "JMAP Object History"
+    author:
+      - fullname: Bron Gondwana
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-object-history-03
+    date: 2026-11-02
 
 --- abstract
 
@@ -776,7 +783,7 @@ Security and privacy considerations:
 
 ## JMAP Data Types Registration
 
-IANA is requested to register the following entry in the "JMAP Data Types" registry:
+IANA is requested to register the following entry in the "JMAP Data Types" registry, including the "Supports History" field defined by {{JMAP-OBJ-HISTORY}}:
 
 Type Name:
 : KeyPackage
@@ -786,6 +793,9 @@ Can Reference Blobs:
 
 Can Use for State Change:
 : Yes
+
+Supports History:
+: No
 
 Capability:
 : `urn:ietf:params:jmap:chat:mimi`
@@ -803,6 +813,9 @@ Can Reference Blobs:
 
 Can Use for State Change:
 : Yes
+
+Supports History:
+: No
 
 Capability:
 : `urn:ietf:params:jmap:chat:mimi`

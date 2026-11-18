@@ -100,8 +100,8 @@ informative:
     author:
       - fullname: Bron Gondwana
     seriesinfo:
-      Internet-Draft: draft-ietf-jmap-object-history-02
-    date: 2026-10-16
+      Internet-Draft: draft-ietf-jmap-object-history-03
+    date: 2026-11-02
   RFC9610:
   RFC9670:
   JMAP-FILENODE:
@@ -1891,7 +1891,7 @@ References to individual JMAP objects do not use this sub-namespace; they use th
 
 ## JMAP Data Types Registration
 
-IANA is requested to register the following entries in the "JMAP Data Types" registry:
+IANA is requested to register the following entries in the "JMAP Data Types" registry, including the "Supports History" field defined by {{JMAP-OBJ-HISTORY}}:
 
 Type Name:
 : ChatContact
@@ -1900,6 +1900,9 @@ Can Reference Blobs:
 : No
 
 Can Use for State Change:
+: Yes
+
+Supports History:
 : Yes
 
 Capability:
@@ -1917,6 +1920,9 @@ Can Reference Blobs:
 Can Use for State Change:
 : Yes
 
+Supports History:
+: Yes
+
 Capability:
 : `urn:ietf:params:jmap:chat`
 
@@ -1930,6 +1936,9 @@ Can Reference Blobs:
 : Yes
 
 Can Use for State Change:
+: Yes
+
+Supports History:
 : Yes
 
 Capability:
@@ -1947,6 +1956,9 @@ Can Reference Blobs:
 Can Use for State Change:
 : Yes
 
+Supports History:
+: Yes
+
 Capability:
 : `urn:ietf:params:jmap:chat`
 
@@ -1960,6 +1972,9 @@ Can Reference Blobs:
 : No
 
 Can Use for State Change:
+: Yes
+
+Supports History:
 : Yes
 
 Capability:
@@ -1977,6 +1992,9 @@ Can Reference Blobs:
 Can Use for State Change:
 : Yes
 
+Supports History:
+: Yes
+
 Capability:
 : `urn:ietf:params:jmap:chat`
 
@@ -1990,6 +2008,9 @@ Can Reference Blobs:
 : No
 
 Can Use for State Change:
+: Yes
+
+Supports History:
 : Yes
 
 Capability:
@@ -2007,6 +2028,9 @@ Can Reference Blobs:
 Can Use for State Change:
 : Yes
 
+Supports History:
+: No
+
 Capability:
 : `urn:ietf:params:jmap:chat`
 
@@ -2021,6 +2045,9 @@ Can Reference Blobs:
 
 Can Use for State Change:
 : Yes
+
+Supports History:
+: No
 
 Capability:
 : `urn:ietf:params:jmap:chat`

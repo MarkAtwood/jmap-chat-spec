@@ -173,6 +173,13 @@ informative:
     author:
       org: Metaverse Standards Forum
     target: https://metaverse-standards.org/
+  JMAP-OBJ-HISTORY:
+    title: "JMAP Object History"
+    author:
+      - fullname: Bron Gondwana
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-object-history-03
+    date: 2026-11-02
 
 --- abstract
 
@@ -2984,29 +2991,33 @@ Security and privacy considerations:
 
 ## JMAP Data Type Registration
 
-IANA is requested to register the following entries in the "JMAP Data Types" registry:
+IANA is requested to register the following entries in the "JMAP Data Types" registry, including the "Supports History" field defined by {{JMAP-OBJ-HISTORY}}:
 
 Type Name: SceneRegion
 Can reference blobs: No
 Can use for state change: Yes
+Supports history: Yes
 Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 Type Name: SceneObject
 Can reference blobs: Yes
 Can use for state change: Yes
+Supports history: Yes
 Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 Type Name: SceneAvatar
 Can reference blobs: Yes
 Can use for state change: Yes
+Supports history: No
 Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 
 Type Name: SceneAsset
 Can reference blobs: Yes
 Can use for state change: Yes
+Supports history: Yes
 Capability: `urn:ietf:params:jmap:scene`
 Specification document: This document.
 

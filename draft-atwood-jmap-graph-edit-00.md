@@ -87,6 +87,13 @@ informative:
       - fullname: Soren Lassen
     date: 2010-07
     target: https://svn.apache.org/repos/asf/incubator/wave/trunk/whitepapers/operational-transform/operational-transform.html?p=1400000
+  JMAP-OBJ-HISTORY:
+    title: "JMAP Object History"
+    author:
+      - fullname: Bron Gondwana
+    seriesinfo:
+      Internet-Draft: draft-ietf-jmap-object-history-03
+    date: 2026-11-02
 
 --- abstract
 
@@ -509,11 +516,12 @@ Security and privacy considerations:
 
 ## JMAP Data Type Registration
 
-IANA is requested to register the following entry in the "JMAP Data Types" registry:
+IANA is requested to register the following entry in the "JMAP Data Types" registry, including the "Supports History" field defined by {{JMAP-OBJ-HISTORY}}:
 
 Type Name: GraphNodeOp
 Can reference blobs: No
 Can use for state change: Yes
+Supports history: No
 Capability: `urn:ietf:params:jmap:graph:edit`
 Specification document: This document.
 
