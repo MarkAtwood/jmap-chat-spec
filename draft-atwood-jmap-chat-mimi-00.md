@@ -601,7 +601,7 @@ In a Chat with a `roomId`, every Message has `bodyType` `"application/mimi-fanou
 
 A client sends an application message as an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, the content that {{RFC9420, Section 17.10}} registers as `message/mls`, with `Room/send` ({{room-send}}). The server MUST reject a `Message/set` create in a Chat with a `roomId` with a `forbidden` SetError.
 
-MIMI edits, reactions, and retractions are MIMI content in new messages. The server MUST reject a `Message/set` update that changes `body`, `bodyType`, or `reactions` of a Message in a Chat with a `roomId` with an `invalidProperties` SetError naming the changed properties.
+MIMI edits, reactions, and retractions are MIMI content in new messages. A server acting as the account's MIMI provider MUST reject a `Message/set` update that changes `body`, `bodyType`, or `reactions` of a Message in a Chat with a `roomId` with an `invalidProperties` SetError naming the changed properties. A converting party that builds the room's messages itself instead maps such an update to MIMI content that replaces the original ({{edits}}).
 
 ## application/mimi-fanout {#fanout-messages}
 
