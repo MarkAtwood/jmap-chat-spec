@@ -234,6 +234,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `assetDownloadUrl` (String, optional):
 : A URL template ({{RFC6570}}, level 1) with the variables `roomId` and `url`. A GET to the URL this forms, authenticated as for the API, returns the content at `url` for a message of room `roomId`: the server's own asset directly, and another provider's through the room's hub (`proxyDownload`, {{MIMI-PROTOCOL, Section 5.10.2}}), so that the client never contacts another provider. The server MUST refuse a `roomId` that no Chat of the account has. Absent if the server does not fetch attachments.
 
+`assetLifetime` (UnsignedInt, optional):
+: The number of seconds after its upload that a blob stays available at `assetUrl`. The server may delete it after that. A client that puts the URL in an ExternalPart MAY set its `expires` ({{MIMI-CONTENT, Section 4.5}}) to the upload time plus this value, so that recipients know when the URL stops working. Absent if the server states no limit; present only with `assetUrl`.
+
 A server that advertises this capability MUST include `"application/mimi-fanout"` in `supportedBodyTypes` ({{JMAP-CHAT}}).
 
 # KeyPackages {#keypackage}
