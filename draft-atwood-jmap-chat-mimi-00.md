@@ -228,6 +228,12 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `maxKeyPackages` (UnsignedInt):
 : The maximum number of KeyPackage records, last-resort KeyPackages included, the server stores for this account.
 
+`assetUrl` (String, optional):
+: A URL template ({{!RFC6570}}, level 1) with the variable `blobId`. A blob the account uploaded ({{RFC8620, Section 6.1}}) is served, without authentication, at the URL this forms, so that the URL can be the `url` of an ExternalPart ({{MIMI-CONTENT, Section 4.5}}) that other providers' clients fetch. The blob id is the only credential for it, so clients upload only encrypted content. Absent if the server does not store attachments.
+
+`assetDownloadUrl` (String, optional):
+: A URL template ({{RFC6570}}, level 1) with the variables `roomId` and `url`. A GET to the URL this forms, authenticated as for the API, returns the content at `url` for a message of room `roomId`: the server's own asset directly, and another provider's through the room's hub (`proxyDownload`, {{MIMI-PROTOCOL, Section 5.10.2}}), so that the client never contacts another provider. The server MUST refuse a `roomId` that no Chat of the account has. Absent if the server does not fetch attachments.
+
 A server that advertises this capability MUST include `"application/mimi-fanout"` in `supportedBodyTypes` ({{JMAP-CHAT}}).
 
 # KeyPackages {#keypackage}
