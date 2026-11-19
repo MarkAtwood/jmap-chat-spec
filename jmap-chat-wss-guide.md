@@ -133,7 +133,8 @@ After the WebSocket handshake completes, send these messages in order:
    ```
 
    The full set of subscribable data types is: `Message`, `Chat`, `ChatContact`,
-   `ReadPosition`, `PresenceStatus`, `Space`, `CustomEmoji`, `SpaceBan`, `SpaceInvite`.
+   `ReadPosition`, `PresenceStatus`, `Space`, `CustomEmoji`, `SpaceBan`, `SpaceInvite`,
+   `ChatBan`.
    Subscribe to whichever your client uses; you do not need to subscribe to all of them.
 
 2. **`ChatStreamEnable`** if ephemeral events are supported:

@@ -248,7 +248,7 @@ informative:
 
 This document defines JMAP for Chat, a JMAP capability (RFC 8620) for direct and group text messaging. It supports two deployment topologies: a mailbox-per-user model in which each user operates their own server, and a relay model in which a shared server routes end-to-end encrypted messages.
 
-The specification defines the `urn:ietf:params:jmap:chat` capability; twenty-one data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in a companion JMAP Chat federation specification.
+The specification defines the `urn:ietf:params:jmap:chat` capability; twenty-two data types (Attachment, Endpoint, MessageAction, Mention, BroadcastMention, MessageRevision, Reaction, ChatContact, ChatMember, Chat, Message, SpaceRole, SpaceMember, Category, ChannelPermission, Space, SpaceInvite, CustomEmoji, SpaceBan, ChatBan, ReadPosition, and PresenceStatus); and JMAP owner methods for each top-level type. Server-to-server federation methods are defined in a companion JMAP Chat federation specification.
 
 The protocol covers the feature set common to contemporary messaging systems: group chat with membership roles, message reactions, editing, deletion, threading, @mentions, typing indicators, read receipts per participant, presence, pinned messages, per-chat notification settings, sender-controlled message expiry, and burn-on-read. Spaces provide a named multi-channel container with a role-based permission system, analogous to what other systems call a server, workspace, or team.
 
@@ -998,6 +998,31 @@ A SpaceBan prevents a user from participating in a Space.
 `expiresAt` (UTCDate, optional):
 : If present, the ban expires at this time and the server MUST restore the user's access. If absent, the ban is permanent until explicitly destroyed.
 
+## ChatBan {#chat-ban}
+
+A ChatBan prevents a user from being a member of a group Chat.
+
+`id` (String, immutable, server-set):
+: Opaque server-assigned JMAP identifier for this ban.
+
+`chatId` (String, immutable):
+: The id of the group Chat this ban applies to.
+
+`userId` (String, immutable):
+: The ChatContact.id of the banned user.
+
+`bannedBy` (String, immutable, server-set):
+: The ChatContact.id of the admin who issued this ban.
+
+`reason` (String, optional):
+: Human-readable reason for the ban. Visible to the banned user.
+
+`createdAt` (UTCDate, immutable, server-set):
+: Time this ban was created.
+
+`expiresAt` (UTCDate, optional):
+: If present, the ban expires at this time and the server MUST lift it. If absent, the ban lasts until it is destroyed.
+
 ## ReadPosition {#read-position}
 
 A ReadPosition tracks the owner's read state within a Chat. The server creates a ReadPosition record automatically when a Chat first becomes visible to the owner, and destroys it when the Chat is destroyed. For direct and group Chats, a ReadPosition is created when the first message is delivered. For channel Chats, a ReadPosition is created when the owner joins the containing Space. This cursor model serves the same local read-tracking purpose as the `$seen` keyword in {{RFC8621}} (JMAP Mail), but uses a per-chat high-water mark rather than per-message boolean flags, which is appropriate for the ordered-stream access pattern of chat.
@@ -1538,6 +1563,26 @@ Standard JMAP `/set`.
 
 `destroy` lifts the ban. Requires `"ban"` permission in the Space.
 
+## ChatBan Methods
+
+### ChatBan/get
+
+Standard JMAP `/get`. Members with the `"admin"` role in a group Chat see all ChatBan records for that Chat. A banned user fetching their own account sees only ChatBan records where `userId` is the accountId.
+
+### ChatBan/changes
+
+Standard JMAP `/changes`.
+
+### ChatBan/set
+
+Standard JMAP `/set`.
+
+`create` accepts: `chatId` (String, required), `userId` (String, required), `reason` (String, optional), `expiresAt` (UTCDate, optional). It requires the `"admin"` role in the Chat, and the Chat MUST be a group Chat; the server MUST reject any other with a `forbidden` SetError. Creating a ban removes the user from `members` if present, as `removeMembers` would, and while the ban lasts the server MUST reject adding the user with an `addMembers` entry, returning a `forbidden` SetError.
+
+`update` supports: `reason`, `expiresAt`. Requires the `"admin"` role in the Chat.
+
+`destroy` lifts the ban. Requires the `"admin"` role in the Chat. Lifting a ban does not add the user back to the Chat.
+
 # Rich Body Format {#rich-body}
 
 This section defines the `application/jmap-chat-rich` body type for structured inline formatting.
@@ -1631,7 +1676,7 @@ data: {"@type":"StateChange","changed":{"<accountId>":{
 data:   "Message":"<s>","Chat":"<s>","ChatContact":"<s>"}}}
 ~~~
 
-The example shows three types. The `changed` object can name any data type registered by this document (`ChatContact`, `Chat`, `Message`, `Space`, `SpaceInvite`, `CustomEmoji`, `SpaceBan`, `ReadPosition`, `PresenceStatus`) and any type defined by a companion capability the server supports.
+The example shows three types. The `changed` object can name any data type registered by this document (`ChatContact`, `Chat`, `Message`, `Space`, `SpaceInvite`, `CustomEmoji`, `SpaceBan`, `ChatBan`, `ReadPosition`, `PresenceStatus`) and any type defined by a companion capability the server supports.
 
 Clients SHOULD call the corresponding `/changes` method upon receipt. On `cannotCalculateChanges`, fall back to `/get`.
 
@@ -2020,6 +2065,24 @@ Reference:
 : This document
 
 Type Name:
+: ChatBan
+
+Can Reference Blobs:
+: No
+
+Can Use for State Change:
+: Yes
+
+Supports History:
+: Yes
+
+Capability:
+: `urn:ietf:params:jmap:chat`
+
+Reference:
+: This document
+
+Type Name:
 : ReadPosition
 
 Can Reference Blobs:
@@ -2068,6 +2131,7 @@ IANA is requested to register the following entries in the "JMAP Object URI Type
 | spaceinvite | SpaceInvite | This document |
 | customemoji | CustomEmoji | This document |
 | spaceban | SpaceBan | This document |
+| chatban | ChatBan | This document |
 | readposition | ReadPosition | This document |
 | presencestatus | PresenceStatus | This document |
 

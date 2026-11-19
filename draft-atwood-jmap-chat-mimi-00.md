@@ -167,6 +167,17 @@ A report from another of the owner's own clients is the owner's own read state: 
 
 When the owner sets `readAt` on a Message another member sent, the converting party MAY send a report with `read` (2) for it, and on receiving a message it MAY send `delivered` (1). It does not send either when the owner's effective `receiptSharing` is `false`, or when the room's status notification policy ({{MIMI-ROOM-POLICY, Section 6.1}}) forbids them. It MAY combine several messages in one report.
 
+# Moderation {#moderation}
+
+A converting party that is itself a member of a room's MLS group, and so builds the room's commits, maps the moderation actions of {{JMAP-CHAT}} on a group Chat bound to that room to room-policy actions ({{MIMI-ROOM-POLICY, Section 8.1}}). Each action becomes one commit that the hub accepts or refuses under the room's policy; a refusal is a `forbidden` SetError, and the Chat's `members` change when the commit is accepted.
+
+* `removeMembers` naming another user removes that user from the participant list and removes all of the user's clients from the group (`canRemoveParticipant`).
+* `updateMemberRoles` changes the user's role in the participant list (`canChangeUserRole`). The role `"admin"` maps to the room's role named "admin" and `"member"` to the room's role named "member"; a room without such a role refuses the change.
+* Creating a ChatBan ({{JMAP-CHAT}}) gives the user the room's role named "banned" and removes all of the user's clients, in one commit (`canBan`). Destroying it gives the user the member role again without adding any client (`canUnban`).
+* The `kickMembers` patch key of `Chat/set` (String\[], ChatContact ids), which this document adds for Chats bound to a room, removes the listed users' clients from the group but keeps them in the participant list, so that they can rejoin (`canKick`). {{JMAP-CHAT}} has no such action, because there a member and its clients are not separate.
+
+This section does not apply to a MIMI provider's own Chats with a `roomId` ({{chat-roomid}}), whose membership changes only through `Room/update`.
+
 # The urn:ietf:params:jmap:chat:mimi Capability {#capability}
 
 Servers supporting the client interface of this document advertise the `urn:ietf:params:jmap:chat:mimi` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also present.

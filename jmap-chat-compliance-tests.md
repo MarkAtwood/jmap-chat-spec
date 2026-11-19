@@ -610,6 +610,14 @@ Verify this works. If the server expects `memberIds` for direct chats, it violat
 
 **Test:** Create a SpaceBan with `expiresAt` in the past. Run the expiry sweep. Verify the ban is removed.
 
+### 9.2a ChatBan expiry auto-restore
+
+**Test:** Create a ChatBan with `expiresAt` in the past. Run the expiry sweep. Verify the ban is removed and the user is not added back to the Chat.
+
+### 9.2b ChatBan blocks addMembers
+
+**Test:** As a group Chat admin, create a ChatBan for a member. Verify the member is no longer in `members`. Call `Chat/set` with `addMembers` naming the banned user. Verify a `forbidden` SetError. Destroy the ban, repeat `addMembers`, verify success.
+
 ### 9.3 Presence expiresAt auto-clear
 **Spec:** draft-atwood-jmap-chat-00
 **Severity:** SHOULD | **Round:** 3

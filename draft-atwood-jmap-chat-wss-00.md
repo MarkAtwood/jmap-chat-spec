@@ -155,6 +155,7 @@ State-change push notifications for JMAP Chat data types work without modificati
 - `"Space"` — new or updated Space objects
 - `"CustomEmoji"` — new or updated CustomEmoji objects
 - `"SpaceBan"` — new or updated SpaceBan objects
+- `"ChatBan"` — new or updated ChatBan objects
 - `"SpaceInvite"` — new or updated SpaceInvite objects
 
 Upon receiving a `StateChange` for a Chat data type, clients issue the corresponding `/changes` call to retrieve updated objects. On `cannotCalculateChanges`, clients fall back to `/get` ({{RFC8620}} Section 5.2).

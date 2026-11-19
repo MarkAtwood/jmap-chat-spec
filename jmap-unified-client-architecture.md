@@ -515,6 +515,7 @@ the tab bar shows Mail and Chat as peer top-level views.
 - Message (message content, attachments, reactions, threads)
 - Space (multi-channel containers with RBAC)
 - SpaceRole, SpaceMember, SpaceInvite, SpaceBan
+- ChatBan (bans from a group Chat)
 - Category, ChannelPermission
 - CustomEmoji
 - ReadPosition (per-chat read cursor)
@@ -526,7 +527,7 @@ BroadcastMention, MessageRevision, Reaction, ReadDisposition (String enum), Chat
 **Ephemeral events consumed:** ChatTypingEvent, ChatPresenceEvent
 
 **State change types:** Message, Chat, ChatContact, ReadPosition,
-PresenceStatus, Space, CustomEmoji, SpaceBan, SpaceInvite
+PresenceStatus, Space, CustomEmoji, SpaceBan, SpaceInvite, ChatBan
 
 #### VTC Module
 
@@ -2016,7 +2017,7 @@ capabilities).
 |---|---|---|
 | Mail | `urn:ietf:params:jmap:mail` | Mailbox, Email, Thread, SearchSnippet |
 | Mail Submission | `urn:ietf:params:jmap:submission` | Identity, EmailSubmission |
-| Chat | `urn:ietf:params:jmap:chat` | ChatContact, Chat, Message, Space, SpaceRole, SpaceMember, SpaceInvite, SpaceBan, CustomEmoji, ReadPosition, PresenceStatus |
+| Chat | `urn:ietf:params:jmap:chat` | ChatContact, Chat, Message, Space, SpaceRole, SpaceMember, SpaceInvite, SpaceBan, ChatBan, CustomEmoji, ReadPosition, PresenceStatus |
 | Chat WSS | `urn:ietf:params:jmap:chat:websocket` | (events: ChatTypingEvent, ChatPresenceEvent) |
 | Chat Push | `urn:ietf:params:jmap:chat:push` | ChatPushConfig, ChatMessagePush, ChatMessageEntry |
 | Chat DID | `urn:ietf:params:jmap:chat:did` | (extends ChatContact with `did` field) |
