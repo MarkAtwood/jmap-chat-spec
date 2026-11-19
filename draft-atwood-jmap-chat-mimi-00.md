@@ -178,6 +178,29 @@ A converting party that is itself a member of a room's MLS group, and so builds 
 
 This section does not apply to a MIMI provider's own Chats with a `roomId` ({{chat-roomid}}), whose membership changes only through `Room/update`.
 
+# Reporting Abuse from a Converting Party {#report-abuse}
+
+A converting party keeps, for each Message it converts from an application message, the application data as received, the hub's acceptance time, and the message's frank when it has one ({{MIMI-PROTOCOL, Section 5.4.1.3}}: "The receiver needs to store the server_frank ... and context fields"). It keeps them as long as it keeps the Message.
+
+`Message/reportAbuse` reports Messages as abusive. Its arguments are `accountId`; `messageIds` (Id\[]), Messages of one Chat bound to a room, all sent by one other user; `reasonCode` (UnsignedInt, the AbuseType); and `note` (String, optional). The converting party builds one AbuseReport naming the account's `userUri` as `reportingUser` and the sender as `allegedAbuserUri`. A Message with a frank becomes an AbusiveMessage. A Message without one, as in a room without franking, is carried in the report's `abuse_extensions` as an unverified message ({{unverified-messages}}), because an AbusiveMessage needs a frank. The converting party sends the report as `Room/reportAbuse` does ({{room-report-abuse}}) and answers with the same `responseCode`. It MUST reject a call that names the owner's own Messages, Messages of more than one Chat or more than one sender, or Messages it has nothing kept for, with `invalidArguments`.
+
+## Unverified Messages {#unverified-messages}
+
+The `unverified_abusive_messages` component (TBD; mimid uses the private-use value 0xF020) of an AbuseReport's `abuse_extensions` carries reported messages that have no frank:
+
+~~~ tls-presentation
+struct {
+    opaque message_content<V>;
+    uint64 accepted_timestamp;
+} UnverifiedAbusiveMessage;
+
+struct {
+    UnverifiedAbusiveMessage messages<V>;
+} UnverifiedAbusiveMessages;
+~~~
+
+`message_content` is the application data as received and `accepted_timestamp` the hub's acceptance time in milliseconds. A hub cannot verify these messages; it MAY record them as unverified alongside the AbusiveMessages it verifies. A hub that does not know the component ignores it, as for any unknown component.
+
 # The urn:ietf:params:jmap:chat:mimi Capability {#capability}
 
 Servers supporting the client interface of this document advertise the `urn:ietf:params:jmap:chat:mimi` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also present.
@@ -487,6 +510,33 @@ The response has the following arguments, decoded from the SubmitMessageResponse
 : When `responseCode` is `"epochTooOld"`: the hub's current epoch.
 
 When the hub accepts the message, the server MUST store, in every Chat of a local account bound to the room, a Message ({{fanout-messages}}) whose body is the FanoutMessage with `timestamp` set to `accepted_timestamp`, `message` set to `message`, and `frank` copied from the response when present, unless {{fanout-messages}} forbids storing it. The hub does not forward the owner's own message to the owner's provider ({{MIMI-PROTOCOL, Section 5.5}}), so this is how the owner's clients and the room's other local participants receive it.
+
+## Room/reportAbuse {#room-report-abuse}
+
+Room/reportAbuse sends an abuse report ({{MIMI-PROTOCOL, Section 5.9}}) to a room's hub.
+
+The request arguments are:
+
+`accountId` (Id):
+: The account to use.
+
+`roomId` (String):
+: The `roomId` of a Chat in this account, bound or unbound ({{chat-roomid}}), so that a user removed from a room can still report what it received.
+
+`report` (String):
+: An AbuseReport ({{MIMI-PROTOCOL, Section 5.9}}).
+
+The server MUST reject the call with `invalidArguments` if `report` does not parse as an AbuseReport, if no Chat in the account has `roomId`, or if the report's `reportingUser` is not `userUri`: a report sent through this method always names its reporter. Otherwise it sends the report to the room's hub, or processes it as hub, and returns `serverUnavailable` if the hub cannot be reached.
+
+The response has the following arguments:
+
+`accountId` (Id):
+: The account used.
+
+`responseCode` (String):
+: `"accepted"` if the hub accepted the report; `"notAllowed"` if the hub refused it because the room's policy does not let the reporter report abuse (`canReportAbuse`, {{MIMI-ROOM-POLICY, Section 8.3}}); `"unverifiedMessage"` if the frank of a reported message did not verify; or `"refused"` for any other refusal.
+
+A hub that reports a refusal reason the server cannot tell apart from others is answered as `"refused"`.
 
 ## Room/unbind {#room-unbind}
 
