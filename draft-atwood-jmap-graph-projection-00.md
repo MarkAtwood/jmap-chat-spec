@@ -150,7 +150,7 @@ An account has at most one projected Graph. It lives in the account whose data i
 
 The server MAY project objects of any data type available in the account, subject to the following:
 
-- A data type is projected only if it has a type name registered in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}), because each node refers to its source object by object URI ({{object-uri-property}}). This document registers type names for the data types of {{RFC8621}} and {{RFC9610}} ({{iana}}).
+- A data type is projected only if it has a type name registered in the "JMAP Object URI Types" registry ({{JMAP-OBJECT-URI}}), because each node refers to its source object by object URI ({{object-uri-property}}). This document registers type names for the data types of {{RFC8621}} and {{RFC9610}} ({{iana}}), except SearchSnippet, which has no `id` and so cannot be named by an object URI, and VacationResponse, a per-account singleton that refers to no other object and that no object refers to.
 - The server MUST NOT project the Graph, GraphNode, or GraphEdge data types. Projecting them would make the projection contain itself.
 - If the server projects a data type, it projects every object of that type in the account. Which objects a given user sees is then determined by {{visibility}}.
 

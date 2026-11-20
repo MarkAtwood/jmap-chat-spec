@@ -73,7 +73,7 @@ A JMAP object URI refers to one JMAP object by type, account, and id. It uses th
 
 ~~~abnf
 jmap-object-uri = "jmap:" type-name ":" account-id ":" object-id
-type-name       = 1*( %x61-7A / DIGIT )
+type-name       = 1*255( %x61-7A / DIGIT )
                   ; registered in "JMAP Object URI Types"
 account-id      = 1*255id-char
 object-id       = 1*255id-char
@@ -81,7 +81,7 @@ id-char         = ALPHA / DIGIT / "-" / "_"
                   ; the Id character set of RFC 8620, Section 1.2
 ~~~
 
-`type-name` is a type name registered in the "JMAP Object URI Types" registry ({{iana-uri-types}}), which maps it to the JMAP data type it stands for. `account-id` is the JMAP accountId of the account holding the object, and `object-id` is the object's `id`. For example, `jmap:calendarevent:A13824:E6B2` refers to the CalendarEvent with id `E6B2` in account `A13824`.
+`type-name` is a type name registered in the "JMAP Object URI Types" registry ({{iana-uri-types}}), which maps it to the JMAP data type it stands for. Like `account-id` and `object-id`, it is at most 255 octets long, the limit {{RFC8620, Section 1.2}} sets for an Id, so a JMAP object URI is at most 772 octets long. `account-id` is the JMAP accountId of the account holding the object, and `object-id` is the object's `id`. For example, `jmap:calendarevent:A13824:E6B2` refers to the CalendarEvent with id `E6B2` in account `A13824`.
 
 ## Interpretation
 

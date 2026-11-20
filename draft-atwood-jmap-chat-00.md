@@ -415,7 +415,7 @@ An Endpoint advertises an out-of-band capability reachable at a URI. Endpoints a
 
 ## MessageAction {#message-action}
 
-A MessageAction is a per-message out-of-band action invitation carried in a Message and in `Peer/deliver`. It signals that a message is associated with an out-of-band interaction — a video call invitation, a payment request, a file available outside the blob channel, etc. Servers MUST store and forward MessageAction records without inspection or transformation, except that a server implementing {{JMAP-CHAT-FED}} maps any user reference that this or a companion specification defines in `metadata`, and removes from data it receives from a peer every MessageAction whose `uri` is a JMAP object URI ({{JMAP-OBJECT-URI}}), both as {{JMAP-CHAT-FED}} specifies. Clients SHOULD NOT act on a MessageAction automatically; all OOB actions require explicit user initiation.
+A MessageAction is a per-message out-of-band action invitation carried in a Message and in `Peer/deliver`. It signals that a message is associated with an out-of-band interaction — a video call invitation, a payment request, a file available outside the blob channel, etc. Servers MUST store and forward MessageAction records without inspection or transformation, except that a server implementing {{JMAP-CHAT-FED}} maps any user reference that this or a companion specification defines in `metadata`, and removes from data it receives from a peer every MessageAction whose `uri` is a `jmap` URI ({{JMAP-OBJECT-URI}}), both as {{JMAP-CHAT-FED}} specifies. Clients SHOULD NOT act on a MessageAction automatically; all OOB actions require explicit user initiation.
 
 `type` (String):
 : Same URI namespace as Endpoint `type` (see {{endpoint}}). Clients MUST ignore actions whose `type` they do not recognize.
@@ -1617,7 +1617,7 @@ Additional fields are type-specific:
 | `"blockquote"` | none | Quoted text |
 | `"mention"` | `userId` (String) | Per-user @mention, for display; `userId` is display data written by the composing client, with no server meaning, and need not be an id on the receiving server |
 | `"broadcast"` | `scope` (String) | Broadcast-scope @mention, for display; `scope` is one of `"everyone"`, `"here"`, or `"admins"` (see {{broadcast-mention}}) |
-| `"link"` | `uri` (String) | Hyperlink; `uri` SHOULD be treated as untrusted, and MUST NOT be a JMAP object URI ({{JMAP-OBJECT-URI}}), because `body` is relayed between servers unchanged |
+| `"link"` | `uri` (String) | Hyperlink; `uri` SHOULD be treated as untrusted, and MUST NOT be a `jmap` URI of any form, including a JMAP object URI ({{JMAP-OBJECT-URI}}), because `body` is relayed between servers unchanged |
 
 Servers MUST NOT reject messages solely because they contain unrecognized span types; this allows protocol evolution. Clients MUST silently ignore unknown span types and render the `text` field as plaintext, preserving forward compatibility.
 

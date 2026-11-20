@@ -57,6 +57,7 @@ informative:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
   RFC8984:
+  RFC9404:
 
 --- abstract
 
@@ -314,6 +315,8 @@ IANA is requested to register the following entries in the "JMAP Object URI Type
 |---|---|---|
 | tasklist | TaskList | This document |
 | task | Task | This document |
+
+The designated expert for that registry checks that each Data Type is registered in the "JMAP Data Types" registry ({{RFC9404, Section 6.3}}). {{JMAP-TASKS}} does not register Task or TaskList there, and no other document does yet. These two entries therefore depend on a document that registers Task and TaskList as JMAP data types; IANA is requested to add them once that registration has been made.
 
 ## MessageAction Type URI
 
