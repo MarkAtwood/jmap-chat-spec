@@ -249,7 +249,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `assetDownloadUrl` (String, optional):
 : A URL template ({{RFC6570}}, level 1) with the variables `roomId` and `url`. A GET to the URL this forms, authenticated as for the API, returns the content at `url` for a message of room `roomId`: the server's own asset directly, and another provider's through the room's hub (`proxyDownload`, {{MIMI-PROTOCOL, Section 5.10.2}}), so that the client never contacts another provider. The server MUST refuse a `roomId` that no Chat of the account has. Absent if the server does not fetch attachments.
 
-  The server answers a `roomId` that no Chat of the account has, and a `url` it cannot find, with status 404; a `url` the room's hub or the asset's provider refuses with 403; and a provider that cannot be reached with 502. It MAY add an RFC 9457 problem body ({{RFC9457}}).
+  The server answers a `roomId` that no Chat of the account has, and a `url` it cannot find, with status 404; a `url` the room's hub or the asset's provider refuses with 403; and a provider that cannot be reached with 502. It MAY add a problem details body ({{RFC9457}}).
 
 `assetLifetime` (UnsignedInt, optional):
 : The number of seconds after its upload that a blob stays available at `assetUrl`. The server may delete it after that. A client that puts the URL in an ExternalPart MAY set its `expires` ({{MIMI-CONTENT, Section 4.5}}) to the upload time plus this value, so that recipients know when the URL stops working. Absent if the server states no limit; present only with `assetUrl`.
@@ -322,7 +322,7 @@ The request arguments are:
 
 The server MUST reject the call with `invalidArguments` if `request` does not parse as a KeyMaterialRequest, if its `requestingUser` is not `userUri`, if its `roomId` is not `roomId`, or if no Chat in the account is bound to that `roomId`. Otherwise the server obtains a KeyMaterialResponse. When this server is the room's hub, it answers from its own KeyPackage store ({{keypackage-claim}}) if the target user is local and asks the target provider otherwise. When this server is not the room's hub, it MUST send the request to the hub, even if the target user is local, because a hub that did not see the request cannot forward the Welcome to the target provider ({{MIMI-PROTOCOL, Section 5.2}}). If the provider it asks cannot be reached, the server returns `serverUnavailable`.
 
-The response has the following arguments, decoded from the KeyMaterialResponse:
+The response has the following arguments. All but `response` are decoded from the KeyMaterialResponse:
 
 `accountId` (Id):
 : The account used.
