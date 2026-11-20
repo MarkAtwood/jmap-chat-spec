@@ -306,6 +306,14 @@ The value of `accountCapabilities["urn:ietf:params:jmap:scene"]` is a JSON objec
 `supportsSceneAsset` (Boolean):
 : `true` if the server supports the SceneAsset methods ({{scene-asset-methods}}) on this account. When `false`, a call to any SceneAsset method returns an `unknownMethod` error ({{RFC8620}} Section 3.6.2).
 
+The following fields are optional. An absent field has the same meaning as `false`, so a server that supports none of these features need not send them.
+
+`supportsRegionBroadcast` (Boolean):
+: `true` if the server supports the `SceneRegion/broadcast` method ({{scene-region-broadcast}}) on this account. When `false`, a call to that method returns an `unknownMethod` error ({{RFC8620}} Section 3.6.2).
+
+`supportsAvatarRegionState` (Boolean):
+: `true` if SceneAvatar records on this account have the `regionState` property ({{scene-avatar}}).
+
 # Data Types
 
 Data types are defined in dependency order: embedded sub-types and referenced types precede the types that reference them.
@@ -426,6 +434,12 @@ A SceneRegion represents a discrete bounded spatial environment that users can e
 
 `activeAvatarCount` (UnsignedInt, server-set):
 : Number of avatars currently present in the region.
+
+`allowObservers` (Boolean):
+: Present only when the server advertises `supportsObserve` in the `urn:ietf:params:jmap:scene:websocket` capability ({{JMAP-SCENE-WSS}}). `true` if users with access to the region may follow its events through an observer subscription, without an avatar. Default: `true`. The region owner and users with deployment-defined administrative privileges may update it, as for any other region property. A default of `true` matches what entering the region already allows: an observer needs the same access as a participant and learns nothing that an avatar would not, and participants see in `observerCount` how many users are watching. An owner who wants the avatars present to be everyone receiving the region's events sets it to `false`. Setting it to `false` stops event delivery to the region's current observers.
+
+`observerCount` (UnsignedInt, server-set):
+: Present when `allowObservers` is present. The number of users currently observing the region through an observer subscription ({{JMAP-SCENE-WSS}}) who do not have an active avatar in it. A user with several observing connections counts once. Every user with access to the region sees it, so participants can tell that they are being watched, though not by whom. Like `activeAvatarCount`, a change to it is a change to the SceneRegion: the server reports the region in `updated` of `SceneRegion/changes` and advances the SceneRegion state string, which produces a `StateChange` ({{push-state-change}}); the coalescing allowed for SceneRegion in {{push-state-change}} applies.
 
 `viewHint` (String|null):
 : Advisory rendering mode for clients. Values defined by this specification: `"3d"` (standard 3D perspective), `"2d-topdown"` (top-down 2D view, as in virtual offices or board games), `"2d-side"` (side-scrolling 2D view, as in platformer games), `"ar"` (augmented reality overlay on the physical world; region coordinates are anchored to a physical location via `geoAnchor`). `null` is treated as `"3d"`. This field is advisory; clients MAY ignore it and render the region in any mode they support. Clients MUST NOT fail when encountering an unrecognized value; they SHOULD fall back to `"3d"`. Deployment-specific view hints SHOULD use reverse-domain notation (e.g., `"com.example.isometric"`).
@@ -717,7 +731,10 @@ SceneAvatar is the Scene analog of VTCParticipant: it tracks who is in a region,
 : Time this avatar left the region. `null` if currently present. The server records the value: a client update that sets `leftAt` to a non-null value signals the intent to leave, and the server stores its own current time instead of the supplied value ({{scene-avatar-leave}}).
 
 `worldState` (Object|null):
-: Deployment-defined avatar state (e.g., animation, equipped items, status). Opaque to the spec; the server stores and relays without interpretation.
+: Deployment-defined avatar state (e.g., animation, equipped items, status). Opaque to the spec; the server stores and relays without interpretation. Only the avatar's user changes it ({{avatar-permissions}}).
+
+`regionState` (Object|null):
+: Present only when the account capability `supportsAvatarRegionState` is `true`. Deployment-defined state that the region, rather than the avatar's user, keeps about this avatar (e.g., team, role, health, or score). Default: `null`. Opaque to the spec; the server stores and relays it without interpretation. Clients MUST ignore unrecognized keys. Only the region owner, users with deployment-defined administrative privileges, and the server itself change it; the avatar's user can read all of it ({{avatar-permissions}}). It keeps its value when the user leaves and re-enters. Secret per-player state, which the player must not see, belongs in a SceneObject owned by the region owner ({{object-permissions}}), not in `regionState`.
 
 ### Example
 
@@ -1137,7 +1154,7 @@ Standard JMAP `/set` ({{RFC8620}} Section 5.3).
 
 Optional: `description` (String), `environment` (Object), `simulationUri` (String), `inputUri` (String), `viewHint` (String), `geoAnchor` (GeoAnchor), `spawnPosition` (Number\[3]), `spawnOrientation` (Number\[4]), `accessPolicy` (String), `invitedUserIds` (String\[\]), `worldState` (Object), `chatId` (String), `spaceId` (String), `channelId` (String).
 
-The server sets `id`, `accountId`, `ownerId` (to the caller's userId), `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`.
+The server sets `id`, `accountId`, `ownerId` (to the caller's userId), `activeAvatarCount` (to `0`), `createdAt`, and `updatedAt`, and, when the region has the observer properties, `observerCount` (to `0`).
 
 Example create:
 
@@ -1451,11 +1468,14 @@ Standard JMAP `/query` ({{RFC8620}} Section 5.5).
 `createdBefore` (UTCDate, optional):
 : Regions created before this timestamp.
 
+`worldStateEquals` (Object, optional):
+: Each property of this object names a top-level key of the region's `worldState` and gives a String, Number, or Boolean value. A region matches when its `worldState` has every one of these keys with an equal value: the same JSON type, and for Strings the same sequence of characters, for Numbers the same numeric value. Nested values are not compared. An empty object matches every region. Support for this filter property is optional; a server that does not support it returns `unsupportedFilter`.
+
 #### Filter Validation
 
 All filter properties are combined with logical AND. A region must match every specified filter property to appear in the result set. The query SHOULD only return regions the authenticated user has access to (see {{access-control}}).
 
-If a client provides a filter property the server does not support, the server returns an `unsupportedFilter` error ({{RFC8620}} Section 5.5). If a client provides an invalid value for `accessPolicy` (not one of the defined values), the server MUST return `invalidArguments`.
+If a client provides a filter property the server does not support, the server returns an `unsupportedFilter` error ({{RFC8620}} Section 5.5). If a client provides an invalid value for `accessPolicy` (not one of the defined values), the server MUST return `invalidArguments`. If `worldStateEquals` is not an object, or one of its values is not a String, Number, or Boolean, the server MUST return `invalidArguments`.
 
 Sort properties: `createdAt`, `name`, `activeAvatarCount`. Default sort: `createdAt` descending.
 
@@ -1519,9 +1539,71 @@ Example query -- public regions with a simulation layer, created after a date:
 }, "0"]]
 ~~~
 
+Example query -- regions whose `worldState` names a game schema, for a lobby browser:
+
+~~~json
+[["SceneRegion/query", {
+  "accountId": "account-xyz",
+  "filter": {
+    "worldStateEquals": {
+      "gameSchema": "urn:game:chess:standard",
+      "phase": "waiting-for-players"
+    }
+  },
+  "sort": [{"property": "activeAvatarCount", "isAscending": false}],
+  "position": 0,
+  "limit": 20
+}, "0"]]
+~~~
+
 ### SceneRegion/queryChanges
 
 Standard JMAP `/queryChanges` ({{RFC8620}} Section 5.6).
+
+### SceneRegion/broadcast {#scene-region-broadcast}
+
+`SceneRegion/broadcast` sends one or more region events: ephemeral, deployment-defined announcements about a region as a whole, such as a round starting, a timer expiring, or a game-over result. Unlike an interaction ({{scene-object-interact}}), a region event has no originating user, avatar, or object. A server supports this method when the account capability `supportsRegionBroadcast` is `true`. The method works over HTTP and, as a `Request`, over the JMAP WebSocket ({{RFC8887}}). Region events are ephemeral: the method does not change any record or state string. The response has the shape of the `SceneObject/interact` response.
+
+The method takes the following arguments:
+
+`accountId` (Id):
+: The hosting account of the regions.
+
+`events` (Id\[SceneRegionBroadcast\]):
+: A map from a client-chosen id to a SceneRegionBroadcast object, defined below.
+
+A SceneRegionBroadcast object has the following properties:
+
+`regionId` (Id):
+: The SceneRegion the event is about.
+
+`event` (String):
+: The event name, in reverse-domain notation (e.g., `"com.example.game.round-start"`). This specification defines no event names.
+
+`data` (Object|null):
+: Event-specific payload, opaque to this specification. Default: `null`.
+
+The response has the following arguments:
+
+`accountId` (Id):
+: The account used for the call.
+
+`accepted` (Id\[\]|null):
+: The client ids of the events the server accepted, or `null` if none.
+
+`notAccepted` (Id\[SetError\]|null):
+: A map from client id to a SetError for each event the server did not accept, or `null` if none.
+
+Only the region owner and users with deployment-defined administrative privileges may broadcast to a region. The server itself MAY also originate region events, for example on behalf of the simulation layer. SetError types:
+
+| Type | Condition |
+|---|---|
+| `notFound` | The region does not exist or the caller has no access to it ({{access-control}}). |
+| `forbidden` | The caller is not the region owner and does not have administrative privileges. |
+| `rateLimit` | The caller has exceeded a deployment-defined rate for region events. |
+| `invalidProperties` | A property is missing or has the wrong type, or `data` exceeds a deployment-defined size; `properties` names it. |
+
+For each accepted event, when {{JMAP-SCENE-WSS}} is supported, the server delivers a `SceneRegionEvent` to the WebSocket subscribers of the region, as {{JMAP-SCENE-WSS}} specifies. Every subscriber of the region receives the same event, so a region event carries only information that every user with access to the region may see.
 
 ## SceneObject Methods
 
@@ -2200,7 +2282,7 @@ Response (the second object has `interactable: false`):
 
 Standard JMAP `/get` ({{RFC8620}} Section 5.1).
 
-Avatars in regions the authenticated user does not have access to are reported in `notFound` (see {{access-control}}).
+Avatars in regions the authenticated user does not have access to are reported in `notFound` (see {{access-control}}), as are avatars hidden from the caller ({{avatar-visibility}}).
 
 ### SceneAvatar/changes
 
@@ -2217,7 +2299,7 @@ A user enters a region by calling `SceneAvatar/set` with a `create`:
 `regionId` (String, required):
 : The SceneRegion to enter.
 
-Optional: `displayName` (String), `visualRef` (String), `visualType` (String), `worldState` (Object).
+Optional: `displayName` (String), `visualRef` (String), `visualType` (String), `worldState` (Object). When `supportsAvatarRegionState` is `true`, a caller who is the region owner or has administrative privileges may also supply `regionState` (Object); the server returns `forbidden` when any other caller supplies a non-null `regionState` ({{avatar-permissions}}).
 
 The server sets `id`, `userId` (to the caller's userId), `position` (to the region's `spawnPosition`), `orientation` (to the region's `spawnOrientation`), `joinedAt`, and `leftAt` (to `null`). If `displayName` is not supplied by the client, the server sets it from the user profile or ChatContact when {{JMAP-CHAT}} is present.
 
@@ -2334,7 +2416,7 @@ A user calls `SceneAvatar/set` to update their own avatar:
 }
 ~~~
 
-The server SHOULD return `forbidden` if the caller's userId does not match the SceneAvatar record's userId, except for the eject case (see {{avatar-permissions}}).
+The server SHOULD return `forbidden` if the caller's userId does not match the SceneAvatar record's userId, except for the updates by a region owner or administrator that {{avatar-permissions}} allows (an eject, or a change to `regionState`).
 
 Position and orientation updates via `SceneAvatar/set` are permitted but are expected to be infrequent (e.g., teleporting to a bookmark). Continuous position synchronization is handled by the simulation layer.
 
@@ -2479,6 +2561,7 @@ A user who has left (has a non-null `leftAt`) re-enters the same region by updat
 |---|---|
 | User is banned or ejected with a cooldown period still active | Deployment-defined ban/eject policies may temporarily or permanently deny entry. The user already knows the region exists. |
 | Caller is creating an avatar record for a different user | The server sets `userId` from the authenticated identity, so a user can only create their own avatar. |
+| Caller supplies a non-null `regionState` and is neither the region owner nor an administrator | `regionState` is kept by the region, not the avatar's user ({{avatar-permissions}}). |
 
 **`alreadyExists`** -- one record per user per region:
 
@@ -2534,7 +2617,8 @@ When the user has an active avatar in a different region, the server SHOULD set 
 
 | Condition | Description |
 |---|---|
-| Caller's userId does not match the SceneAvatar's userId | Users may not update other users' avatars. Exception: region owners and administrators may set `leftAt` on another user's avatar to eject them; an eject update patches no other property. |
+| Caller's userId does not match the SceneAvatar's userId | Users may not update other users' avatars. Exception: region owners and administrators may set `leftAt` on another user's avatar to eject them, and may change its `regionState`; such an update patches no other property ({{avatar-permissions}}). |
+| Caller changes `regionState` and is neither the region owner nor an administrator | `regionState` is kept by the region, not the avatar's user ({{avatar-permissions}}). |
 
 **`notFound`**:
 
@@ -2575,7 +2659,7 @@ Spatial filters:
 
 All filter properties are combined with logical AND. An avatar must match every specified filter property to appear in the result set.
 
-If `withinRadius.radius` is zero or negative, or if any `withinBounds.min` component is greater than the corresponding `withinBounds.max` component, the server MUST return `invalidArguments`. The query SHOULD only return avatars in regions the authenticated user has access to.
+If `withinRadius.radius` is zero or negative, or if any `withinBounds.min` component is greater than the corresponding `withinBounds.max` component, the server MUST return `invalidArguments`. The query SHOULD only return avatars in regions the authenticated user has access to, and SHOULD NOT return avatars hidden from the caller ({{avatar-visibility}}). Spatial filters are evaluated against the `position` returned to the caller.
 
 Sort properties: `joinedAt`, `displayName`. Default sort: `joinedAt` ascending.
 
@@ -2656,6 +2740,7 @@ The server SHOULD periodically reconcile the simulation layer's state with the J
 
 - Avatar positions in SceneAvatar records SHOULD be updated from the simulation layer at a deployment-defined interval (RECOMMENDED: every 5-30 seconds). These updates are not real-time; they serve as a fallback for clients that do not have a simulation layer connection.
 - Objects moved by the simulation layer (dynamic physics, scripted movement) SHOULD have their SceneObject position/orientation updated via the standard JMAP state-change mechanism.
+- Per-avatar state that the simulation layer owns (for example, team, health, or score) belongs in `regionState` when the server supports it, not in `worldState`, which only the avatar's user changes ({{avatar-permissions}}). Without `regionState`, a deployment keeps such state on SceneObjects owned by the region owner ({{object-permissions}}).
 
 Clients connected to the simulation layer typically use simulation-layer positions for rendering and treat SceneAvatar and SceneObject positions as stale fallbacks.
 
@@ -2671,9 +2756,23 @@ The server SHOULD apply visibility filtering to limit the objects returned based
 
 The spec does not dictate the algorithm. It recommends that the access-control check is always enforced and that visibility optimization is available as a deployment choice.
 
-Visibility filtering, here and in {{blocked-contact-spatial}} and {{content-moderation}}, is a server choice and does not change the JMAP state model: each data type has one state string per account ({{RFC8620}} Section 5.1), and `/changes` and `/queryChanges` report changes for the account. A server MAY report an object hidden from the caller in `notFound` from `/get`.
+Visibility filtering, here and in {{blocked-contact-spatial}} and {{content-moderation}}, is a server choice and does not change the JMAP state model: each data type has one state string per account ({{RFC8620}} Section 5.1), and `/changes` and `/queryChanges` report changes for the account, except as {{avatar-visibility}} describes for SceneAvatar. A server MAY report an object hidden from the caller in `notFound` from `/get`.
 
 When a client targets an object that is no longer within the client's visibility set (e.g., the object moved out of range, or the avatar moved away), the server MAY return `notFound` for JMAP method calls (`SceneObject/set`, `SceneObject/get`, `SceneObject/interact`) targeting that object. The server SHOULD NOT return `forbidden`, as that would confirm the object still exists. For interactions delivered via the simulation layer, the simulation layer MAY silently ignore stale targets without generating any JMAP-level error.
+
+### Avatar Visibility {#avatar-visibility}
+
+A server MAY also limit which SceneAvatar records, and which of their properties, each caller sees: for example, to keep opponents' positions from players during a competitive round, or to show each team the state of its own members only. The rule is deployment-defined; it can depend on the caller's avatar, the region's `worldState`, or the avatars' `regionState`. The suppression for regions bound to end-to-end encrypted calls ({{spatial-metadata-exposure}}) and for blocked contacts ({{blocked-contact-spatial}}) are instances of it. A caller always sees their own avatar in full. The server SHOULD NOT hide avatars, or withhold their properties, from the region owner and administrators, who eject avatars and maintain `regionState` ({{avatar-permissions}}).
+
+The server hides an avatar from a caller as a whole, or withholds some of its properties:
+
+- A hidden avatar is treated as if it did not exist: `SceneAvatar/get` reports it in `notFound`, `SceneAvatar/query` does not return it, and a `SceneAvatar/set` update of it returns `notFound`.
+
+- Only `position`, `orientation`, `worldState`, and `regionState` can be withheld. For `position` and `orientation`, the server returns a value the deployment chooses that tells the caller nothing it may not know, such as the region's `spawnPosition` and `spawnOrientation`, or the values at the time the avatar was last visible to the caller. For `worldState` and `regionState`, the server leaves out the withheld top-level keys. This parallels `invitedUserIds` on SceneRegion ({{scene-region}}), which the server returns as `[]` to callers who may not update the region. `SceneAvatar/query` evaluates its filters and sorts against the values returned to the caller, so a spatial query cannot locate an avatar whose position is withheld.
+
+For SceneAvatar, a server that hides avatars or withholds properties to protect information, rather than only for blocked contacts or end-to-end encrypted calls, SHOULD answer `/changes` and `/queryChanges` from the caller's view instead of reporting changes for the account: `SceneAvatar/changes` lists an avatar in `created` when it becomes visible to the caller, in `destroyed` when it becomes hidden, and in `updated` only when a value returned to the caller changes; `SceneAvatar/queryChanges` adds and removes it to match. Reporting hidden changes would tell the caller that the avatar is still present and when it moves. The state string remains one per account, so a `/changes` call after a change the caller cannot see returns a new state with no ids. A `destroyed` id here means that the avatar left the caller's view, not that the user left the region; presence is `leftAt`. Whenever the caller's view changes, the server advances the SceneAvatar state string, so push ({{push-state-change}}) notifies the caller. A server that hides avatars only for blocked contacts or end-to-end encrypted calls MAY report changes for the account as described above for objects.
+
+{{JMAP-SCENE-WSS}} applies the same rule to `SceneAvatarEvent`: an event about an avatar hidden from the recipient is not delivered to that recipient. `activeAvatarCount` on SceneRegion counts hidden avatars, as {{blocked-contact-spatial}} recommends for blocked users.
 
 # Access Control {#access-control}
 
@@ -2706,9 +2805,11 @@ The server SHOULD return `forbidden` to all other users for `SceneObject/set` up
 
 ## Avatar Permissions {#avatar-permissions}
 
-Users may only modify their own SceneAvatar record, except for the eject case below. The server SHOULD return `forbidden` for any other `SceneAvatar/set` update targeting another user's avatar.
+Users may only modify their own SceneAvatar record, except for the eject case and `regionState` below. The server SHOULD return `forbidden` for any other `SceneAvatar/set` update targeting another user's avatar.
 
 Region owners and administrators MAY eject avatars by setting `leftAt` on another user's SceneAvatar; the server records its own current time as `leftAt` ({{scene-avatar-leave}}). An eject update patches only `leftAt`. This is the Scene equivalent of kicking a participant from a VTCCall.
+
+When `supportsAvatarRegionState` is `true`, region owners and administrators MAY also change `regionState` on any SceneAvatar in the region, as they may change any SceneObject in it ({{object-permissions}}) and the region's own `worldState`. An update by a region owner or administrator to another user's avatar may combine an eject with a change to `regionState`, and patches no other property. The avatar's user cannot change `regionState` unless that user is also the region owner or an administrator; the server returns `forbidden`. The server itself MAY change `regionState`, for example when it reconciles state from the simulation layer ({{simulation-layer}}). Keeping region-owned state out of `worldState` means that neither side can overwrite the other's keys: the user cannot forge their team or health, and the region owner cannot change what the user chose.
 
 # Security Considerations {#security}
 
@@ -2750,7 +2851,9 @@ Without limits, a malicious user could create thousands of objects in a region, 
 
 ## Visibility and Information Leakage
 
-SceneObject data returned to a client reveals information about the scene (object names, positions, custom properties). Deployments where scene content is sensitive (e.g., a competitive game with hidden objects) SHOULD use the visibility filtering described in {{visibility-contract}} to limit what data reaches each client.
+SceneObject and SceneAvatar data returned to a client reveals information about the scene (object names, positions, custom properties) and about other users (where they are, their `worldState` and `regionState`). Deployments where scene content is sensitive (e.g., a competitive game with hidden objects, or one where an opponent's position is a secret during a round) SHOULD use the visibility filtering described in {{visibility-contract}} and {{avatar-visibility}} to limit what data reaches each client. Region `worldState` and region events ({{scene-region-broadcast}}) reach every user with access to the region and are not filtered per caller.
+
+Each data type has one state string per account, including when avatars are hidden or their properties withheld ({{avatar-visibility}}). A caller can therefore tell that some SceneAvatar changed, from a new state string or a `StateChange` with no ids it can see, even when the change itself is hidden. It does not learn which avatar changed or how. Deployments for which that timing is sensitive can reduce it by reconciling avatar state less often while information is hidden, or by coalescing changes ({{push-state-change}}).
 
 ## Blocked-Contact Spatial Presence {#blocked-contact-spatial}
 
@@ -2854,7 +2957,7 @@ Scene data types differ significantly in mutation frequency:
 
 - **SceneObject** changes at moderate frequency: object creation, destruction, and position/property updates. The server MAY coalesce rapid SceneObject mutations similarly.
 
-- **SceneRegion** changes whenever a user enters or leaves a region, because `activeAvatarCount` changes, in addition to the less frequent region creation and configuration updates. The server MAY coalesce rapid SceneRegion mutations in the same way as SceneAvatar mutations.
+- **SceneRegion** changes whenever a user enters or leaves a region, because `activeAvatarCount` changes, and whenever a user starts or stops observing it, because `observerCount` changes, in addition to the less frequent region creation and configuration updates. The server MAY coalesce rapid SceneRegion mutations in the same way as SceneAvatar mutations.
 
 - **SceneAsset** changes infrequently: asset uploads and metadata updates are low-frequency operations. Coalescing is generally unnecessary but remains at the server's discretion.
 

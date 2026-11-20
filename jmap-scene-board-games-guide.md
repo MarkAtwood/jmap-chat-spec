@@ -182,7 +182,14 @@ each other in the same channel.
 
 SceneAvatars beyond the active players are spectators. They can see
 all public game state but cannot interact with pieces. The simulation
-layer ignores interaction events from non-player avatars.
+layer ignores interaction events from non-player avatars. Where the
+server advertises `supportsObserve` (JMAP Scene WebSocket) and the
+region owner has not turned off the region's `allowObservers`, a
+spectator can
+instead follow the region's events with an observer subscription and
+no avatar, so it takes no avatar slot and does not appear in the
+player list; players see how many are watching in the region's
+`observerCount`.
 
 ### Real-Time Event Notifications
 
@@ -3039,10 +3046,11 @@ selection for FPS games.
 6. **Enemy AI:** The simulation runs per-enemy state machines: idle,
    alert (heard gunfire or saw player), chase, attack (melee or
    ranged), pain (briefly stunned on taking damage), death.
-7. **Damage:** The simulation tracks health. Only a user may update
-   their own SceneAvatar (Avatar Permissions), so health that the
-   server owns is published, if at all, on a per-player SceneObject
-   owned by the region owner, not in SceneAvatar `worldState`. On
+7. **Damage:** The simulation tracks health. Only the user may update
+   their own SceneAvatar `worldState` (Avatar Permissions), so health
+   that the server owns is published, if at all, in the avatar's
+   `regionState` where the server supports it, or otherwise on a
+   per-player SceneObject owned by the region owner. On
    death, the avatar enters a death state (camera falls to floor),
    then respawns at a spawn point after a delay.
 8. **Frag log:** Each kill posts a system message to the bound Chat:
@@ -3411,8 +3419,9 @@ Everything that Doom could not do, Quake can:
 
 Same as Doom: all SceneObject positions are public (no fog-of-war
 in standard Quake deathmatch). Player inventory and health are
-public via per-player SceneObjects owned by the region owner (the
-simulation cannot write another user's SceneAvatar). For competitive modes
+public via each avatar's `regionState`, or, where the server does not
+support it, via per-player SceneObjects owned by the region owner (the
+simulation cannot write another user's `worldState`). For competitive modes
 that require fog-of-war, the server would use spatial filtering on
 `SceneObject/query` to return only objects within the player's
 line of sight.
@@ -4182,10 +4191,13 @@ pattern:
 ```
 
 Region `worldState` is visible to every user who can access the
-region, so it holds only what every player may see. Each player's
-money and loadout go on a per-player SceneObject owned by the region
-owner, where object visibility filtering (Visibility Contract) keeps
-them from opponents:
+region, so it holds only what every player may see. Where the server
+supports `regionState`, each player's team, money, and loadout go in
+that player's SceneAvatar `regionState`, written by the region owner;
+Avatar Visibility lets the server withhold `money` from opponents, and
+withhold opponents' `position` during a live round. Otherwise they go
+on a per-player SceneObject owned by the region owner, where object
+visibility filtering (Visibility Contract) keeps them from opponents:
 
 ```json
 {
@@ -4204,8 +4216,11 @@ them from opponents:
 The simulation manages round transitions (freeze time, buy phase,
 live round, post-round), economy (money for kills, round wins,
 equipment purchases), and win conditions (bomb plant/defuse,
-elimination, timeout), and writes the results to these objects and
-to region `worldState`.
+elimination, timeout), and writes the results to these records and
+to region `worldState`. Round transitions and kills that every player
+may see can also go out as region events (`SceneRegion/broadcast`),
+which reach subscribers as `SceneRegionEvent` without a server avatar
+or an interactable object.
 
 ### Survival/Crafting Pattern (Minecraft)
 

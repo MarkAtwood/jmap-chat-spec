@@ -972,7 +972,9 @@ Example response:
 
 The spec defines region-level access control via `accessPolicy` (section 8),
 object-level permissions via `ownerId` / region owner / admin (section 8.2),
-and avatar permissions (users modify only their own avatar, section 8.3). It
+and avatar permissions (users modify only their own avatar, except that
+region owners and admins eject avatars and, where supported, maintain
+`regionState`; section 8.3). It
 requires returning `notFound` rather than `forbidden` for unauthorized
 get/query requests to prevent enumeration. It permits region owners and
 admins to eject avatars. What the spec leaves open is how administrative
@@ -1140,6 +1142,11 @@ id's existence is acceptable. C covers spatial culling only: blocked-contact
 and E2EE filtering still need A or B. Whatever you choose, apply the same
 filter to `/get`, `/query`, `SceneObject/interact` (`notFound`), and
 ephemeral events, and use one approach per data type per account.
+For SceneAvatar, the draft's Avatar Visibility section asks for B's
+`/changes` behavior (`created` when an avatar enters the caller's view,
+`destroyed` when it leaves) when hiding avatars or withholding their
+properties protects information, while keeping one state string per
+account; A remains allowed for blocked contacts and E2EE-bound regions.
 
 ---
 

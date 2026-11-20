@@ -40,7 +40,8 @@ require the client to follow up with `/changes` calls; survive reconnection via
 joined, regions modified.
 
 **Scene ephemeral events** (`SceneAvatarEvent`, `SceneObjectEvent`,
-`SceneInteractionEvent`, via `SceneStreamEnable`): carry no state token; require no
+`SceneInteractionEvent`, `SceneRegionEvent`, via `SceneStreamEnable`): carry no
+state token; require no
 follow-up API call; are not durable — the server does not buffer them for disconnected
 clients. On reconnect, missed ephemeral events are gone. These are fire-and-forget
 signals that drive spatial UI updates: an avatar appeared, an object was placed, a user
@@ -73,10 +74,15 @@ account for this when interpreting the absence of an expected event.
 
 The server silently drops a `SceneAvatarEvent` for a recipient when:
 
-- The recipient does not have an active avatar in the event's region at delivery time.
+- The recipient does not have an active avatar in the event's region at delivery time
+  (for an observer subscription: does not have access to the region, or the region's
+  `allowObservers` has since been set to `false`). A `SceneStreamEnable` that asks to
+  observe a region whose `allowObservers` is `false`, or that the server declines by
+  policy, fails with a `forbidden` `RequestError` naming the refused `regionIds`.
 - The recipient's subscription does not include the event's region (explicit `regionIds`
   that do not contain this region).
 - The recipient's subscription does not include `"SceneAvatarEvent"` in `eventTypes`.
+- The avatar is hidden from the recipient (Avatar Visibility in the draft).
 - The event's `userId` is on the recipient's blocked list (`ChatContact.blocked: true`)
   when the Chat capability is present.
 - The region's `activeCallId` references a VTCCall with `e2eeEnabled: true` and the
@@ -132,7 +138,9 @@ If `urn:ietf:params:jmap:websocket` is absent, WebSocket is unavailable. If
 `urn:ietf:params:jmap:scene:websocket` is absent but the first two are present, the
 WebSocket transport works and the Scene data types are available via standard JMAP
 methods, but ephemeral Scene events are not supported; clients MUST NOT send
-`SceneStreamEnable` in that case.
+`SceneStreamEnable` in that case. A client sends `observe: true` in `SceneStreamEnable`
+only when the `urn:ietf:params:jmap:scene:websocket` value has `supportsObserve: true`;
+a server that does not advertise it need not honor the property.
 
 Example Session object:
 
@@ -193,7 +201,9 @@ After the WebSocket handshake completes, send these messages in order:
 The ordering matters. Send `WebSocketPushEnable` first so state-change notifications
 begin flowing immediately. Enter the region before enabling the scene stream — a
 `regionIds` entry for a region where the user has no active avatar produces no events
-until the user enters it. An optional `id` on `SceneStreamEnable` comes back as the
+until the user enters it, unless the subscription is an observer subscription
+(`observe: true`), which follows the listed regions without an avatar. An optional
+`id` on `SceneStreamEnable` comes back as the
 `requestId` of any `RequestError` it causes.
 
 ### SceneStreamEnable: region-scoped filtering
@@ -212,9 +222,9 @@ until the user enters it. An optional `id` on `SceneStreamEnable` comes back as 
 
 **Event-type filtering** via `eventTypes`:
 
-- `null` — all three event types.
+- `null` — all event types.
 - Explicit list — only the listed types. Recognized values: `"SceneAvatarEvent"`,
-  `"SceneObjectEvent"`, `"SceneInteractionEvent"`.
+  `"SceneObjectEvent"`, `"SceneInteractionEvent"`, `"SceneRegionEvent"`.
 - Empty array or all-unrecognized — the server responds with a `RequestError`
   (`invalidArguments`) and does not update the subscription.
 
@@ -535,8 +545,8 @@ A workable structure:
 
 - Each WebSocket connection handler maintains its Scene ephemeral subscription state (the
   current `regionIds` and `eventTypes` filter from the last `SceneStreamEnable`).
-- Publish avatar, object, and interaction events to topics keyed by `(accountId,
-  regionId)` for all three event types.
+- Publish avatar, object, interaction, and region events to topics keyed by `(accountId,
+  regionId)` for all four event types.
 - Each connection handler subscribes to the topics matching its active `regionIds` filter
   when `SceneStreamEnable` is received and unsubscribes when `SceneStreamDisable` is
   received or the connection closes.
@@ -556,8 +566,9 @@ Servers SHOULD verify authorization at the time of each event delivery, not only
 connection is open:
 
 - All Scene ephemeral events SHOULD only be delivered for regions where the user has an
-  active avatar at delivery time. If the user's avatar was ejected between subscription
-  and delivery, the event SHOULD be dropped.
+  active avatar at delivery time, or, for an observer subscription, access to the region.
+  If the user's avatar was ejected between subscription and delivery, the event SHOULD be
+  dropped.
 - `SceneObjectEvent` SHOULD respect the visibility contract: if the server would not return
   this object in a `SceneObject/get` response to this user, it SHOULD NOT deliver the
   ephemeral event.
@@ -643,7 +654,8 @@ Clients MUST handle both arriving and MUST NOT treat them as duplicates.
 When the JMAP Chat capability (`urn:ietf:params:jmap:chat`) is available for the
 receiving account and the originating user is on the recipient's blocked list
 (`ChatContact.blocked` is `true`), the server SHOULD silently drop all Scene ephemeral
-events originating from that user before delivery. This applies to all three event types:
+events originating from that user before delivery. This applies to the three event types
+that name an originating user (`SceneRegionEvent` names none and is not suppressed):
 
 - **SceneAvatarEvent**: Events for a blocked user's avatar (keyed on `userId`) SHOULD NOT
   be delivered. The blocking user should not see the blocked user enter, leave, or get

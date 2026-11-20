@@ -64,8 +64,8 @@ These ephemeral events supplement the real-time simulation layer
 (which carries high-frequency position updates) and JMAP
 `StateChange` notifications (which carry persistent state changes).
 They provide low-latency notification of discrete spatial events —
-avatar entry/exit, object placement/removal, and user interactions —
-that benefit from immediate delivery but do not warrant a full
+avatar entry/exit, object placement/removal, user interactions, and
+region-wide announcements — that benefit from immediate delivery but do not warrant a full
 simulation-layer connection.
 
 --- middle
@@ -82,6 +82,8 @@ delivery without the round-trip of a `StateChange` followed by a
 - An avatar entering or leaving a region (social presence signal).
 - An object being placed, moved, or removed (collaborative editing).
 - A user interacting with an object (click, grab, activate).
+- The region owner or the server announcing something about the
+  region as a whole (a round starts, a timer expires).
 
 These events are ephemeral signals — not persisted as JMAP objects —
 that drive spatial user interfaces.
@@ -136,8 +138,15 @@ they appear in all capitals, as shown here.
 
 Servers supporting this specification MUST add a property named
 `urn:ietf:params:jmap:scene:websocket` to the JMAP Session object
-capabilities.  The value of this property is an empty JSON object
-`{}`.
+capabilities.  The value of this property is a JSON object with the
+following optional field:
+
+`supportsObserve` (Boolean):
+: `true` if the server accepts observer subscriptions
+  (`observe` in `SceneStreamEnable`, {{scene-stream-enable}}) and
+  regions carry the `allowObservers` and `observerCount` properties
+  ({{JMAP-SCENE}}).  An absent field has the same meaning as `false`, so the value `{}`
+  advertises no optional features.
 
 Presence of this capability indicates that the server supports
 ephemeral Scene event push: it delivers the spatial events defined
@@ -162,16 +171,18 @@ advertises the Scene data model and methods.  A server advertising
       "supportsPush": true
     },
     "urn:ietf:params:jmap:scene": {},
-    "urn:ietf:params:jmap:scene:websocket": {}
+    "urn:ietf:params:jmap:scene:websocket": {
+      "supportsObserve": true
+    }
   }
 }
 ~~~
 
 # Ephemeral Event Types {#event-types}
 
-This specification defines three ephemeral event types for spatial
-state.  `SceneAvatarEvent` and `SceneObjectEvent` are server-to-client
-only.  `SceneInteractionEvent` is bidirectional: a client can submit
+This specification defines four ephemeral event types for spatial
+state.  `SceneAvatarEvent`, `SceneObjectEvent`, and `SceneRegionEvent`
+are server-to-client only.  `SceneInteractionEvent` is bidirectional: a client can submit
 an interaction by sending a `SceneInteractionEvent` frame to the
 server, and the server delivers each accepted interaction to
 subscribers as a `SceneInteractionEvent` (see
@@ -427,6 +438,49 @@ these checks or an interaction listed in `accepted` in a
 `SceneInteractionEvent` to the subscribers of that region, subject
 to {{event-delivery}}.
 
+## SceneRegionEvent {#scene-region-event}
+
+Delivered when the region owner, an administrator, or the server
+itself announces an event about a region as a whole, such as a round
+starting, a timer expiring, or a game-over result.  The event has no
+originating user, avatar, or object.  It is sent with the
+`SceneRegion/broadcast` method ({{JMAP-SCENE}}), which also defines
+who may send it, or originated by the server.  There is no
+client-to-server frame for it.
+
+`@type` (String):
+: `"SceneRegionEvent"`.
+
+`regionId` (String):
+: The SceneRegion id.
+
+`event` (String):
+: The event name, in reverse-domain notation
+  (e.g., `"com.example.game.round-start"`).  This specification
+  defines no event names.  Clients MUST ignore unrecognized values.
+
+`data` (Object|null):
+: Event-specific payload.  Opaque to this specification; the server
+  relays it without interpretation.  `null` when no additional data
+  is needed.
+
+Every subscriber of the region receives the same event, without
+per-recipient filtering beyond that of {{event-delivery}}, so a
+region event carries only information that every user with access
+to the region may see.
+
+Example — a round starts:
+
+~~~json
+{
+  "@type": "SceneRegionEvent",
+  "accountId": "account-xyz",
+  "regionId": "01J5ABC0000000000000000001",
+  "event": "com.example.game.round-start",
+  "data": {"round": 6, "buyTimeSeconds": 20}
+}
+~~~
+
 # Scene Stream Control Messages {#stream-control}
 
 ## SceneStreamEnable {#scene-stream-enable}
@@ -447,8 +501,14 @@ connection.
 - **`eventTypes`** (String\[]|null): An explicit list of event type
   names the client wishes to receive, or `null` to receive all
   event types.  Recognized values are: `"SceneAvatarEvent"`,
-  `"SceneObjectEvent"`, and `"SceneInteractionEvent"`.
-  Default: `null`.
+  `"SceneObjectEvent"`, `"SceneInteractionEvent"`, and
+  `"SceneRegionEvent"`.  Default: `null`.
+
+- **`observe`** (Boolean, optional): When `true`, the subscription
+  is an observer subscription: events for each region in `regionIds`
+  are delivered whether or not the user has an active avatar in it
+  (see Semantics below).  Recognized only when the server advertises
+  `supportsObserve` ({{capability}}).  Default: `false`.
 
 - **`id`** (String, optional): A client-specified identifier for
   this message.  A `RequestError` caused by this message carries
@@ -510,9 +570,9 @@ Client sends:
 }
 ~~~
 
-Setting `eventTypes` to `null` means all three event types
-(`SceneAvatarEvent`, `SceneObjectEvent`, `SceneInteractionEvent`) are
-delivered for each listed region in which the user has an active
+Setting `eventTypes` to `null` means all four event types
+(`SceneAvatarEvent`, `SceneObjectEvent`, `SceneInteractionEvent`,
+`SceneRegionEvent`) are delivered for each listed region in which the user has an active
 avatar.
 
 This message replaces any previous `SceneStreamEnable` subscription in
@@ -540,7 +600,8 @@ user's SceneAvatar record in that region has a null `leftAt`
 ({{JMAP-SCENE}}).
 
 If a `regionIds` entry refers to a region in which the authenticated
-user does not have an active avatar, that entry produces no events
+user does not have an active avatar, and the subscription is not an
+observer subscription, that entry produces no events
 but is retained in the subscription record.  If the user later
 enters (or re-enters) that region, events begin (or resume) without
 a new `SceneStreamEnable`, so a client may subscribe before entering
@@ -552,6 +613,48 @@ SceneRegion ids are unique only within an account.  An id listed in
 `regionIds` matches that id in every account the authenticated user
 can access; clients use the `accountId` of each event to tell the
 accounts apart.
+
+An observer subscription delivers the events of each region in
+`regionIds` that the user has access to ({{JMAP-SCENE}}, Region
+Access) and whose `allowObservers` property ({{JMAP-SCENE}}) is
+`true`, with or without an active avatar, so that a spectator,
+moderator, or companion application can follow a region without
+entering it: no SceneAvatar record is created, `activeAvatarCount`
+does not change, and no `SceneAvatarEvent` announces the observer.
+Visibility filtering ({{visibility}}) applies to an observer as to
+any other caller of `/get`.  Observing does not let the user submit
+interactions ({{interaction-submission}}), which still require an
+active avatar.  A server MAY also decline observers of a region for
+deployment-defined policy reasons even when `allowObservers` is
+`true`.
+
+When `observe` is `true` and a listed region that the user has
+access to has `allowObservers` set to `false`, or the server
+declines observers of it by policy, the server MUST respond with a
+`RequestError` frame ({{RFC8887}} Section 4.3.4) with a `type` of
+`"urn:ietf:params:jmap:error:forbidden"` and a `regionIds` member
+listing the refused regions, and MUST NOT update the current
+ephemeral subscription state.  A listed region that the user has no
+access to, or that does not exist, is not refused: the entry is
+retained and produces no events, so the response does not reveal
+whether the region exists ({{JMAP-SCENE}}, Region Access).  If the
+region owner later sets `allowObservers` to `false`, or the user
+loses access, events for that region stop; the client learns of the
+change from the SceneRegion record.
+
+While an observer subscription delivers events for a region to a
+user without an active avatar there, the user counts toward the
+region's `observerCount` ({{JMAP-SCENE}}).  The count drops when the
+subscription stops covering the region, through a new
+`SceneStreamEnable`, `SceneStreamDisable`, the connection closing,
+or the user entering the region with an avatar.
+
+If `observe` is
+`true` and `regionIds` is `null`, the server MUST respond with a
+`RequestError` of type
+`"urn:ietf:params:jmap:error:invalidArguments"` and MUST NOT update
+the current ephemeral subscription state, because an observer
+subscription names its regions.
 
 The server does not acknowledge `SceneStreamEnable`.  As with
 `WebSocketPushEnable` ({{RFC8887}}), success is silent and failure
@@ -632,7 +735,9 @@ When `regionIds` is an explicit list, the subscription is static:
 only events from the listed regions are delivered.  If the user
 leaves a listed region, events for that region stop.  If the user
 later re-enters the same region, events resume without a new
-`SceneStreamEnable`.
+`SceneStreamEnable`.  For an observer subscription, events for a
+listed region continue while the user has access to the region,
+whether or not the user is present in it.
 
 ## SceneStreamDisable {#scene-stream-disable}
 
@@ -685,11 +790,13 @@ state.  This is optional; the event provides enough information
 | `SceneAvatarEvent`      | per-region   | Avatar entered, left, ejected  |
 | `SceneObjectEvent`      | per-region   | Object created, updated, gone  |
 | `SceneInteractionEvent` | per-region   | User interacted with object    |
+| `SceneRegionEvent`      | per-region   | Region-wide announcement       |
 
 All Scene ephemeral events are per-region: they are delivered only
 for regions that match the active subscription's `regionIds` filter
 (or all regions if `regionIds` is `null`) and for which the user has
-an active avatar.
+an active avatar, or, for an observer subscription, access to the
+region ({{scene-stream-enable}}).
 
 ## Rate Limiting {#rate-limiting}
 
@@ -788,6 +895,9 @@ The server SHOULD apply the visibility contract of {{JMAP-SCENE}}
 not delivered.  A deployment that performs server-side visibility
 filtering (e.g., radius-based or occlusion-based) applies the same
 filter here as it does to `SceneObject/get` and `SceneObject/query`.
+Likewise, a `SceneAvatarEvent` about an avatar hidden from the
+recipient ({{JMAP-SCENE}}, Avatar Visibility) is not delivered to
+that recipient.  `SceneRegionEvent` is not filtered by visibility.
 
 ## Blocked-Sender Suppression {#blocked-sender}
 
@@ -824,6 +934,9 @@ triggered the update.
 **SceneInteractionEvent:**  The server SHOULD NOT deliver a
 `SceneInteractionEvent` to a recipient who has blocked the user
 identified by the event's `userId` field.
+
+**SceneRegionEvent:**  A `SceneRegionEvent` has no originating user
+and is not subject to blocked-sender suppression.
 
 ### Without Chat Capability
 
@@ -908,7 +1021,7 @@ events:
 1. **`ChatStreamEnable` with `"scene"` in `dataTypes`**:  Subscribes
    to all Scene event types for all regions in which the user has
    an active avatar.  This is the coarse-grained path and requires
-   no additional control messages.
+   no additional control messages.  It has no observer form.
 
 2. **`SceneStreamEnable`**:  Provides region-scoped and
    event-type-scoped filtering.  This is the fine-grained path.
@@ -1184,7 +1297,9 @@ received, since region access, avatar presence, and block status
 can change while the connection is open:
 
 - Scene ephemeral events go only to users with an active avatar in
-  the region at delivery time ({{event-summary}}).
+  the region at delivery time, or, for an observer subscription, to
+  users with access to the region at delivery time
+  ({{event-summary}}).
 
 - `SceneObjectEvent` and `SceneInteractionEvent` delivery follows
   the visibility contract ({{visibility}}).
@@ -1213,7 +1328,8 @@ server fan-out resources or flood client connections.
 
 ## Interaction Event Data Exposure
 
-`SceneInteractionEvent` carries an opaque `data` field.  The server
+`SceneInteractionEvent` and `SceneRegionEvent` carry an opaque `data`
+field.  The server
 relays this without interpretation.  Servers SHOULD enforce a
 deployment-defined size limit on `data` to prevent abuse.  Clients
 SHOULD NOT trust `data` contents for security-critical decisions.
@@ -1225,6 +1341,19 @@ is intentional (it enables social presence features) but
 privacy-sensitive.  Deployments that require avatar anonymity can
 suppress `displayName` or use pseudonymous identifiers in regions
 where anonymity is desired.
+
+## Observers
+
+An observer subscription ({{scene-stream-enable}}) receives a region's
+events without an avatar, so the region's participants do not see
+the observer in `SceneAvatar/query` or in `SceneAvatarEvent`.  An
+observer learns nothing that it could not learn by entering the
+region, since both require access to the region, but it learns it
+without appearing as an avatar.  The region owner can turn observation
+off with `allowObservers`, and the region's `observerCount`
+({{JMAP-SCENE}}) tells participants how many users are watching,
+though not who.  A server can also decline observers by policy, or
+the region's access policy can admit only the participants.
 
 ## Regions Bound to End-to-End Encrypted Calls {#e2ee}
 
