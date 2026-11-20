@@ -45,6 +45,7 @@ informative:
   RFC8291:
   RFC8825:
   I-D.ietf-wish-whep:
+  RFC9725:
   I-D.ietf-moq-transport:
   EME:
     title: "Encrypted Media Extensions"
@@ -246,6 +247,15 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 
 `livestreamModes` (String\[]):
 : The VTCLivestream modes the server accepts: one or both of `"push"` and `"hosted"` ({{vtc-livestream}}). Empty when `supportsLivestream` is `false`.
+
+`supportsRecordingPause` (Boolean, optional):
+: `true` if the server supports pausing and resuming a VTCRecording ({{pausing-a-recording}}). Default: `true`. A client SHOULD NOT offer a pause control when it is `false`.
+
+`livestreamPushSchemes` (String\[]):
+: The URI schemes the server accepts in a push-mode `streamUri`, in lowercase, for example `"rtmp"`, `"rtmps"`, `"srt"`, and `"https"` (an ingest endpoint of the WebRTC-HTTP Ingestion Protocol {{RFC9725}}). Empty when `livestreamModes` does not include `"push"`. {{stream-key-presentation}} says how the server presents `streamKey` for each.
+
+`layouts` (String\[]):
+: The composition layouts ({{composition-layouts}}) the server accepts in the `layout` property of VTCRecording and VTCLivestream. Empty when the server offers no choice of layout.
 
 `supportsLobby` (Boolean):
 : `true` if the server supports lobby/waiting-room mode on calls.
@@ -573,6 +583,19 @@ A VTCRecording tracks the metadata of a recording session within a VTCCall. It i
 `mediaType` (String|null, server-set):
 : MIME type of the recording file (e.g., `"video/webm"`, `"video/mp4"`, `"audio/ogg"`). Available only when `state` is `"available"`.
 
+`layout` (String|null):
+: How the participants' video is arranged in the recording ({{composition-layouts}}). `null` means the server's default. Default: `null`.
+
+### Composition Layouts {#composition-layouts}
+
+A recording or a livestream carries one composed picture of the call. Its `layout` names how the server arranges the participants' video in it. This specification defines:
+
+- `"grid"`: every participant with video in equal tiles.
+- `"speaker"`: the active speaker large, the other participants smaller.
+- `"single-speaker"`: only the active speaker.
+
+Other layouts SHOULD use reverse-domain notation (e.g., `"com.example.stage"`). The server MUST return `invalidProperties` naming `layout` when a create or update sets a value not listed in the account-level `layouts`. A client treats a `layout` value it does not recognize as the server's default. How a layout looks in detail, and how the server picks the active speaker, is deployment policy.
+
 ## VTCLivestream {#vtc-livestream}
 
 A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It is a top-level JMAP data type. A livestream has one of two modes:
@@ -605,10 +628,10 @@ A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It 
 : Push mode: target platform identifier (e.g., `"youtube"`, `"twitch"`). Deployment-defined; clients MUST ignore unrecognized values. Always `null` in hosted mode.
 
 `streamUri` (String|null, immutable):
-: Push mode: the RTMP or equivalent ingest endpoint. Treated as sensitive; see {{livestream-key-exposure}}. Always `null` in hosted mode.
+: Push mode: the ingest endpoint, a URI whose scheme is listed in the account-level `livestreamPushSchemes`. Treated as sensitive; see {{livestream-key-exposure}}. Always `null` in hosted mode.
 
 `streamKey` (String|null, immutable):
-: Push mode: the stream key or authentication credential for the ingest endpoint. This field is write-only for non-moderators: the server SHOULD return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}. Always `null` in hosted mode.
+: Push mode: the stream key or authentication credential for the ingest endpoint, presented as {{stream-key-presentation}} describes. This field is write-only for non-moderators: the server SHOULD return an empty string in `VTCLivestream/get` responses for participants whose role is not `"moderator"`. See {{livestream-key-exposure}}. Always `null` in hosted mode.
 
 `playbackEndpoints` (VTCPlaybackEndpoint\[], server-set):
 : Hosted mode: the endpoints from which viewers can play the stream ({{vtc-playback-endpoint}}). The server chooses which protocols to offer. The list MAY be empty while the livestream is `"starting"`, and is empty once it is `"stopped"` or `"failed"`. Always empty in push mode.
@@ -618,6 +641,9 @@ A VTCLivestream tracks the metadata of a one-to-many broadcast of a VTCCall. It 
 
 `stoppedAt` (UTCDate|null, server-set):
 : Time the stream stopped or failed. `null` while the stream is `"starting"` or `"live"`.
+
+`layout` (String|null):
+: How the participants' video is arranged in the stream ({{composition-layouts}}), in both modes. `null` means the server's default. Default: `null`.
 
 ### Livestream States {#livestream-states}
 
@@ -1285,6 +1311,9 @@ Only participants with `role: "moderator"` on the associated VTCCall MAY create,
 `callId` (String, required):
 : The VTCCall to record. The call MUST be in state `"active"`.
 
+`layout` (String|null, optional):
+: The composition layout ({{composition-layouts}}).
+
 The server sets `id`, `state` (to `"recording"`), `startedAt`, and `initiatedBy`.
 
 Example create:
@@ -1303,7 +1332,7 @@ When the call has `e2eeEnabled: true`, a recording that would require server-sid
 
 On success, the server SHOULD deliver a `VTCRecordingStateEvent` ({{vtc-recording-state-event}}) with `state: "recording"` to all participants in the call. This is the consent signal (see {{recording-consent}}). The event reaches only clients with an active WebSocket subscription, and a participant who joins mid-recording receives no event, so on joining a call a client SHOULD check `VTCRecording/query` for recordings of the call in state `"recording"` or `"paused"` and display them.
 
-#### Pausing, Resuming, and Stopping a Recording
+#### Pausing, Resuming, and Stopping a Recording {#pausing-a-recording}
 
 `update` supports patching `state`:
 
@@ -1323,7 +1352,9 @@ Example update (stop recording):
 }
 ~~~
 
-The server MUST return `invalidProperties` naming `state` for any state transition not listed above (e.g., `"stopped"` → `"recording"`, `"available"` → anything). After stopping, the server transitions the recording through `"processing"` (while the recording file is prepared) to `"available"` (when `blobId`, `size`, `duration`, and `mediaType` are set), or to `"failed"` on error. These post-stop transitions are server-initiated and not client-controllable.
+The server MUST return `invalidProperties` naming `state` for any state transition not listed above (e.g., `"stopped"` → `"recording"`, `"available"` → anything), and for `"recording"` → `"paused"` when the account-level `supportsRecordingPause` is `false`. The recording file contains no media from the paused intervals; a server MAY produce it by recording each unpaused interval separately and joining them while the recording is `"processing"`.
+
+`update` may also set `layout` while the recording is `"recording"` or `"paused"`; the new layout applies from then on. The server MUST return `invalidProperties` naming `layout` for a change in any other state. After stopping, the server transitions the recording through `"processing"` (while the recording file is prepared) to `"available"` (when `blobId`, `size`, `duration`, and `mediaType` are set), or to `"failed"` on error. These post-stop transitions are server-initiated and not client-controllable.
 
 #### Destroying a Recording
 
@@ -1387,10 +1418,13 @@ Only participants with `role: "moderator"` on the associated VTCCall MAY create,
 : `"push"` (default) or `"hosted"`.
 
 `streamUri` (String, required in push mode):
-: The RTMP or equivalent ingest endpoint.
+: The ingest endpoint, a URI whose scheme is listed in the account-level `livestreamPushSchemes`.
 
 `streamKey` (String, required in push mode):
-: The stream key or authentication credential for the ingest endpoint.
+: The stream key or authentication credential for the ingest endpoint ({{stream-key-presentation}}).
+
+`layout` (String|null, optional):
+: The composition layout ({{composition-layouts}}).
 
 Optional in push mode: `platform` (String) — a label identifying the target platform (e.g., `"youtube"`, `"twitch"`).
 
@@ -1472,11 +1506,22 @@ A hosted livestream as JMAP data looks like this once it is live:
     }
   ],
   "startedAt": "2026-10-21T17:02:11Z",
-  "stoppedAt": null
+  "stoppedAt": null,
+  "layout": null
 }
 ~~~
 
-When the call has `e2eeEnabled: true`, a livestream that would require server-side media access is rejected as {{e2ee-media-participants}} describes. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidProperties` naming `mode` when the requested mode is not listed in the account-level `livestreamModes`. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
+When the call has `e2eeEnabled: true`, a livestream that would require server-side media access is rejected as {{e2ee-media-participants}} describes. The server MAY accept the create for such a call when the stream is produced by a key-holding livestream bridge that joins the call as a participant ({{e2ee-media-participants}}). The server MUST return `forbidden` when the account-level `supportsLivestream` is `false`. The server MUST return `invalidProperties` naming `mode` when the requested mode is not listed in the account-level `livestreamModes`, and naming `streamUri` when a push-mode `streamUri` is not a URI or its scheme is not listed in `livestreamPushSchemes`.
+
+##### Presenting the Stream Key {#stream-key-presentation}
+
+The server presents `streamKey` to the ingest endpoint in the way the endpoint's protocol expects:
+
+- `"rtmp"`, `"rtmps"`: as the RTMP stream name, appended to the application path given by `streamUri`, which is what streaming platforms call the stream key.
+- `"srt"`: as the SRT stream ID, or as the encryption passphrase when the destination authenticates that way, as the destination requires. A `streamUri` that already carries a stream ID is used as given.
+- `"https"` (WHIP): as the bearer token with which the WHIP client authenticates ({{RFC9725}}).
+
+For any other scheme, the specification or deployment that defines the scheme says how the key is presented. The server MUST return `invalidProperties` naming `callId` when the call is not in state `"active"`.
 
 #### Stopping a Livestream {#stopping-a-livestream}
 
@@ -1493,6 +1538,8 @@ When the call has `e2eeEnabled: true`, a livestream that would require server-si
 ~~~
 
 The server MUST return `invalidProperties` naming `state` if the livestream is not in state `"starting"` or `"live"`.
+
+`update` may also set `layout` while the livestream is `"starting"` or `"live"`; the new layout applies from then on. The server MUST return `invalidProperties` naming `layout` for a change in any other state.
 
 #### Destroying a Livestream
 
