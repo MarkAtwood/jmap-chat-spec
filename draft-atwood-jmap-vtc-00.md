@@ -394,7 +394,7 @@ VTCParticipant ids are ordinary server-assigned JMAP ids, unique within the call
   - H.323: `{"alias": "alice", "endpointType": "terminal"}`
 
 `lobbyState` (String|null):
-: Present only when the call has `lobbyEnabled: true`. Values: `"waiting"`, `"admitted"`, `"rejected"`. `null` when lobby is not active or the participant bypassed the lobby (moderators).
+: Values: `"waiting"`, `"admitted"`, `"rejected"`. `null` when the call does not have `lobbyEnabled: true` or the participant bypassed the lobby (moderators). The property is always present.
 
 `mediaState` (VTCMediaState):
 : The participant's current self-reported media state.
@@ -730,6 +730,7 @@ Example response (properties abridged):
 ~~~json
 {
   "id": "01J4XKZQN4MWVT8PPBEHTJ3AB0",
+  "accountId": "bob-account",
   "callType": "ring",
   "state": "active",
   "createdAt": "2026-06-05T14:30:00Z",
@@ -774,6 +775,15 @@ VTCCall/set manages call lifecycle: creating calls, ending calls, and updating c
 When creating a VTCCall with a `chatId` that is already referenced by another VTCCall in `"active"` or `"ringing"` state, the server MUST return an `invalidProperties` SetError naming `chatId`, with description "A call is already active on this Chat." This ensures that `Chat.activeCallId` is unambiguous and at most one call is active per Chat at any time.
 
 The following checks apply to every `create`. When `chatId` is supplied but `urn:ietf:params:jmap:chat` is not present in the server's capabilities, the server MUST return `invalidProperties` naming `chatId` with a description indicating the Chat capability is required. When `chatId` does not resolve to a Chat object, the server MUST return `invalidProperties` naming `chatId`. The server SHOULD return the same error when the caller is not a member of that Chat, so that the response does not reveal that the Chat exists. When the call carries a `spaceId` or `channelId` binding and {{JMAP-CHAT}} is present, the server SHOULD return `forbidden` if the caller lacks the `"start_call"` permission in the bound Space or channel.
+
+The account-level capability gates the following, on `create` and, for `lobbyEnabled`, on `update`:
+
+- `lobbyEnabled: true` when `supportsLobby` is `false`: `invalidProperties` naming `lobbyEnabled`.
+- A non-null `parentCallId` when `supportsBreakoutRooms` is `false`: `invalidProperties` naming `parentCallId`.
+- A create that would give the account more than `maxConcurrentCalls` calls in `"creating"`, `"ringing"`, `"active"` or `"pending"` state: `overQuota`.
+- A create with a `parentCallId` whose call already has `maxBreakoutRooms` breakout rooms: `overQuota`.
+
+`maxParticipantsPerCall` is enforced when a participant joins ({{joining}}).
 
 #### Creating a Ring Call
 
@@ -868,7 +878,7 @@ Optional: `subject` (String), `lobbyEnabled` (Boolean), `joinPassword` (String),
 
 The server sets `id`, `initiatorId`, `createdAt`, `state` (to `"pending"`), and `joinUri`.
 
-Example create:
+Example create, sent before its `scheduledStartAt`:
 
 ~~~json
 {
@@ -963,7 +973,7 @@ Filter properties:
 
 All filter properties are combined with logical AND. The query SHOULD return only calls the authenticated user has access to (see {{access-control}}).
 
-Sort properties: `createdAt`, `endedAt`. Default sort: `createdAt` descending.
+Sort properties: `createdAt`, `endedAt`. Default sort: `createdAt` descending. A call whose `endedAt` is `null` sorts after every call that has ended, whatever the sort direction.
 
 ### VTCCall/queryChanges
 
