@@ -680,7 +680,7 @@ For such a Message:
 The server assigns Message `id`s in the order in which it stores the Messages of a Chat, so that sorting a Chat's Messages by `id` gives that order. A client processes the handshake messages of a room in that order. A server MAY also return Messages in that order from `Message/get` and `Message/changes`.
 {: #message-order}
 
-A client that cannot calculate Message changes from its state MAY use `Message/query` on each Chat, sorted by `id`, with `anchor` set to the last Message it processed, to fetch only the later Messages ({{message-order}}).
+A client that cannot calculate Message changes from its state MAY use `Message/query` on each Chat, sorted by `id`, with `anchor` set to the last Message it processed and `anchorOffset` 1, to fetch only the later Messages ({{message-order}}).
 
 Storing a Message changes the account's Message state, and creating or binding a Chat again changes its Chat state ({{RFC8620, Section 5.1}}), so a client that watches both types in `StateChange` events learns of every FanoutMessage stored for it, its own included.
 
