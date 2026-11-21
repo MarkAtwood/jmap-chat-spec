@@ -39,8 +39,8 @@ normative:
     author:
       - fullname: Rohan Mahy
     seriesinfo:
-      Internet-Draft: draft-ietf-mimi-content-09
-    date: 2026-07-04
+      Internet-Draft: draft-ietf-mimi-content-10
+    date: 2026-11-02
   MIMI-PROTOCOL:
     title: "More Instant Messaging Interoperability (MIMI) using HTTPS and MLS"
     author:
@@ -51,8 +51,8 @@ normative:
       - fullname: Travis Ralston
       - fullname: Raphael Robert
     seriesinfo:
-      Internet-Draft: draft-ietf-mimi-protocol-06
-    date: 2026-04-25
+      Internet-Draft: draft-ietf-mimi-protocol-07
+    date: 2026-11-02
   MIMI-ROOM-POLICY:
     title: "Room Policy for the More Instant Messaging Interoperability (MIMI) Protocol"
     author:
@@ -72,6 +72,7 @@ normative:
     target: https://github.com/ulid/spec
 
 informative:
+  RFC6750:
   RFC6838:
   RFC9457:
   JMAP-METADATA:
@@ -191,6 +192,8 @@ A converting party that is itself a member of a room's MLS group, and so builds 
 * Creating a ChatBan ({{JMAP-CHAT}}) gives the user the room's role named "banned" and removes all of the user's clients, in one commit (`canBan`). Destroying it gives the user the member role again without adding any client (`canUnban`).
 * The `kickMembers` patch key of `Chat/set` (String\[], ChatContact ids), which this document adds for Chats bound to a room, removes the listed users' clients from the group but keeps them in the participant list, so that they can rejoin (`canKick`). {{JMAP-CHAT}} has no such action, because there a member and its clients are not separate.
 
+Role names are matched against `role_name` in the room's `roles_list` component ({{MIMI-ROOM-POLICY, Section 3}}), octet for octet. A room created through `Room/create` ({{room-create}}) SHOULD name its roles "member", "admin" and "banned", so that these mappings work.
+
 This section does not apply to a MIMI provider's own Chats with a `roomId` ({{chat-roomid}}), whose membership changes only through `Room/update`.
 
 # Reporting Abuse from a Converting Party {#report-abuse}
@@ -220,6 +223,8 @@ struct {
 
 Servers supporting the client interface of this document advertise the `urn:ietf:params:jmap:chat:mimi` capability in the JMAP Session object. This capability is meaningful only when `urn:ietf:params:jmap:chat` is also present.
 
+A server MAY authenticate clients with OAuth 2.0 bearer tokens ({{RFC6750}}); this document does not require any particular mechanism.
+
 ## Session-Level Capability Object
 
 The value of `capabilities["urn:ietf:params:jmap:chat:mimi"]` at the session level is an empty object `{}`.
@@ -242,6 +247,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 
 `maxKeyPackages` (UnsignedInt):
 : The maximum number of KeyPackage records, last-resort KeyPackages included, the server stores for this account.
+
+`maxKeyPackageLifetime` (UnsignedInt, optional):
+: The longest leaf node lifetime ({{RFC9420, Section 7.2}}), from `not_before` to `not_after`, in seconds, that the server accepts in a KeyPackage ({{keypackage}}). Absent if the server states no limit.
 
 `maxClients` (UnsignedInt, optional):
 : The maximum number of signature keys the server binds to this account ({{client}}), that is, the number of the owner's clients. Absent if the server states no limit.
@@ -268,6 +276,8 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 A server that advertises this capability MUST include `"application/mimi-fanout"` in `supportedBodyTypes` ({{JMAP-CHAT}}).
 
 A server that limits how often an account calls the methods of this document answers a call over its limit with the method-level error `rateLimited` ({{JMAP-CHAT}}). The error object MAY include `retryAfter` (UnsignedInt), the number of seconds after which the server expects the call can succeed. A client that receives `rateLimited` waits before it calls again, at least `retryAfter` seconds when it is present.
+
+When a server rejects a call, or a create, update or destroy, under a rule of this document, it MAY say in the error's `description` ({{RFC8620}}) which check failed.
 
 A client of this capability that does not convert content needs `StateChange` events for the Message, Chat, Consent and KeyPackage types; it MAY ask for only these in the event source's `types`.
 
@@ -301,7 +311,7 @@ Standard JMAP `/changes` ({{RFC8620, Section 5.2}}). A KeyPackage handed out app
 
 Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that `update` is not supported: the server MUST reject every update with a SetError of type `forbidden`.
 
-On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account and creates a Client record for it ({{client}}). The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
+On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired or is longer than the server allows (`maxKeyPackageLifetime`), if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account and creates a Client record for it ({{client}}). The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
 
 The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`. When `maxClients` signature keys are already bound to the account, it rejects with `overQuota` a create whose signature key is not one of them.
 
@@ -309,7 +319,9 @@ Each client has at most one last-resort KeyPackage. Creating a last-resort KeyPa
 
 ## Handing Out KeyPackages {#keypackage-claim}
 
-When this server answers a key material request for the owner ({{MIMI-PROTOCOL, Section 5.2}}) and the requester has consent ({{consent-received}}), it returns at most one KeyPackage for each of the owner's clients. For each client it returns a KeyPackage compatible with the request that is not last-resort and destroys that record in the same transaction, so that no KeyPackage is handed out twice. When the client has no such KeyPackage, the server returns the client's compatible last-resort KeyPackage, if any, and keeps it. Returning a last-resort KeyPackage more than once departs from {{MIMI-PROTOCOL, Section 5.2}}, which forbids repeating key material across responses, and follows {{RFC9420, Section 16.8}}.
+When this server answers a key material request for the owner ({{MIMI-PROTOCOL, Section 5.2}}) and the requester has consent ({{consent-received}}), it returns at most one KeyPackage for each of the owner's clients. For each client it returns a KeyPackage compatible with the request that is not last-resort and destroys that record in the same transaction, so that no KeyPackage is handed out twice. When the client has no such KeyPackage, the server returns the client's compatible last-resort KeyPackage, if any, and keeps it. A client's last-resort KeyPackage is compatible whenever its other KeyPackages would be. Returning a last-resort KeyPackage more than once departs from {{MIMI-PROTOCOL, Section 5.2}}, which forbids repeating key material across responses, and follows {{RFC9420, Section 16.8}}.
+
+When every client the server lists has `clientStatus` `keyMaterialExhausted`, which happens only when none of them has a last-resort KeyPackage, {{MIMI-PROTOCOL, Section 5.2}} gives no fitting user code: `partialSuccess` means that at least one client got key material. The server answers with `userStatus` `noCompatibleMaterial`, the one failure code with which the response may list the clients, and lists each client with `clientStatus` `keyMaterialExhausted`. A later revision of {{MIMI-PROTOCOL}} may define a code for this case.
 
 The `clientUri` the server returns for each client ({{MIMI-PROTOCOL, Section 5.2}}) is implementation-defined, but MUST be stable and unique per leaf: the server MUST return the same `clientUri` in every response for a given signature key ({{keypackage}}), and different `clientUri` values for different signature keys.
 
@@ -341,6 +353,8 @@ Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that only `destroy` is s
 
 Destroying a Client record unbinds its signature key from the account. The server destroys the account's KeyPackage records with that signature key, and the key no longer counts toward `maxClients` or passes the check of `Room/create` ({{room-create}}). A later KeyPackage/set create or external Commit with the same signature key binds it again, as for a new client.
 
+A server MAY unbind a signature key that has had no KeyPackage record and has sent nothing through this capability for a period it chooses, and destroy its Client record, as if the owner had destroyed it.
+
 Unbinding does not remove the client from any room. The server is not a member of the rooms' MLS groups and cannot remove its leaves, and until a commit removes them the client can still decrypt those rooms' messages. A client that destroys the record of another of the owner's clients, such as a lost device, removes that client's leaves, with `Room/update` ({{room-update}}), from the rooms they share. Nor does unbinding end the removed client's access to the account; that is a matter for the account's authentication.
 
 # KeyMaterial/fetch {#keymaterial-fetch}
@@ -357,6 +371,8 @@ The request arguments are:
 
 `request` (String):
 : A KeyMaterialRequest signed by the client.
+
+A client SHOULD copy the room's `required_capabilities` extension ({{RFC9420, Section 11.1}}) into the request's `requiredCapabilities`. `requiredCapabilities` cannot name app components ({{MLS-EXTENSIONS, Section 5}}), so a server that knows the room MAY also skip KeyPackages whose leaf lacks a component named in the room's `app_components`, and report such a client as `nothingCompatible`.
 
 The server MUST reject the call with `invalidArguments` if `request` does not parse as a KeyMaterialRequest, if its `requestingUser` is not `userUri`, if its `roomId` is not `roomId`, or if no Chat in the account is bound to that `roomId`. Otherwise the server obtains a KeyMaterialResponse. When this server is the room's hub, it answers from its own KeyPackage store ({{keypackage-claim}}) if the target user is local and asks the target provider otherwise. When this server is not the room's hub, it MUST send the request to the hub, even if the target user is local, because a hub that did not see the request cannot forward the Welcome to the target provider ({{MIMI-PROTOCOL, Section 5.2}}). If the provider it asks cannot be reached, the server returns `serverUnavailable`.
 
@@ -505,7 +521,9 @@ The server MUST reject the call with `invalidArguments` unless all of the follow
 
 Clients SHOULD generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and SHOULD use a fresh group ID for every MLS group of a room.
 
-Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, and `room_metadata` out of the room's `app_components`, or add both later with AppDataUpdates once it knows every member supports it.
+The GroupInfo SHOULD contain the `external_pub` extension ({{RFC9420, Section 12.4.3.2}}), so that the hub can answer `GroupInfo/fetch` ({{groupinfo-fetch}}). The room SHOULD carry a `roles_list` component ({{MIMI-ROOM-POLICY, Section 3}}) that gives the creator a role with `canAddParticipant`, since without one the hub can authorize no later add; the server MAY refuse a room without one. The group's `app_components` component ({{MLS-EXTENSIONS, Section 5}}) names the components that have state in the GroupContext, such as `franking_agent`, `participant_list`, `roles_list`, `base_room_policy`, and `room_metadata` when present. A room whose hub franks messages also lists `frank_aad`, in both `safe_aad` and `app_components` ({{MLS-EXTENSIONS, Section 5}}).
+
+Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, and `room_metadata` out of the room's `app_components`, or add both later with AppDataUpdates once it knows every member supports it. Leaving the metadata out has a cost: some clients do not show an invitation to a room that has no room metadata.
 
 On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), and returns:
 
@@ -533,7 +551,9 @@ The request arguments are:
 : The MIMI room ID. Unless `request` carries an external Commit, the `roomId` of a Chat in this account bound to its room.
 
 `request` (String):
-: An UpdateRequest.
+: An UpdateRequest ({{MIMI-PROTOCOL, Section 5.3}}).
+
+`request` is the HandshakeBundle with no Protocol octet before it. The Welcome and the GroupInfo in it are the bare structures ({{RFC9420, Section 12.4.3}}), not MLSMessages, unlike `groupInfo` of `Room/create`. A client SHOULD send the ratchet tree as `full` ({{MLS-RATCHET-TREE-OPTIONS}}), unless `maxMlsObjectSize` forces another option. {{examples}} shows the octets of such a request.
 
 An external Commit ({{MIMI-PROTOCOL, Section 3.5}}) joins the account's user to a room, whether or not the account is in it: this is how a client joins an open room or by a join link, rejoins after leaving, or adds another of its own clients. Its signature key need not be bound to the account ({{client}}), so the server checks the credential instead. When the hub accepts an external Commit whose UpdatePath leaf's signature key is not bound to the account, the server binds it and creates a Client record for it, as a KeyPackage/set create does. When `maxClients` signature keys are already bound to the account, the server rejects, with the method-level error `forbidden` and without submitting it, an external Commit whose signature key is not one of them. The server SHOULD reject, with `invalidArguments`, an external Commit whose signature key is bound to another account.
 
@@ -548,7 +568,7 @@ The response has the following arguments, decoded from the hub's response:
 : The `responseCode`, written as its name in {{MIMI-PROTOCOL, Section 5.3}} (`"success"`, `"wrongEpoch"`, `"notAllowed"`, or `"invalidProposal"`).
 
 `errorDescription` (String):
-: The hub's `errorDescription`, possibly empty.
+: The hub's `errorDescription`, possibly empty. A hub that refuses a commit because it is not valid MLS, rather than by policy, MAY say so here.
 
 `acceptedAt` (UTCDate):
 : When `responseCode` is `"success"`: the hub's `accepted_timestamp`.
@@ -563,6 +583,8 @@ The response has the following arguments, decoded from the hub's response:
 : When `responseCode` is `"invalidProposal"`: the ProposalRefs of the invalid proposals.
 
 On success the server MUST store, in every Chat of a local account bound to the room, a Message ({{fanout-messages}}) whose body is the FanoutMessage with `timestamp` set to `accepted_timestamp`, `message` set to `proposalOrCommit`, and `moreProposals` copied from the request (or an empty `externalProposals` for a commit), unless {{fanout-messages}} forbids storing it. The hub does not forward the owner's own handshake to the owner's provider ({{MIMI-PROTOCOL, Section 5.5}}), so this is how the owner's other clients and the room's other local participants receive it. When the hub staples `externalProposals` to the owner's external commit, the owner's other clients and the room's other local participants do not receive them.
+
+On `success` the client merges its own Commit and does not process the Messages named in `messageIds`. A client that lost the response recognises its Commit by comparing the stored MLSMessage octets with the ones it sent.
 
 A client that did not receive the response MAY submit the same `request` again. The server SHOULD answer a `request` byte-identical to one the hub already accepted for the room with the earlier response, without submitting it again.
 
@@ -598,7 +620,7 @@ The response has the following arguments, decoded from the SubmitMessageResponse
 : When `responseCode` is `"accepted"`: the hub's `accepted_timestamp`.
 
 `frank` (String, optional):
-: When `responseCode` is `"accepted"` and the hub franked the message: the hub's Frank ({{MIMI-PROTOCOL, Section 5.4}}).
+: When `responseCode` is `"accepted"` and the hub franked the message: the hub's Frank ({{MIMI-PROTOCOL, Section 5.4}}). The hub franks a message only if its PrivateMessage carries a `frank_aad` SafeAAD item ({{MIMI-PROTOCOL, Section 5.4.1}}).
 
 `messageIds` (Id\[], optional):
 : The ids of the Messages the server stored in this account for the accepted message, so that the sending client can recognise them when it reads its Messages.
@@ -672,6 +694,8 @@ The request arguments are:
 `request` (String):
 : A GroupInfoRequest signed by the client.
 
+{{MIMI-PROTOCOL, Section 5.6}} makes `joiningCode` optional in GroupInfoRequestTBS but a plain vector in GroupInfoRequest. A client without a joining code signs a GroupInfoRequestTBS in which `joiningCode` is absent and sends a zero-length `joiningCode` in the GroupInfoRequest.
+
 The server MUST reject the call with `invalidArguments` if `request` does not parse as a GroupInfoRequest, if `roomId` is not a MIMI room ID, or if the hub hosts no such room. Otherwise it answers as hub, or forwards the request to the hub, and returns `serverUnavailable` if the hub cannot be reached.
 
 The response arguments are:
@@ -685,7 +709,9 @@ The response arguments are:
 `response` (String):
 : The whole GroupInfoResponse, unchanged.
 
-The GroupInfo and ratchet tree are encrypted to the client's `groupInfoPublicKey`, so the server passes them through. The client SHOULD verify the response signature with `hub_sender`, and SHOULD verify that the decrypted GroupInfo's `external_senders` extension contains that `hub_sender`, before it joins.
+The GroupInfo and ratchet tree are encrypted to the client's `groupInfoPublicKey`, so the server passes them through. The client SHOULD verify the response signature with `hub_sender`, and SHOULD verify that the decrypted GroupInfo's `external_senders` extension contains that `hub_sender`, before it joins. The client frames the external Commit's `authenticated_data` according to the GroupContext in the fetched GroupInfo, as {{MLS-EXTENSIONS, Section 4.9}} requires: when that GroupContext has a `safe_aad` component, `authenticated_data` is a SafeAAD, empty if the client adds no items.
+
+A FanoutMessage carrying a Welcome ({{fanout-messages}}) whose RatchetTreeOption is `distributionService` ({{MLS-RATCHET-TREE-OPTIONS}}) does not carry the tree. The client gets the tree with GroupInfo/fetch, which returns the tree of the group's current epoch. A client that cannot get the tree for the Welcome's epoch, because a later commit has been accepted, MAY join by external join instead.
 
 A local user added to the participant list without being added to the MLS group ({{MIMI-PROTOCOL, Section 5.6}}) has no Chat for the room, and so cannot use GroupInfo/fetch. This document does not define how such a user learns of the room.
 
@@ -697,15 +723,17 @@ Push events carry no Messages. A client that reconnects its event source, or sta
 
 ## message/mls {#private-messages}
 
-A client sends an application message as an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, the content that {{RFC9420, Section 17.10}} registers as `message/mls`, with `Room/send` ({{room-send}}). The server MUST reject a `Message/set` create in a Chat with a `roomId` with a `forbidden` SetError.
+A client sends an application message as an MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, the content that {{RFC9420, Section 17.10}} registers as `message/mls`, with `Room/send` ({{room-send}}). The server MUST reject a `Message/set` create in a Chat with a `roomId` with a `forbidden` SetError, whatever its `bodyType`.
 
 MIMI edits, reactions, and retractions are MIMI content in new messages. A server acting as the account's MIMI provider MUST reject a `Message/set` update that changes `body`, `bodyType`, or `reactions` of a Message in a Chat with a `roomId` with an `invalidProperties` SetError naming the changed properties. A converting party that builds the room's messages itself instead maps such an update to MIMI content that replaces the original ({{edits}}).
 
 ## application/mimi-fanout {#fanout-messages}
 
-A Message with `bodyType` `"application/mimi-fanout"` has as `body` one FanoutMessage ({{MIMI-PROTOCOL, Section 5.5}}). Only servers create such Messages; the server MUST reject a `Message/set` create with this body type with an `invalidProperties` SetError naming `bodyType`.
+A Message with `bodyType` `"application/mimi-fanout"` has as `body` one FanoutMessage ({{MIMI-PROTOCOL, Section 5.5}}). The FanoutMessage carries no Protocol octet; its last field is chosen by the MLSMessage's wire format and, for a PublicMessage, its content type: `frank` for a PrivateMessage, `ratchetTreeOption` for a Welcome, `moreProposals` for a proposal, and `externalProposals` for a commit. Only servers create such Messages: in a Chat without a `roomId`, the server MUST reject a `Message/set` create with this body type with an `invalidProperties` SetError naming `bodyType`; in a Chat with a `roomId`, the rule of {{private-messages}} applies.
 
 The server stores each FanoutMessage it receives or originates for a room as one Message, in the order received, in every Chat of a local account bound to that room ({{chat-roomid}}). A FanoutMessage carrying a Welcome is stored only in the account owning a KeyPackageRef named in the Welcome; if that account has no Chat bound to the room, the server first binds the account's unbound Chat for the room again or, if it has none, creates a Chat bound to the room. The server stores a FanoutMessage that carries a commit removing the owner's clients like any other, so that those clients learn of their removal ({{chat-roomid}}).
+
+A client joined by a Welcome takes the room ID from the Chat's `roomId`. If the group carries room metadata ({{MIMI-PROTOCOL, Section 7.6}}), the client MAY check that its `room_uri` equals the `roomId`.
 
 A Chat that is created or bound again holds the Messages the server stores for its room from then on. A server MAY also place in it Messages it stored for the room earlier, for example those stored while the hub was still answering the request that bound it. Such Messages appear in `Message/changes` as created, even from a state given after they were stored. A client therefore cannot treat a Message state as "every Message up to some point"; it can only resume from a state the server gave it.
 
@@ -721,7 +749,7 @@ For such a Message:
 The server assigns Message `id`s in the order in which it stores the Messages of a Chat, so that sorting a Chat's Messages by `id` gives that order. A client processes the handshake messages of a room in that order. A server MAY also return Messages in that order from `Message/get` and `Message/changes`.
 {: #message-order}
 
-A client that cannot calculate Message changes from its state MAY use `Message/query` on each Chat, sorted by `id`, with `anchor` set to the last Message it processed and `anchorOffset` 1, to fetch only the later Messages ({{message-order}}).
+A client that cannot calculate Message changes from its state MAY use `Message/query` on each Chat, sorted by `id`, with `anchor` set to the last Message it processed and `anchorOffset` 1, to fetch only the later Messages ({{message-order}}). This document adds `id` as a sort property of `Message/query` ({{JMAP-CHAT}}) for Chats with a `roomId`.
 
 Storing a Message changes the account's Message state, and creating or binding a Chat again changes its Chat state ({{RFC8620, Section 5.1}}), so a client that watches both types in `StateChange` events learns of every FanoutMessage stored for it, its own included.
 
@@ -810,7 +838,7 @@ Alice's client commits Bob's addition and the hub accepts it:
 ["Room/update", {
   "accountId": "u1",
   "roomId": "mimi://a.example/r/k5qwmzlqmfsgk3tbnvsxi2lf4a",
-  "request": "AAEAAQAQmvVK..."
+  "request": "AAEAARBeDKF9..."
 }, "c4"]
 ~~~
 
@@ -823,6 +851,41 @@ Response:
   "errorDescription": "",
   "acceptedAt": "2026-10-18T17:02:11.482Z"
 }, "c4"]
+~~~
+
+The octets of such a `request`, before base64url encoding, follow ({{room-update}}). They are those of an UpdateRequest that the mimid hub accepted in its tests, for a Commit that adds one user with one client. Long fields are cut short with `...`. A vector's octets begin with its length prefix, and the length its note gives does not count the prefix.
+
+~~~
+00 01 00 01        MLSMessage of the Commit: version mls10 (1),
+                   wire_format mls_public_message (1). No Protocol
+                   octet comes before it.
+10 5e 0c a1 7d 33 92 4b 08 a6 1f 70 d4 2e 95 c3 6b
+                   group_id (16 octets)
+00 00 00 00 00 00 00 01
+                   epoch 1
+01 00 00 00 00     sender: member (1), leaf_index 0
+01 00              authenticated_data (1 octet): a SafeAAD with no
+                   items
+03                 content_type commit (3)
+41 88 01 00 01 ... proposals (392 octets), both by value: an Add
+                   carrying the new client's KeyPackage, and an
+                   AppDataUpdate of the participant list
+00                 path: absent
+40 40 1e ab ...    signature (64 octets)
+20 5b b0 6f ...    confirmation_tag (32 octets)
+20 80 41 a3 ...    membership_tag (32 octets)
+01                 welcome: present
+00 01              Welcome, bare, with no MLSMessage header:
+                   cipher_suite 1
+40 76 20 c6 ...    secrets (118 octets): one EncryptedGroupSecrets
+42 1d 89 5d ...    encrypted_group_info (541 octets)
+01                 GroupInfoOption: representation full (1)
+00 01 00 01 10 5e 0c ...
+                   GroupInfo, bare (561 octets); its GroupContext
+                   starts with version mls10 (1), cipher_suite
+                   1, group_id
+01                 RatchetTreeOption: representation full (1)
+42 df 01 01 20 ... ratchet_tree (735 octets)
 ~~~
 
 A new client of Alice fetches GroupInfo before an external join:
@@ -929,9 +992,9 @@ A MIMI provider is not a member of any MLS group and never holds message keys. I
 
 As hub, a MIMI provider's `hubSender` is an external sender of every room it hosts and can propose removals. Clients that create a room through `Room/create` grant it that role.
 
-Every request that consumes a KeyPackage brings the owner's clients closer to their last-resort KeyPackages, whose reuse weakens the protection that single-use KeyPackages give ({{RFC9420, Section 16.8}}). Servers SHOULD rate-limit key material requests per requester.
+Every request that consumes a KeyPackage brings the owner's clients closer to their last-resort KeyPackages, whose reuse weakens the protection that single-use KeyPackages give ({{RFC9420, Section 16.8}}). Servers SHOULD rate-limit key material requests per requester. Clients SHOULD fetch key material only when they are ready to commit, and reuse a fetched KeyPackage when they retry the same Commit.
 
-`Room/unbind` is not checked against the MLS group. A client that calls it while other clients of the account remain in the group cuts those clients off from the room: the server stores no further FanoutMessage for them, and they cannot use `GroupInfo/fetch` to rejoin by external join. Only a later Welcome binds the Chat again.
+`Room/unbind` is not checked against the MLS group. A client that calls it while other clients of the account remain in the group cuts those clients off from the room: the server stores no further FanoutMessage for them, so they no longer receive the room's messages; they can rejoin by external join if the room's policy lets them.
 
 Anyone on a peer provider can send the owner a consent request, so requests are themselves a way to reach a user who has not agreed to be contacted. Servers SHOULD rate-limit requests per requester and per provider, and MAY drop requests without creating a record. A Consent record is visible only to its owner, but sending a revoke tells the requester's provider that the owner refused; a server can withhold revokes ({{consent-set}}).
 
