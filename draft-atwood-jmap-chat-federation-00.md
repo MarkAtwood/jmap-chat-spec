@@ -789,7 +789,9 @@ defined in {{JMAP-CHAT}}) to the owner's connected clients.
 Servers SHOULD rate-limit inbound `Peer/typing` calls per peer to prevent
 abuse. Servers MAY accept no more than one `Peer/typing` call per
 peer per chat per 3 seconds; calls received above this rate MAY be
-silently discarded without error.
+silently discarded without error. A call with `typing` set to `false`
+is exempt: it is always accepted and does not count against the rate,
+as for `Chat/typing` ({{JMAP-CHAT}}).
 
 ### Example
 
