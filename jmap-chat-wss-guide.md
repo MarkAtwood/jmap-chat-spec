@@ -264,8 +264,9 @@ When the sender stops typing and their client signals the server, a receiver get
 `ChatTypingEvent` with `typing: false` and can clear immediately. When the sender's
 client crashes or loses connectivity, no stop signal reaches the server and no
 `typing: false` arrives. The server rate-limits typing events to one per sender per chat
-per 3 seconds; if no further event for a (chatId, senderId) pair arrives within 10
-seconds, clients SHOULD hide the indicator automatically.
+per 3 seconds on each connection, and never drops a `typing: false` for rate; if no
+further event for a (chatId, senderId) pair arrives within 10 seconds, clients SHOULD
+hide the indicator automatically.
 
 To signal typing state to the server, a sender calls `Chat/typing` (defined in the main
 JMAP Chat spec) with `chatId` and `typing: true` when the user begins typing, and
@@ -368,13 +369,16 @@ The spec recommends (SHOULD) rate limiting typing events (permitting (MAY) one p
 and presence events to one per contact per 30 seconds. These limits are per outbound
 connection: each connected client has its own independent rate-limit budget, so two
 simultaneously connected clients can each receive the same event at the full rate.
+A `ChatTypingEvent` with `typing: false` is exempt from the typing limit: it is never
+dropped for rate and does not count toward the window.
 
 Servers SHOULD track the last delivery timestamp in a structure keyed by
 `(connectionId, chatId, senderId)` for typing and `(connectionId, contactId)` for
 presence, where `connectionId` is a server-internal identifier for the WebSocket
 connection. Before sending a frame, the server checks the elapsed time and MAY drop
-silently if within the rate window. For presence, the most recent state SHOULD be
-delivered when the window reopens, so a dropped transition does not leave stale presence.
+silently if within the rate window (never a `typing: false`). For presence, the most
+recent state SHOULD be delivered when the window reopens, so a dropped transition does
+not leave stale presence.
 
 These structures are per-connection and in-memory — they need not be durable or shared
 across nodes. When a connection closes, servers SHOULD discard its rate-limit state.

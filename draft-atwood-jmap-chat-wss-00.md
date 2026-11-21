@@ -131,7 +131,7 @@ Example Session object fragment:
 
 The credential-expiry rules of {{RFC8887}} Section 4.2 apply. If the server closes the connection when credentials expire, it SHOULD use Close frame status code 1008 (Policy Violation), which {{RFC8887}} leaves optional, so that clients can reliably detect and recover from credential expiry on a long-lived chat connection.
 
-Ephemeral events are pushed, not requested, so treating subsequent requests as unauthenticated does not by itself stop them. A server that does not close the connection when credentials expire SHOULD NOT deliver further ephemeral events on that connection.
+Ephemeral events are pushed, not requested, so treating subsequent requests as unauthenticated does not by itself stop them. A server that does not close the connection when credentials expire SHOULD NOT deliver further ephemeral events on that connection. Keeping the connection open therefore requires a check of the connection's credentials before each ephemeral event is delivered; a server that does not make that check closes the connection when credentials expire.
 
 Because a single authenticated WebSocket connection authorizes a continuous stream of JMAP Chat operations, credential theft has broader impact than in the per-request HTTP model. Implementations SHOULD use short-lived credentials (e.g., OAuth 2.0 Bearer tokens with short expiry) and SHOULD support credential refresh by closing and re-establishing the connection with fresh credentials.
 
@@ -231,7 +231,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 : MUST be `"ChatTypingEvent"`.
 
 `accountId` (String):
-: The id of the account that contains the Chat.
+: The id of the recipient's account that contains the Chat. The server generates a separate `ChatTypingEvent` for each recipient account, with `chatId` and `senderId` as they are in that account, and delivers it only on connections of users with access to that account.
 
 `chatId` (String):
 : The `id` of the Chat in which the typing event occurred.
@@ -252,7 +252,7 @@ Delivered to the client when another participant begins or stops typing in a Cha
 }
 ~~~
 
-As for all typing events in {{JMAP-CHAT}} (see Chat/typing Server Behavior), servers do not persist `ChatTypingEvent` messages. Servers SHOULD rate-limit outbound typing events per sender per chat: no more than one `ChatTypingEvent` per sender per chat per 3 seconds SHOULD be delivered; events above this rate MAY be silently dropped. This rate limit is consistent with the `Chat/typing` inbound rate limit defined in {{JMAP-CHAT}} and the `Peer/typing` rate limit defined in {{JMAP-CHAT-FED}}.
+As for all typing events in {{JMAP-CHAT}} (see Chat/typing Server Behavior), servers do not persist `ChatTypingEvent` messages. Servers SHOULD rate-limit outbound typing events per sender per chat, counting the events delivered on each recipient connection: no more than one `ChatTypingEvent` per sender per chat per 3 seconds SHOULD be delivered on a connection; events above this rate MAY be silently dropped. A `ChatTypingEvent` with `typing: false` is exempt from this limit: the server does not drop it for rate and does not count it, so that a recipient does not go on showing a sender who has stopped typing. This rate limit is consistent with the `Chat/typing` inbound rate limit defined in {{JMAP-CHAT}} and the `Peer/typing` rate limit defined in {{JMAP-CHAT-FED}}.
 
 For direct and group Chats, the `receiveTypingIndicators` check of {{JMAP-CHAT}} (see Chat/typing Server Behavior) applies before delivery: if the recipient's `receiveTypingIndicators` is `false`, the `ChatTypingEvent` is silently dropped and is not delivered to any of that owner's WebSocket connections. The sender is not notified. This check does not apply to channel Chats.
 
@@ -268,7 +268,7 @@ Delivered to the client when a ChatContact's presence state changes and that con
 : MUST be `"ChatPresenceEvent"`.
 
 `accountId` (String):
-: The id of the account that contains the ChatContact.
+: The id of the recipient's account that contains the ChatContact. As for `ChatTypingEvent`, the server generates a separate event for each recipient account, with `contactId` as it is in that account.
 
 `contactId` (String):
 : The ChatContact.id whose presence state changed.
@@ -299,7 +299,7 @@ Delivered to the client when a ChatContact's presence state changes and that con
 }
 ~~~
 
-Servers SHOULD rate-limit outbound `ChatPresenceEvent` messages per contact: no more than one `ChatPresenceEvent` per contact per 30 seconds SHOULD be delivered; events above this rate MAY be silently dropped, but the most recent presence state SHOULD be delivered when the rate window reopens, so that a dropped transition does not leave the recipient with stale presence. This rate limit is consistent with the `Peer/subscribePresence` delivery rate defined in {{JMAP-CHAT-FED}}.
+Servers SHOULD rate-limit outbound `ChatPresenceEvent` messages per contact, counting the events delivered on each recipient connection: no more than one `ChatPresenceEvent` per contact per 30 seconds SHOULD be delivered on a connection; events above this rate MAY be silently dropped, but the most recent presence state SHOULD be delivered when the rate window reopens, so that a dropped transition does not leave the recipient with stale presence. This rate limit is consistent with the `Peer/subscribePresence` delivery rate defined in {{JMAP-CHAT-FED}}.
 
 As for the presence push event in {{JMAP-CHAT}}, a `ChatPresenceEvent` is not delivered for a contact whose `blocked` field is `true` on the owner's ChatContact record for that contact.
 

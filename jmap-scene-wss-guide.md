@@ -76,9 +76,11 @@ The server silently drops a `SceneAvatarEvent` for a recipient when:
 
 - The recipient does not have an active avatar in the event's region at delivery time
   (for an observer subscription: does not have access to the region, or the region's
-  `allowObservers` has since been set to `false`). A `SceneStreamEnable` that asks to
-  observe a region whose `allowObservers` is `false`, or that the server declines by
-  policy, fails with a `forbidden` `RequestError` naming the refused `regionIds`.
+  `allowObservers` is `false` or the server declines observers of it, checked at delivery
+  time; delivery resumes when the region admits observers again). A `SceneStreamEnable`
+  that asks to observe a region whose `allowObservers` is `false`, or that the server
+  declines by policy, fails with a `forbidden` `RequestError` naming the refused
+  `regionIds`.
 - The recipient's subscription does not include the event's region (explicit `regionIds`
   that do not contain this region).
 - The recipient's subscription does not include `"SceneAvatarEvent"` in `eventTypes`.
@@ -108,8 +110,9 @@ The server silently drops a `SceneObjectEvent` for a recipient when:
 The server silently drops a `SceneInteractionEvent` for a recipient when:
 
 - The interacted object is not visible to the recipient per the visibility contract.
-- The event exceeds the server's rate limit (SHOULD be no more than 5 per user per region
-  per second per the spec's recommendation).
+- The interaction exceeded the sending user's rate limit (SHOULD be no more than 5 per user
+  per region per second, counted per sending user, not per recipient). The server drops
+  such a frame before relaying it, so no subscriber receives it.
 - The event's `userId` is on the recipient's blocked list (`ChatContact.blocked: true`)
   when the Chat capability is present.
 
@@ -613,8 +616,9 @@ reconciliation is sufficient for this purpose.
 
 The spec recommends (SHOULD-level) two rate limits for outbound ephemeral events. These
 are not hard requirements — a server MAY choose different thresholds — but the
-recommended values are sensible defaults. Both are per outbound connection; each
-connected client has its own independent budget.
+recommended values are sensible defaults. The object-update limit is per outbound
+connection: each connected client has its own independent budget. The interaction limit
+is per sending user, over all of that user's connections.
 
 **SceneObjectEvent** with `event: "updated"`: the spec recommends no more than 2 events
 per object per second. Events above this rate MAY be silently dropped. Track the last
@@ -626,9 +630,10 @@ simulation layer, not the JMAP WebSocket.
 **SceneInteractionEvent**: the spec recommends no more than 5 events per user per region
 per second. Frames above this rate MAY be silently dropped; an interaction over the limit
 submitted with `SceneObject/interact` is reported in `notAccepted` with a `rateLimit`
-SetError. Track with a structure keyed by `(connectionId, regionId, userId)`.
+SetError. Track with a structure keyed by `(accountId, regionId, userId)`, shared by all
+of the user's connections.
 
-These structures are per-connection and in-memory. When a connection closes, discard them.
+These structures are in-memory. When a connection closes, discard its object-update state.
 The spec also notes that servers MAY apply additional rate limits to other event types
 beyond these two.
 

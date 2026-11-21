@@ -124,6 +124,15 @@ here so that this document stands alone.  Under it, the
 {{event-types}}.  Except as updated here, all {{RFC8887}}
 requirements apply unchanged.
 
+This document also makes one exception to {{RFC8887}} Section
+4.3.1, under which a server returns a `RequestError` for any
+request-level error: the server returns no `RequestError` for a
+message whose `@type` is `"SceneInteractionEvent"`
+({{scene-interaction-event}}), even one whose other members are
+malformed.  A message that is not a JSON object, or that exceeds
+`maxSizeRequest` ({{RFC8620}} Section 2), is handled as {{RFC8887}}
+specifies.
+
 # Conventions Used in This Document
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
@@ -419,7 +428,9 @@ A client submits an interaction in one of two ways:
   giving the reason.  A client that needs confirmation or errors
   uses this path.
 
-A frame carries the properties defined above.  The server sets
+A frame carries the properties defined above.  The server relays
+only those: any other member of the frame, an `id` included, is not
+relayed, and an absent `data` is read as `null`.  The server sets
 `userId` on the relayed event to the authenticated user's userId
 ({{JMAP-SCENE}}); a `userId` supplied in the frame is ignored.  The
 server SHOULD also verify, as `SceneObject/interact` does, that:
@@ -429,8 +440,10 @@ server SHOULD also verify, as `SceneObject/interact` does, that:
 2. The `objectId` references a SceneObject in that region with
    `interactable: true`.
 
-If any check fails, the server discards the frame and returns no
-error to the sender.
+If any check fails, or the frame is malformed (for example,
+`objectId` is missing or `data` is neither an object nor `null`),
+the server discards the frame and returns no error to the sender
+({{rfc8887-update}}).
 
 An interaction accepted through either path, a frame that passes
 these checks or an interaction listed in `accepted` in a
@@ -462,7 +475,7 @@ client-to-server frame for it.
 `data` (Object|null):
 : Event-specific payload.  Opaque to this specification; the server
   relays it without interpretation.  `null` when no additional data
-  is needed.
+  is needed.  An absent `data` is equivalent to `null`.
 
 Every subscriber of the region receives the same event, without
 per-recipient filtering beyond that of {{event-delivery}}, so a
@@ -612,7 +625,10 @@ array), no events are delivered.
 SceneRegion ids are unique only within an account.  An id listed in
 `regionIds` matches that id in every account the authenticated user
 can access; clients use the `accountId` of each event to tell the
-accounts apart.
+accounts apart.  When an observer subscription is enabled, the
+server makes the checks below in the accounts it chooses from those
+the user can access, typically the user's own account; delivery is
+not limited to those accounts.
 
 An observer subscription delivers the events of each region in
 `regionIds` that the user has access to ({{JMAP-SCENE}}, Region
@@ -626,7 +642,8 @@ any other caller of `/get`.  Observing does not let the user submit
 interactions ({{interaction-submission}}), which still require an
 active avatar.  A server MAY also decline observers of a region for
 deployment-defined policy reasons even when `allowObservers` is
-`true`.
+`true`.  Like `allowObservers`, a decline applies both when the
+subscription is enabled and when each event is delivered.
 
 When `observe` is `true` and a listed region that the user has
 access to has `allowObservers` set to `false`, or the server
@@ -638,16 +655,23 @@ ephemeral subscription state.  A listed region that the user has no
 access to, or that does not exist, is not refused: the entry is
 retained and produces no events, so the response does not reveal
 whether the region exists ({{JMAP-SCENE}}, Region Access).  If the
-region owner later sets `allowObservers` to `false`, or the user
-loses access, events for that region stop; the client learns of the
-change from the SceneRegion record.
+region owner later sets `allowObservers` to `false`, the server
+starts declining observers of the region, or the user loses access,
+events for that region stop, but the entry stays in the
+subscription: events resume without a new `SceneStreamEnable` once
+the region admits the observer again.  The client learns of a
+change to `allowObservers`, or of losing access, from the
+SceneRegion record.
 
 While an observer subscription delivers events for a region to a
 user without an active avatar there, the user counts toward the
-region's `observerCount` ({{JMAP-SCENE}}).  The count drops when the
-subscription stops covering the region, through a new
-`SceneStreamEnable`, `SceneStreamDisable`, the connection closing,
-or the user entering the region with an avatar.
+region's `observerCount` ({{JMAP-SCENE}}).  The server recomputes the
+count when a subscription starts or stops covering the region
+(through `SceneStreamEnable`, `SceneStreamDisable`, or the
+connection closing), when an avatar enters or leaves the region, and
+when the region is updated, for example its `allowObservers` or
+access policy.  While the region does not admit observers, the count
+is `0`.
 
 If `observe` is
 `true` and `regionIds` is `null`, the server MUST respond with a
@@ -736,8 +760,9 @@ only events from the listed regions are delivered.  If the user
 leaves a listed region, events for that region stop.  If the user
 later re-enters the same region, events resume without a new
 `SceneStreamEnable`.  For an observer subscription, events for a
-listed region continue while the user has access to the region,
-whether or not the user is present in it.
+listed region continue while the user has access to the region and
+the region admits observers, whether or not the user is present in
+it.
 
 ## SceneStreamDisable {#scene-stream-disable}
 
@@ -804,17 +829,18 @@ Servers SHOULD enforce the following rate limits to prevent resource
 exhaustion:
 
 - **`SceneObjectEvent`** with `event: "updated"`: no more than
-  two events per object per second.  Events above this rate MAY be
-  silently dropped; the most recent state SHOULD be delivered when
-  the rate window reopens.  Object updates at higher frequency
-  (e.g., physics simulation) belong on the simulation layer, not
-  the JMAP WebSocket.
+  two events per object per second on each recipient connection.
+  Events above this rate MAY be silently dropped; the most recent
+  state SHOULD be delivered when the rate window reopens.  Object
+  updates at higher frequency (e.g., physics simulation) belong on
+  the simulation layer, not the JMAP WebSocket.
 
 - **`SceneInteractionEvent`**: no more than five events per user
-  per region per second.  Frames above this rate MAY be silently
-  dropped.  An interaction above this rate submitted with
-  `SceneObject/interact` is reported in `notAccepted` with a
-  `rateLimit` SetError ({{JMAP-SCENE}}).
+  per region per second, counted per sending user over all of that
+  user's connections rather than per recipient.  Frames above this
+  rate MAY be silently dropped.  An interaction above this rate
+  submitted with `SceneObject/interact` is reported in `notAccepted`
+  with a `rateLimit` SetError ({{JMAP-SCENE}}).
 
 Servers MAY apply additional rate limits to other event types.
 
@@ -1298,8 +1324,8 @@ can change while the connection is open:
 
 - Scene ephemeral events go only to users with an active avatar in
   the region at delivery time, or, for an observer subscription, to
-  users with access to the region at delivery time
-  ({{event-summary}}).
+  users with access to the region at delivery time whose observation
+  the region still admits ({{event-summary}}, {{scene-stream-enable}}).
 
 - `SceneObjectEvent` and `SceneInteractionEvent` delivery follows
   the visibility contract ({{visibility}}).
@@ -1318,7 +1344,10 @@ use Close frame status code 1008 (Policy Violation).  Ephemeral
 events are pushed, not requested, so treating subsequent requests
 as unauthenticated does not by itself stop them: a server that does
 not close the connection SHOULD NOT deliver further Scene ephemeral
-events on that connection.
+events on that connection.  Keeping the connection open therefore
+requires a check of the connection's credentials before each
+ephemeral event is delivered; a server that does not make that
+check closes the connection when credentials expire.
 
 ## Rate Limiting {#security-rate-limiting}
 

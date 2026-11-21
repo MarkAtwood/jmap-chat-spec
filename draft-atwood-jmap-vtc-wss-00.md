@@ -311,6 +311,13 @@ delivered if `eventTypes` is `null` or includes that event type,
 including when `callIds` is an empty array or names only calls in
 which the user is not a current participant.
 
+Neither per-user event names its recipient; the server addresses
+it.  It delivers a `VTCRingEvent` only to the connections of the
+ringed user, the user identified by the `userId` of the target's
+VTCParticipant record ({{JMAP-VTC}}), and a `VTCCallEndEvent` only
+to the connections of users who have a VTCParticipant record in the
+call, as {{JMAP-VTC}} directs for each `endReason`.
+
 Per-call events are delivered only for calls that match the active
 subscription's `callIds` filter (or all calls if `callIds` is
 `null`) and for which the user is a current participant.
@@ -332,6 +339,10 @@ exhaustion:
   rate limits defined in {{JMAP-VTC}} Security Considerations.
 
 Servers MAY apply additional rate limits to other event types.
+
+The limits on `VTCMediaStateEvent` and `VTCActiveSpeakerEvent`
+count the events delivered on each recipient connection, so each
+connection has its own budget.
 
 ## Event Ordering
 
@@ -631,7 +642,10 @@ use Close frame status code 1008 (Policy Violation).  Ephemeral
 events are pushed, not requested, so treating subsequent requests
 as unauthenticated does not by itself stop them: a server that does
 not close the connection SHOULD NOT deliver further VTC ephemeral
-events on that connection.
+events on that connection.  Keeping the connection open therefore
+requires a check of the connection's credentials before each
+ephemeral event is delivered; a server that does not make that
+check closes the connection when credentials expire.
 
 ## Rate Limiting {#security-rate-limiting}
 
