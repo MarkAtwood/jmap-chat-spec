@@ -2152,7 +2152,7 @@ Reference:
 : This document
 
 Description:
-: A method-level error: the calling peer has exceeded a server-defined request rate limit. Returned by the Peer/* methods of {{JMAP-CHAT-FED}}. The caller waits before retrying. (Per-object rate limits on `/set`, including channel slow mode, use the `rateLimit` SetError of {{RFC8620, Section 5.3}}.)
+: A method-level error: the calling peer or client has exceeded a server-defined request rate limit. Returned by the Peer/* methods of {{JMAP-CHAT-FED}} and by the methods of {{JMAP-CHAT-MIMI}}. The caller waits before retrying. (Per-object rate limits on `/set`, including channel slow mode, use the `rateLimit` SetError of {{RFC8620, Section 5.3}}.)
 
 JMAP Error Code:
 : `notPermitted`

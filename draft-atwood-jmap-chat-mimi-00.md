@@ -244,7 +244,7 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 : The maximum number of KeyPackage records, last-resort KeyPackages included, the server stores for this account.
 
 `maxClients` (UnsignedInt, optional):
-: The maximum number of signature keys the server binds to this account ({{keypackage}}), that is, the number of the owner's clients. Absent if the server states no limit.
+: The maximum number of signature keys the server binds to this account ({{client}}), that is, the number of the owner's clients. Absent if the server states no limit.
 
 `assetUrl` (String, optional):
 : A URL template ({{!RFC6570}}, level 1) with the variable `blobId`. A blob the account uploaded ({{RFC8620, Section 6.1}}) is served, without authentication, at the URL this forms, so that the URL can be the `url` of an ExternalPart ({{MIMI-CONTENT, Section 4.5}}) that other providers' clients fetch. The blob id is the only credential for it, so clients upload only encrypted content. Absent if the server does not store attachments.
@@ -301,7 +301,7 @@ Standard JMAP `/changes` ({{RFC8620, Section 5.2}}). A KeyPackage handed out app
 
 Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that `update` is not supported: the server MUST reject every update with a SetError of type `forbidden`.
 
-On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account. The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
+On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account and creates a Client record for it ({{client}}). The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
 
 The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`. When `maxClients` signature keys are already bound to the account, it rejects with `overQuota` a create whose signature key is not one of them.
 
@@ -314,6 +314,34 @@ When this server answers a key material request for the owner ({{MIMI-PROTOCOL, 
 The `clientUri` the server returns for each client ({{MIMI-PROTOCOL, Section 5.2}}) is implementation-defined, but MUST be stable and unique per leaf: the server MUST return the same `clientUri` in every response for a given signature key ({{keypackage}}), and different `clientUri` values for different signature keys.
 
 The server MUST keep the KeyPackageRef of every KeyPackage it hands out, with the account it belongs to, until a Welcome naming it has been delivered or its leaf node lifetime has passed. A destroyed record appears in a new state for the KeyPackage type, so a client that receives the `StateChange` can replenish its KeyPackages.
+
+# Clients {#client}
+
+A Client record stands for one signature key bound to the account, that is, one of the owner's MLS clients. The server creates it when it binds a signature key, on a KeyPackage/set create ({{keypackage}}) or when the hub accepts an external Commit ({{room-update}}). Destroying it ends the binding, which frees a place under `maxClients`.
+
+## Client Object Fields
+
+`id` (Id, immutable, server-set):
+: The id of the record.
+
+`signatureKey` (String, immutable, server-set):
+: The client's SignaturePublicKey ({{RFC9420, Section 5.1.1}}), the signature key of its leaf nodes.
+
+## Client/get
+
+Standard JMAP `/get` ({{RFC8620, Section 5.1}}).
+
+## Client/changes
+
+Standard JMAP `/changes` ({{RFC8620, Section 5.2}}).
+
+## Client/set
+
+Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that only `destroy` is supported: the server MUST reject every create and update with a SetError of type `forbidden`.
+
+Destroying a Client record unbinds its signature key from the account. The server destroys the account's KeyPackage records with that signature key, and the key no longer counts toward `maxClients` or passes the check of `Room/create` ({{room-create}}). A later KeyPackage/set create or external Commit with the same signature key binds it again, as for a new client.
+
+Unbinding does not remove the client from any room. The server is not a member of the rooms' MLS groups and cannot remove its leaves, and until a commit removes them the client can still decrypt those rooms' messages. A client that destroys the record of another of the owner's clients, such as a lost device, removes that client's leaves, with `Room/update` ({{room-update}}), from the rooms they share. Nor does unbinding end the removed client's access to the account; that is a matter for the account's authentication.
 
 # KeyMaterial/fetch {#keymaterial-fetch}
 
@@ -507,7 +535,7 @@ The request arguments are:
 `request` (String):
 : An UpdateRequest.
 
-An external Commit ({{MIMI-PROTOCOL, Section 3.5}}) joins the account's user to a room, whether or not the account is in it: this is how a client joins an open room or by a join link, rejoins after leaving, or adds another of its own clients. Its signature key is bound to no KeyPackage the account published ({{keypackage}}), so the server checks the credential instead.
+An external Commit ({{MIMI-PROTOCOL, Section 3.5}}) joins the account's user to a room, whether or not the account is in it: this is how a client joins an open room or by a join link, rejoins after leaving, or adds another of its own clients. Its signature key need not be bound to the account ({{client}}), so the server checks the credential instead. When the hub accepts an external Commit whose UpdatePath leaf's signature key is not bound to the account, the server binds it and creates a Client record for it, as a KeyPackage/set create does. When `maxClients` signature keys are already bound to the account, the server rejects, with the method-level error `forbidden` and without submitting it, an external Commit whose signature key is not one of them. The server SHOULD reject, with `invalidArguments`, an external Commit whose signature key is bound to another account.
 
 The server MUST reject the call with `invalidArguments` if `request` does not parse as an UpdateRequest, if it carries an external Commit whose UpdatePath leaf's credential identity is not `userUri`, or if it does not carry an external Commit and no Chat in the account is bound to `roomId`. Otherwise it processes the request as hub, or submits it to the hub, and returns `serverUnavailable` if the hub cannot be reached. When the hub accepts an external Commit from an account that has no Chat bound to the room, the server creates a Chat bound to it, or binds the account's unbound Chat with that `roomId` again.
 
@@ -972,9 +1000,29 @@ Capability:
 Reference:
 : This document
 
+IANA is requested to register the following entry in the "JMAP Data Types" registry:
+
+Type Name:
+: Client
+
+Can Reference Blobs:
+: No
+
+Can Use for State Change:
+: Yes
+
+Supports History:
+: No
+
+Capability:
+: `urn:ietf:params:jmap:chat:mimi`
+
+Reference:
+: This document
+
 ## JMAP Error Code Registration
 
-IANA is requested to add this document to the Reference of the `rateLimited` entry that {{JMAP-CHAT}} registers in the "JMAP Error Codes" registry ({{RFC8620, Section 9.5}}). This document returns it from its own methods ({{capability}}), with the optional `retryAfter` property.
+IANA is requested to add this document to the Reference of the `rateLimited` entry that {{JMAP-CHAT}} registers in the "JMAP Error Codes" registry ({{RFC8620, Section 9.5}}), whose Description names this document. This document returns it from its own methods ({{capability}}), with the optional `retryAfter` property.
 
 ## Media Type Registration
 
