@@ -243,6 +243,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `maxKeyPackages` (UnsignedInt):
 : The maximum number of KeyPackage records, last-resort KeyPackages included, the server stores for this account.
 
+`maxClients` (UnsignedInt, optional):
+: The maximum number of signature keys the server binds to this account ({{keypackage}}), that is, the number of the owner's clients. Absent if the server states no limit.
+
 `assetUrl` (String, optional):
 : A URL template ({{!RFC6570}}, level 1) with the variable `blobId`. A blob the account uploaded ({{RFC8620, Section 6.1}}) is served, without authentication, at the URL this forms, so that the URL can be the `url` of an ExternalPart ({{MIMI-CONTENT, Section 4.5}}) that other providers' clients fetch. The blob id is the only credential for it, so clients upload only encrypted content. Absent if the server does not store attachments.
 
@@ -257,7 +260,14 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `maxMlsObjectSize` (UnsignedInt, optional):
 : The largest MLS or MIMI structure, in octets before base64url encoding, that the server accepts in any argument of this document's methods. A client that would send a larger one MAY choose a ratchet tree option ({{MLS-RATCHET-TREE-OPTIONS}}) that keeps the tree out of the message.
 
+`messageRetention` (UnsignedInt, optional):
+: The number of seconds the server keeps a Message in a Chat with a `roomId` ({{chat-roomid}}) after storing it. The server MAY destroy such a Message after that time. Absent if the server states no limit.
+
+  A client that has not read a Chat's Messages for longer than this may have missed some, handshake messages among them, and then cannot follow the room's MLS group. It may find that the server cannot calculate changes from its saved Message state, and that the Message it would use as `anchor` ({{message-order}}) is gone (`anchorNotFound`, {{RFC8620, Section 5.5}}). Such a client MAY rejoin the room by external join ({{groupinfo-fetch}}, {{room-update}}); the application messages it missed are lost to it.
+
 A server that advertises this capability MUST include `"application/mimi-fanout"` in `supportedBodyTypes` ({{JMAP-CHAT}}).
+
+A server that limits how often an account calls the methods of this document answers a call over its limit with the method-level error `rateLimited` ({{JMAP-CHAT}}). The error object MAY include `retryAfter` (UnsignedInt), the number of seconds after which the server expects the call can succeed. A client that receives `rateLimited` waits before it calls again, at least `retryAfter` seconds when it is present.
 
 A client of this capability that does not convert content needs `StateChange` events for the Message, Chat, Consent and KeyPackage types; it MAY ask for only these in the event source's `types`.
 
@@ -293,7 +303,7 @@ Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that `update` is not sup
 
 On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired, if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account. The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
 
-The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`.
+The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`. When `maxClients` signature keys are already bound to the account, it rejects with `overQuota` a create whose signature key is not one of them.
 
 Each client has at most one last-resort KeyPackage. Creating a last-resort KeyPackage for a client destroys that client's previous last-resort KeyPackage.
 
@@ -542,6 +552,9 @@ The request arguments are:
 
 `message` (String):
 : An MLSMessage ({{RFC9420, Section 6}}) of wire format PrivateMessage and content type application, whose plaintext is MIMI content {{MIMI-CONTENT}}.
+
+`silent` (Boolean, optional, default `false`):
+: When `true`, the server MAY skip push notifications ({{RFC8620, Section 7.2}}) for the Messages it stores for this message in local accounts. A client MAY set it for a message that recipients need but need not be woken for, such as a message status report ({{status}}) or an edit. The flag does not reach other providers: a SubmitMessageRequest and a FanoutMessage ({{MIMI-PROTOCOL}}) carry no such flag, so another provider notifies its users as it would for any message.
 
 The server MUST reject the call with `invalidArguments` if `message` does not parse as such an MLSMessage or if no Chat in the account is bound to `roomId`. Otherwise it submits the message to the hub as a SubmitMessageRequest with `sendingUri` set to `userUri` ({{MIMI-PROTOCOL, Section 5.4}}), or processes it as hub, and returns `serverUnavailable` if the hub cannot be reached.
 
@@ -958,6 +971,10 @@ Capability:
 
 Reference:
 : This document
+
+## JMAP Error Code Registration
+
+IANA is requested to add this document to the Reference of the `rateLimited` entry that {{JMAP-CHAT}} registers in the "JMAP Error Codes" registry ({{RFC8620, Section 9.5}}). This document returns it from its own methods ({{capability}}), with the optional `retryAfter` property.
 
 ## Media Type Registration
 
