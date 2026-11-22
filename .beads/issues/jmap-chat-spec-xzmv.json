@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-xzmv",
+  "title": "VTC: derive E2EE call media keys from the room's MLS group (exporter)",
+  "description": "From mimid work 2026-11-21 (Mark: file it). For a call started from a MIMI room, derive SFrame (RFC 9605) media keys from the room's MLS group via the MLS exporter, so the join endpoint never carries a secret and membership changes rekey the call. Nothing in MIMI or draft-atwood-jmap-vtc-00 defines this binding; candidate for a VTC draft section or a small companion draft.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "feature",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-21T19:49:14.964584114Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-11-21T19:49:14.964584114Z"
+}

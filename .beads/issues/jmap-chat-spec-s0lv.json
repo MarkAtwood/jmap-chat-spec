@@ -1,0 +1,12 @@
+{
+  "id": "jmap-chat-spec-s0lv",
+  "title": "VTC: a structured call invite carried in MIMI content",
+  "description": "From mimid work 2026-11-21 (Mark: file it). mimi-content-10 §5.10 carries only a join URL as an ExternalPart with disposition session; no call id, ring vs room, start time, or call-ended. draft-atwood-jmap-vtc-00 has VTCCall; define a media type (e.g. application/vnd.jmap-vtc-call+json or CBOR) for a VTCCall invite inside a mimi-content part, so any MIMI client can show 'Join call' with details and E2EE state.",
+  "status": "open",
+  "priority": 3,
+  "issue_type": "feature",
+  "owner": "mark@reviewcommit.com",
+  "created_at": "2026-11-21T19:49:14.887555268Z",
+  "created_by": "Mark Atwood",
+  "updated_at": "2026-11-21T19:49:14.887555268Z"
+}
