@@ -175,12 +175,14 @@ Servers MAY include other fields in the account-level capability object as deplo
 A server advertising the `urn:ietf:params:jmap:chat:did` capability MUST be able to resolve DIDs of the following methods and verify signatures made by keys bound in their DID Documents:
 
 - **`did:web`** ({{DID-WEB}}) — resolution by HTTPS GET of a JSON DID Document at a well-known path derived from the DID's authority component.
-- **`did:key`** ({{DID-KEY}}) — resolution by deterministic local derivation of the DID Document from the public key material encoded in the DID URI itself. No network resolution is performed.
+- **`did:key`** ({{DID-KEY}}) — resolution by deterministic local derivation of the DID Document from the public key material encoded in the DID URI itself. No network resolution is performed. A `did:key` DID cannot be rotated; see {{did-key-non-rotatability}} before adopting one as a long-term identity.
 - **`did:plc`** ({{DID-PLC}}) — resolution via the PLC directory protocol, including the operation-log integrity check defined by that protocol.
 
 This list is mandatory-to-implement. A server that cannot resolve any one of these three methods MUST NOT advertise the `urn:ietf:params:jmap:chat:did` capability.
 
-Support for `did:webvh` ({{DID-WEBVH}}) is RECOMMENDED but not mandatory-to-implement. `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, keys from the `did:web` DID Document are treated as defined in {{JMAP-DID}} and {{DID-WEBVH}}: a key not present in the verified `did:webvh` log carries none of the log's guarantees.
+A server that resolves `did:web` MUST also resolve `did:webvh` ({{DID-WEBVH}}). `did:webvh` is the history-verifiable upgrade from `did:web`: it keeps DNS anchoring and adds a verifiable log of DID Document versions, so a compromise of the hosting server cannot silently rewrite key history. When a server can resolve a `did:webvh` DID for the same domain and path as a `did:web` DID, keys from the `did:web` DID Document are treated as defined in {{JMAP-DID}} and {{DID-WEBVH}}: a key not present in the verified `did:webvh` log carries none of the log's guarantees.
+
+That rule is the reason for the requirement. A server that resolved `did:web` alone could never apply it, so the protection it describes would be available only to deployments that had already chosen `did:webvh` — leaving a conforming server free to be the weak one for exactly the key history the rule exists to protect. Since `did:web` is mandatory-to-implement above, `did:webvh` is therefore also mandatory-to-implement in this revision. The requirement is written as a condition on `did:web` rather than added to the list so that it continues to track `did:web`: a future revision that demotes `did:web` demotes `did:webvh` with it, and one that keeps `did:web` keeps both.
 
 Servers MAY additionally support any other DID method listed in the W3C DID Extensions registry ({{DID-EXTENSIONS}}) or otherwise specified. Support for additional methods is advertised by including the method name in the `supportedMethods` array ({{capability}}).
 
@@ -296,7 +298,7 @@ Implementations MAY also implement out-of-band signaling for high-priority rotat
 
 `did:web` resolution depends on DNS and TLS. A compromise of the DNS resolver, the TLS infrastructure, or the HTTPS host serving the DID Document is a compromise of any `did:web` DID resolved through that path. Implementations SHOULD pin TLS chains for `did:web` resolutions where operator policy permits; TLS handshake failures are resolution failures. `did:web` also keeps no verifiable key history; `did:webvh` ({{methods}}) addresses this.
 
-## did:key non-rotatability
+## did:key non-rotatability {#did-key-non-rotatability}
 
 `did:key` DIDs are deterministically derived from the public key encoded in the DID URI. There is no key-rotation mechanism: changing the key creates a new DID, which is a DID migration ({{JMAP-DID}}). A `did:key` whose private key is compromised cannot be recovered or rotated; the DID itself must be retired and a new DID adopted. Deployments using `did:key` as a long-term identity need to plan for key-loss as a likely event and to provide deployment-level migration paths (typically out of scope for this protocol; see the companion implementer guide).
 
