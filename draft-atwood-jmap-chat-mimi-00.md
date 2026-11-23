@@ -152,7 +152,7 @@ A MIMI reference to another message (`replaces` or `inReplyTo` {{MIMI-CONTENT}},
 
 # Senders {#senders}
 
-The sender's MIMI user URI ({{MIMI-PROTOCOL}}) is the identity of the Basic credential ({{RFC9420, Section 5.3}}) in the MLS sender's leaf. A converted Message's `senderId` is the `id` of the local ChatContact ({{JMAP-CHAT}}) whose `identity` is that user URI. If no ChatContact has that `identity`, the converting party MUST create one, with that `identity` and an `id` the server assigns, before storing the Message. When that user URI equals the account's `ownerUserId` ({{JMAP-CHAT}}), the same identity mapping {{JMAP-CHAT}} and {{JMAP-CHAT-FED}} use, `senderId` is the `accountId` ({{JMAP-CHAT}}) and no ChatContact is created.
+The sender's MIMI user URI ({{MIMI-PROTOCOL}}) is the identity of the credential ({{RFC9420, Section 5.3}}) in the MLS sender's leaf, whatever the credential's type ({{keypackage}}). A converted Message's `senderId` is the `id` of the local ChatContact ({{JMAP-CHAT}}) whose `identity` is that user URI. If no ChatContact has that `identity`, the converting party MUST create one, with that `identity` and an `id` the server assigns, before storing the Message. When that user URI equals the account's `ownerUserId` ({{JMAP-CHAT}}), the same identity mapping {{JMAP-CHAT}} and {{JMAP-CHAT-FED}} use, `senderId` is the `accountId` ({{JMAP-CHAT}}) and no ChatContact is created.
 
 # Edits {#edits}
 
@@ -245,6 +245,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:chat:mimi"]` is a JSON o
 `cipherSuites` (UnsignedInt\[]):
 : The MLS cipher suites ({{RFC9420, Section 17.1}}) this server accepts in KeyPackages and new rooms. MUST NOT be empty.
 
+`credentialTypes` (UnsignedInt\[], optional):
+: The MLS credential types ({{RFC9420, Section 17.5}}) this server accepts in a KeyPackage's leaf ({{keypackage}}). A client that holds a credential whose type is not listed knows not to offer it, rather than learning so from a rejected `KeyPackage/set`. When absent, a client learns which types the server accepts only by offering one. The server authorizes a KeyPackage by the credential's identity in either case ({{keypackage}}).
+
 `maxKeyPackages` (UnsignedInt):
 : The maximum number of KeyPackage records, last-resort KeyPackages included, the server stores for this account.
 
@@ -311,7 +314,11 @@ Standard JMAP `/changes` ({{RFC8620, Section 5.2}}). A KeyPackage handed out app
 
 Standard JMAP `/set` ({{RFC8620, Section 5.3}}), except that `update` is not supported: the server MUST reject every update with a SetError of type `forbidden`.
 
-On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired or is longer than the server allows (`maxKeyPackageLifetime`), if its credential is not a Basic credential ({{RFC9420, Section 5.3}}), or if the credential identity is not `userUri`. The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account and creates a Client record for it ({{client}}). The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
+On create, the server MUST reject the record with `invalidProperties` naming `keyPackage` if `keyPackage` does not parse as a KeyPackage, if its signature does not verify, if its cipher suite is not in `cipherSuites`, if its leaf node lifetime has expired or is longer than the server allows (`maxKeyPackageLifetime`), or if the credential identity is not `userUri`.
+
+The leaf node's signature key identifies the client and binds the KeyPackage to the account: the first KeyPackage the server accepts with a given signature key binds that signature key to the account and creates a Client record for it ({{client}}). The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose signature key is bound to another account.
+
+This document does not constrain the leaf credential's type ({{RFC9420, Section 5.3}}). What it requires is that the credential's identity be the account's `userUri`: that is what authorizes the KeyPackage for the account, and it holds for a Basic credential, for an X.509 credential, and for any credential type registered later. A server MAY reject, with `invalidProperties` naming `keyPackage`, a credential whose type it cannot verify, and SHOULD advertise the types it accepts in `credentialTypes` ({{capability}}).
 
 The server SHOULD reject, with `invalidProperties` naming `keyPackage`, a KeyPackage whose KeyPackageRef equals that of a KeyPackage it stores or has handed out, and MUST reject a create that would exceed `maxKeyPackages` with `overQuota`. When `maxClients` signature keys are already bound to the account, it rejects with `overQuota` a create whose signature key is not one of them.
 
