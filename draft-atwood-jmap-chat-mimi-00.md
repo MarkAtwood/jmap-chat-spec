@@ -103,6 +103,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-chat-federation-00
     date: 2026
+  JMAP-VTC:
+    title: "JMAP for Video/Voice Teleconferencing"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-vtc-00
+    date: 2026
   JMAP-OBJ-HISTORY:
     title: "JMAP Object History"
     author:
@@ -113,7 +120,7 @@ informative:
 
 --- abstract
 
-This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format and JMAP Chat. It specifies how MIMI message identifiers, edits, topics, media reactions, and message statuses map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider: it publishes KeyPackages, fetches key material, asks for and gives consent to be added to rooms, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
+This document defines how a gateway converts messages between the IETF More Instant Messaging Interoperability (MIMI) content format and JMAP Chat. It specifies how MIMI message identifiers, edits, topics, media reactions, message statuses, and calls to join map onto JMAP Chat Messages, so that independent gateways derive the same JMAP Chat identifiers for the same MIMI messages without coordination. It also defines a JMAP capability with which a JMAP Chat server acts as an MLS client's MIMI provider: it publishes KeyPackages, fetches key material, asks for and gives consent to be added to rooms, creates and updates rooms, records that the account has left a room, fetches GroupInfo, and sends and delivers end-to-end encrypted MIMI messages without decrypting them.
 
 --- middle
 
@@ -165,6 +172,14 @@ MIMI's `topicId` {{MIMI-CONTENT}}, a byte string, maps to the Message `topicId` 
 # Reactions {#reactions}
 
 A MIMI media reaction (a reaction that is not an emoji) is carried in JMAP Chat as a reply containing the media, as {{MIMI-CONTENT}} permits; JMAP Chat Reactions ({{JMAP-CHAT}}) remain emoji and custom emoji.
+
+# Calls {#calls}
+
+A MIMI part whose disposition is `session` ({{MIMI-CONTENT, Section 5.10}}) carries an endpoint for a multimedia call, not content to fetch. A converting party maps such a part whose `url` is an `https` or `wss` URI to a MessageAction ({{JMAP-CHAT}}) of type `urn:ietf:params:jmap:chat:cap:vtc`, with the part's `url` as the action's `uri` and its `description` as the action's `label`, and maps such a MessageAction back to a `session` part of external cardinality. It does not fetch the URL, and ignores the part's `expires`, `size`, `encAlg` and `hashAlg`, which Section 5.10's own example leaves at zero or none. A `session` part whose `url` carries any other scheme maps to a line of `body` instead, so that the URI still reaches the user; the converting party still converts the message. A converting party sends no MessageAction type other than this one over MIMI, and refuses a MessageAction that carries `metadata`, since {{MIMI-CONTENT}} gives a `session` part nowhere to put it.
+
+The `session` disposition covers "a description of a multimedia session, or a URI used to join one" ({{MIMI-CONTENT}}). Only the second is mapped: a `session` part that carries a session description rather than a join URI maps to no MessageAction, because JMAP Chat has no field for one and {{MIMI-CONTENT}} states no content type for it. Such a part maps as an ordinary part of its cardinality and content type, so its content still reaches the user.
+
+Nothing here says how a call's media is keyed. {{MIMI-CONTENT}}, Section 5.10 puts "further discussion of calling and conferencing functionality" out of scope, and {{JMAP-VTC}}'s `e2eeEnabled` is a state signal whose mechanism is media-layer-defined. A later revision may say what a call bound to a MIMI room derives its media keys from.
 
 # Message Status {#status}
 
