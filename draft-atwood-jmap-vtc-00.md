@@ -28,6 +28,8 @@ normative:
   RFC4648:
   RFC8866:
   RFC8122:
+  RFC7064:
+  RFC7065:
   ULID:
     title: "Universally Unique Lexicographically Sortable Identifier"
     target: https://github.com/ulid/spec
@@ -315,6 +317,10 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 `gateways` (VTCGateway\[], optional):
 : Protocol gateways available for this deployment. See {{vtc-gateway}}.
 
+`iceServers` (VTCIceServer\[], optional):
+: The STUN and TURN servers this deployment offers its own clients for NAT traversal ({{vtc-ice-server}}), in the order a client SHOULD try them. Absent when the deployment offers none, which is not the same as a call needing none: a client MAY have its own.
+: This is configuration from a server to its own clients and is never negotiated between the two ends of a call ({{turn-not-negotiated}}). Each end offers the candidates its own servers gave it, and the ends agree on a working pair by ICE, having agreed on nothing beforehand.
+
 # Data Types
 
 Data types are defined in dependency order: embedded sub-types precede the types that reference them.
@@ -361,6 +367,34 @@ A VTCDialInEntry is an address through which an external caller can reach a VTCC
 
 `tollFree` (Boolean):
 : `true` if this is a toll-free number. Applicable to PSTN gateways; `false` for other protocols.
+
+## VTCIceServer {#vtc-ice-server}
+
+One STUN or TURN server a deployment offers its own clients
+({{capability}}). The fields are those of {{WEBRTC}}'s `RTCIceServer`, so
+a browser client passes the object through unchanged.
+
+`urls` (String\[]):
+: The server's URLs, as `stun:` ({{RFC7064}}) or `turn:`/`turns:`
+({{RFC7065}}) URIs. Several name one server reachable more than one way,
+such as over UDP and over TCP.
+
+`username` (String|null):
+: The username a TURN server requires. `null` for a STUN server.
+
+`credential` (String|null):
+: The credential a TURN server requires. `null` for a STUN server. A
+deployment that issues short-lived credentials puts the current one here,
+and a client that finds it expired asks for the capability again.
+
+A TURN server relays media, so it learns the addresses of the clients
+that relay through it and that encrypted bytes flow between them
+({{turn-not-negotiated}}). A deployment SHOULD offer its own clients a
+relay it runs itself, which learns nothing it does not already know from
+those clients connecting to it. A deployment that instead names a third
+party's relay discloses its clients' addresses to that third party, and
+one whose clients and their peers all name the same third party discloses
+to it who spoke to whom.
 
 ## VTCMediaState {#media-state}
 
