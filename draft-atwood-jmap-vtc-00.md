@@ -1877,7 +1877,15 @@ A VTCCallSignal carries one call signalling message from another participant of 
 `timestamp` (UTCDate):
 : Time the server accepted the message the signal arrived in.
 
-Signals arrive in the order the call's MIMI room accepted them, because that room's hub orders the messages it accepts. A client can therefore apply an offer and answer in order without sequence numbers of its own. Candidates have no order requirement.
+A server MAY deliver a signal more than once, and a client MUST tolerate
+it: a second copy of an offer it has already applied is ignored rather
+than applied again, and a repeated candidate is harmless. A client that
+keeps a record of what it has seen SHOULD bound it, since a call's
+signalling is unbounded in principle.
+
+Signals arrive in the order the call's MIMI room accepted them, because that room's hub orders the messages it accepts. A client can therefore apply an offer and answer in that order without sequence numbers of its own.
+
+Arrival order is not processing order, and a client MUST NOT treat it as one. Applying a session description is asynchronous: it may wait on the user's permission to use a microphone or camera, and on the media layer accepting the description. A candidate that arrived after the offer can therefore reach a client that has not finished applying it. A client MUST hold such a candidate until the remote description is set and then apply what it held, and MUST NOT discard it: the candidates a client discards are the routes its call then fails to find. A client that applies candidates as they arrive works on a fast machine and fails intermittently on a slow one.
 
 A signal reaches every member of the call's MIMI room, because that is the granularity at which the room's MLS group encrypts. In a call whose media is peer-to-peer between two participants, or one whose media passes through a selective forwarding unit that is itself a participant, that is what is wanted. In a mesh call among three or more, the session description a participant intends for one peer is readable by all of them, so such a call gets no privacy between its own participants from this mechanism and MUST NOT be presented as though it did.
 
