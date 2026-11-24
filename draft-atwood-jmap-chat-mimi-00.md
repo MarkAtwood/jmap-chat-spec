@@ -518,6 +518,13 @@ When this capability is present, the Chat object ({{JMAP-CHAT}}) has two more fi
 `roomBound` (Boolean, server-set, optional):
 : `true` while the Chat is bound to its room, `false` once it is unbound. Present exactly when `roomId` is.
 
+`parentRoomId` (String|null, server-set, optional):
+: The MIMI room ID of the parent of the room this Chat is bound to, when that room is parent-dependent ({{MIMI-ROOM-POLICY, Section 5}}); `null` when it is not. Present exactly when `roomId` is, and only from a server that knows the room's policy.
+
+A parent-dependent room is the shape a call with a room of its own takes ({{MIMI-CALLS}}), and `kind` ({{JMAP-CHAT}}) has no value that describes a call, so a Chat bound to such a room is one a client SHOULD NOT list among the user's conversations. It is still a Chat: a Chat bound to a room is that room's message container and the handle its messages are sent and received through, so omitting it would leave the room with no messages rather than with no conversation. `parentRoomId` is how a client tells the two apart.
+
+Only a server that holds the room's policy can set `parentRoomId`. {{MIMI-ROOM-POLICY, Section 5}} puts a parent-dependent room on the same Hub as its parent, so the Hub's own server can set it, and a server following the room for one of its users cannot: it holds no group state and cannot read a Welcome addressed to a client. Such a server omits the field, and a client that needs to know reads the room's `base_room_policy` from the group itself.
+
 A Chat with a `roomId` has kind `"group"`. Its participant list, roles, and metadata are MLS group state, changed only through `Room/update` ({{room-update}}), and its messages are sent with `Room/send` ({{room-send}}). The server MUST reject, with `forbidden`, a `Chat/set` update on such a Chat that sets `name`, `description`, or `avatarBlobId` or that uses the `addMembers`, `removeMembers`, or `updateMemberRoles` patch key ({{JMAP-CHAT}}), and clients take the room's name and participants from the MLS group state rather than from these fields. The server sets `name` to the `room_name` of the room metadata ({{MIMI-PROTOCOL, Section 7.6}}) when it knows it and to the empty string otherwise.
 
 The server does not mirror the participant list into ChatMember records: `members` of a Chat with a `roomId` is the empty list, whether `Room/create` ({{room-create}}) or a Welcome ({{fanout-messages}}) created it.
@@ -564,7 +571,7 @@ The GroupInfo SHOULD contain the `external_pub` extension ({{RFC9420, Section 12
 
 Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, and `room_metadata` out of the room's `app_components`, or add both later with AppDataUpdates once it knows every member supports it. Leaving the metadata out has a cost: some clients do not show an invitation to a room that has no room metadata.
 
-On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), unless the room is parent-dependent. A parent-dependent room gets no Chat: `kind` ({{JMAP-CHAT}}) has no value that describes one, so a client given such a Chat shows it among the user's conversations, where it is not one. A call with a room of its own ({{MIMI-CALLS}}) is the case this arises in, and what a user sees of such a call belongs in the parent room's Chat rather than in one of its own. The room is still created, and the client addresses it by `roomId`.
+On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), whatever kind of room it is. A parent-dependent room gets one like any other: a Chat bound to a room is that room's message container, so a room without one has no messages. A client tells such a Chat apart by its `parentRoomId` ({{chat-roomid}}) rather than by its absence.
 
 Room/create returns:
 
@@ -574,8 +581,8 @@ Room/create returns:
 `roomId` (String):
 : The room ID.
 
-`chatId` (Id|null):
-: The id of the new Chat, or `null` when the room is parent-dependent and no Chat was created.
+`chatId` (Id):
+: The id of the new Chat.
 
 The owner's other clients join the room by external join ({{groupinfo-fetch}}), as any new client of a participant does.
 
