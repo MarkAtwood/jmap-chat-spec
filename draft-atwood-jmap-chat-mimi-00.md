@@ -22,6 +22,8 @@ author:
     email: mark@reviewcommit.com
 
 normative:
+  RFC8866:
+  RFC8122:
   RFC2119:
   RFC4648:
   RFC8174:
@@ -184,7 +186,13 @@ A MIMI media reaction (a reaction that is not an emoji) is carried in JMAP Chat 
 
 A MIMI part whose disposition is `session` ({{MIMI-CONTENT, Section 5.10}}) carries an endpoint for a multimedia call, not content to fetch. A converting party maps such a part whose `url` is an `https` or `wss` URI to a MessageAction ({{JMAP-CHAT}}) of type `urn:ietf:params:jmap:chat:cap:vtc`, with the part's `url` as the action's `uri` and its `description` as the action's `label`, and maps such a MessageAction back to a `session` part of external cardinality. It does not fetch the URL, and ignores the part's `expires`, `size`, `encAlg` and `hashAlg`, which Section 5.10's own example leaves at zero or none. A `session` part whose `url` carries any other scheme maps to a line of `body` instead, so that the URI still reaches the user; the converting party still converts the message. A converting party sends no MessageAction type other than this one over MIMI, and refuses a MessageAction that carries `metadata`, since {{MIMI-CONTENT}} gives a `session` part nowhere to put it.
 
-The `session` disposition covers "a description of a multimedia session, or a URI used to join one" ({{MIMI-CONTENT}}). Only the second is mapped: a `session` part that carries a session description rather than a join URI maps to no MessageAction, because JMAP Chat has no field for one and {{MIMI-CONTENT}} states no content type for it. Such a part maps as an ordinary part of its cardinality and content type, so its content still reaches the user.
+The `session` disposition covers "a description of a multimedia session, or a URI used to join one" ({{MIMI-CONTENT}}). The paragraph above maps the second. The first is call signalling, and is mapped as follows.
+
+An inline `session` part whose content type is `application/sdp` ({{RFC8866}}) carries a session description for a call held in the room it is sent to, not content for a person to read. A converting party MUST NOT put such a part's content in a Message `body` and MUST NOT map it to a MessageAction: a client that cannot hold a call has nothing to do with a session description, and a client that can reaches it through {{JMAP-VTC}} rather than as a message. In the room of a call that has one of its own ({{MIMI-CALLS}}), which is parent-dependent on the room of the Chat the call belongs to ({{MIMI-ROOM-POLICY, Section 5}}), the converting party delivers such a part to that capability and converts no Message for it. In any other room it discards the part, having nowhere to deliver it.
+
+Carrying a session description this way authenticates it. The part travels in the room's MLS group, so its sender is the authenticated MLS sender and the certificate fingerprints ({{RFC8122}}) it carries are bound to that sender's credential. A call signalled this way therefore needs no separate fingerprint comparison between its participants, which is what {{JMAP-VTC}}'s `e2eeFingerprint` is for in a call signalled some other way.
+
+A `session` part that is neither a join URI nor an `application/sdp` session description maps as an ordinary part of its cardinality and content type, so its content still reaches the user.
 
 Nothing here says how a call's media is keyed. {{MIMI-CONTENT}}, Section 5.10 puts "further discussion of calling and conferencing functionality" out of scope, and {{JMAP-VTC}}'s `e2eeEnabled` is a state signal whose mechanism is media-layer-defined. {{MIMI-CALLS}} says where a call's media keys come from when the call has a MIMI room of its own: they are exported from that room's MLS group, so the call's media is confined to the room's membership and to nothing smaller. The mapping in this section is unaffected either way, because an `https` or `wss` join URI names an endpoint outside MIMI, which such a key does not reach.
 
