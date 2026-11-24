@@ -110,6 +110,13 @@ informative:
     seriesinfo:
       Internet-Draft: draft-atwood-jmap-vtc-00
     date: 2026
+  MIMI-CALLS:
+    title: "Media Keys for Calls in More Instant Messaging Interoperability (MIMI)"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-mimi-calls-00
+    date: 2026
   JMAP-OBJ-HISTORY:
     title: "JMAP Object History"
     author:
@@ -179,7 +186,7 @@ A MIMI part whose disposition is `session` ({{MIMI-CONTENT, Section 5.10}}) carr
 
 The `session` disposition covers "a description of a multimedia session, or a URI used to join one" ({{MIMI-CONTENT}}). Only the second is mapped: a `session` part that carries a session description rather than a join URI maps to no MessageAction, because JMAP Chat has no field for one and {{MIMI-CONTENT}} states no content type for it. Such a part maps as an ordinary part of its cardinality and content type, so its content still reaches the user.
 
-Nothing here says how a call's media is keyed. {{MIMI-CONTENT}}, Section 5.10 puts "further discussion of calling and conferencing functionality" out of scope, and {{JMAP-VTC}}'s `e2eeEnabled` is a state signal whose mechanism is media-layer-defined. A later revision may say what a call bound to a MIMI room derives its media keys from.
+Nothing here says how a call's media is keyed. {{MIMI-CONTENT}}, Section 5.10 puts "further discussion of calling and conferencing functionality" out of scope, and {{JMAP-VTC}}'s `e2eeEnabled` is a state signal whose mechanism is media-layer-defined. {{MIMI-CALLS}} says where a call's media keys come from when the call has a MIMI room of its own: they are exported from that room's MLS group, so the call's media is confined to the room's membership and to nothing smaller. The mapping in this section is unaffected either way, because an `https` or `wss` join URI names an endpoint outside MIMI, which such a key does not reach.
 
 # Message Status {#status}
 
@@ -540,6 +547,8 @@ The server MUST reject the call with `invalidArguments` unless all of the follow
 5. `roomId` is `roomIdPrefix` followed by the unpadded lowercase base32 encoding ({{RFC4648, Section 6}}) of 16 octets, and no room this server hosts has that room ID. If the group carries room metadata ({{MIMI-PROTOCOL, Section 7.6}}), its `room_uri` is `roomId`.
 6. The group ID is 16 octets and no room this server hosts uses it.
 7. The group's `app_data_dictionary` extension ({{MLS-EXTENSIONS, Section 4.6}}) contains a `franking_agent` component ({{MIMI-PROTOCOL, Section 5.4.1}}) whose `franking_signature_key` and `credential` are those of `hubSender`, and a `base_room_policy` component ({{MIMI-ROOM-POLICY, Section 5}}) that parses.
+8. If that `base_room_policy` has `parent_dependant` set, its `parent_room` is a room this server hosts. {{MIMI-ROOM-POLICY, Section 5}} requires a parent-dependent room to be "always hosted on the same Hub as the parent room", and a server that does not host the parent cannot apply the rest of Section 5 to the room.
+9. If that `base_room_policy` has `parent_dependant` set, `userUri` is a participant of the parent room. Section 5 keeps a parent-dependent room's participants within the parent's, and by condition 4 the creator is the room's only participant.
 
 Clients SHOULD generate the 16 octets of the room ID and the 16 octets of the group ID independently from a cryptographically secure random source, and SHOULD use a fresh group ID for every MLS group of a room.
 
@@ -547,7 +556,9 @@ The GroupInfo SHOULD contain the `external_pub` extension ({{RFC9420, Section 12
 
 Room metadata is optional. A room that carries it requires every member's client to support the `room_metadata` component, since a component with state in the GroupContext is a required component ({{MLS-EXTENSIONS, Section 5}}). A client creating a room it will share with users of other providers can leave the metadata out, and `room_metadata` out of the room's `app_components`, or add both later with AppDataUpdates once it knows every member supports it. Leaving the metadata out has a cost: some clients do not show an invitation to a room that has no room metadata.
 
-On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), and returns:
+On success the server creates a Chat bound to the room, with `roomId` set to the room ID ({{chat-roomid}}), unless the room is parent-dependent. A parent-dependent room gets no Chat: `kind` ({{JMAP-CHAT}}) has no value that describes one, so a client given such a Chat shows it among the user's conversations, where it is not one. A call with a room of its own ({{MIMI-CALLS}}) is the case this arises in, and what a user sees of such a call belongs in the parent room's Chat rather than in one of its own. The room is still created, and the client addresses it by `roomId`.
+
+Room/create returns:
 
 `accountId` (Id):
 : The account used.
@@ -555,8 +566,8 @@ On success the server creates a Chat bound to the room, with `roomId` set to the
 `roomId` (String):
 : The room ID.
 
-`chatId` (Id):
-: The id of the new Chat.
+`chatId` (Id|null):
+: The id of the new Chat, or `null` when the room is parent-dependent and no Chat was created.
 
 The owner's other clients join the room by external join ({{groupinfo-fetch}}), as any new client of a participant does.
 
