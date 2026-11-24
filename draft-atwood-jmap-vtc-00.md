@@ -26,12 +26,23 @@ normative:
   RFC8620:
   RFC8030:
   RFC4648:
+  RFC8866:
+  RFC8122:
   ULID:
     title: "Universally Unique Lexicographically Sortable Identifier"
     target: https://github.com/ulid/spec
 
 informative:
   RFC9420:
+  WEBRTC:
+    title: "WebRTC: Real-Time Communication in Browsers"
+    author:
+      - fullname: Cullen Jennings
+      - fullname: Florent Castelli
+      - fullname: Henrik Boström
+      - fullname: Jan-Ivar Bruaroey
+    target: https://www.w3.org/TR/webrtc/
+    date: 2025
   JMAP-OBJECT-URI:
     title: "JMAP Object URIs"
     author:
@@ -286,8 +297,8 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 `supportsBreakoutRooms` (Boolean):
 : `true` if the server supports breakout rooms (parent/child VTCCall relationships).
 
-`supportsMimiKeyedCalls` (Boolean, optional):
-: `true` if the server gives a call a MIMI room of its own and keys its media from that room's MLS group ({{e2ee-mimi}}). Default: `false`. A server that advertises `false`, or omits the field, offers no `mimiRoomId` and no `VTCCall/exportMediaSecret`. Absent or `false` when `urn:ietf:params:jmap:chat:mimi` ({{JMAP-CHAT-MIMI}}) is not advertised on the account, since there is then no MIMI room to key from.
+`supportsMimiCalls` (Boolean, optional):
+: `true` if the server gives a call a MIMI room of its own ({{e2ee-mimi}}): the call is signalled through that room ({{vtc-call-signal}}) and its media keys are exported from that room's MLS group ({{export-media-secret}}). Default: `false`. A server that advertises `false`, or omits the field, offers no `mimiRoomId`, no `VTCCall/signal` and no `VTCCall/exportMediaSecret`. Absent or `false` when `urn:ietf:params:jmap:chat:mimi` ({{JMAP-CHAT-MIMI}}) is not advertised on the account, since there is then no MIMI room to use.
 
 `supportedMediaTypes` (String\[]):
 : Media types the deployment supports. Values: `"audio"`, `"video"`, `"screen"`. Servers MUST include at least `"audio"`.
@@ -545,7 +556,7 @@ When a Space or channel Chat referenced by `spaceId` or `channelId` is destroyed
 : When `urn:ietf:params:jmap:calendars` is present: the id of a CalendarEvent ({{JMAP-CALENDARS}}) bound to this call. Same-account only. `null` if the call has no calendar binding.
 
 `mimiRoomId` (String|null, immutable, server-set):
-: When the account-level `supportsMimiKeyedCalls` is `true`: the room ID ({{JMAP-CHAT-MIMI}}) of this call's own MIMI room, from whose MLS group the call's media keys are exported ({{e2ee-mimi}}). `null` for a call this server does not key that way, including every call when `supportsMimiKeyedCalls` is `false`. This is not the room of the Chat named by `chatId`: that room is the call room's parent ({{MIMI-ROOM-POLICY, Section 5}}), and the call has a room of its own because the exported secret belongs to a whole MLS group ({{MIMI-CALLS}}).
+: When the account-level `supportsMimiCalls` is `true`: the room ID ({{JMAP-CHAT-MIMI}}) of this call's own MIMI room, from whose MLS group the call's media keys are exported ({{e2ee-mimi}}). `null` for a call this server does not run that way, including every call when `supportsMimiCalls` is `false`. This is not the room of the Chat named by `chatId`: that room is the call room's parent ({{MIMI-ROOM-POLICY, Section 5}}), and the call has a room of its own because the exported secret belongs to a whole MLS group ({{MIMI-CALLS}}).
 
 ### State Machine {#state-machine}
 
@@ -1030,9 +1041,36 @@ All filter properties are combined with logical AND. The query SHOULD return onl
 
 Sort properties: `createdAt`, `endedAt`. Default sort: `createdAt` descending. A call whose `endedAt` is `null` sorts after every call that has ended, whatever the sort direction.
 
+### VTCCall/signal {#vtc-call-signal}
+
+Sends one call signalling message to the other participants of a call that has a MIMI room of its own ({{e2ee-mimi}}). Offered only when the account-level `supportsMimiCalls` is `true`.
+
+This is not a standard JMAP method. It carries no record and changes no state: the server converts the message to an inline `session` part ({{JMAP-CHAT-MIMI}}) and sends it in the call's room, where the room's other members receive it as a `VTCCallSignal` event ({{vtc-call-signal-event}}). A client holding a call SHOULD make these calls over the WebSocket transport ({{JMAP-VTC-WSS}}), since trickled ICE candidates arrive faster than an HTTP round trip each.
+
+The request arguments are:
+
+`accountId` (Id):
+: The call's hosting account ({{hosting-account}}).
+
+`callId` (String):
+: The call to signal in.
+
+`signal` (String):
+: The signal type. `"offer"` and `"answer"` carry a session description in `sdp`; `"candidate"` carries one ICE candidate in `candidate`. A server MUST reject an unregistered value with `invalidArguments` naming `signal`, so that a client learns the server will not carry it rather than finding a call that never connects.
+
+`sdp` (String|null):
+: For `"offer"` and `"answer"`: the session description ({{RFC8866}}). `null` otherwise.
+
+`candidate` (Object|null):
+: For `"candidate"`: one ICE candidate, with the members `candidate` (String), `sdpMid` (String|null) and `sdpMLineIndex` (UnsignedInt|null) of {{WEBRTC}}'s `RTCIceCandidateInit`. `null` otherwise.
+
+The server MUST return `forbidden` unless the requesting account is a participant of the call's MIMI room, and MUST return `invalidArguments` when `callId` names a call whose `mimiRoomId` is `null` or whose state is `"ended"`, when `signal` and the payload do not agree, or when the message would exceed what the account's MIMI provider accepts in one message.
+
+On success the server returns `accountId` and `callId`. A server MAY rate-limit these calls and SHOULD answer `rateLimit` ({{RFC8620}} Section 5.3) rather than drop a signal silently, since a dropped candidate is indistinguishable to a client from a candidate that found no route.
+
 ### VTCCall/exportMediaSecret {#export-media-secret}
 
-Returns the media secret of the call's own MIMI room for the epoch its MLS group is in ({{e2ee-mimi}}). Offered only when the account-level `supportsMimiKeyedCalls` is `true`.
+Returns the media secret of the call's own MIMI room for the epoch its MLS group is in ({{e2ee-mimi}}). Offered only when the account-level `supportsMimiCalls` is `true`.
 
 This is not a standard JMAP method. It returns key material rather than a record, and its result MUST NOT be cached or logged by anything that handles ordinary method responses.
 
@@ -1780,6 +1818,35 @@ Example — call answered on another device:
 
 When a ring call is answered or declined on one device, the server SHOULD deliver a silent push notification (with `urgency: "low"`) to all other devices that received the original `VTCCallPush`, carrying the `endReason` (`"answered_elsewhere"`, `"declined"`, or `"timeout"`). This allows backgrounded devices without an active WebSocket to dismiss the incoming-call UI promptly rather than waiting for the push TTL to expire.
 
+## VTCCallSignal {#vtc-call-signal-event}
+
+A VTCCallSignal carries one call signalling message from another participant of a call that has a MIMI room of its own ({{e2ee-mimi}}). It is an ephemeral WebSocket event, not persisted as a JMAP object: it is never returned by a `/get`, never appears in a `/query`, and is not replayed to a client that was not connected when it arrived.
+
+`@type` (String):
+: `"VTCCallSignal"`.
+
+`callId` (String):
+: The call this signal pertains to.
+
+`participantId` (String):
+: The VTCParticipant that sent it. The server sets this from the authenticated MLS sender of the message it arrived in, not from anything the sender asserted, so a participant cannot signal as another.
+
+`signal` (String):
+: `"offer"`, `"answer"`, or `"candidate"`, as in `VTCCall/signal` ({{vtc-call-signal}}). A client MUST ignore an event whose `signal` it does not recognize.
+
+`sdp` (String|null):
+: The session description for `"offer"` and `"answer"`; `null` otherwise.
+
+`candidate` (Object|null):
+: The ICE candidate for `"candidate"`; `null` otherwise.
+
+`timestamp` (UTCDate):
+: Time the server accepted the message the signal arrived in.
+
+Signals arrive in the order the call's MIMI room accepted them, because that room's hub orders the messages it accepts. A client can therefore apply an offer and answer in order without sequence numbers of its own. Candidates have no order requirement.
+
+A signal reaches every member of the call's MIMI room, because that is the granularity at which the room's MLS group encrypts. In a call whose media is peer-to-peer between two participants, or one whose media passes through a selective forwarding unit that is itself a participant, that is what is wanted. In a mesh call among three or more, the session description a participant intends for one peer is readable by all of them, so such a call gets no privacy between its own participants from this mechanism and MUST NOT be presented as though it did.
+
 ## VTCGatewaySignal {#gateway-signal}
 
 A VTCGatewaySignal carries a protocol-specific signal between a gateway and a call participant. It is an ephemeral WebSocket event — not persisted as a JMAP object. This is the pass-through mechanism for any external protocol verb that does not map to a core VTC lifecycle operation (join, leave, mute, kick, end).
@@ -1979,7 +2046,7 @@ The participant list, `speakerTimeMs`, and the active speaker are visible to the
 
 ## MIMI-Keyed Calls {#e2ee-mimi}
 
-This section applies when the account-level `supportsMimiKeyedCalls` is `true` and the call's `mimiRoomId` is not `null`.
+This section applies when the account-level `supportsMimiCalls` is `true` and the call's `mimiRoomId` is not `null`.
 
 `e2eeEnabled` names no mechanism, by design: the mechanism is media-layer-defined. This section describes one, for a deployment that is also a MIMI provider ({{JMAP-CHAT-MIMI}}).
 
@@ -1989,6 +2056,10 @@ Two consequences are worth stating, because they are what the arrangement buys:
 
 - Nothing is sent to key the call. Every member of the call room's current epoch derives the same secret from the epoch it is already in, so there is no media key to distribute and no key-distribution message to lose, replay, or withhold.
 - Membership changes rekey the call. Adding or removing a participant is a Commit, which changes the epoch and so the secret, so a participant added mid-call cannot read earlier media and one removed from the call cannot read later media. No media-layer rekeying protocol is needed for either.
+
+The call is also signalled through that room: a session description or ICE candidate goes out with `VTCCall/signal` ({{vtc-call-signal}}) and arrives as a `VTCCallSignal` ({{vtc-call-signal-event}}), carried as an inline `session` part ({{JMAP-CHAT-MIMI}}) in the room's own messages. Two things follow from the channel rather than from anything this document adds. The room's hub orders the messages it accepts, so an offer and an answer arrive in order. And the sender of each is the authenticated MLS sender, so the certificate fingerprints ({{RFC8122}}) a session description carries are bound to that sender's credential: a call signalled this way needs no fingerprint comparison between its participants, and `e2eeFingerprint` ({{vtc-participant}}) is for a call signalled some other way.
+
+In a two-party call this makes the media end-to-end encrypted without the exported secret at all, since the DTLS-SRTP keys the authenticated session descriptions negotiate are the two parties'. The exported secret is what a call needs when its media passes through something that forwards it, which cannot be given those keys.
 
 The call needs a room of its own rather than borrowing the Chat's because the exported secret belongs to a whole MLS group: a call keyed from the Chat's room would be readable by every member of the Chat, including those not in the call, undetectably and with no protocol error ({{MIMI-CALLS}}).
 
@@ -2091,6 +2162,18 @@ When `lobbyEnabled` is `true`, the server SHOULD NOT allow participants to skip 
 
 A playback `credential`, and a `url` that carries authorization, let whoever holds them watch the stream. Because they are issued per user ({{playback-authorization}}), a leaked credential can be traced to the user it was issued to and revoked without affecting other viewers. The server SHOULD give them an expiry no longer than the deployment needs. Clients SHOULD NOT log them or include them in links that users share.
 
+## NAT Traversal Is Not Negotiated {#turn-not-negotiated}
+
+A call whose media is peer-to-peer or forwarded still needs NAT traversal, and a relay (TURN) sees the addresses of whoever relays through it and that encrypted bytes are flowing between them. Nothing in this document negotiates which relay a call uses, and nothing should: a relay is infrastructure a provider offers its own clients, so each end of a call learns its relays from its own provider and offers whatever candidates it gets. The two ends then agree on a working pair by ICE, having agreed on nothing beforehand.
+
+This keeps the exposure where it already is. A client's own provider knows that client's address because the client connects to it; relaying through that provider's relay tells it nothing new. A relay at the other end of the call learns an address and that bytes flow, and not whose call it is. A deployment that instead points both ends at one third-party relay gives that third party both addresses and the knowledge that those two parties spoke, which no amount of media encryption takes back.
+
+## Call Signalling Is Visible to the Whole Call {#signal-visibility}
+
+A `VTCCallSignal` ({{vtc-call-signal-event}}) reaches every member of the call's MIMI room, because that is the granularity at which the room's MLS group encrypts. A session description reveals codecs, candidate addresses, and the fingerprints of the sending client. For a two-party call, or one whose forwarding unit is a participant, the audience is exactly the intended one. For a mesh call among three or more, every participant can read the session description a participant meant for one of the others, and a client MUST NOT present such a call as though its signalling were private between pairs.
+
+The server relays these messages without reading them. It converts between the JMAP event and the MIMI part and does not retain either beyond the relay.
+
 ## Gateway Participant Identity
 
 `displayName` and `gatewayData` for participants who joined via a protocol gateway (`joinMethod` of `"pstn"`, `"sip"`, or `"h323"`) are derived from the external protocol's identity mechanisms (PSTN caller ID, SIP From header, H.323 alias). These identities are trivially spoofable on their respective networks and are not authenticated by the JMAP server. Clients can visually distinguish gateway participants from authenticated JMAP users to limit impersonation.
@@ -2186,8 +2269,8 @@ The following design choices were left to deployments rather than prescribed:
 
 - **Media stack selection.** WebRTC, SIP/RTP, proprietary SFU, or any other media transport. The spec is media-agnostic by design.
 - **SFU/MCU architecture.** Whether the deployment uses a Selective Forwarding Unit, a Multipoint Control Unit, peer-to-peer mesh, or a hybrid. The JMAP server does not participate in media routing.
-- **WebRTC signaling.** SDP offer/answer and ICE candidate exchange are the media stack's responsibility. A future companion specification may define JMAP-based signaling relay, but this document does not.
-- **STUN/TURN server deployment.** NAT traversal infrastructure is deployment-defined.
+- **WebRTC signaling, except over a MIMI room.** SDP offer/answer and ICE candidate exchange are the media stack's responsibility in general. For a call that has a MIMI room of its own, this document does relay them, because the room is already an ordered, authenticated, end-to-end encrypted channel between exactly the call's participants ({{vtc-call-signal}}, {{vtc-call-signal-event}}). No equivalent is defined for a call without such a room.
+- **STUN/TURN server deployment.** NAT traversal infrastructure is deployment-defined, and stays so even for a call signalled through a MIMI room ({{turn-not-negotiated}}): which relay a client uses is a matter between that client and its own provider, not between providers, so no part of it is negotiated between the two ends of a call.
 - **Recording storage backend.** Where and how recording blobs are stored. The spec only models the metadata and the resulting `blobId`.
 - **Livestream ingest protocol.** RTMP is assumed for push mode but not prescribed; deployments may use SRT, HLS ingest, or any other protocol.
 - **Livestream media pipeline.** In hosted mode, how the call's media becomes playback endpoints (an SFU egress, a transcoder and packager, an origin server, a content delivery network) is deployment-defined. The spec models only the resulting endpoints ({{vtc-playback-endpoint}}), so the JMAP server remains a state database, not a media server.
