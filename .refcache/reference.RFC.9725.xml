@@ -1,0 +1,14 @@
+<reference anchor="RFC9725" target="https://www.rfc-editor.org/info/rfc9725">
+  <front>
+    <title>WebRTC-HTTP Ingestion Protocol (WHIP)</title>
+    <author fullname="S. Garcia Murillo" initials="S." surname="Garcia Murillo"/>
+    <author fullname="A. Gouaillard" initials="A." surname="Gouaillard"/>
+    <date month="March" year="2025"/>
+    <abstract>
+      <t>This document describes a simple HTTP-based protocol that will allow WebRTC-based ingestion of content into streaming services and/or Content Delivery Networks (CDNs).</t>
+      <t>This document updates RFCs 8840 and 8842.</t>
+    </abstract>
+  </front>
+  <seriesInfo name="RFC" value="9725"/>
+  <seriesInfo name="DOI" value="10.17487/RFC9725"/>
+</reference>

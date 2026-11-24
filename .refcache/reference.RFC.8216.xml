@@ -1,0 +1,13 @@
+<reference anchor="RFC8216" target="https://www.rfc-editor.org/info/rfc8216">
+  <front>
+    <title>HTTP Live Streaming</title>
+    <author fullname="R. Pantos" initials="R." role="editor" surname="Pantos"/>
+    <author fullname="W. May" initials="W." surname="May"/>
+    <date month="August" year="2017"/>
+    <abstract>
+      <t>This document describes a protocol for transferring unbounded streams of multimedia data. It specifies the data format of the files and the actions to be taken by the server (sender) and the clients (receivers) of the streams. It describes version 7 of this protocol.</t>
+    </abstract>
+  </front>
+  <seriesInfo name="RFC" value="8216"/>
+  <seriesInfo name="DOI" value="10.17487/RFC8216"/>
+</reference>

@@ -1,0 +1,19 @@
+<reference anchor="RFC3261" target="https://www.rfc-editor.org/info/rfc3261">
+  <front>
+    <title>SIP: Session Initiation Protocol</title>
+    <author fullname="J. Rosenberg" initials="J." surname="Rosenberg"/>
+    <author fullname="H. Schulzrinne" initials="H." surname="Schulzrinne"/>
+    <author fullname="G. Camarillo" initials="G." surname="Camarillo"/>
+    <author fullname="A. Johnston" initials="A." surname="Johnston"/>
+    <author fullname="J. Peterson" initials="J." surname="Peterson"/>
+    <author fullname="R. Sparks" initials="R." surname="Sparks"/>
+    <author fullname="M. Handley" initials="M." surname="Handley"/>
+    <author fullname="E. Schooler" initials="E." surname="Schooler"/>
+    <date month="July" year="2002"/>
+    <abstract>
+      <t>This document describes Session Initiation Protocol (SIP), an application-layer control (signaling) protocol for creating, modifying, and terminating sessions with one or more participants. These sessions include Internet telephone calls, multimedia distribution, and multimedia conferences. [STANDARDS-TRACK]</t>
+    </abstract>
+  </front>
+  <seriesInfo name="RFC" value="3261"/>
+  <seriesInfo name="DOI" value="10.17487/RFC3261"/>
+</reference>

@@ -25,11 +25,13 @@ normative:
   RFC8174:
   RFC8620:
   RFC8030:
+  RFC4648:
   ULID:
     title: "Universally Unique Lexicographically Sortable Identifier"
     target: https://github.com/ulid/spec
 
 informative:
+  RFC9420:
   JMAP-OBJECT-URI:
     title: "JMAP Object URIs"
     author:
@@ -149,6 +151,27 @@ informative:
     seriesinfo:
       Internet-Draft: draft-ietf-jmap-object-history-03
     date: 2026-11-02
+  JMAP-CHAT-MIMI:
+    title: "A JMAP Chat binding for More Instant Messaging Interoperability (MIMI)"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-jmap-chat-mimi-00
+    date: 2026
+  MIMI-CALLS:
+    title: "Media Keys for Calls in More Instant Messaging Interoperability (MIMI)"
+    author:
+      fullname: Mark Atwood
+    seriesinfo:
+      Internet-Draft: draft-atwood-mimi-calls-00
+    date: 2026
+  MIMI-ROOM-POLICY:
+    title: "More Instant Messaging Interoperability (MIMI) Room Policy"
+    author:
+      - fullname: Rohan Mahy
+    seriesinfo:
+      Internet-Draft: draft-ietf-mimi-room-policy-04
+    date: 2026-07-06
 
 --- abstract
 
@@ -262,6 +285,9 @@ The value of `accountCapabilities["urn:ietf:params:jmap:vtc"]` is a JSON object 
 
 `supportsBreakoutRooms` (Boolean):
 : `true` if the server supports breakout rooms (parent/child VTCCall relationships).
+
+`supportsMimiKeyedCalls` (Boolean, optional):
+: `true` if the server gives a call a MIMI room of its own and keys its media from that room's MLS group ({{e2ee-mimi}}). Default: `false`. A server that advertises `false`, or omits the field, offers no `mimiRoomId` and no `VTCCall/exportMediaSecret`. Absent or `false` when `urn:ietf:params:jmap:chat:mimi` ({{JMAP-CHAT-MIMI}}) is not advertised on the account, since there is then no MIMI room to key from.
 
 `supportedMediaTypes` (String\[]):
 : Media types the deployment supports. Values: `"audio"`, `"video"`, `"screen"`. Servers MUST include at least `"audio"`.
@@ -517,6 +543,9 @@ When a Space or channel Chat referenced by `spaceId` or `channelId` is destroyed
 
 `calendarEventId` (String|null):
 : When `urn:ietf:params:jmap:calendars` is present: the id of a CalendarEvent ({{JMAP-CALENDARS}}) bound to this call. Same-account only. `null` if the call has no calendar binding.
+
+`mimiRoomId` (String|null, immutable, server-set):
+: When the account-level `supportsMimiKeyedCalls` is `true`: the room ID ({{JMAP-CHAT-MIMI}}) of this call's own MIMI room, from whose MLS group the call's media keys are exported ({{e2ee-mimi}}). `null` for a call this server does not key that way, including every call when `supportsMimiKeyedCalls` is `false`. This is not the room of the Chat named by `chatId`: that room is the call room's parent ({{MIMI-ROOM-POLICY, Section 5}}), and the call has a room of its own because the exported secret belongs to a whole MLS group ({{MIMI-CALLS}}).
 
 ### State Machine {#state-machine}
 
@@ -1000,6 +1029,43 @@ Filter properties:
 All filter properties are combined with logical AND. The query SHOULD return only calls the authenticated user has access to (see {{access-control}}).
 
 Sort properties: `createdAt`, `endedAt`. Default sort: `createdAt` descending. A call whose `endedAt` is `null` sorts after every call that has ended, whatever the sort direction.
+
+### VTCCall/exportMediaSecret {#export-media-secret}
+
+Returns the media secret of the call's own MIMI room for the epoch its MLS group is in ({{e2ee-mimi}}). Offered only when the account-level `supportsMimiKeyedCalls` is `true`.
+
+This is not a standard JMAP method. It returns key material rather than a record, and its result MUST NOT be cached or logged by anything that handles ordinary method responses.
+
+The request arguments are:
+
+`accountId` (Id):
+: The call's hosting account ({{hosting-account}}).
+
+`callId` (String):
+: The VTCCall whose media secret to export.
+
+`epoch` (UnsignedInt, optional):
+: The epoch the client believes the call's MLS group is in. When given and the group has moved on, the server MUST return `stateMismatch` and report the current epoch, so that a client does not use a secret for an epoch that has ended without noticing. When omitted the server exports the current epoch's.
+
+The server MUST return `forbidden` unless the requesting account is a participant of the call's MIMI room, and MUST return `invalidArguments` when `callId` names a call whose `mimiRoomId` is `null` or whose state is `"ended"`.
+
+On success the server returns:
+
+`accountId` (Id):
+: The account used.
+
+`callId` (String):
+: The call.
+
+`epoch` (UnsignedInt):
+: The epoch of the call room's MLS group that this secret belongs to ({{RFC9420, Section 8.1}}). Every member of that epoch derives the same secret, and the next epoch has another.
+
+`mediaSecret` (String):
+: The base64 ({{RFC4648, Section 4}}) encoding of `SafeExportSecret(media_keys)` for that epoch ({{MIMI-CALLS}}).
+
+A client MUST use `mediaSecret` as the input keying material of the media layer's own key schedule and MUST NOT use it directly as a media encryption key, as {{MIMI-CALLS}} requires. A client MUST derive afresh on entering a new epoch and MUST stop using the previous epoch's secret for new media.
+
+A server MUST NOT return a secret over an unauthenticated connection, MUST NOT include one in a push payload ({{vtc-call-push}}) or a WebSocket event ({{JMAP-VTC-WSS}}), and MUST NOT retain one after answering. A client MUST NOT send one to any other party: every participant exports it for itself, which is the property that makes the call's media reach the call's members and nobody else.
 
 ### VTCCall/queryChanges
 
@@ -1910,6 +1976,25 @@ The participant list, `speakerTimeMs`, and the active speaker are visible to the
 - The server SHOULD NOT map media-layer streams (for example, SFU stream or RTP SSRC identifiers) to VTCParticipant ids.
 - A server that does not map streams cannot attribute audio, so it SHOULD NOT deliver `VTCActiveSpeakerEvent` for the call, and it sets `speakerTimeMs` to `0` as that field's definition requires.
 - Clients MAY determine the active speaker locally from decrypted audio levels, using the stream-to-participant mapping learned inside the E2EE layer. Clients SHOULD prefer local detection over `VTCActiveSpeakerEvent` when both are available.
+
+## MIMI-Keyed Calls {#e2ee-mimi}
+
+This section applies when the account-level `supportsMimiKeyedCalls` is `true` and the call's `mimiRoomId` is not `null`.
+
+`e2eeEnabled` names no mechanism, by design: the mechanism is media-layer-defined. This section describes one, for a deployment that is also a MIMI provider ({{JMAP-CHAT-MIMI}}).
+
+The call has a MIMI room of its own, whose MLS group's members are the call's participants and nobody else. That room is parent-dependent on the room of the Chat the call belongs to ({{MIMI-ROOM-POLICY, Section 5}}), so its participants stay within that Chat's. The call's media secret is exported from the call room's own group ({{MIMI-CALLS}}) and fetched with `VTCCall/exportMediaSecret` ({{export-media-secret}}).
+
+Two consequences are worth stating, because they are what the arrangement buys:
+
+- Nothing is sent to key the call. Every member of the call room's current epoch derives the same secret from the epoch it is already in, so there is no media key to distribute and no key-distribution message to lose, replay, or withhold.
+- Membership changes rekey the call. Adding or removing a participant is a Commit, which changes the epoch and so the secret, so a participant added mid-call cannot read earlier media and one removed from the call cannot read later media. No media-layer rekeying protocol is needed for either.
+
+The call needs a room of its own rather than borrowing the Chat's because the exported secret belongs to a whole MLS group: a call keyed from the Chat's room would be readable by every member of the Chat, including those not in the call, undetectably and with no protocol error ({{MIMI-CALLS}}).
+
+A participant who leaves the Chat rather than the call keeps the ability to derive the secret until a member of the call commits their removal, because the hub that sees the Chat's membership change is not a member of the call's group and can only propose it ({{MIMI-ROOM-POLICY, Section 5}}, {{MIMI-CALLS}}). A client MUST NOT present leaving the Chat as leaving the call.
+
+A server offering this MUST NOT itself hold the exported secret beyond answering `VTCCall/exportMediaSecret`, and the rule of {{e2ee-media-participants}} applies unchanged: a recorder, bridge, or gateway reaches plaintext only by joining the call as a disclosed key-holding participant, which here means being a member of the call room's MLS group and appearing in its participant list.
 
 ## Participant Visibility {#e2ee-participant-visibility}
 

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reference anchor="I-D.ietf-wish-whep" target="https://datatracker.ietf.org/doc/html/draft-ietf-wish-whep-05">
+   <front>
+      <title>WebRTC-HTTP Egress Protocol (WHEP)</title>
+      <author initials="S. G." surname="Murillo" fullname="Sergio Garcia Murillo">
+         <organization>Millicast</organization>
+      </author>
+      <author initials="C." surname="Chen" fullname="Cheng Chen">
+         </author>
+      <author initials="D." surname="Jenkins" fullname="Dan Jenkins">
+         <organization>Everycast Labs Ltd</organization>
+      </author>
+      <date month="October" day="12" year="2026" />
+      <abstract>
+	 <t>   This document describes a simple HTTP-based protocol that will allow
+   WebRTC-based viewers to watch content from streaming services,
+   Content Delivery Networks (CDNs), or WebRTC Transmission Networks
+   (WTNs).
+
+	 </t>
+      </abstract>
+   </front>
+   <seriesInfo name="Internet-Draft" value="draft-ietf-wish-whep-05" />
+   
+</reference>
