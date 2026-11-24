@@ -163,10 +163,14 @@ ephemeral VTC event subscription on the current WebSocket connection.
 - **`eventTypes`** (String\[]|null): An explicit list of event type
   names the client wishes to receive, or `null` to receive all
   event types.  Recognized values are: `"VTCRingEvent"`,
-  `"VTCCallEndEvent"`, `"VTCGatewaySignal"`,
+  `"VTCCallEndEvent"`, `"VTCGatewaySignal"`, `"VTCCallSignal"`,
   `"VTCParticipantEvent"`, `"VTCMediaStateEvent"`,
   `"VTCActiveSpeakerEvent"`, `"VTCUnmuteRequestEvent"`, and
   `"VTCRecordingStateEvent"`.  Default: `null`.
+  `VTCCallSignal` ({{JMAP-VTC}}) carries the session descriptions and
+  candidates a call is negotiated with, so a client that filters it out
+  of a call it is holding will not connect; a client that does not hold
+  the call has no use for it.
   `VTCRecordingStateEvent` is the recording consent signal
   ({{JMAP-VTC}}), so the server delivers it for every call the
   subscription covers whether or not `eventTypes` lists it.

@@ -1,0 +1,12 @@
+<reference anchor="RFC8887" target="https://www.rfc-editor.org/info/rfc8887">
+  <front>
+    <title>A JSON Meta Application Protocol (JMAP) Subprotocol for WebSocket</title>
+    <author fullname="K. Murchison" initials="K." surname="Murchison"/>
+    <date month="August" year="2020"/>
+    <abstract>
+      <t>This document defines a binding for the JSON Meta Application Protocol (JMAP) over a WebSocket transport layer. The WebSocket binding for JMAP provides higher performance than the current HTTP binding for JMAP.</t>
+    </abstract>
+  </front>
+  <seriesInfo name="RFC" value="8887"/>
+  <seriesInfo name="DOI" value="10.17487/RFC8887"/>
+</reference>
